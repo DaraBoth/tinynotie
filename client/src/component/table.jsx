@@ -29,7 +29,7 @@ function TableComponent() {
   };
 
   useEffect(()=>{
-    if(onSubmit != false){
+    if(onSubmit != false && onSubmit != "false1"){
       alert('sucess!')
     }
   },[onSubmit])
@@ -123,6 +123,7 @@ function calculateMoney(allMembers,trips) {
 
 function formatMoney(money,option=2) {
   let newMoney = "";
+  if(!money) return "-/-  ";
   if(typeof money == "string"){
     try {
       money = Number(parseFloat(money));
@@ -159,20 +160,29 @@ function functionRenderColumns(rows){
     newColumns[i] = {
       field:key[i],
       headerName:title,
-      headerAlign: 'right',
-      align: 'right'
+      headerAlign: 'center',
+      align: 'center'
     }
     if(title === 'Name') {
       newColumns[i] = Object.assign(newColumns[i],{
         minWidth: 110,
         headerAlign: 'left',
-        align: 'left'
+        align: 'left',
+        hideable: false
+      })
+    }
+    if(title === 'Sol' || title === 'Unpaid') {
+      newColumns[i] = Object.assign(newColumns[i],{
+        minWidth: 110,
+        headerAlign: 'right',
+        align: 'right'
       })
     }
     if(title === 'ID') {
       newColumns[i] = Object.assign(newColumns[i],{
-        minWidth: 50,
-        width:50
+        hidden: true,
+        minWidth: 60,
+        width:60
       })
     }
   }

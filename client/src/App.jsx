@@ -4,7 +4,6 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import { ColorModeContext, useMode } from './theme';
 import './index.scss'
 import Topbar from './global/Topbar';
-import Form from './component/form';
 import { QueryClientProvider, QueryClient, useQuery } from 'react-query'
 
 function App() {

@@ -29,7 +29,7 @@ const Topbar = () => {
         gap="10px"
       >
         {/* SEARCH BAR */}
-        <Box
+        {/* <Box
           display="flex"
           backgroundColor={colors.primary[400]}
           borderRadius="3px"
@@ -38,7 +38,7 @@ const Topbar = () => {
           <IconButton type="button" sx={{ p: 1 }}>
             <SearchIcon />
           </IconButton>
-        </Box>
+        </Box> */}
 
         {/* ICONS */}
         <Box display="flex">
