@@ -138,7 +138,7 @@ router.get("/editMember", async (req, res) => {
           res.send({results:results.affectedRows,status:true});
         })
       }else{
-        res.status(200).json({status:false,message:'Could not found member name '+name+'. Are you sure this member is exist?'})
+        res.status(200).json({status:false,message:'Could not found member name '+editName+'. Are you sure this member is exist?'})
       }
     })
   } catch (error) {

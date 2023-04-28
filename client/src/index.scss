@@ -5,8 +5,20 @@ body,
 #root,
 .app,
 .content {
-  width: 100%;
+  margin: 0;
   font-family: "Source Sans Pro", sans-serif;
+  box-sizing: border-box;
+}
+
+.content {
+  margin: 10px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  margin: 15px;
+  gap: 20px;
 }
 
 ::-webkit-scrollbar-thumb {

@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/auth.js');
 const noteRoutes = require('./routes/note.js');
+const apiRoutes = require('./routes/api.js');
 const app = express();
 
 /* CONFIGURATIONS */
@@ -20,6 +21,7 @@ app.use(cors());
 
 /* ROUTES */
 app.use("/note", noteRoutes);
+app.use("/api", apiRoutes);
 app.use("/auth", authRoutes);
 
 /* SERVER SETUP */

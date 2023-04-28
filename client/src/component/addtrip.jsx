@@ -7,12 +7,9 @@ import Select from '@mui/material/Select';
 import axios from 'axios';
 import { useState } from "react";
 import AutorenewIcon from '@mui/icons-material/Autorenew';
-import Checkbox from '@mui/material/Checkbox';
-
-
 const baseURL = import.meta.env.VITE_BASE_URL;
-const user_id = 1;
-export default function Form({ onSubmit, setOnSubmit }) {
+const user_id = 2;
+export default function AddTripForm({ onSubmit, setOnSubmit }) {
   let deletName, editName, editMoney;
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -89,11 +86,13 @@ export default function Form({ onSubmit, setOnSubmit }) {
   }
 
   return (
-    <Box>
+    <Box
+      marginTop={5}
+    >
       <Typography variant="h3"
         sx={{ marginBottom: 1 }}
       >
-        Members
+        Trips
       </Typography>
       <Formik
         onSubmit={handleFormSubmit}
@@ -110,6 +109,7 @@ export default function Form({ onSubmit, setOnSubmit }) {
         }) => (
           <form>
             <Box
+
               display="grid"
               gap="30px"
               gridTemplateColumns="repeat(4, minmax(0, 1fr))"
@@ -121,112 +121,94 @@ export default function Form({ onSubmit, setOnSubmit }) {
                 display="grid"
                 gap="30px"
                 gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-                sx={{ gridColumn: "span 3" }}
+                sx={{ gridColumn: "span 2" }}
               >
+
                 {/* add member */}
-                <Box
-                  display="grid"
-                  gap="30px"
-                  gridTemplateColumns="repeat(6, minmax(0, 1fr))"
-                  sx={{ gridColumn: "span 6", placeItems: "center" }}
+                <TextField
+                  fullWidth
+                  variant="filled"
+                  type="text"
+                  label="Name"
+                  onBlur={handleBlur}
+                  onChange={handleChange}
+                  value={values.name}
+                  name="name"
+                  color="info"
+                  error={!!touched.name && !!errors.name}
+                  helperText={touched.name && errors.name}
+                  sx={{ gridColumn: "span 2" }}
                   style={changeButton === 1 ? { display: "flex" } : { display: "none" }}
-                >
-                  <TextField
-                    fullWidth
-                    variant="filled"
-                    type="text"
-                    label="Name"
-                    onBlur={handleBlur}
-                    onChange={handleChange}
-                    value={values.name}
-                    name="name"
-                    color="info"
-                    error={!!touched.name && !!errors.name}
-                    helperText={touched.name && errors.name}
-                    sx={{ gridColumn: "span 3" }}
-                  />
-                  <TextField
-                    fullWidth
-                    variant="filled"
-                    type="text"
-                    label="$ Paid"
-                    onBlur={handleBlur}
-                    onChange={handleChange}
-                    value={values.money}
-                    name="money"
-                    color="info"
-                    error={!!touched.money && !!errors.money}
-                    helperText={touched.money && errors.money}
-                    sx={{ gridColumn: "span 3" }}
-                    style={changeButton === 1 ? { display: "flex" } : { display: "none" }}
-                  />
-                </Box>
+                />
+                <TextField
+                  fullWidth
+                  variant="filled"
+                  type="text"
+                  label="$ Paid"
+                  onBlur={handleBlur}
+                  onChange={handleChange}
+                  value={values.money}
+                  name="money"
+                  color="info"
+                  error={!!touched.money && !!errors.money}
+                  helperText={touched.money && errors.money}
+                  sx={{ gridColumn: "span 2" }}
+                  style={changeButton === 1 ? { display: "flex" } : { display: "none" }}
+                />
+
                 {/* edit user  */}
-                <Box
-                  display="grid"
-                  gap="30px"
-                  gridTemplateColumns="repeat(7, minmax(0, 1fr))"
-                  sx={{ gridColumn: "span 7", placeItems: "center" }}
-                  style={changeButton === 2 ? { display: "flex" } : { display: "none" }}
-                >
-                  <FormControl
-                    fullWidth
-                    sx={{ gridColumn: "span 2" }}
-                  >
-                    <InputLabel id="editName" color="info" >Name</InputLabel>
-                    <Select
-                      labelId="editName"
-                      id="editName"
-                      value={editName}
-                      color="info"
-                      onChange={getEditName}
-                      label="Name"
-                    >
-                      {(typeof data != "undefined") && (!!data) && data.map((item, index) =>
-                        <MenuItem key={index} value={item.name}>  {item.name}</MenuItem>
-                      )}
-                    </Select>
-                  </FormControl>
-                  <TextField
-                    fullWidth
-                    variant="filled"
-                    type="text"
-                    label="$ Paid"
+                <FormControl
+                  fullWidth
+                  sx={{ gridColumn: "span 2" }}
+                  style={changeButton === 2 ? { display: "flex" } : { display: "none" }} >
+                  <InputLabel id="editName" color="info" >Name</InputLabel>
+                  <Select
+                    labelId="editName"
+                    id="editName"
+                    value={editName}
                     color="info"
-                    value={editMoney}
-                    onChange={getEditMoney}
-                    error={!!touched.money && !!errors.money}
-                    helperText={touched.money && errors.money}
-                    sx={{ gridColumn: "span 2" }}
-                  />
-                </Box>
-                {/* delete user */}
-                <Box
-                  display="grid"
-                  gap="30px"
-                  gridTemplateColumns="repeat(7, minmax(0, 1fr))"
-                  sx={{ gridColumn: "span 7", placeItems: "center" }}
-                  style={changeButton === 3 ? { display: "flex" } : { display: "none" }}
-                >
-                  <FormControl
-                    fullWidth
-                    sx={{ gridColumn: "span 4" }}
+                    onChange={getEditName}
+                    label="Name"
                   >
-                    <InputLabel id="Name" color="info" >Name</InputLabel>
-                    <Select
-                      labelId="Name"
-                      id="Name"
-                      color="info"
-                      value={deletName}
-                      onChange={getDeleteName}
-                      label="Name"
-                    >
-                      {(typeof data != "undefined") && (!!data) && data.map((item, index) =>
-                        <MenuItem key={index} value={item.name}> {item.name}</MenuItem>
-                      )}
-                    </Select>
-                  </FormControl>
-                </Box>
+                    {(typeof data != "undefined") && (!!data) && data.map((item, index) =>
+                      <MenuItem key={index} value={item.name}>{item.name}</MenuItem>
+                    )}
+                  </Select>
+                </FormControl>
+                <TextField
+                  fullWidth
+                  variant="filled"
+                  type="text"
+                  label="$ Paid"
+                  color="info"
+                  value={editMoney}
+                  onChange={getEditMoney}
+                  error={!!touched.money && !!errors.money}
+                  helperText={touched.money && errors.money}
+                  sx={{ gridColumn: "span 2" }}
+                  style={changeButton === 2 ? { display: "flex" } : { display: "none" }}
+                />
+
+                {/* delete user */}
+                <FormControl
+                  fullWidth
+                  sx={{ gridColumn: "span 4" }}
+                  style={changeButton === 3 ? { display: "flex" } : { display: "none" }} >
+                  <InputLabel id="Name" color="info" >Name</InputLabel>
+                  <Select
+                    labelId="Name"
+                    id="Name"
+                    color="info"
+                    value={deletName}
+                    onChange={getDeleteName}
+                    label="Name"
+                  >
+                    {(typeof data != "undefined") && (!!data) && data.map((item, index) =>
+                      <MenuItem key={index} value={item.name}>{item.name}</MenuItem>
+                    )}
+                  </Select>
+                </FormControl>
+
               </Box>
               <Box
                 display="flex"
