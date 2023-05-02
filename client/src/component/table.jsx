@@ -2,38 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { DataGrid, GridToolbar, GridToolbarQuickFilter } from "@mui/x-data-grid";
 import { tokens } from "../theme";
 import { Box, Typography, useTheme } from "@mui/material";
-import { useQuery } from 'react-query'
-import Form from './form';
-import AddTripForm from './addtrip';
-const baseURL = import.meta.env.VITE_BASE_URL;
-const user_id = 1;
-function TableComponent({ onSubmit, setOnSubmit }) {
-
-  const members = useQuery('getAllMembers', () =>
-    fetch(baseURL + `note/getAllMembers?user_id=${user_id}`).then(res => res.json())
-  );
-
-  const trips = useQuery('getTripsByUserId', () =>
-    fetch(baseURL + `note/getTripsByUserId?user_id=${user_id}`).then(res => res.json())
-  );
-
+function TableComponent({ rows, columns }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [pageSize, setPageSize] = useState(5);
-
-  let rows, columns;
-  if (!members.isLoading && !trips.isLoading) {
-    rows = calculateMoney(members.data, trips.data);
-    columns = functionRenderColumns(rows);
-    localStorage.setItem('allMembers', JSON.stringify(members.data))
-  };
-
-  useEffect(() => {
-    if (onSubmit != false && onSubmit != "false1") {
-      alert('sucess!')
-    }
-  }, [onSubmit])
-
   return (
     <Box>
       <Box
@@ -67,21 +39,15 @@ function TableComponent({ onSubmit, setOnSubmit }) {
           },
         }}
       >
-        <Typography variant="h3"
-          sx={{ marginBottom: 1 }}
-        >
-          List
-        </Typography>
-        {!members.isLoading && !trips.isLoading &&
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            components={{ Toolbar: GridToolbar }}
-            disableSelectionOnClick
-            pageSize={pageSize}
-            onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
-            rowsPerPageOptions={[5, 10, 20, 50]}
-          />}
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          components={{ Toolbar: GridToolbar }}
+          disableSelectionOnClick
+          pageSize={pageSize}
+          onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
+          rowsPerPageOptions={[5, 10, 20, 50]}
+        />
       </Box>
     </Box>
   )
@@ -89,104 +55,3 @@ function TableComponent({ onSubmit, setOnSubmit }) {
 
 export default TableComponent
 
-function calculateMoney(allMembers, trips) {
-  let newData = [];
-  let i, j, trip;
-  let kitLuy = {}
-  for (i in allMembers) {
-    newData[i] = {};
-    let member = allMembers[i];
-    let luyForTrip = 0;
-    let paid = member.money;
-    let luySol = paid;
-    for (trip in trips) {
-      let { joinedMembers, spended, place } = trips[trip];
-      let osMnek = 0;
-      for (j in joinedMembers) {
-        let joined = joinedMembers[j]
-        if (member.name === joined) {
-          osMnek = (spended / joinedMembers?.length);
-          luyForTrip += (spended / joinedMembers?.length);
-          luySol = (member.money - luyForTrip);
-        }
-      }
-      kitLuy = Object.assign(kitLuy, { [place]: formatMoney(osMnek, 1) })
-    }
-    let unPaid = 0;
-    newData[i] = {
-      id: Number(i) + 1,
-      name: allMembers[i].name,
-      paid: paid + "$",
-    }
-    newData[i] = Object.assign(newData[i], kitLuy, { luySol: formatMoney(luySol > 0 ? luySol : unPaid), "Unpaid": formatMoney(luySol > 0 ? unPaid : luySol) })
-  }
-  return newData;
-}
-
-function formatMoney(money, option = 2) {
-  let newMoney = "";
-  if (!money) return "-/-  ";
-  if (typeof money == "string") {
-    try {
-      money = Number(parseFloat(money));
-    } catch {
-      alert("error typeof money is not number");
-      return money;
-    }
-  }
-  if (option == 1) {
-    if (money > 0) {
-      newMoney = "-" + money;
-    } else {
-      newMoney = money;
-    }
-  }
-  if (option == 2) {
-    newMoney = money;
-  }
-  return newMoney.toString().substring(0, 5) + "$"
-}
-
-function functionRenderColumns(rows) {
-  let newColumns = [];
-  let key = Object.keys(rows[0]);
-  let headerValues = ["ID", "Name", "Paid", "Sol", "Unpaid"]
-  for (let i in key) {
-    let title = key[i];
-    for (let j in headerValues) {
-      if (key[i].toLocaleLowerCase().includes(headerValues[j].toLocaleLowerCase())) {
-        title = headerValues[j];
-      }
-    }
-    // set column style 
-    newColumns[i] = {
-      field: key[i],
-      headerName: title,
-      headerAlign: 'center',
-      align: 'center'
-    }
-    if (title === 'Name') {
-      newColumns[i] = Object.assign(newColumns[i], {
-        minWidth: 110,
-        headerAlign: 'left',
-        align: 'left',
-        hideable: false
-      })
-    }
-    if (title === 'Sol' || title === 'Unpaid') {
-      newColumns[i] = Object.assign(newColumns[i], {
-        minWidth: 110,
-        headerAlign: 'right',
-        align: 'right'
-      })
-    }
-    if (title === 'ID') {
-      newColumns[i] = Object.assign(newColumns[i], {
-        hidden: false,
-        minWidth: 60,
-        width: 60
-      })
-    }
-  }
-  return newColumns;
-}

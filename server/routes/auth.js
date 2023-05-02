@@ -9,8 +9,8 @@ const pool = new Pool({
   port : 5432
 })
 
-router.get("/login", async (req, res) => {
-  const { usernm , passwd } = req.query;
+router.post("/login", async (req, res) => {
+  const { usernm , passwd } = req.body;
   try {
     let sql = `SELECT id FROM user_infm where usernm = '${usernm}' and passwd = '${passwd}';`
     pool.query(sql.toString(),(error,results)=>{
@@ -18,7 +18,11 @@ router.get("/login", async (req, res) => {
         res.status(500).json({ status:false,error: error.message });
         throw error;
       }
-      res.send({status:true,REC:results.rows});
+      if(results.rows.length>0){
+        res.send({status:true,usernm:usernm,_id:results.rows[0].id});
+      }else{
+        res.send({status:false,message:`username ${usernm} doesn't exist please try register instead!`})
+      }
     })
   } catch (error) {
     console.error("error", error);
@@ -27,8 +31,7 @@ router.get("/login", async (req, res) => {
 });
 
 router.get("/register", async (req, res) => {
-  const { usernm , passwd } = req.query;
-  let duplicate = false;
+  const { usernm , passwd } = req.body;
   try {
     let sql = `SELECT usernm FROM user_infm where usernm = '${usernm}';`
     pool.query(sql.toString(),(error,results)=>{
@@ -36,23 +39,19 @@ router.get("/register", async (req, res) => {
         res.status(500).json({ status:false,error: error.message });
         throw error;
       }
-      if(results.rows.length > 0) {
-        duplicate = true;
+      if(!results.rows.length > 0) {
+        let sql2 = `INSERT INTO user_infm( usernm, passwd ) VALUES('${usernm}', '${passwd}');`
+        pool.query(sql2.toString(),(error,results)=>{
+          if(error) {
+            res.status(500).json({ status:false,error: error.message });
+            throw error;
+          }
+          res.send({status:true,message:"Registered success!"});
+        })
+      }else {
+        res.send({status:false,message:"User name is already existed!"});
       }
     })
-    console.log(duplicate);
-    if(duplicate == false){
-      let sql2 = `INSERT INTO user_infm( usernm, passwd ) VALUES('${usernm}', '${passwd}');`
-      pool.query(sql2.toString(),(error,results)=>{
-        if(error) {
-          res.status(500).json({ status:false,error: error.message });
-          throw error;
-        }
-        res.send({status:true,message:"Registered success!"});
-      })
-    }else {
-      res.send({status:true,message:"User name is already existed!"});
-    }
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ status:false,error: error.message });

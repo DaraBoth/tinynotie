@@ -7,12 +7,11 @@ import Select from '@mui/material/Select';
 import axios from 'axios';
 import { useState } from "react";
 import AutorenewIcon from '@mui/icons-material/Autorenew';
-import Checkbox from '@mui/material/Checkbox';
 
 
 const baseURL = import.meta.env.VITE_BASE_URL;
 const user_id = 1;
-export default function Form({ onSubmit, setOnSubmit }) {
+export default function Form() {
   let deletName, editName, editMoney;
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -38,7 +37,6 @@ export default function Form({ onSubmit, setOnSubmit }) {
       const res = await axios.get(`${baseURL}note/addMember?user_id=${user_id}&member=${JSON.stringify(values)}`).then(res => {
         if (res.data.status == false) {
           alert(res.data.message);
-          setOnSubmit(false);
         }
         if (res.data.status == true) {
           alert('sucess!')
@@ -104,7 +102,6 @@ export default function Form({ onSubmit, setOnSubmit }) {
           values,
           errors,
           touched,
-          handleBlur,
           handleChange,
           handleSubmit,
         }) => (
@@ -136,7 +133,6 @@ export default function Form({ onSubmit, setOnSubmit }) {
                     variant="filled"
                     type="text"
                     label="Name"
-                    onBlur={handleBlur}
                     onChange={handleChange}
                     value={values.name}
                     name="name"
@@ -150,7 +146,6 @@ export default function Form({ onSubmit, setOnSubmit }) {
                     variant="filled"
                     type="text"
                     label="$ Paid"
-                    onBlur={handleBlur}
                     onChange={handleChange}
                     value={values.money}
                     name="money"

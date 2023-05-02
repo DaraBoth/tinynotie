@@ -6,7 +6,7 @@ import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 
-const Topbar = () => {
+const Topbar = ({groupInfo}) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const colorMode = useContext(ColorModeContext);
@@ -22,7 +22,7 @@ const Topbar = () => {
         alignItems="center"
         fontSize="25px"
       >
-         <Typography variant="h3">TinyNotie</Typography>
+         <Typography variant="h3">{groupInfo.group_name}</Typography>
       </Box>
       <Box
         display="flex"

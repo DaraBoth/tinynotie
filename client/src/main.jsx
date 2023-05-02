@@ -5,7 +5,6 @@ import './index.scss'
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
-import { BrowserRouter } from "react-router-dom";
 import { api } from "@/api/api";
 
 export const store = configureStore({
