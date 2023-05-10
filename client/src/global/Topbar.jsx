@@ -1,16 +1,13 @@
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ColorModeContext, tokens } from "../theme";
-import InputBase from "@mui/material/InputBase";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
-import SearchIcon from "@mui/icons-material/Search";
 
 const Topbar = ({groupInfo}) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const colorMode = useContext(ColorModeContext);
-
   return (
     <Box display="flex" justifyContent="space-between">
 
@@ -22,7 +19,7 @@ const Topbar = ({groupInfo}) => {
         alignItems="center"
         fontSize="25px"
       >
-         <Typography variant="h3">{groupInfo.group_name}</Typography>
+         <Typography variant="h3">{groupInfo.grp_name ?? groupInfo.group_name}</Typography>
       </Box>
       <Box
         display="flex"

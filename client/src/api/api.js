@@ -12,6 +12,13 @@ export const api = createApi({
         params: payload,
       }),
     }),
+    postAddGroup: build.mutation({
+      query: (payload) => ({
+        url: "api/addGroupByUserId",
+        method: "POST",
+        body: payload,
+      }),
+    }),
     getTrip: build.mutation({
       query: (payload) => ({
         url: "api/getTripByGroupId",
@@ -19,9 +26,37 @@ export const api = createApi({
         params: payload,
       }),
     }),
+    postAddTrip: build.mutation({
+      query: (payload) => ({
+        url: "api/addTripByGroupId",
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    postEditTrip: build.mutation({
+      query: (payload) => ({
+        url: "api/getTripByGroupId",
+        method: "GET",
+        body: payload,
+      }),
+    }),
+    getAllTrip: build.mutation({
+      query: (payload) => ({
+        url: "api/getAllTrip",
+        method: "GET",
+        params: payload,
+      }),
+    }),
     getMember: build.mutation({
       query: (payload) => ({
         url: "api/getMemberByGroupId",
+        method: "GET",
+        params: payload,
+      }),
+    }),
+    getAllMember: build.mutation({
+      query: (payload) => ({
+        url: "api/getAllMember",
         method: "GET",
         params: payload,
       }),
@@ -47,14 +82,27 @@ export const api = createApi({
         body: payload,
       }),
     }),
+    postRegister: build.mutation({
+      query: (payload) => ({
+        url: "auth/register",
+        method: "GET",
+        params: payload,
+      }),
+    }),
   }),
 });
 
 export const {
   usePostLoginMutation,
+  usePostRegisterMutation,
+  usePostAddGroupMutation,
   useGetGroupMutation,
   useGetTripMutation,
+  usePostAddTripMutation,
+  usePostEditTripMutation,
+  useGetAllTripMutation,
   useGetMemberMutation,
+  useGetAllMemberMutation,
   usePostAddMemberMutation,
   usePostEditMemberMutation,
 } = api;

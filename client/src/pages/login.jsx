@@ -1,28 +1,62 @@
-import { Box, Button, TextField, useMediaQuery } from '@mui/material';
+import { Box, Button, IconButton, InputAdornment, TextField, Typography, styled, useMediaQuery } from '@mui/material';
 import { Formik } from 'formik';
-import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import * as yup from "yup";
-import { usePostLoginMutation } from '../api/api'
-const baseURL = import.meta.env.VITE_BASE_URL;
+import LoadingButton from '@mui/lab/LoadingButton';
+import { usePostLoginMutation, usePostRegisterMutation } from '../api/api';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 export default function Login({ setUser, setSecret }) {
   const isNonMobile = useMediaQuery("(min-width:600px)");
 
   const [username, setUsername] = useState("");
+  const [isRegister, setIsRegister] = useState(false);
   const [triggerLogin, resultLogin] = usePostLoginMutation();
+  const [triggerRegister, resultRegister] = usePostRegisterMutation();
+  const [loadingLogin, setLoadingLogin] = useState(false);
 
-  const handleFormSubmit = debounce(async (values) => {
-    triggerLogin({ usernm:values.username, passwd:values.password });
-    setUsername(values.username);
+  const InputAdornment = styled('div')`
+  margin: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+  const handleFormSubmit = debounce(async (values, { resetForm }) => {
+    if (isRegister) {
+      setLoadingLogin(true);
+      triggerRegister({ usernm: values.username, passwd: values.password })
+    } else {
+      setLoadingLogin(true);
+      triggerLogin({ usernm: values.username, passwd: values.password });
+      setUsername(values.username);
+    }
+    resetForm();
   }, 500);
 
   useEffect(() => {
     if (resultLogin.data?.status) {
       setUser(username);
       setSecret(resultLogin.data._id);
+      setLoadingLogin(false);
+    }
+    if (resultLogin.data?.status == false) {
+      alert(resultLogin.data?.message)
+      setLoadingLogin(false);
     }
   }, [resultLogin.data]); // eslint-disable-line
+
+  useEffect(() => {
+    if (resultRegister.data?.status) {
+      setIsRegister(false);
+      setLoadingLogin(false);
+    }
+    if (resultRegister.data?.status == false) {
+      alert(resultRegister.data?.message)
+      setLoadingLogin(false);
+    }
+  }, [resultRegister.data]); // eslint-disable-line
 
   return (
     <Box sx={{
@@ -33,6 +67,7 @@ export default function Login({ setUser, setSecret }) {
       justifyContent: 'center',
       alignItems: 'center'
     }} >
+
       <Formik
         onSubmit={handleFormSubmit}
         initialValues={initialValues}
@@ -46,8 +81,16 @@ export default function Login({ setUser, setSecret }) {
           handleSubmit,
         }) => (
           <form>
+            <Typography
+              sx={{
+                marginBottom: '5px',
+                textAlign: 'center'
+              }}
+              variant='h3' >
+              <span style={{ color: '#f1f1f1' }} >TinyNotie</span>
+            </Typography>
             <Box
-              width='280px'
+              width='270px'
               display="grid"
               gap="30px"
               gridTemplateColumns="repeat(2, minmax(0, 1fr))"
@@ -57,7 +100,7 @@ export default function Login({ setUser, setSecret }) {
             >
               <TextField
                 fullWidth
-                variant="filled"
+                variant="standard"
                 type="text"
                 label="Username"
                 onChange={handleChange}
@@ -70,7 +113,7 @@ export default function Login({ setUser, setSecret }) {
               />
               <TextField
                 fullWidth
-                variant="filled"
+                variant="standard"
                 type="password"
                 label="Password"
                 onChange={handleChange}
@@ -81,16 +124,46 @@ export default function Login({ setUser, setSecret }) {
                 helperText={touched.password && errors.password}
                 sx={{ gridColumn: "span 4" }}
               />
+
             </Box>
             <Box
               display="flex"
-              justifyContent="flex-end"
+              justifyContent="space-between"
               gap="5px"
               marginTop='5px'
-              >
-              <Button onClick={handleSubmit} type="button" color="info" variant="contained" >
-                Login
-              </Button>
+            >
+              <Typography
+                variant='subtitle2'
+                style={{ color: '#f1f1f1' }}
+              > {isRegister ? 'Already have an account?' : "Don't have an account?"}
+                <Button
+                  disableRipple
+                  sx={{
+                    "&:hover": {
+                      boxShadow: `none`,
+                      backgroundColor: 'none',
+                      background: 'none'
+                    },
+                    padding: '0px',
+                    minWidth: '0px',
+                    marginLeft: '5px',
+                    textAlign: 'left',
+                    textTransform: 'capitalize',
+                    textDecoration: 'underline'
+                  }}
+                  type="button"
+                  onClick={() => {
+                    setIsRegister(!isRegister)
+                  }}
+                  color="info"
+                  variant="text"
+                  title={isRegister ? "Login" : "Register"} >
+                  {isRegister ? "Login" : "Register"}
+                </Button>
+              </Typography>
+              <LoadingButton loading={loadingLogin ? true : false} onClick={handleSubmit} type="button" color="info" variant="outlined" >
+                {isRegister ? 'Register' : 'Login'}
+              </LoadingButton>
             </Box>
           </form>
         )}
@@ -114,3 +187,4 @@ function debounce(func, timeout = 300) {
     timer = setTimeout(() => { func.apply(this, args); }, timeout);
   };
 }
+

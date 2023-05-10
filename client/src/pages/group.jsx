@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Topbar from '../global/Topbar'
-import Form from '../component/form'
 import TableComponent from '../component/table'
-import { Autocomplete, Chip, TextField, useTheme } from '@mui/material'
+import { Typography, useTheme } from '@mui/material'
 import { tokens } from '../theme'
-import { useGetMemberMutation, useGetTripMutation } from '../api/api'
+import { useGetAllTripMutation, useGetMemberMutation, useGetTripMutation } from '../api/api'
 import ToolTip from '../component/toolTip'
+import AddTrip from '../component/addtrip';
 
 export default function Group({ user, secret, groupInfo }) {
   const theme = useTheme();
@@ -24,13 +24,13 @@ export default function Group({ user, secret, groupInfo }) {
     if (resultTrip.data?.status) {
       setTrip(resultTrip.data?.data)
     }
-  }, [resultTrip])
+  }, [resultTrip.data])
 
   useEffect(() => {
     if (resultMember.data?.status) {
       setMember(resultMember.data?.data)
     }
-  }, [resultMember])
+  }, [resultMember.data])
 
   const rows = calculateMoney(member, trip);
   const columns = functionRenderColumns(rows);
@@ -39,9 +39,9 @@ export default function Group({ user, secret, groupInfo }) {
     <main className="content">
       <Topbar groupInfo={groupInfo} />
       <div className='body'>
-        <ToolTip triggerMember={triggerMember} member={member} group_id={groupInfo.group_id} />
-        {/* <Form /> */}
         <TableComponent rows={rows} columns={columns} />
+        <ToolTip triggerMember={triggerMember} member={member} group_id={groupInfo.group_id} />
+        <AddTrip triggerTrip={triggerTrip}  trip={trip} group_id={groupInfo.group_id} />
       </div>
     </main>
   )

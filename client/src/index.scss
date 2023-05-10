@@ -10,6 +10,17 @@ body,
   box-sizing: border-box;
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+input:-internal-autofill-selected {
+  -webkit-box-shadow: 0 0 0 100px #141b2d inset;
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
 .content {
   margin: 10px;
 }
@@ -35,4 +46,3 @@ body,
   margin: 2px 0;
   background-color: transparent;
 }
-

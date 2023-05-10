@@ -1,253 +1,255 @@
-import { Box, Button, FormControl, InputLabel, MenuItem, TextField, Typography, useTheme } from "@mui/material";
-import { tokens } from "../theme";
-import { Formik } from "formik";
-import * as yup from "yup";
-import useMediaQuery from "@mui/material/useMediaQuery";
-import Select from '@mui/material/Select';
-import axios from 'axios';
-import { useState } from "react";
-import AutorenewIcon from '@mui/icons-material/Autorenew';
-const baseURL = import.meta.env.VITE_BASE_URL;
-const user_id = 2;
-export default function AddTripForm({ onSubmit, setOnSubmit }) {
-  let deletName, editName, editMoney;
+import * as React from 'react';
+import TextField from '@mui/material/TextField';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import { useGetAllTripMutation, usePostAddMemberMutation, usePostAddTripMutation, usePostEditMemberMutation } from '../api/api';
+import { Box, useTheme } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import { tokens } from '../theme'
+const filter = createFilterOptions();
+
+export default function AddTrip({ triggerTrip, group_id, trip }) {
+  const [value, setValue] = React.useState(null);
+  const [open, toggleOpen] = React.useState(false);
+  const [triggerAddTrip, resultAddTrip] = usePostAddTripMutation();
+  const [triggerEditTrip, resultEditTrip] = usePostEditMemberMutation();
+  const [money, setMoney] = React.useState(null);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const isNonMobile = useMediaQuery("(min-width:600px)");
-  const [changeButton, setChangeButton] = useState(1);
 
-  let data = JSON.parse(localStorage.getItem('allMembers'));
+  const handleClose = () => {
+    setDialogValue({
+      mem_name: '',
+      paid: '',
+    });
+    toggleOpen(false);
+  };
 
-  const getEditName = (events) => {
-    editName = events.target.value;
+  const [dialogValue, setDialogValue] = React.useState({
+    mem_name: '',
+    paid: '',
+  });
+
+  const handleEdit = () => {
+    // triggerEditMember({ user_id: d value.id, paid: money })
   }
 
-  const getEditMoney = (events) => {
-    editMoney = events.target.value;
-  }
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setValue({
+      mem_name: dialogValue.mem_name,
+      paid: dialogValue.paid,
+    });
+    handleClose();
+  };
 
-  const getDeleteName = (events) => {
-    deletName = events.target.value;
-  }
-
-  const handleFormSubmit = debounce(async (values) => {
-    if (values.name && values.money) {
-      const res = await axios.get(`${baseURL}note/addMember?user_id=${user_id}&member=${JSON.stringify(values)}`).then(res => {
-        if (res.data.status == false) {
-          alert(res.data.message);
-          setOnSubmit(false);
-        }
-        if (res.data.status == true) {
-          alert('sucess!')
-        }
-      });
+  React.useEffect(() => {
+    if (resultAddTrip.data?.status) {
+      triggerTrip({ group_id })
     }
-  }, 500);
+  }, [resultAddTrip])
 
-  const handleEdit = debounce(async () => {
-    const member = { editName, editMoney }
-    if (member.editName && member.editMoney) {
-      const res = await axios.get(`${baseURL}note/editMember?user_id=${user_id}&member=${JSON.stringify(member)}`).then(res => {
-        if (res.data.status == false) {
-          alert(res.data.message);
-          setOnSubmit(false);
-        }
-        if (res.data.status == true) {
-          alert('sucess!')
-        }
-      });
+  React.useEffect(() => {
+    if (resultAddTrip.data?.status || resultEditTrip.data?.status) {
+      triggerTrip({ group_id })
     }
-
-  }, 500);
-
-  const handleDelete = debounce(async () => {
-    if (deletName) {
-      const res = await axios.get(`${baseURL}note/deleteMember?user_id=${user_id}&name=${deletName}`).then(res => {
-        if (res.data.status == false) {
-          alert(res.data.message);
-          setOnSubmit(false);
-        }
-        if (res.data.status == true) {
-          if (onSubmit === true) {
-            setOnSubmit("true");
-          } else {
-            setOnSubmit(true);
-          }
-        }
-      });
-    }
-  }, 500);
-
-  const handleSettingButton = () => {
-    setChangeButton(changeButton + 1)
-    if (changeButton >= 3) {
-      setChangeButton(1)
-    }
-  }
+  }, [resultAddTrip, resultEditTrip])
 
   return (
-    <Box
-      marginTop={5}
-    >
-      <Typography variant="h3"
-        sx={{ marginBottom: 1 }}
+    <React.Fragment>
+      <Box
+        display={'flex'}
+        flexDirection={'row'}
+        justifyContent={'center'}
+        flexWrap={'wrap'}
+        gap={'10px'}
       >
-        Trips
-      </Typography>
-      <Formik
-        onSubmit={handleFormSubmit}
-        initialValues={initialValues}
-        validationSchema={checkoutSchema}
+        <Autocomplete
+          style={{ flex: '2' }}
+          value={value}
+          onChange={(event, newValue) => {
+            if (typeof newValue === 'string') {
+              // timeout to avoid instant validation of the dialog's form.
+              setTimeout(() => {
+                toggleOpen(true);
+                setDialogValue({
+                  trp_name: newValue,
+                  paid: '',
+                });
+              });
+            } else if (newValue && newValue.inputValue) {
+              toggleOpen(true);
+              setDialogValue({
+                trp_name: newValue.inputValue,
+                paid: '',
+              });
+            } else {
+              setValue(newValue);
+            }
+          }}
+          filterOptions={(options, params) => {
+            const filtered = filter(options, params);
+
+            if (params.inputValue !== '') {
+              filtered.push({
+                inputValue: params.inputValue,
+                trp_name: `Add "${params.inputValue}"`,
+              });
+            }
+
+            return filtered;
+          }}
+          id="free-solo-dialog-demo"
+          options={trip}
+          getOptionLabel={(option) => {
+            // e.g value selected with enter, right from the input
+            if (typeof option === 'string') {
+              return option;
+            }
+            if (option.inputValue) {
+              return option.inputValue;
+            }
+            return option.trp_name;
+          }}
+          selectOnFocus
+          clearOnBlur
+          handleHomeEndKeys
+          renderOption={(props, option) => <li {...props}>{option.trp_name}</li>}
+          freeSolo
+          renderInput={(params) => <TextField color="info" {...params} variant='standard' label="Edit Trip" />}
+        />
+
+        <TextField
+          style={{ flex: '1' }}
+          variant='standard'
+          type="number"
+          label="Spended"
+          color="info"
+          value={money}
+          onChange={(e) => {
+            setMoney(e.target.value)
+          }}
+        />
+        <Button onClick={handleEdit} type="button" color="info" variant='standard' >
+          <SendIcon />
+        </Button>
+      </Box>
+      <Box
+        display={'flex'}
+        flexDirection={'row'}
+        justifyContent={'center'}
+        flexWrap={'wrap'}
+        gap={'10px'}
       >
-        {({
-          values,
-          errors,
-          touched,
-          handleBlur,
-          handleChange,
-          handleSubmit,
-        }) => (
-          <form>
-            <Box
 
-              display="grid"
-              gap="30px"
-              gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-              sx={{
-                "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
-              }}
-            >
-              <Box
-                display="grid"
-                gap="30px"
-                gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-                sx={{ gridColumn: "span 2" }}
-              >
+        <Autocomplete
+          style={{ flex: '2' }}
+          value={value}
+          onChange={(event, newValue) => {
+            if (typeof newValue === 'string') {
+              // timeout to avoid instant validation of the dialog's form.
+              setTimeout(() => {
+                toggleOpen(true);
+                setDialogValue({
+                  trp_name: newValue,
+                  paid: '',
+                });
+              });
+            } else if (newValue && newValue.inputValue) {
+              toggleOpen(true);
+              setDialogValue({
+                trp_name: newValue.inputValue,
+                paid: '',
+              });
+            } else {
+              setValue(newValue);
+            }
+          }}
+          filterOptions={(options, params) => {
+            const filtered = filter(options, params);
 
-                {/* add member */}
-                <TextField
-                  fullWidth
-                  variant="filled"
-                  type="text"
-                  label="Name"
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.name}
-                  name="name"
-                  color="info"
-                  error={!!touched.name && !!errors.name}
-                  helperText={touched.name && errors.name}
-                  sx={{ gridColumn: "span 2" }}
-                  style={changeButton === 1 ? { display: "flex" } : { display: "none" }}
-                />
-                <TextField
-                  fullWidth
-                  variant="filled"
-                  type="text"
-                  label="$ Paid"
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.money}
-                  name="money"
-                  color="info"
-                  error={!!touched.money && !!errors.money}
-                  helperText={touched.money && errors.money}
-                  sx={{ gridColumn: "span 2" }}
-                  style={changeButton === 1 ? { display: "flex" } : { display: "none" }}
-                />
+            if (params.inputValue !== '') {
+              filtered.push({
+                inputValue: params.inputValue,
+                trp_name: `Add "${params.inputValue}"`,
+              });
+            }
 
-                {/* edit user  */}
-                <FormControl
-                  fullWidth
-                  sx={{ gridColumn: "span 2" }}
-                  style={changeButton === 2 ? { display: "flex" } : { display: "none" }} >
-                  <InputLabel id="editName" color="info" >Name</InputLabel>
-                  <Select
-                    labelId="editName"
-                    id="editName"
-                    value={editName}
-                    color="info"
-                    onChange={getEditName}
-                    label="Name"
-                  >
-                    {(typeof data != "undefined") && (!!data) && data.map((item, index) =>
-                      <MenuItem key={index} value={item.name}>{item.name}</MenuItem>
-                    )}
-                  </Select>
-                </FormControl>
-                <TextField
-                  fullWidth
-                  variant="filled"
-                  type="text"
-                  label="$ Paid"
-                  color="info"
-                  value={editMoney}
-                  onChange={getEditMoney}
-                  error={!!touched.money && !!errors.money}
-                  helperText={touched.money && errors.money}
-                  sx={{ gridColumn: "span 2" }}
-                  style={changeButton === 2 ? { display: "flex" } : { display: "none" }}
-                />
+            return filtered;
+          }}
+          id="free-solo-dialog-demo"
+          options={trip}
+          getOptionLabel={(option) => {
+            // e.g value selected with enter, right from the input
+            if (typeof option === 'string') {
+              return option;
+            }
+            if (option.inputValue) {
+              return option.inputValue;
+            }
+            return option.trp_name;
+          }}
+          selectOnFocus
+          clearOnBlur
+          handleHomeEndKeys
+          renderOption={(props, option) => <li {...props}>{option.trp_name}</li>}
+          freeSolo
+          renderInput={(params) => <TextField color="info" {...params} variant='standard' label="Edit Trip" />}
+        />
 
-                {/* delete user */}
-                <FormControl
-                  fullWidth
-                  sx={{ gridColumn: "span 4" }}
-                  style={changeButton === 3 ? { display: "flex" } : { display: "none" }} >
-                  <InputLabel id="Name" color="info" >Name</InputLabel>
-                  <Select
-                    labelId="Name"
-                    id="Name"
-                    color="info"
-                    value={deletName}
-                    onChange={getDeleteName}
-                    label="Name"
-                  >
-                    {(typeof data != "undefined") && (!!data) && data.map((item, index) =>
-                      <MenuItem key={index} value={item.name}>{item.name}</MenuItem>
-                    )}
-                  </Select>
-                </FormControl>
-
-              </Box>
-              <Box
-                display="flex"
-                justifyContent="space-evenly"
-                gap="5px" >
-                <Button sx={{ flex: 6 }} style={changeButton === 1 ? { display: "flex" } : { display: "none" }} onClick={handleSubmit} type="button" color="info" variant="contained" >
-                  Add
-                </Button>
-                <Button sx={{ flex: 6 }} style={changeButton === 2 ? { display: "flex" } : { display: "none" }} onClick={handleEdit} type="button" color="secondary" variant="contained" >
-                  Edit
-                </Button>
-                <Button sx={{ flex: 6 }} style={changeButton === 3 ? { display: "flex" } : { display: "none" }} onClick={handleDelete} type="button" color="warning" variant="contained" >
-                  Delete
-                </Button>
-                <Button sx={{ flex: 1 }} onClick={handleSettingButton} type="button" color="info" variant="outlined"  >
-                  <AutorenewIcon />
-                </Button>
-              </Box>
-            </Box>
-          </form>
-        )}
-      </Formik>
-    </Box>
+      </Box>
+      <Dialog open={open} onClose={handleClose}>
+        <form onSubmit={handleSubmit}
+          style={{ backgroundColor: colors.primary[400] }}
+        >
+          <DialogTitle>Add a member</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Please help fill out new member's name and their paid money.
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="dense"
+              id="name"
+              color="info"
+              value={dialogValue.mem_name}
+              onChange={(event) =>
+                setDialogValue({
+                  ...dialogValue,
+                  mem_name: event.target.value,
+                })
+              }
+              label="Name"
+              type="text"
+              variant="standard"
+            />
+            <TextField
+              margin="dense"
+              id="paid"
+              color="info"
+              value={dialogValue.paid}
+              onChange={(event) =>
+                setDialogValue({
+                  ...dialogValue,
+                  paid: event.target.value,
+                })
+              }
+              label="Paid"
+              type="number"
+              variant="standard"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button color="info" variant="standard" onClick={handleClose}>Cancel</Button>
+            <Button color="info" variant="standard" type="submit">Add</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    </React.Fragment>
   );
-};
-
-const checkoutSchema = yup.object().shape({
-  name: yup.string().required("required"),
-  money: yup.number().required("required")
-});
-const initialValues = {
-  name: "",
-  money: "",
-};
-
-function debounce(func, timeout = 300) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => { func.apply(this, args); }, timeout);
-  };
 }

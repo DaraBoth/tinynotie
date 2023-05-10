@@ -21,7 +21,7 @@ router.post("/login", async (req, res) => {
       if(results.rows.length>0){
         res.send({status:true,usernm:usernm,_id:results.rows[0].id});
       }else{
-        res.send({status:false,message:`username ${usernm} doesn't exist please try register instead!`})
+        res.send({status:false,message:`Username ${usernm} doesn't exist please try register instead!`})
       }
     })
   } catch (error) {
@@ -31,7 +31,7 @@ router.post("/login", async (req, res) => {
 });
 
 router.get("/register", async (req, res) => {
-  const { usernm , passwd } = req.body;
+  const { usernm , passwd } = req.query;
   try {
     let sql = `SELECT usernm FROM user_infm where usernm = '${usernm}';`
     pool.query(sql.toString(),(error,results)=>{
@@ -49,7 +49,7 @@ router.get("/register", async (req, res) => {
           res.send({status:true,message:"Registered success!"});
         })
       }else {
-        res.send({status:false,message:"User name is already existed!"});
+        res.send({status:false,message:"Username "+usernm+" is already existed!"});
       }
     })
   } catch (error) {

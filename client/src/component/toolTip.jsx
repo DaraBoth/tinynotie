@@ -8,8 +8,9 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { usePostAddMemberMutation, usePostEditMemberMutation } from '../api/api';
-import { Box } from '@mui/material';
+import { Box, Fab, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
+import { tokens } from '../theme'
 const filter = createFilterOptions();
 
 export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
@@ -17,7 +18,9 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddMember, resultAddMember] = usePostAddMemberMutation();
   const [triggerEditMember, resultEditMember] = usePostEditMemberMutation();
-  const [money,setMoney] = React.useState(null);
+  const [money, setMoney] = React.useState(null);
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
 
   const handleClose = () => {
     setDialogValue({
@@ -33,7 +36,7 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
   });
 
   const handleEdit = () => {
-    triggerEditMember({user_id:value.id,paid:money})
+    triggerEditMember({ user_id: value.id, paid: money })
   }
 
   const handleSubmit = (event) => {
@@ -60,7 +63,7 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
     if (resultAddMember.data?.status || resultEditMember.data?.status) {
       triggerMember({ group_id })
     }
-  }, [resultAddMember,resultEditMember])
+  }, [resultAddMember, resultEditMember])
 
   return (
     <React.Fragment>
@@ -68,9 +71,11 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
         display={'flex'}
         flexDirection={'row'}
         justifyContent={'center'}
+        flexWrap={'wrap'}
         gap={'10px'}
       >
         <Autocomplete
+          style={{ flex: '2' }}
           value={value}
           onChange={(event, newValue) => {
             if (typeof newValue === 'string') {
@@ -122,9 +127,10 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
           renderOption={(props, option) => <li {...props}>{option.mem_name}</li>}
           sx={{ width: 300 }}
           freeSolo
-          renderInput={(params) => <TextField {...params} variant='standard' label="Edit Member" />}
+          renderInput={(params) => <TextField color="info" {...params} variant='standard' label="Edit Member" />}
         />
         <TextField
+          style={{ flex: '1' }}
           variant='standard'
           type="number"
           label="$ Paid"
@@ -139,7 +145,9 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
         </Button>
       </Box>
       <Dialog open={open} onClose={handleClose}>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}
+          style={{ backgroundColor: colors.primary[400] }}
+        >
           <DialogTitle>Add a member</DialogTitle>
           <DialogContent>
             <DialogContentText>
@@ -149,6 +157,7 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
               autoFocus
               margin="dense"
               id="name"
+              color="info"
               value={dialogValue.mem_name}
               onChange={(event) =>
                 setDialogValue({
@@ -163,6 +172,7 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
             <TextField
               margin="dense"
               id="paid"
+              color="info"
               value={dialogValue.paid}
               onChange={(event) =>
                 setDialogValue({
@@ -176,8 +186,8 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button type="submit">Add</Button>
+            <Button color="info" variant="standard" onClick={handleClose}>Cancel</Button>
+            <Button color="info" variant="standard" type="submit">Add</Button>
           </DialogActions>
         </form>
       </Dialog>
