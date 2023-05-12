@@ -6,6 +6,7 @@ import { tokens } from '../theme'
 import { useGetAllTripMutation, useGetMemberMutation, useGetTripMutation } from '../api/api'
 import ToolTip from '../component/toolTip'
 import AddTrip from '../component/addtrip';
+import EditTripMem from '../component/editTripMem'
 
 export default function Group({ user, secret, groupInfo }) {
   const theme = useTheme();
@@ -41,7 +42,8 @@ export default function Group({ user, secret, groupInfo }) {
       <div className='body'>
         <TableComponent rows={rows} columns={columns} />
         <ToolTip triggerMember={triggerMember} member={member} group_id={groupInfo.group_id} />
-        <AddTrip triggerTrip={triggerTrip}  trip={trip} group_id={groupInfo.group_id} />
+        <AddTrip triggerTrip={triggerTrip} member={member} secret={secret} trip={trip} group_id={groupInfo.group_id} />
+        <EditTripMem triggerTrip={triggerTrip} member={member} secret={secret} trip={trip} group_id={groupInfo.group_id} />
       </div>
     </main>
   )
@@ -77,7 +79,7 @@ function calculateMoney(allMembers, trips) {
       name: allMembers[i].mem_name,
       paid: paid + "$",
     }
-    newData[i] = Object.assign(newData[i], kitLuy, { luySol: formatMoney(luySol > 0 ? luySol : unPaid), "Unpaid": formatMoney(luySol > 0 ? unPaid : luySol) })
+    newData[i] = Object.assign(newData[i], kitLuy, { remain: formatMoney(luySol > 0 ? luySol : unPaid), "Unpaid": formatMoney(luySol > 0 ? unPaid : luySol) })
   }
   return newData;
 }
@@ -107,7 +109,7 @@ function formatMoney(money, option = 2) {
 }
 
 function functionRenderColumns(rows) {
-  let headerValues = ["ID", "Name", "Paid", "Sol", "Unpaid"]
+  let headerValues = ["ID", "Name", "Paid", "Remain", "Unpaid"]
   let newColumns = [], key;
   try {
     key = Object.keys(rows[0]);
@@ -136,7 +138,7 @@ function functionRenderColumns(rows) {
         hideable: false
       })
     }
-    if (title === 'Sol' || title === 'Unpaid') {
+    if (title === 'Remain' || title === 'Unpaid') {
       newColumns[i] = Object.assign(newColumns[i], {
         minWidth: 110,
         headerAlign: 'right',

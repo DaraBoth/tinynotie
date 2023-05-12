@@ -68,29 +68,29 @@ router.post("/addGroupByUserId", async (req, res) => {
 
 });
 
-router.get("/addTripByGroupId", async (req, res) => {
-  const { trp_name, spend, admn_id, mem_id, discription, group_id } = req.query;
+router.post("/addTripByGroupId", async (req, res) => {
+  const { trp_name, spend, admn_id, mem_id, discription, group_id } = req.body;
   const create_date = format(new Date());
   try {
-    let sql = `SELECT id, trp_name, spend, admn_id, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}';`
+    let sql = `SELECT id, trp_name, spend, admn_id, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}' and trp_name='${trp_name}';`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
         throw error;
       }
-      if(!results.rows.length > 0) {
+      if (!results.rows.length > 0) {
         let sql2 = `INSERT INTO trp_infm
         (trp_name, spend, admn_id, mem_id, discription, group_id, create_date)
         VALUES('${trp_name}', ${spend}, ${admn_id}, '${mem_id}', '${discription}', ${group_id}, '${create_date}');`
-        pool.query(sql2.toString(),(error,results)=>{
-          if(error) {
-            res.status(500).json({ status:false,error: error.message });
+        pool.query(sql2.toString(), (error, results) => {
+          if (error) {
+            res.status(500).json({ status: false, error: error.message });
             throw error;
           }
-          res.send({status:true,message:"Registered success!"});
+          res.send({ status: true, message: "Add trip success!" });
         })
-      }else {
-        res.send({status:false,message:"Username "+usernm+" is already existed!"});
+      } else {
+        res.send({ status: false, message: "Trip " + trp_name + " is already existed!" });
       }
     })
   } catch (error) {
@@ -99,30 +99,27 @@ router.get("/addTripByGroupId", async (req, res) => {
   }
 });
 
-router.get("/editTripByGroupId", async (req, res) => {
-  const { trp_name, spend, admn_id, mem_id, discription, group_id } = req.query;
-  const create_date = format(new Date());
+router.post("/editTripByGroupId", async (req, res) => {
+  const { trp_name, spend, group_id } = req.body;
   try {
-    let sql = `SELECT id, trp_name, spend, admn_id, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}';`
+    let sql = `SELECT id FROM trp_infm where group_id='${group_id}' and trp_name='${trp_name}';`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
         throw error;
       }
-      // if(!results.rows.length > 0) {
-      //   let sql2 = `INSERT INTO trp_infm
-      //   (trp_name, spend, admn_id, mem_id, discription, group_id, create_date)
-      //   VALUES('${trp_name}', ${spend}, ${admn_id}, '${mem_id}', '${discription}', ${group_id}, '${create_date}');`
-      //   pool.query(sql2.toString(),(error,results)=>{
-      //     if(error) {
-      //       res.status(500).json({ status:false,error: error.message });
-      //       throw error;
-      //     }
-      //     res.send({status:true,message:"Registered success!"});
-      //   })
-      // }else {
-      //   res.send({status:false,message:"Username "+usernm+" is already existed!"});
-      // }
+      if(results.rows[0]?.id) {
+        let sql2 = `UPDATE trp_infm SET spend=${spend} WHERE id=${results.rows[0].id};`
+        pool.query(sql2.toString(),(error,results)=>{
+          if(error) {
+            res.status(500).json({ status:false,error: error.message });
+            throw error;
+          }
+          res.send({status:true,message:"Edit "+trp_name+" success!"});
+        })
+      }else {
+        res.send({status:false,message:"Username "+usernm+" is already existed!"});
+      }
     })
   } catch (error) {
     console.error("error", error);

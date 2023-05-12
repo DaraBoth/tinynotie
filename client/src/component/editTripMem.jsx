@@ -7,17 +7,17 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
-import { usePostAddTripMutation, usePostEditMemberMutation, usePostEditTripMutation } from '../api/api';
+import { usePostAddTripMutation, usePostEditMemberMutation } from '../api/api';
 import { Box, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { tokens } from '../theme'
 const filter = createFilterOptions();
 
-export default function AddTrip({ triggerTrip, member, secret, trip, group_id }) {
+export default function EditTripMem({ triggerTrip, member, secret, trip, group_id }) {
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddTrip, resultAddTrip] = usePostAddTripMutation();
-  const [triggerEditTrip, resultEditTrip] = usePostEditTripMutation();
+  const [triggerEditTrip, resultEditTrip] = usePostEditMemberMutation();
   const [money, setMoney] = React.useState(null);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -36,8 +36,7 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
   });
 
   const handleEdit = () => {
-    triggerEditTrip({trp_name:value.trp_name,spend: Number(money),group_id })
-    console.log({trp_name:value.trp_name,spend: Number(money),group_id });
+    triggerEditTrip({ user_id: value.id, spended: money })
   }
 
   const handleSubmit = (event) => {
@@ -60,12 +59,6 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
   React.useEffect(() => {
     if (resultAddTrip.data?.status || resultEditTrip.data?.status) {
       triggerTrip({ group_id })
-    }
-    if (resultAddTrip.data?.status === false){
-      alert(resultAddTrip.data?.message)
-    }
-    if (resultEditTrip.data?.status === false){
-      alert(resultEditTrip.data?.message)
     }
   }, [resultAddTrip, resultEditTrip])
 
@@ -132,21 +125,74 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
           freeSolo
           renderInput={(params) => <TextField color="info" {...params} variant='standard' label="Edit Event" />}
         />
-
-        <TextField
+        <Autocomplete
           style={{ flex: '1' }}
-          variant='standard'
-          type="number"
-          label="$ Spend"
-          color="info"
-          value={money}
-          onChange={(e) => {
-            setMoney(e.target.value)
+          value={value}
+          onChange={(event, newValue) => {
+            if (typeof newValue === 'string') {
+              // timeout to avoid instant validation of the dialog's form.
+              setTimeout(() => {
+                toggleOpen(true);
+                setDialogValue({
+                  trp_name: newValue,
+                  paid: '',
+                });
+              });
+            } else if (newValue && newValue.inputValue) {
+              toggleOpen(true);
+              setDialogValue({
+                trp_name: newValue.inputValue,
+                paid: '',
+              });
+            } else {
+              setValue(newValue);
+            }
           }}
+          filterOptions={(options, params) => {
+            const filtered = filter(options, params);
+
+            if (params.inputValue !== '') {
+              filtered.push({
+                inputValue: params.inputValue,
+                trp_name: `Add "${params.inputValue}"`,
+              });
+            }
+
+            return filtered;
+          }}
+          id="free-solo-dialog-demo"
+          options={trip}
+          getOptionLabel={(option) => {
+            // e.g value selected with enter, right from the input
+            if (typeof option === 'string') {
+              return option;
+            }
+            if (option.inputValue) {
+              return option.inputValue;
+            }
+            return option.trp_name;
+          }}
+          selectOnFocus
+          clearOnBlur
+          handleHomeEndKeys
+          renderOption={(props, option) => <li {...props}>{option.trp_name}</li>}
+          freeSolo
+          renderInput={(params) => <TextField color="info" {...params} variant='standard' label="Edit Trip" />}
         />
         <Button onClick={handleEdit} type="button" color="info" variant='standard' >
           <SendIcon />
         </Button>
+      </Box>
+      <Box
+        display={'flex'}
+        flexDirection={'row'}
+        justifyContent={'center'}
+        flexWrap={'wrap'}
+        gap={'10px'}
+      >
+
+        
+
       </Box>
       <Dialog open={open} onClose={handleClose}>
         <form onSubmit={handleSubmit}
@@ -155,7 +201,7 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
           <DialogTitle>Add a event</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Please help fill out new event and spended money.
+              Please help fill out new trip and spended money.
             </DialogContentText>
             <TextField
               autoFocus
@@ -184,7 +230,7 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
                   spended: event.target.value,
                 })
               }
-              label="Spend"
+              label="Spended"
               type="number"
               variant="standard"
             />

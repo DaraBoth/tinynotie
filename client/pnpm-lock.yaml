@@ -22,6 +22,9 @@ dependencies:
   '@mui/x-data-grid':
     specifier: ^5.17.2
     version: 5.17.26(@mui/material@5.12.1)(@mui/system@5.12.1)(react-dom@18.2.0)(react@18.2.0)
+  '@mui/x-data-grid-pro':
+    specifier: ^6.3.1
+    version: 6.3.1(@mui/material@5.12.1)(@mui/system@5.12.1)(react-dom@18.2.0)(react@18.2.0)
   '@reduxjs/toolkit':
     specifier: ^1.9.5
     version: 1.9.5(react-redux@8.0.5)(react@18.2.0)
@@ -1493,6 +1496,29 @@ packages:
       react-is: 18.2.0
     dev: false
 
+  /@mui/x-data-grid-pro@6.3.1(@mui/material@5.12.1)(@mui/system@5.12.1)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-r15LNQN0uwczti+Qm6WHi7gaBvwPU2BVvmkT+Tgq/wfNpMul4X40cX2vNDixhZcMLR3+K+TIHfUgM5VV9vLJtg==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@mui/material': ^5.4.1
+      '@mui/system': ^5.4.1
+      react: ^17.0.2 || ^18.0.0
+      react-dom: ^17.0.2 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.21.0
+      '@mui/material': 5.12.1(@emotion/react@11.10.6)(@emotion/styled@11.10.6)(@types/react@18.0.37)(react-dom@18.2.0)(react@18.2.0)
+      '@mui/system': 5.12.1(@emotion/react@11.10.6)(@emotion/styled@11.10.6)(@types/react@18.0.37)(react@18.2.0)
+      '@mui/utils': 5.12.3(react@18.2.0)
+      '@mui/x-data-grid': 6.3.1(@mui/material@5.12.1)(@mui/system@5.12.1)(react-dom@18.2.0)(react@18.2.0)
+      '@mui/x-license-pro': 6.0.4(react@18.2.0)
+      '@types/format-util': 1.0.2
+      clsx: 1.2.1
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      reselect: 4.1.8
+    dev: false
+
   /@mui/x-data-grid@5.17.26(@mui/material@5.12.1)(@mui/system@5.12.1)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-eGJq9J0g9cDGLFfMmugOadZx0mJeOd/yQpHwEa5gUXyONS6qF0OhXSWyDOhDdA3l2TOoQzotMN5dY/T4Wl1KYA==}
     engines: {node: '>=12.0.0'}
@@ -1511,6 +1537,37 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       reselect: 4.1.8
+    dev: false
+
+  /@mui/x-data-grid@6.3.1(@mui/material@5.12.1)(@mui/system@5.12.1)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-iceINknaOd7AIyd1h8GZVVQKS0R/JgcC7Cr7jjbqBtv018FEppMCweWdbQZYrHmcmkx2tsM28dvOn40iUKHVCg==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@mui/material': ^5.4.1
+      '@mui/system': ^5.4.1
+      react: ^17.0.2 || ^18.0.0
+      react-dom: ^17.0.2 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.21.0
+      '@mui/material': 5.12.1(@emotion/react@11.10.6)(@emotion/styled@11.10.6)(@types/react@18.0.37)(react-dom@18.2.0)(react@18.2.0)
+      '@mui/system': 5.12.1(@emotion/react@11.10.6)(@emotion/styled@11.10.6)(@types/react@18.0.37)(react@18.2.0)
+      '@mui/utils': 5.12.3(react@18.2.0)
+      clsx: 1.2.1
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      reselect: 4.1.8
+    dev: false
+
+  /@mui/x-license-pro@6.0.4(react@18.2.0):
+    resolution: {integrity: sha512-4E9TRDb0Enc7OngSz/Lx34++WdiD95tsYuFCdhicq/FImahgLEg799qUj+il5UQJ5mxQP/pKdVqv0T8FZg2JPA==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      react: ^17.0.2 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.21.0
+      '@mui/utils': 5.12.3(react@18.2.0)
+      react: 18.2.0
     dev: false
 
   /@popperjs/core@2.11.7:
@@ -1582,6 +1639,10 @@ packages:
   /@remix-run/router@1.5.0:
     resolution: {integrity: sha512-bkUDCp8o1MvFO+qxkODcbhSqRa6P2GXgrGZVpt0dCXNW2HCSCqYI0ZoAqEOSAjRWmmlKcYgFvN4B4S+zo/f8kg==}
     engines: {node: '>=14'}
+    dev: false
+
+  /@types/format-util@1.0.2:
+    resolution: {integrity: sha512-9SrLCpgzWo2yHHhiMOX0WwgDh37nSbDbWUsRc1ss++o8O97E3tB6SJiyUQM21UeUsKvZNuhDCmkRaINZ4uJAfg==}
     dev: false
 
   /@types/hoist-non-react-statics@3.3.1:

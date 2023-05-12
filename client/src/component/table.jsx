@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { DataGrid, GridToolbar, GridToolbarQuickFilter } from "@mui/x-data-grid";
+import { DataGridPro } from '@mui/x-data-grid-pro';
 import { tokens } from "../theme";
 import { Box, Typography, useTheme } from "@mui/material";
 function TableComponent({ rows, columns }) {
@@ -47,6 +48,7 @@ function TableComponent({ rows, columns }) {
           pageSize={pageSize}
           onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
           rowsPerPageOptions={[5, 10, 20, 50]}
+          initialState={{ pinnedColumns: { left: ['name']} }}
         />
       </Box>
     </Box>

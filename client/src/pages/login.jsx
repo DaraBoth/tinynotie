@@ -15,13 +15,7 @@ export default function Login({ setUser, setSecret }) {
   const [triggerLogin, resultLogin] = usePostLoginMutation();
   const [triggerRegister, resultRegister] = usePostRegisterMutation();
   const [loadingLogin, setLoadingLogin] = useState(false);
-
-  const InputAdornment = styled('div')`
-  margin: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-`;
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleFormSubmit = debounce(async (values, { resetForm }) => {
     if (isRegister) {
@@ -41,7 +35,7 @@ export default function Login({ setUser, setSecret }) {
       setSecret(resultLogin.data._id);
       setLoadingLogin(false);
     }
-    if (resultLogin.data?.status == false) {
+    if (resultLogin.data?.status === false) {
       alert(resultLogin.data?.message)
       setLoadingLogin(false);
     }
@@ -52,7 +46,7 @@ export default function Login({ setUser, setSecret }) {
       setIsRegister(false);
       setLoadingLogin(false);
     }
-    if (resultRegister.data?.status == false) {
+    if (resultRegister.data?.status === false) {
       alert(resultRegister.data?.message)
       setLoadingLogin(false);
     }
@@ -114,7 +108,7 @@ export default function Login({ setUser, setSecret }) {
               <TextField
                 fullWidth
                 variant="standard"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 label="Password"
                 onChange={handleChange}
                 value={values.password}
@@ -123,6 +117,18 @@ export default function Login({ setUser, setSecret }) {
                 error={!!touched.password && !!errors.password}
                 helperText={touched.password && errors.password}
                 sx={{ gridColumn: "span 4" }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        setShowPassword(!showPassword)
+                      }}
+                      position="end">
+                      {showPassword ? <Visibility /> : <VisibilityOff />}
+                    </InputAdornment>
+                  ),
+                }}
               />
 
             </Box>

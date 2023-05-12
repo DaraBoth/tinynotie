@@ -35,8 +35,8 @@ export const api = createApi({
     }),
     postEditTrip: build.mutation({
       query: (payload) => ({
-        url: "api/getTripByGroupId",
-        method: "GET",
+        url: "api/editTripByGroupId",
+        method: "POST",
         body: payload,
       }),
     }),
