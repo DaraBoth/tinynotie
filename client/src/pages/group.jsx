@@ -7,8 +7,9 @@ import { useGetAllTripMutation, useGetMemberMutation, useGetTripMutation } from 
 import ToolTip from '../component/toolTip'
 import AddTrip from '../component/addtrip';
 import EditTripMem from '../component/editTripMem'
+import { useNavigate } from 'react-router-dom'
 
-export default function Group({ user, secret, groupInfo }) {
+export default function Group({ user, secret, groupInfo , setGroupInfo }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [triggerTrip, resultTrip] = useGetTripMutation();
@@ -38,7 +39,7 @@ export default function Group({ user, secret, groupInfo }) {
 
   return (
     <main className="content">
-      <Topbar groupInfo={groupInfo} />
+      <Topbar groupInfo={groupInfo} setGroupInfo={setGroupInfo} />
       <div className='body'>
         <TableComponent rows={rows} columns={columns} />
         <ToolTip triggerMember={triggerMember} member={member} group_id={groupInfo.group_id} />

@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { DataGrid, GridToolbar, GridToolbarQuickFilter } from "@mui/x-data-grid";
-import { DataGridPro } from '@mui/x-data-grid-pro';
 import { tokens } from "../theme";
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 function TableComponent({ rows, columns }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -10,33 +9,32 @@ function TableComponent({ rows, columns }) {
   return (
     <Box>
       <Box
-        height="65vh"
+        height="85vh"
         sx={{
           "& .MuiDataGrid-root": {
-            border: "none",
+            border: `2px solid ${colors.blueAccent[600]}`,
+            // backgroundColor:colors.grey[800]
           },
           "& .MuiDataGrid-cell": {
-            borderBottom: "none",
+            // borderTop:'1px solid rgba(81, 81, 81, 1)'
           },
           "& .name-column--cell": {
             color: colors.greenAccent[300],
           },
           "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.blueAccent[700],
-            borderBottom: "none",
+            // borderTop:'1px solid rgba(81, 81, 81, 1)'
           },
           "& .MuiDataGrid-virtualScroller": {
-            backgroundColor: colors.primary[400],
+            // backgroundColor:colors.blueAccent[600]
           },
           "& .MuiDataGrid-footerContainer": {
             borderTop: "none",
-            backgroundColor: colors.blueAccent[700],
           },
           "& .MuiCheckbox-root": {
-            color: `${colors.greenAccent[200]} !important`,
+            // color: `${colors.greenAccent[200]} !important`,
           },
           "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-            color: `${colors.grey[100]} !important`,
+            color: `${colors.blueAccent[500]} !important`,
           },
         }}
       >

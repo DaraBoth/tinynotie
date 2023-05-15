@@ -4,8 +4,9 @@ import { useGetAllMemberMutation, usePostAddGroupMutation } from '../api/api';
 import { Formik } from 'formik';
 import * as yup from "yup";
 import { useNavigate } from 'react-router-dom';
+import { computeFlexColumnsWidth } from '@mui/x-data-grid/hooks/features/columns/gridColumnsUtils';
 
-export default function CreateGroup({ secret ,setGroupInfo}) {
+export default function CreateGroup({ secret, setGroupInfo }) {
     const isNonMobile = useMediaQuery("(min-width:600px)");
     const [triggerMember, resultMember] = useGetAllMemberMutation();
     const [triggerCreateGroup, resultGroup] = usePostAddGroupMutation();
@@ -25,20 +26,19 @@ export default function CreateGroup({ secret ,setGroupInfo}) {
     }, [resultMember.data])
 
     const handleFormSubmit = debounce(async (values) => {
-        const {grp_name , discription} = values;
-        const members = newMember; 
+        const { grp_name, discription } = values;
+        const members = newMember;
         if (grp_name && discription) {
             setnewGroupName(grp_name);
-            triggerCreateGroup({user_id:secret,grp_name,discription,status:1,member:JSON.stringify(members)})
+            triggerCreateGroup({ user_id: secret, grp_name, discription, status: 1, member: JSON.stringify(members) })
         }
     }, 500);
- 
-    useEffect(()=>{
-        if(resultGroup.data?.status){
-            setGroupInfo({group_id:resultGroup.data?.data.id,group_name:newGroupName});
-            navigate('/group');
+
+    useEffect(() => {
+        if (resultGroup.data?.status) {
+            navigate('/');
         }
-    },[resultGroup])
+    }, [resultGroup])
 
     return (
         <>
@@ -116,15 +116,35 @@ export default function CreateGroup({ secret ,setGroupInfo}) {
                                         />
                                     )}
                                 />
-                                <Button
-                                    color="info"
-                                    variant="outlined"
-                                    type="button"
-                                    sx={{ gridColumn: "span 4" }}
-                                    onClick={handleSubmit}
+                                <Box
+                                    sx={{
+                                        gridColumn: "span 4",
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        gap: '10px'
+                                    }}
                                 >
-                                    Create
-                                </Button>
+                                    <Button
+                                        color="info"
+                                        variant="outlined"
+                                        type="button"
+                                        sx={{ flex: '1' }}
+                                        onClick={handleSubmit}
+                                    >
+                                        Create
+                                    </Button>
+                                    <Button
+                                        color="error"
+                                        variant="outlined"
+                                        type="button"
+                                        sx={{ gridColumn: "span 4" }}
+                                        onClick={() => {
+                                            navigate('/');
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                </Box>
                             </Box>
                         </form>
                     )}
