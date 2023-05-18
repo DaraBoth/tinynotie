@@ -40,6 +40,13 @@ export const api = createApi({
         body: payload,
       }),
     }),
+    postEditTripMem: build.mutation({
+      query: (payload) => ({
+        url: "api/editTripMem",
+        method: "POST",
+        body: payload,
+      }),
+    }),
     getAllTrip: build.mutation({
       query: (payload) => ({
         url: "api/getAllTrip",
@@ -52,6 +59,12 @@ export const api = createApi({
         url: "api/getMemberByGroupId",
         method: "GET",
         params: payload,
+      }),
+    }),
+    deleteMember: build.mutation({
+      query: (payload) => ({
+        url: "api/members/"+payload,
+        method: "DELETE",
       }),
     }),
     getAllMember: build.mutation({
@@ -100,8 +113,10 @@ export const {
   useGetTripMutation,
   usePostAddTripMutation,
   usePostEditTripMutation,
+  usePostEditTripMemMutation,
   useGetAllTripMutation,
   useGetMemberMutation,
+  useDeleteMemberMutation,
   useGetAllMemberMutation,
   usePostAddMemberMutation,
   usePostEditMemberMutation,

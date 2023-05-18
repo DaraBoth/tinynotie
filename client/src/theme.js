@@ -60,6 +60,7 @@ export const tokens = (mode) => ({
           800: "#2a2d64",
           900: "#151632",
         },
+        backrgound:"#141b2d",
       }
     : {
         grey: {
@@ -117,6 +118,7 @@ export const tokens = (mode) => ({
           800: "#c3c6fd",
           900: "#e1e2fe",
         },
+        backrgound:"#fff",
       }),
 });
 
@@ -141,7 +143,7 @@ export const themeSettings = (mode) => {
               light: colors.grey[100],
             },
             background: {
-              default: colors.primary[500],
+              default: colors.backrgound,
             },
           }
         : {
@@ -158,7 +160,7 @@ export const themeSettings = (mode) => {
               light: colors.grey[100],
             },
             background: {
-              default: "#fff",
+              default: colors.backrgound,
             },
           }),
     },
@@ -199,7 +201,7 @@ export const ColorModeContext = createContext({
 });
 
 export const useMode = () => {
-  const [mode, setMode] = useState("dark");
+  const [mode, setMode] = useState("light");
 
   const colorMode = useMemo(
     () => ({
@@ -210,5 +212,5 @@ export const useMode = () => {
   );
 
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
-  return [theme, colorMode];
+  return [theme, colorMode ,setMode];
 };

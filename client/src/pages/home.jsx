@@ -1,4 +1,4 @@
-import { Autocomplete, Box, Button, FormControl, TextField, Typography, useMediaQuery } from '@mui/material'
+import { Autocomplete, Box, Button, FormControl, IconButton, TextField, Typography, useMediaQuery } from '@mui/material'
 import React, { useEffect, useState } from 'react'
 import { useGetGroupMutation } from '../api/api'
 import { useNavigate } from 'react-router-dom'
@@ -8,9 +8,10 @@ import ListItemText from '@mui/material/ListItemText';
 import { useTheme } from '@mui/material';
 import { tokens } from '../theme'
 import AddIcon from '@mui/icons-material/Add';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { rspWidth } from '../responsive';
 
-export default function Home({ user, secret, setGroupInfo }) {
+export default function Home({ user,setUser, secret, setGroupInfo }) {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [triggerUser, resultUser] = useGetGroupMutation();
@@ -60,25 +61,21 @@ export default function Home({ user, secret, setGroupInfo }) {
                             >
                                 Welcome to TinyNotie, {user && (
                                     <>
-                                        Hello <span style={{ color: colors.blueAccent[300],fontWeight:"700" }} >{user}</span>!
+                                        Hello <span style={{ color: colors.blueAccent[300], fontWeight: "700" }} >{user}</span>!
                                     </>
                                 )}
                             </Typography>
                         </React.Fragment>
                     }
-                    secondary={
-                        <>
-                            <Typography
-                                sx={{ display: 'inline' }}
-                                component="span"
-                                variant="body1"
-                                color="text.primary"
-                            >
-
-                            </Typography>
-                        </>
-                    }
                 />
+                <IconButton
+                    onClick={()=>{
+                        setUser(false);
+                        navigate('/login');
+                    }}
+                >
+                    <LogoutIcon sx={{fill:colors.redAccent[500]}} />
+                </IconButton>
             </ListItem>
             <ListItem
                 sx={{
@@ -95,15 +92,26 @@ export default function Home({ user, secret, setGroupInfo }) {
                     }}
                     primary={
                         <>
-                            <Typography
-                                variant='body1'
-                                width={"100%"}
-                                display={'flex'}
-                                textAlign={'center'}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    justifyContent: 'center',
+                                    alignItems: 'center'
+                                }}
                             >
                                 <AddIcon />
-                                Add Trip
-                            </Typography>
+                                <Typography
+                                    variant='body1'
+                                    width={"100%"}
+                                    display={'flex'}
+                                    textAlign={'center'}
+                                    fontWeight={500}
+                                    fontSize={17}
+                                >
+                                    New note
+                                </Typography>
+                            </Box>
                         </>
                     }
                 />
@@ -132,7 +140,7 @@ export default function Home({ user, secret, setGroupInfo }) {
                         return (
                             <>
                                 <ListItem
-                                    key={index}
+                                    key={item.id}
                                     sx={{
                                         cursor: "pointer",
                                         width: '100%',
@@ -142,6 +150,7 @@ export default function Home({ user, secret, setGroupInfo }) {
                                     alignItems="flex-start"
                                     onClick={() => {
                                         setGroupInfo({ group_id: item.id, grp_name: item.grp_name });
+                                        navigate('/group')
                                     }}
                                 >
                                     <ListItemText

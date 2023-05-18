@@ -8,12 +8,14 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { usePostAddMemberMutation, usePostEditMemberMutation } from '../api/api';
-import { Box, Fab, useTheme } from '@mui/material';
+import { Box, Fab, Typography, useMediaQuery, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { tokens } from '../theme'
+import { rspWidth } from '../responsive';
 const filter = createFilterOptions();
 
 export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
+  const isNonMobile = useMediaQuery("(min-width:600px)");
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddMember, resultAddMember] = usePostAddMemberMutation();
@@ -21,6 +23,10 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
   const [money, setMoney] = React.useState(null);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  
+  const handleFont = () => {
+    return rspWidth("1.2rem","1rem","1rem")
+  }  
 
   const handleClose = () => {
     setDialogValue({
@@ -68,18 +74,24 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
   return (
     <React.Fragment>
       <Box
-        display={'flex'}
-        flexDirection={'row'}
-        justifyContent={'center'}
-        flexWrap={'wrap'}
-        gap={'10px'}
+        display="grid"
+        gap="10px"
+        gridTemplateColumns="repeat(4, 1fr)"
+        sx={{
+          "& > div": { gridColumn: "span 4" },
+          marginBottom:'10px'
+        }}
       >
+        <Typography
+          fontSize={handleFont}
+          sx={{gridColumn: "span 4"}}
+        >
+          Add & Edit member information
+        </Typography>
         <Autocomplete
-          style={{ flex: '2' }}
           value={value}
           onChange={(event, newValue) => {
             if (typeof newValue === 'string') {
-              // timeout to avoid instant validation of the dialog's form.
               setTimeout(() => {
                 toggleOpen(true);
                 setDialogValue({
@@ -109,7 +121,6 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
 
             return filtered;
           }}
-          id="free-solo-dialog-demo"
           options={member}
           getOptionLabel={(option) => {
             // e.g value selected with enter, right from the input
@@ -125,23 +136,22 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
           clearOnBlur
           handleHomeEndKeys
           renderOption={(props, option) => <li {...props}>{option.mem_name}</li>}
-          sx={{ width: 300 }}
           freeSolo
           renderInput={(params) => <TextField color="info" {...params} variant='standard' label="Edit Member" />}
         />
         <TextField
-          style={{ flex: '1' }}
           variant='standard'
           type="number"
           label="$ Paid"
           color="info"
           value={money}
+          // InputProps={}
           onChange={(e) => {
             setMoney(e.target.value)
           }}
         />
-        <Button onClick={handleEdit} type="button" color="info" variant='standard' >
-          <SendIcon />
+        <Button sx={{ gridColumn: "span 4" }} onClick={handleEdit} type="button" color="info" variant='outlined' >
+          Edit Member's paid&nbsp;<SendIcon />
         </Button>
       </Box>
       <Dialog open={open} onClose={handleClose}>

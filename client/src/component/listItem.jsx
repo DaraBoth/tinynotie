@@ -26,7 +26,7 @@ export default function AlignItemsList({ item }) {
                 return (
                     <>
                         <ListItem
-                            key={index}
+                            key={item.id}
                             sx={{
                                 backgroundColor: colors.primary[500],
                                 width: "200px"

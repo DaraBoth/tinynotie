@@ -60,6 +60,9 @@ export default function Login({ setUser, setSecret }) {
 
   useEffect(() => {
     if (resultRegister.data?.status) {
+      setMessage("Success register to " + username)
+      setSuccess(true);
+      setOpen(true);
       setIsRegister(false);
       setLoadingLogin(false);
     }

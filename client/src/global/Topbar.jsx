@@ -1,18 +1,14 @@
-import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
-import { useContext } from "react";
-import { ColorModeContext, tokens } from "../theme";
-import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
-import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import { Box, IconButton, Typography, useTheme } from "@mui/material";
+import { tokens } from "../theme";
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import { useNavigate } from "react-router-dom";
 import { rspWidth } from "../responsive";
 
-const Topbar = ({ groupInfo ,setGroupInfo }) => {
+const Topbar = ({ groupInfo, setGroupInfo }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const colorMode = useContext(ColorModeContext);
   const navigate = useNavigate();
-  const titleFontSize = rspWidth("24px","18px","16px")
+  const titleFontSize = () => {return rspWidth("24px", "18px", "16px")};
 
   return (
     <Box display="flex" justifyContent="center">
@@ -37,9 +33,10 @@ const Topbar = ({ groupInfo ,setGroupInfo }) => {
       <Box
         // sx={{fontSize:"14px"}}
         display="flex"
-        justifyContent="center"
+        justifyContent="flex-end"
         alignItems="center"
         flex="1"
+        paddingRight={'10px'}
       >
         <Typography
           variant="h3"
@@ -51,23 +48,6 @@ const Topbar = ({ groupInfo ,setGroupInfo }) => {
         >
           {groupInfo?.grp_name ?? groupInfo?.group_name}
         </Typography>
-      </Box>
-      <Box
-        display="flex"
-        gap="10px"
-        justifyContent={'flex-end'}
-        flex="1"
-      >
-        {/* ICONS */}
-        {/* <Box display="flex">
-          <IconButton onClick={colorMode.toggleColorMode}>
-            {theme.palette.mode === "dark" ? (
-              <DarkModeOutlinedIcon />
-            ) : (
-              <LightModeOutlinedIcon />
-            )}
-          </IconButton>
-        </Box> */}
       </Box>
     </Box>
   );

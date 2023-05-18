@@ -1,254 +1,184 @@
 import * as React from 'react';
-import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
-import { usePostAddTripMutation, usePostEditMemberMutation } from '../api/api';
-import { Box, useTheme } from '@mui/material';
+import { createFilterOptions } from '@mui/material/Autocomplete';
+import { usePostEditTripMemMutation } from '../api/api';
+import { Box, FormControl, InputLabel, OutlinedInput, Select, MenuItem, useTheme, ListItemText, Checkbox, useMediaQuery, Button, Typography } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { tokens } from '../theme'
+import { rspWidth } from '../responsive';
 const filter = createFilterOptions();
 
 export default function EditTripMem({ triggerTrip, member, secret, trip, group_id }) {
-  const [value, setValue] = React.useState(null);
-  const [open, toggleOpen] = React.useState(false);
-  const [triggerAddTrip, resultAddTrip] = usePostAddTripMutation();
-  const [triggerEditTrip, resultEditTrip] = usePostEditMemberMutation();
-  const [money, setMoney] = React.useState(null);
+  const isNonMobile = useMediaQuery("(min-width:600px)");
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const [triggerEditTripMem, ResultEditTripMem] = usePostEditTripMemMutation();
+  const [trpNametoEdit, setTrpNametoEdit] = React.useState([]);
+  const [trpIDtoEdit, setTrpIDtoEdit] = React.useState([]);
+  const [memberName, setMemberName] = React.useState([]);
+  const [memberID, setMemberID] = React.useState([]);
+  const [isCheckedMember, setisCheckedMember] = React.useState([]);
+  const [isDisable, setIsDisable] = React.useState(true);
+  
+  const handleFont = () => {
+    return rspWidth("1.2rem","1rem","1rem")
+  } 
 
-  const handleClose = () => {
-    setDialogValue({
-      trp_name: '',
-      spended: '',
-    });
-    toggleOpen(false);
+  const handleChange = (event) => {
+    const memName = getMemberName(event.target.value, trip, member);
+    const memID = getMemberID(member, memName);
+    const isChMm = getMemberCheck(memName, member);
+    setTrpNametoEdit(event.target.value);
+    setIsDisable(false);
+    setMemberName(memName);
+    setMemberID(memID);
+    setisCheckedMember(isChMm);
+    setTrpIDtoEdit(getTripID(event.target.value, trip));
   };
-
-  const [dialogValue, setDialogValue] = React.useState({
-    trp_name: '',
-    spended: '',
-  });
 
   const handleEdit = () => {
-    triggerEditTrip({ user_id: value.id, spended: money })
+    triggerEditTripMem({ trp_id: trpIDtoEdit, group_id, trp_name: trpNametoEdit, mem_id: JSON.stringify(memberID) })
   }
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setValue({
-      trp_name: dialogValue.trp_name,
-      spended: dialogValue.spended,
-    });
-    triggerAddTrip({
-      trp_name: dialogValue.trp_name,
-      spend: dialogValue.spended,
-      admn_id: secret,
-      mem_id: JSON.stringify(convertMemKeyToArray(member, 'id')),
-      discription: '',
-      group_id,
-    })
-    handleClose();
-  };
-
   React.useEffect(() => {
-    if (resultAddTrip.data?.status || resultEditTrip.data?.status) {
+    if (ResultEditTripMem.data?.status) {
       triggerTrip({ group_id })
     }
-  }, [resultAddTrip, resultEditTrip])
+  }, [ResultEditTripMem.data])
+
+  const handleChangeMemName = (event) => {
+    const { target: { value } } = event;
+    const memName = typeof value === 'string' ? value.split(',') : value;
+    const memID = getMemberID(member, memName);
+    const isChMm = getMemberCheck(memName, member);
+    setMemberName(memName);
+    setMemberID(memID);
+    setisCheckedMember(isChMm);
+  };
 
   return (
     <React.Fragment>
       <Box
-        display={'flex'}
-        flexDirection={'row'}
-        justifyContent={'center'}
-        flexWrap={'wrap'}
-        gap={'10px'}
+        display="grid"
+        gap="10px"
+        gridTemplateColumns="repeat(4, 1fr)"
+        sx={{
+          "& > div": { gridColumn: "span 4" },
+        }}
       >
-        <Autocomplete
-          style={{ flex: '2' }}
-          value={value}
-          onChange={(event, newValue) => {
-            if (typeof newValue === 'string') {
-              // timeout to avoid instant validation of the dialog's form.
-              setTimeout(() => {
-                toggleOpen(true);
-                setDialogValue({
-                  trp_name: newValue,
-                  spended: '',
-                });
-              });
-            } else if (newValue && newValue.inputValue) {
-              toggleOpen(true);
-              setDialogValue({
-                trp_name: newValue.inputValue,
-                spended: '',
-              });
-            } else {
-              setValue(newValue);
-            }
-          }}
-          filterOptions={(options, params) => {
-            const filtered = filter(options, params);
-
-            if (params.inputValue !== '') {
-              filtered.push({
-                inputValue: params.inputValue,
-                trp_name: `Add "${params.inputValue}"`,
-              });
-            }
-
-            return filtered;
-          }}
-          id="free-solo-dialog-demo"
-          options={trip}
-          getOptionLabel={(option) => {
-            // e.g value selected with enter, right from the input
-            if (typeof option === 'string') {
-              return option;
-            }
-            if (option.inputValue) {
-              return option.inputValue;
-            }
-            return option.trp_name;
-          }}
-          selectOnFocus
-          clearOnBlur
-          handleHomeEndKeys
-          renderOption={(props, option) => <li {...props}>{option.trp_name}</li>}
-          freeSolo
-          renderInput={(params) => <TextField color="info" {...params} variant='standard' label="Edit Event" />}
-        />
-        <Autocomplete
-          style={{ flex: '1' }}
-          value={value}
-          onChange={(event, newValue) => {
-            if (typeof newValue === 'string') {
-              // timeout to avoid instant validation of the dialog's form.
-              setTimeout(() => {
-                toggleOpen(true);
-                setDialogValue({
-                  trp_name: newValue,
-                  paid: '',
-                });
-              });
-            } else if (newValue && newValue.inputValue) {
-              toggleOpen(true);
-              setDialogValue({
-                trp_name: newValue.inputValue,
-                paid: '',
-              });
-            } else {
-              setValue(newValue);
-            }
-          }}
-          filterOptions={(options, params) => {
-            const filtered = filter(options, params);
-
-            if (params.inputValue !== '') {
-              filtered.push({
-                inputValue: params.inputValue,
-                trp_name: `Add "${params.inputValue}"`,
-              });
-            }
-
-            return filtered;
-          }}
-          id="free-solo-dialog-demo"
-          options={trip}
-          getOptionLabel={(option) => {
-            // e.g value selected with enter, right from the input
-            if (typeof option === 'string') {
-              return option;
-            }
-            if (option.inputValue) {
-              return option.inputValue;
-            }
-            return option.trp_name;
-          }}
-          selectOnFocus
-          clearOnBlur
-          handleHomeEndKeys
-          renderOption={(props, option) => <li {...props}>{option.trp_name}</li>}
-          freeSolo
-          renderInput={(params) => <TextField color="info" {...params} variant='standard' label="Edit Trip" />}
-        />
-        <Button onClick={handleEdit} type="button" color="info" variant='standard' >
-          <SendIcon />
+        <Typography
+          fontSize={handleFont}
+          sx={{ gridColumn: "span 4" }}
+        >
+          Edit event's member
+        </Typography>
+        <FormControl>
+          <InputLabel variant='standard' color='info' >Pick Event</InputLabel>
+          <Select
+            value={trpNametoEdit}
+            onChange={handleChange}
+            label="trpNametoEdit"
+            variant='standard'
+            color='info'
+          >
+            {trip?.map((item) => (
+              <MenuItem
+                key={item.id}
+                value={item.trp_name}
+              >
+                {item.trp_name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl >
+          <InputLabel variant='standard' color='info' >Member</InputLabel>
+          <Select
+            multiple
+            variant='standard'
+            color='info'
+            disabled={isDisable}
+            value={memberName}
+            onChange={handleChangeMemName}
+            renderValue={(selected) => {
+              return selected.join(',');
+            }}
+          >
+            {member.map((item, index) => (
+              <MenuItem key={item.id} value={item.mem_name}>
+                <Checkbox
+                  checked={isCheckedMember[index]}
+                />
+                <ListItemText primary={item.mem_name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Button
+          sx={{ gridColumn: "span 4" }}
+          onClick={handleEdit}
+          type="button"
+          color="info"
+          variant='outlined'
+        >
+          Edit Event's member&nbsp;<SendIcon />
         </Button>
       </Box>
-      <Box
-        display={'flex'}
-        flexDirection={'row'}
-        justifyContent={'center'}
-        flexWrap={'wrap'}
-        gap={'10px'}
-      >
-
-        
-
-      </Box>
-      <Dialog open={open} onClose={handleClose}>
-        <form onSubmit={handleSubmit}
-          style={{ backgroundColor: colors.primary[400] }}
-        >
-          <DialogTitle>Add a event</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Please help fill out new trip and spended money.
-            </DialogContentText>
-            <TextField
-              autoFocus
-              margin="dense"
-              id="trp_name"
-              color="info"
-              value={dialogValue.trp_name}
-              onChange={(event) =>
-                setDialogValue({
-                  ...dialogValue,
-                  trp_name: event.target.value,
-                })
-              }
-              label="Trip's name"
-              type="text"
-              variant="standard"
-            />
-            <TextField
-              margin="dense"
-              id="spended"
-              color="info"
-              value={dialogValue.spended}
-              onChange={(event) =>
-                setDialogValue({
-                  ...dialogValue,
-                  spended: event.target.value,
-                })
-              }
-              label="Spended"
-              type="number"
-              variant="standard"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button color="info" variant="standard" onClick={handleClose}>Cancel</Button>
-            <Button color="info" variant="standard" type="submit">Add</Button>
-          </DialogActions>
-        </form>
-      </Dialog>
     </React.Fragment>
   );
 }
 
-function convertMemKeyToArray(member, key) {
-  let newArray = [];
-  for (let i in member) {
-    newArray[i] = member[i][key];
+function getMemberID(allMember, selectedMember) {
+  let newArrayId = [];
+  let newArrayNm = [];
+  for (let i in allMember) {
+    for (let j in selectedMember) {
+      if (allMember[i].mem_name === selectedMember[j]) {
+        newArrayId[j] = allMember[i].id
+        newArrayNm[j] = allMember[i].mem_name
+      }
+    }
   }
-  return newArray;
+  return newArrayId;
+}
+
+function getMemberName(trp_name, trips, member) {
+  let newMemId;
+  let newMemNM = [];
+  for (let index in trips) {
+    if (trips[index].trp_name === trp_name) {
+      newMemId = JSON.parse(trips[index].mem_id);
+    }
+  }
+  for (let index in member) {
+    let memID = member[index].id
+    for (let index2 in newMemId) {
+      if (memID == newMemId[index2]) {
+        newMemNM[index] = member[index].mem_name
+      }
+    }
+  }
+  return newMemNM;
+}
+
+function getMemberCheck(memName, member) {
+  let newArr = [];
+  for (let i in member) {
+    newArr[i] = false;
+    for (let index in memName) {
+      if (member[i].mem_name == memName[index]) {
+        newArr[i] = true;
+      }
+    }
+  }
+  return newArr;
+}
+
+function getTripID(trp_name, trips) {
+  let trp_id;
+  for (let index in trips) {
+    if (trips[index].trp_name == trp_name) {
+      trp_id = trips[index].id;
+    }
+  }
+  return trp_id;
 }

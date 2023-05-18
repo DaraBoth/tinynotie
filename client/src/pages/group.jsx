@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import Topbar from '../global/Topbar'
 import TableComponent from '../component/table'
-import { Typography, useTheme } from '@mui/material'
+import { Box, Icon, List, ListItem, ListItemAvatar, ListItemText, colors, useMediaQuery, useTheme } from '@mui/material'
 import { tokens } from '../theme'
-import { useGetAllTripMutation, useGetMemberMutation, useGetTripMutation } from '../api/api'
+import { useGetMemberMutation, useGetTripMutation } from '../api/api'
 import ToolTip from '../component/toolTip'
 import AddTrip from '../component/addtrip';
+import PaidIcon from '@mui/icons-material/Paid';
 import EditTripMem from '../component/editTripMem'
-import { useNavigate } from 'react-router-dom'
+import PaymentIcon from '@mui/icons-material/Payment';
+import MoneyOffCsredIcon from '@mui/icons-material/MoneyOffCsred';
+import DeleteMember from '../component/deleteMember'
 
-export default function Group({ user, secret, groupInfo , setGroupInfo }) {
+export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [triggerTrip, resultTrip] = useGetTripMutation();
@@ -32,81 +35,208 @@ export default function Group({ user, secret, groupInfo , setGroupInfo }) {
     if (resultMember.data?.status) {
       setMember(resultMember.data?.data)
     }
-  }, [resultMember.data])
+  }, [resultMember.data]);
 
-  const rows = calculateMoney(member, trip);
+  const { info, newData } = calculateMoney(member, trip);
+  const rows = newData;
   const columns = functionRenderColumns(rows);
 
   return (
     <main className="content">
-      <Topbar groupInfo={groupInfo} setGroupInfo={setGroupInfo} />
+      <Topbar user={user} groupInfo={groupInfo} setGroupInfo={setGroupInfo} />
       <div className='body'>
-        <TableComponent rows={rows} columns={columns} />
+        <TitleComponent info={info} />
+        <TableComponent rows={rows ?? []} columns={columns ?? []} />
         <ToolTip triggerMember={triggerMember} member={member} group_id={groupInfo.group_id} />
         <AddTrip triggerTrip={triggerTrip} member={member} secret={secret} trip={trip} group_id={groupInfo.group_id} />
         <EditTripMem triggerTrip={triggerTrip} member={member} secret={secret} trip={trip} group_id={groupInfo.group_id} />
+        <DeleteMember triggerMember={triggerMember} member={member} group_id={groupInfo.group_id} />
       </div>
     </main>
   )
 }
 
+const TitleComponent = ({ info }) => {
+  const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
+  const isNonMobile = useMediaQuery("(min-width:600px)");
+  const isGalaxyFold = useMediaQuery("(max-width:280px)");
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+
+  const editText = (text) => {
+    text = "$" + text.substring(0, text.length - 1).replace("-", "");
+    return text.replace("/-", "0");
+  }
+
+  return (
+    <Box
+      display="grid"
+      gap="10px"
+      gridTemplateColumns="repeat(4, 1fr)"
+      sx={{
+        position: "sticky",
+        top: "15px",
+        backgroundColor: colors.backrgound,
+        borderRadius: '10px',
+        zIndex: 1,
+        "& > .MuiListItem-root": {
+          gridColumn: isNonMobile ? "span 1" : "span 2",
+          border: `2px solid ${colors.blueAccent[500]}`,
+          borderRadius: '10px',
+          display: 'grid',
+          gridTemplateColumns: "repeat(3, 1fr)",
+          overflowY: isGalaxyFold ? 'scroll' : undefined,
+          boxSizing: 'border-box',
+        },
+        "& > .MuiListItem-root::-webkit-scrollbar": {
+          display: 'none'
+        },
+        "& > .MuiListItem-root .MuiBox-root": {
+          gridColumn: "span 1",
+          display: 'grid',
+          gridTemplateColumns: "repeat(4, 1fr)",
+          placeItems: 'center',
+          gap: '5px',
+          position: 'relative',
+
+        },
+        "& > .MuiListItem-root .MuiBox-root div ": {
+          position: 'absolute',
+          display: isGalaxyFold ? "none" : undefined,
+          top: '-110%',
+          left: '0%',
+          backgroundColor: colors.backrgound,
+          padding: '0px 5px',
+          paddingTop: '1px',
+          borderRadius: '5px',
+          zIndex: '5',
+        },
+        "& > .MuiListItem-root .MuiListItemText-root ": {
+          gridColumn: "span 2",
+          textAlign: 'right'
+        }
+      }}
+    >
+      <ListItem>
+        <Box>
+          <div>Paid</div>
+          <PaymentIcon sx={{ fill: colors.blueAccent[500] }} />
+        </Box>
+        <ListItemText primary={`${editText(totalPaid)}`} />
+      </ListItem>
+      <ListItem color={colors.primary[400]} >
+        <Box>
+          <div>UnPaid</div>
+          <PaidIcon sx={{ fill: '#ffa900' }} />
+        </Box>
+        <ListItemText primary={`${editText(totalUnPaid)} `} />
+      </ListItem>
+      <ListItem>
+        <Box>
+          <div>Spend</div>
+          <MoneyOffCsredIcon sx={{ fill: colors.redAccent[500] }} />
+        </Box>
+        <ListItemText primary={`${editText(totalSpend)}`} />
+      </ListItem>
+      <ListItem>
+        <Box>
+          <div>Remain</div>
+          <PaidIcon sx={{ fill: colors.greenAccent[500] }} />
+        </Box>
+        <ListItemText primary={`${editText(totalRemain)}`} />
+      </ListItem>
+    </Box>
+  )
+}
+
 function calculateMoney(allMembers, trips) {
   let newData = [];
-  let i, j, trip;
-  let kitLuy = {}
-  for (i in allMembers) {
-    newData[i] = {};
-    let member = allMembers[i];
+  let kitLuy = {};
+
+  let totalMember = 0, totalPaid = 0, totalRemain = 0, totalUnPaid = 0, totalSpend = 0;
+  newData = allMembers.map((member, id) => {
     let luyForTrip = 0;
     let paid = member.paid;
     let luySol = paid;
-    for (trip in trips) {
-      let { mem_id, spend, trp_name } = trips[trip];
+    trips.forEach((trip) => {
+      let { mem_id, spend } = trip;
       mem_id = JSON.parse(mem_id);
       let osMnek = 0;
-      for (j in mem_id) {
-        let joined = mem_id[j]
+      const joinedMemCount = getMemberID(allMembers,mem_id);
+      mem_id.forEach((joined) => {
         if (member.id === Number(joined)) {
-          osMnek = (spend / mem_id?.length);
-          luyForTrip += (spend / mem_id?.length);
+          osMnek = (spend / joinedMemCount);
+          luyForTrip += (spend / joinedMemCount);
           luySol = (member.paid - luyForTrip);
         }
-      }
-      kitLuy = Object.assign(kitLuy, { [trp_name]: formatMoney(osMnek, 1) })
-    }
+      })
+      kitLuy[trip.trp_name] = formatMoney(osMnek, 1);
+    })
     let unPaid = 0;
-    newData[i] = {
-      id: Number(i) + 1,
-      name: allMembers[i].mem_name,
+    totalPaid += paid;
+    totalRemain += luySol > 0 ? luySol : unPaid;
+    totalUnPaid += luySol > 0 ? unPaid : luySol;
+    return {
+      id: id + 1,
+      name: member.mem_name,
       paid: paid + "$",
+      ...kitLuy,
+      remain: formatMoney(luySol > 0 ? luySol : unPaid),
+      unpaid: formatMoney(luySol > 0 ? unPaid : luySol)
     }
-    newData[i] = Object.assign(newData[i], kitLuy, { remain: formatMoney(luySol > 0 ? luySol : unPaid), "Unpaid": formatMoney(luySol > 0 ? unPaid : luySol) })
-  }
-  return newData;
+  });
+  totalMember = newData.length;
+  totalSpend = "-" + formatMoney(totalPaid - totalRemain);
+  totalPaid = formatMoney(totalPaid)
+  totalRemain = formatMoney(totalRemain)
+  totalUnPaid = formatMoney(totalUnPaid)
+
+  return { info: { totalMember, totalPaid, totalRemain, totalSpend, totalUnPaid }, newData };
 }
 
+
 function formatMoney(money, option = 2) {
+  const formatter = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
   let newMoney = "";
   if (!money) return "-/-  ";
   if (typeof money == "string") {
     try {
-      money = Number(parseFloat(money));
+      money = formatter.format(money);
     } catch {
       alert("error typeof money is not number");
       return money;
     }
   }
-  if (option == 1) {
+  if (option === 1) {
     if (money > 0) {
-      newMoney = "-" + money;
+      newMoney = "-" + formatter.format(money);
     } else {
-      newMoney = money;
+      newMoney = formatter.format(money);
     }
   }
-  if (option == 2) {
-    newMoney = money;
+  if (option === 2) {
+    newMoney = formatter.format(money);
   }
-  return newMoney.toString().substring(0, 5) + "$"
+  if (option === 3) {
+    return newMoney.toString();
+  } else {
+    return newMoney.toString() + "$"
+  }
+}
+
+function getMemberID(allMember, selectedMember) {
+  let newArrayId = [];
+  for (let i in allMember) {
+    for (let j in selectedMember) {
+      if (allMember[i].id === selectedMember[j]) {
+        newArrayId[j] = allMember[i].id
+      }
+    }
+  }
+  return newArrayId.length;
 }
 
 function functionRenderColumns(rows) {

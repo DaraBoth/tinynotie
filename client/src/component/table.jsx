@@ -1,15 +1,18 @@
 import React, { useState } from 'react'
 import { DataGrid, GridToolbar, GridToolbarQuickFilter } from "@mui/x-data-grid";
 import { tokens } from "../theme";
-import { Box, useTheme } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+
 function TableComponent({ rows, columns }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [pageSize, setPageSize] = useState(5);
+  const isNonMobile = useMediaQuery("(min-width:600px)");
+  const [pageSize, setPageSize] = useState(isNonMobile?5:10);
+
   return (
     <Box>
       <Box
-        height="85vh"
+        height={isNonMobile ? "71vh" : "calc(10 * 50px)"}
         sx={{
           "& .MuiDataGrid-root": {
             border: `2px solid ${colors.blueAccent[600]}`,
@@ -39,6 +42,7 @@ function TableComponent({ rows, columns }) {
         }}
       >
         <DataGrid
+          density={isNonMobile? "standard" : "compact" }
           rows={rows}
           columns={columns}
           components={{ Toolbar: GridToolbar }}
@@ -46,7 +50,7 @@ function TableComponent({ rows, columns }) {
           pageSize={pageSize}
           onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
           rowsPerPageOptions={[5, 10, 20, 50]}
-          initialState={{ pinnedColumns: { left: ['name']} }}
+          initialState={{ pinnedColumns: { left: ['name'] } }}
         />
       </Box>
     </Box>

@@ -8,12 +8,14 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { usePostAddTripMutation, usePostEditMemberMutation, usePostEditTripMutation } from '../api/api';
-import { Box, useTheme } from '@mui/material';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { tokens } from '../theme'
+import { rspWidth } from '../responsive';
 const filter = createFilterOptions();
 
 export default function AddTrip({ triggerTrip, member, secret, trip, group_id }) {
+  const isNonMobile = useMediaQuery("(min-width:600px)");
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddTrip, resultAddTrip] = usePostAddTripMutation();
@@ -21,6 +23,10 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
   const [money, setMoney] = React.useState(null);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  const handleFont = () => {
+    return rspWidth("1.2rem","1rem","1rem")
+  } 
 
   const handleClose = () => {
     setDialogValue({
@@ -36,8 +42,7 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
   });
 
   const handleEdit = () => {
-    triggerEditTrip({trp_name:value.trp_name,spend: Number(money),group_id })
-    console.log({trp_name:value.trp_name,spend: Number(money),group_id });
+    triggerEditTrip({ trp_name: value.trp_name, spend: parseFloat(money), group_id })
   }
 
   const handleSubmit = (event) => {
@@ -61,10 +66,10 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
     if (resultAddTrip.data?.status || resultEditTrip.data?.status) {
       triggerTrip({ group_id })
     }
-    if (resultAddTrip.data?.status === false){
+    if (resultAddTrip.data?.status === false) {
       alert(resultAddTrip.data?.message)
     }
-    if (resultEditTrip.data?.status === false){
+    if (resultEditTrip.data?.status === false) {
       alert(resultEditTrip.data?.message)
     }
   }, [resultAddTrip, resultEditTrip])
@@ -72,18 +77,23 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
   return (
     <React.Fragment>
       <Box
-        display={'flex'}
-        flexDirection={'row'}
-        justifyContent={'center'}
-        flexWrap={'wrap'}
-        gap={'10px'}
+        display="grid"
+        gap="10px"
+        gridTemplateColumns="repeat(4, 1fr)"
+        sx={{
+          "& > div": { gridColumn: "span 4" },
+        }}
       >
+        <Typography
+          fontSize={handleFont}
+          sx={{gridColumn: "span 4"}}
+        >
+          Add & Edit event information
+        </Typography>
         <Autocomplete
-          style={{ flex: '2' }}
           value={value}
           onChange={(event, newValue) => {
             if (typeof newValue === 'string') {
-              // timeout to avoid instant validation of the dialog's form.
               setTimeout(() => {
                 toggleOpen(true);
                 setDialogValue({
@@ -113,7 +123,6 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
 
             return filtered;
           }}
-          id="free-solo-dialog-demo"
           options={trip}
           getOptionLabel={(option) => {
             // e.g value selected with enter, right from the input
@@ -134,7 +143,6 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
         />
 
         <TextField
-          style={{ flex: '1' }}
           variant='standard'
           type="number"
           label="$ Spend"
@@ -144,8 +152,8 @@ export default function AddTrip({ triggerTrip, member, secret, trip, group_id })
             setMoney(e.target.value)
           }}
         />
-        <Button onClick={handleEdit} type="button" color="info" variant='standard' >
-          <SendIcon />
+        <Button sx={{ gridColumn: "span 4" }} onClick={handleEdit} type="button" color="info" variant='outlined' >
+          Edit Event's Spend&nbsp;<SendIcon />
         </Button>
       </Box>
       <Dialog open={open} onClose={handleClose}>

@@ -108,17 +108,61 @@ router.post("/editTripByGroupId", async (req, res) => {
         res.status(500).json({ error: error.message });
         throw error;
       }
-      if(results.rows[0]?.id) {
+      if (results.rows[0]?.id) {
         let sql2 = `UPDATE trp_infm SET spend=${spend} WHERE id=${results.rows[0].id};`
-        pool.query(sql2.toString(),(error,results)=>{
-          if(error) {
-            res.status(500).json({ status:false,error: error.message });
+        pool.query(sql2.toString(), (error, results) => {
+          if (error) {
+            res.status(500).json({ status: false, error: error.message });
             throw error;
           }
-          res.send({status:true,message:"Edit "+trp_name+" success!"});
+          res.send({ status: true, message: "Edit " + trp_name + " success!" });
         })
-      }else {
-        res.send({status:false,message:"Username "+usernm+" is already existed!"});
+      } else {
+        res.send({ status: false, message: "Username " + usernm + " is already existed!" });
+      }
+    })
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/editTripMem", async (req, res) => {
+  const { trp_id, trp_name, group_id, mem_id } = req.body;
+  try {
+    let sql = `UPDATE trp_infm SET mem_id='${mem_id}' WHERE id=${trp_id};`
+    pool.query(sql.toString(), (error, results) => {
+      if (error) {
+        res.status(500).json({ status: false, error: error.message });
+        throw error;
+      }
+      res.send({ status: true, message: "Edit " + trp_name + " success!" });
+    })
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+router.post("/editTripByGroupId", async (req, res) => {
+  const { trp_name, spend, group_id } = req.body;
+  try {
+    let sql = `SELECT id FROM trp_infm where group_id='${group_id}' and trp_name='${trp_name}';`
+    pool.query(sql.toString(), (error, results) => {
+      if (error) {
+        res.status(500).json({ error: error.message });
+        throw error;
+      }
+      if (results.rows[0]?.id) {
+        let sql2 = `UPDATE trp_infm SET spend=${spend} WHERE id=${results.rows[0].id};`
+        pool.query(sql2.toString(), (error, results) => {
+          if (error) {
+            res.status(500).json({ status: false, error: error.message });
+            throw error;
+          }
+          res.send({ status: true, message: "Edit " + trp_name + " success!" });
+        })
+      } else {
+        res.send({ status: false, message: "Username " + usernm + " is already existed!" });
       }
     })
   } catch (error) {
@@ -147,7 +191,7 @@ router.get("/getAllTrip", async (req, res) => {
 router.get("/getTripByGroupId", async (req, res) => {
   const { group_id } = req.query;
   try {
-    let sql = `SELECT id, trp_name, spend, admn_id, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}';`
+    let sql = `SELECT id, trp_name, spend, admn_id, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}' order by id;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
@@ -187,6 +231,24 @@ router.get("/getMemberByGroupId", async (req, res) => {
         throw error;
       }
       res.send({ status: true, data: results.rows });
+    })
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+router.delete("/members/:id", async (req, res) => {
+  const id = req.params.id;
+  try {
+    let sql = `DELETE FROM member_infm WHERE id=${id};`
+    pool.query(sql.toString(), (error, results) => {
+      if (error) {
+        res.status(500).json({ error: error.message });
+        throw error;
+      }
+      res.send({ status: true, message: `Delete success !` });
     })
   } catch (error) {
     console.error("error", error);
