@@ -12,7 +12,7 @@ const pool = new Pool({
 router.post("/login", async (req, res) => {
   const { usernm , passwd } = req.body;
   try {
-    let sql = `SELECT id FROM user_infm where usernm = '${usernm}' and passwd = '${passwd}';`
+    let sql = `SELECT id FROM user_infm where usernm = '${usernm.toLowerCase()}' and passwd = '${passwd}';`
     pool.query(sql.toString(),(error,results)=>{
       if(error) {
         res.status(500).json({ status:false,error: error.message });
@@ -33,14 +33,14 @@ router.post("/login", async (req, res) => {
 router.get("/register", async (req, res) => {
   const { usernm , passwd } = req.query;
   try {
-    let sql = `SELECT usernm FROM user_infm where usernm = '${usernm}';`
+    let sql = `SELECT usernm FROM user_infm where usernm = '${usernm.toLowerCase()}';`
     pool.query(sql.toString(),(error,results)=>{
       if(error) {
         res.status(500).json({ status:false,error: error.message });
         throw error;
       }
       if(!results.rows.length > 0) {
-        let sql2 = `INSERT INTO user_infm( usernm, passwd ) VALUES('${usernm}', '${passwd}');`
+        let sql2 = `INSERT INTO user_infm( usernm, passwd ) VALUES('${usernm.toLowerCase()}', '${passwd}');`
         pool.query(sql2.toString(),(error,results)=>{
           if(error) {
             res.status(500).json({ status:false,error: error.message });

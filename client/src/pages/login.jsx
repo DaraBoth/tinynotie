@@ -6,6 +6,8 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import { usePostLoginMutation, usePostRegisterMutation } from '../api/api';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Person4RoundedIcon from '@mui/icons-material/Person4Rounded';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { tokens } from '../theme'
 import { rspWidth } from '../responsive';
 
@@ -18,10 +20,15 @@ export default function Login({ setUser, setSecret }) {
   const [triggerLogin, resultLogin] = usePostLoginMutation();
   const [triggerRegister, resultRegister] = usePostRegisterMutation();
   const [loadingLogin, setLoadingLogin] = useState(false);
+  const [isErrorServer, setIsErrorServer] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [open, setOpen] = useState(false);
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState("");
+  const [durationMsg, setDurationMsg] = useState(3000);
+  const [count,setCount] = useState(1);
+
+
   const handleClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
@@ -39,6 +46,7 @@ export default function Login({ setUser, setSecret }) {
       setUsername(values.username);
     }
     resetForm();
+    handleServerError(2);
   }, 500);
 
   useEffect(() => {
@@ -60,7 +68,7 @@ export default function Login({ setUser, setSecret }) {
 
   useEffect(() => {
     if (resultRegister.data?.status) {
-      setMessage("Success register to " + username)
+      setMessage("Register is success!")
       setSuccess(true);
       setOpen(true);
       setIsRegister(false);
@@ -73,6 +81,29 @@ export default function Login({ setUser, setSecret }) {
       setLoadingLogin(false);
     }
   }, [resultRegister.data]); // eslint-disable-line
+
+  const handleServerError = (second) => {
+    let min = second;
+    setTimeout(()=>{
+      if(min===1) {
+        setCount(count+1)
+        return false;
+      }else{
+        handleServerError(min-1);
+      }
+    },6000);
+  }
+
+  useEffect(()=>{
+    if(count===2 && loadingLogin === true){
+      setMessage(`Sorry our service is unaviable right now! Please contact your admin.`);
+      setDurationMsg(6000);
+      setSuccess(false);
+      setOpen(true);
+      setLoadingLogin(false);
+      setCount(1);
+    }
+  },[count])
 
   return (
     <Box sx={{
@@ -131,6 +162,13 @@ export default function Login({ setUser, setSecret }) {
                   error={!!touched.username && !!errors.username}
                   helperText={touched.username && errors.username}
                   sx={{ gridColumn: "span 4" }}
+                  InputProps={{
+                    startAdornment:(
+                      <InputAdornment position="start">
+                        <Person4RoundedIcon/>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
                 <TextField
                   fullWidth
@@ -145,6 +183,11 @@ export default function Login({ setUser, setSecret }) {
                   helperText={touched.password && errors.password}
                   sx={{ gridColumn: "span 4" }}
                   InputProps={{
+                    startAdornment:(
+                      <InputAdornment position="start">
+                        <LockOutlinedIcon/>
+                      </InputAdornment>
+                    ),
                     endAdornment: (
                       <InputAdornment
                         style={{ cursor: 'pointer' }}
@@ -161,7 +204,7 @@ export default function Login({ setUser, setSecret }) {
               </Box>
               <Box>
                 <LoadingButton
-                  sx={{ width: "100%", color:colors.blueAccent[500] , borderColor:colors.blueAccent[500] }}
+                  sx={{ width: "100%", color: colors.blueAccent[500], borderColor: colors.blueAccent[500] }}
                   loading={loadingLogin ? true : false}
                   onClick={handleSubmit}
                   type="button"
@@ -210,7 +253,7 @@ export default function Login({ setUser, setSecret }) {
       <Snackbar
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
         open={open}
-        autoHideDuration={3000}
+        autoHideDuration={durationMsg}
         onClose={handleClose}>
         <Alert onClose={handleClose} severity={success ? "success" : "error"} sx={{ width: '100%' }}>
           {message}
@@ -235,4 +278,5 @@ function debounce(func, timeout = 300) {
     timer = setTimeout(() => { func.apply(this, args); }, timeout);
   };
 }
+
 

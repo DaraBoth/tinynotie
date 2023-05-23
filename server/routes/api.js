@@ -12,7 +12,7 @@ const pool = new Pool({
 router.get("/getGroupByUserId", async (req, res) => {
   const { user_id } = req.query;
   try {
-    let sql = `SELECT id, grp_name, status, discription, admin_id, create_date FROM grp_infm where admin_id='${user_id}' order by id;`
+    let sql = `SELECT id, grp_name, status, discription, admin_id, create_date FROM grp_infm where admin_id=${Number(user_id)} order by id;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
@@ -48,9 +48,8 @@ router.post("/addGroupByUserId", async (req, res) => {
       sql += `INSERT INTO member_infm (`
       sql += `    mem_name,`
       sql += `    paid,`
-      sql += `    group_id,`
-      sql += `    trp_id`
-      sql += `) VALUES('${newMember[i]}', 0, group_id, null);`;
+      sql += `    group_id`
+      sql += `) VALUES('${newMember[i]}', 0, group_id);`;
     }
     sql += `END $$;`;
     sql += `SELECT MAX(id) as id from grp_infm; `;
@@ -69,10 +68,10 @@ router.post("/addGroupByUserId", async (req, res) => {
 });
 
 router.post("/addTripByGroupId", async (req, res) => {
-  const { trp_name, spend, admn_id, mem_id, discription, group_id } = req.body;
+  const { trp_name, spend, mem_id, discription, group_id } = req.body;
   const create_date = format(new Date());
   try {
-    let sql = `SELECT id, trp_name, spend, admn_id, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}' and trp_name='${trp_name}';`
+    let sql = `SELECT id, trp_name, spend, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}' and trp_name='${trp_name}';`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
@@ -80,8 +79,8 @@ router.post("/addTripByGroupId", async (req, res) => {
       }
       if (!results.rows.length > 0) {
         let sql2 = `INSERT INTO trp_infm
-        (trp_name, spend, admn_id, mem_id, discription, group_id, create_date)
-        VALUES('${trp_name}', ${spend}, ${admn_id}, '${mem_id}', '${discription}', ${group_id}, '${create_date}');`
+        (trp_name, spend, mem_id, discription, group_id, create_date)
+        VALUES('${trp_name}', ${spend}, '${mem_id}', '${discription}', ${group_id}, '${create_date}');`
         pool.query(sql2.toString(), (error, results) => {
           if (error) {
             res.status(500).json({ status: false, error: error.message });
@@ -173,7 +172,7 @@ router.post("/editTripByGroupId", async (req, res) => {
 
 router.get("/getAllTrip", async (req, res) => {
   try {
-    let sql = `SELECT id, trp_name, spend, admn_id, mem_id, discription, group_id, create_date
+    let sql = `SELECT id, trp_name, spend, mem_id, discription, group_id, create_date
     FROM trp_infm;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
@@ -191,13 +190,17 @@ router.get("/getAllTrip", async (req, res) => {
 router.get("/getTripByGroupId", async (req, res) => {
   const { group_id } = req.query;
   try {
-    let sql = `SELECT id, trp_name, spend, admn_id, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}' order by id;`
+    let sql = `SELECT id, trp_name, spend, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}' order by id;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
         throw error;
       }
-      res.send({ status: true, data: results.rows });
+      if(results.rows.length === 0){
+        res.send({ status: true, data: [] });
+      }else{
+        res.send({ status: true, data: results.rows });
+      }
     })
   } catch (error) {
     console.error("error", error);
@@ -207,7 +210,7 @@ router.get("/getTripByGroupId", async (req, res) => {
 
 router.get("/getAllMember", async (req, res) => {
   try {
-    let sql = `SELECT DISTINCT mem_name FROM member_infm order by mem_name;`
+    let sql = `SELECT DISTINCT mem_name FROM member_infm where mem_name not like '%test%' and mem_name not like '%asd%' order by mem_name;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
@@ -224,7 +227,7 @@ router.get("/getAllMember", async (req, res) => {
 router.get("/getMemberByGroupId", async (req, res) => {
   const { group_id } = req.query;
   try {
-    let sql = `SELECT id, mem_name, paid, group_id, trp_id FROM member_infm where group_id='${group_id}' order by id;`
+    let sql = `SELECT id, mem_name, paid, group_id FROM member_infm where group_id='${group_id}' order by id;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
