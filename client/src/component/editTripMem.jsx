@@ -1,13 +1,36 @@
-import * as React from 'react';
-import { createFilterOptions } from '@mui/material/Autocomplete';
-import { usePostEditTripMemMutation } from '../api/api';
-import { Box, FormControl, InputLabel, OutlinedInput, Select, MenuItem, useTheme, ListItemText, Checkbox, useMediaQuery, Button, Typography } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import { tokens } from '../theme'
-import { rspWidth } from '../responsive';
+import * as React from "react";
+import { createFilterOptions } from "@mui/material/Autocomplete";
+import { usePostEditTripMemMutation } from "../api/api";
+import {
+  Box,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
+  Select,
+  MenuItem,
+  useTheme,
+  ListItemText,
+  Checkbox,
+  useMediaQuery,
+  Button,
+  Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
+import { tokens } from "../theme";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { rspWidth } from "../responsive";
 const filter = createFilterOptions();
 
-export default function EditTripMem({ triggerTrip, member, secret, trip, group_id }) {
+export default function EditTripMem({
+  triggerTrip,
+  member,
+  secret,
+  trip,
+  group_id,
+}) {
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -18,10 +41,15 @@ export default function EditTripMem({ triggerTrip, member, secret, trip, group_i
   const [memberID, setMemberID] = React.useState([]);
   const [isCheckedMember, setisCheckedMember] = React.useState([]);
   const [isDisable, setIsDisable] = React.useState(true);
-  
+  const [expanded, setExpanded] = React.useState(false);
+
+  const handleChangeExpand = (panel) => (event, isExpanded) => {
+    setExpanded(isExpanded ? panel : false);
+  };
+
   const handleFont = () => {
-    return rspWidth("1.2rem","1rem","1rem")
-  } 
+    return rspWidth("1.2rem", "1rem", "1rem");
+  };
 
   const handleChange = (event) => {
     const memName = getMemberName(event.target.value, trip, member);
@@ -36,18 +64,25 @@ export default function EditTripMem({ triggerTrip, member, secret, trip, group_i
   };
 
   const handleEdit = () => {
-    triggerEditTripMem({ trp_id: trpIDtoEdit, group_id, trp_name: trpNametoEdit, mem_id: JSON.stringify(memberID) })
-  }
+    triggerEditTripMem({
+      trp_id: trpIDtoEdit,
+      group_id,
+      trp_name: trpNametoEdit,
+      mem_id: JSON.stringify(memberID),
+    });
+  };
 
   React.useEffect(() => {
     if (ResultEditTripMem.data?.status) {
-      triggerTrip({ group_id })
+      triggerTrip({ group_id });
     }
-  }, [ResultEditTripMem.data])
+  }, [ResultEditTripMem.data]);
 
   const handleChangeMemName = (event) => {
-    const { target: { value } } = event;
-    const memName = typeof value === 'string' ? value.split(',') : value;
+    const {
+      target: { value },
+    } = event;
+    const memName = typeof value === "string" ? value.split(",") : value;
     const memID = getMemberID(member, memName);
     const isChMm = getMemberCheck(memName, member);
     setMemberName(memName);
@@ -65,63 +100,83 @@ export default function EditTripMem({ triggerTrip, member, secret, trip, group_i
           "& > div": { gridColumn: "span 4" },
         }}
       >
-        <Typography
-          fontSize={handleFont}
-          sx={{ gridColumn: "span 4" }}
+        <Accordion
+          variant="outlined"
+          expanded={expanded === "panel1"}
+          onChange={handleChangeExpand("panel1")}
         >
-          Edit event's member
-        </Typography>
-        <FormControl>
-          <InputLabel variant='standard' color='info' >Pick Event</InputLabel>
-          <Select
-            value={trpNametoEdit}
-            onChange={handleChange}
-            label="trpNametoEdit"
-            variant='standard'
-            color='info'
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls="panel1bh-content"
+            id="panel1bh-header"
           >
-            {trip?.map((item) => (
-              <MenuItem
-                key={item.id}
-                value={item.trp_name}
-              >
-                {item.trp_name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl >
-          <InputLabel variant='standard' color='info' >Member</InputLabel>
-          <Select
-            multiple
-            variant='standard'
-            color='info'
-            disabled={isDisable}
-            value={memberName}
-            onChange={handleChangeMemName}
-            renderValue={(selected) => {
-              return selected.join(',');
+            <Typography
+              fontSize={handleFont}
+              sx={{ flexShrink: 0 }}
+            >
+              Edit Event's member
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
             }}
           >
-            {member.map((item, index) => (
-              <MenuItem key={item.id} value={item.mem_name}>
-                <Checkbox
-                  checked={isCheckedMember[index]}
-                />
-                <ListItemText primary={item.mem_name} />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Button
-          sx={{ gridColumn: "span 4" }}
-          onClick={handleEdit}
-          type="button"
-          color="info"
-          variant='outlined'
-        >
-          Edit Event's member&nbsp;<SendIcon />
-        </Button>
+            <FormControl>
+              <InputLabel variant="standard" color="info">
+                Pick Event
+              </InputLabel>
+              <Select
+                value={trpNametoEdit}
+                onChange={handleChange}
+                label="trpNametoEdit"
+                variant="standard"
+                color="info"
+              >
+                {trip?.map((item) => (
+                  <MenuItem key={item.id} value={item.trp_name}>
+                    {item.trp_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl>
+              <InputLabel variant="standard" color="info">
+                Member
+              </InputLabel>
+              <Select
+                multiple
+                variant="standard"
+                color="info"
+                disabled={isDisable}
+                value={memberName}
+                onChange={handleChangeMemName}
+                renderValue={(selected) => {
+                  return selected.join(",");
+                }}
+              >
+                {member.map((item, index) => (
+                  <MenuItem key={item.id} value={item.mem_name}>
+                    <Checkbox checked={isCheckedMember[index]} />
+                    <ListItemText primary={item.mem_name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button
+              sx={{ gridColumn: "span 4" }}
+              onClick={handleEdit}
+              type="button"
+              color="info"
+              variant="outlined"
+            >
+              Edit Event's member&nbsp;
+              <SendIcon />
+            </Button>
+          </AccordionDetails>
+        </Accordion>
       </Box>
     </React.Fragment>
   );
@@ -133,8 +188,8 @@ function getMemberID(allMember, selectedMember) {
   for (let i in allMember) {
     for (let j in selectedMember) {
       if (allMember[i].mem_name === selectedMember[j]) {
-        newArrayId[j] = allMember[i].id
-        newArrayNm[j] = allMember[i].mem_name
+        newArrayId[j] = allMember[i].id;
+        newArrayNm[j] = allMember[i].mem_name;
       }
     }
   }
@@ -150,10 +205,10 @@ function getMemberName(trp_name, trips, member) {
     }
   }
   for (let index in member) {
-    let memID = member[index].id
+    let memID = member[index].id;
     for (let index2 in newMemId) {
       if (memID == newMemId[index2]) {
-        newMemNM[index] = member[index].mem_name
+        newMemNM[index] = member[index].mem_name;
       }
     }
   }
