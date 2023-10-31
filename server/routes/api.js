@@ -295,7 +295,7 @@ router.post("/editMemberByMemberId", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
 
 function format(date) {
   if (!(date instanceof Date)) {
