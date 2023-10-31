@@ -264,7 +264,7 @@ router.delete("/members/:id", async (req, res) => {
 router.post("/addMemberByGroupId", async (req, res) => {
   const { group_id, paid, mem_name } = req.body;
   try {
-    let sql = `INSERT INTO member_infm (mem_name, paid, group_id, trp_id) VALUES('${mem_name}', ${paid}, ${group_id}, 1);`
+    let sql = `INSERT INTO member_infm (mem_name, paid, group_id) VALUES('${mem_name}', ${paid}, ${group_id});`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
