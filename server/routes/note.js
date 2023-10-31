@@ -182,7 +182,6 @@ router.get("/deleteMember", async (req, res) => {
       }
     })
   } catch (error) {
-    console.error("error", error);
     res.status(500).json({ error: error.message });
   }
   
