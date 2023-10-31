@@ -70,6 +70,10 @@ export default function EditTripMem({
       trp_name: trpNametoEdit,
       mem_id: JSON.stringify(memberID),
     });
+    setTrpIDtoEdit([])
+    setTrpNametoEdit([])
+    setMemberID([])
+    setMemberName([])
   };
 
   React.useEffect(() => {

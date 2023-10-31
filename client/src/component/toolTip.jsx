@@ -53,6 +53,7 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
       mem_name: "",
       paid: "",
     });
+    setValue("")
     toggleOpen(false);
   };
 
@@ -63,6 +64,8 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
 
   const handleEdit = () => {
     triggerEditMember({ user_id: value.id, paid: money });
+    setValue("")
+    setMoney("")
   };
 
   const handleSubmit = (event) => {

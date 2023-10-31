@@ -40,6 +40,7 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
   const handleDelete = () => {
     if (deleteName) {
       triggerDeleteMember(deleteName);
+      setDeleteName("")
     }
   };
 

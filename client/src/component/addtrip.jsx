@@ -58,6 +58,7 @@ export default function AddTrip({
       trp_name: "",
       spended: "",
     });
+    setValue("")
     toggleOpen(false);
   };
 
@@ -72,6 +73,8 @@ export default function AddTrip({
       spend: parseFloat(money),
       group_id,
     });
+    setValue("")
+    setMoney("")
   };
 
   const handleSubmit = (event) => {
@@ -88,6 +91,11 @@ export default function AddTrip({
       discription: "",
       group_id,
     });
+    setDialogValue({
+      ...dialogValue,
+      trp_name: "",
+      spended: "",
+    })
     handleClose();
   };
 
