@@ -1,6 +1,8 @@
-const express = require('express');
+import pg from "pg"
+import express from "express"
+
 const router = express.Router();
-const Pool = require("pg").Pool
+const Pool = pg.Pool
 const pool = new Pool({
   user : "kjjelxjh",
   host : "chunee.db.elephantsql.com",

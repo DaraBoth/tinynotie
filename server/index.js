@@ -1,12 +1,13 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const bodyParser = require('body-parser');
-const authRoutes = require('./routes/auth.js');
-const noteRoutes = require('./routes/note.js');
-const apiRoutes = require('./routes/api.js');
+import express from "express" 
+import dotenv from "dotenv"
+import cors from "cors"
+import helmet from "helmet"
+import morgan from "morgan"
+import bodyParser from "body-parser"
+import authRoutes from "./routes/auth.js"
+import noteRoutes from "./routes/note.js"
+import apiRoutes from "./routes/api.js"
+
 const app = express();
 
 /* CONFIGURATIONS */
