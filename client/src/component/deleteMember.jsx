@@ -114,7 +114,7 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
               sx={{ gridColumn: "span 4" }}
               onClick={handleDelete}
               type="button"
-              variant="outlined"
+              variant="contained"
               color="error"
             >
               Delete member&nbsp;

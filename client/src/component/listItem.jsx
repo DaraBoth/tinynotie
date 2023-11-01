@@ -36,7 +36,7 @@ export default function AlignItemsList({ item }) {
                                 primary={item.grp_name}
                                 secondary={
                                     <React.Fragment>
-                                        {item.discription}
+                                        {item.description}
                                     </React.Fragment>
                                 }
                             />

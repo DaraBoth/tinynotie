@@ -172,8 +172,8 @@ export default function Home({ user,setUser, secret, setGroupInfo }) {
                                                     variant="body2"
                                                     color="text.primary"
                                                 >
-                                                    Discription : <span style={{ color: colors.grey[300] }} >
-                                                        {item.discription}
+                                                    description : <span style={{ color: colors.grey[300] }} >
+                                                        {item.description}
                                                     </span>
                                                 </Typography>
                                                 <Typography

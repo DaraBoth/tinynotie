@@ -58,7 +58,7 @@ export default function AddTrip({
       trp_name: "",
       spended: "",
     });
-    setValue("")
+    setValue("");
     toggleOpen(false);
   };
 
@@ -68,13 +68,15 @@ export default function AddTrip({
   });
 
   const handleEdit = () => {
-    triggerEditTrip({
-      trp_name: value.trp_name,
-      spend: parseFloat(money),
-      group_id,
-    });
-    setValue("")
-    setMoney(0)
+    if (!!value.trp_name && null != parseFloat(money)) {
+      triggerEditTrip({
+        trp_name: value.trp_name,
+        spend: parseFloat(money),
+        group_id,
+      });
+      setValue();
+      setMoney("");
+    }
   };
 
   const handleSubmit = (event) => {
@@ -88,14 +90,14 @@ export default function AddTrip({
       spend: dialogValue.spended,
       admn_id: secret,
       mem_id: JSON.stringify(convertMemKeyToArray(member, "id")),
-      discription: "",
+      description: "",
       group_id,
     });
     setDialogValue({
       ...dialogValue,
       trp_name: "",
       spended: "",
-    })
+    });
     handleClose();
   };
 
@@ -205,11 +207,13 @@ export default function AddTrip({
 
             <TextField
               variant="standard"
-              type="number"
+              type="text"
               label="$ Spend"
               color="info"
               value={money}
               onChange={(e) => {
+                e.target.value = e.target.value.trim();
+                if (isNaN(Number(e.target.value)) && (e.target.value != ".")) return;
                 setMoney(e.target.value);
               }}
             />
@@ -218,7 +222,7 @@ export default function AddTrip({
               onClick={handleEdit}
               type="button"
               color="info"
-              variant="outlined"
+              variant="contained"
             >
               Edit Event's Spend&nbsp;
               <SendIcon />

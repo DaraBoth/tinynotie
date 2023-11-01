@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { tokens } from "../theme";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { rspWidth } from "../responsive";
 const filter = createFilterOptions();
 
@@ -70,10 +70,12 @@ export default function EditTripMem({
       trp_name: trpNametoEdit,
       mem_id: JSON.stringify(memberID),
     });
-    setTrpIDtoEdit([])
-    setTrpNametoEdit([])
-    setMemberID([])
-    setMemberName([])
+    setisCheckedMember([])
+    setIsDisable(true)
+    setTrpIDtoEdit([]);
+    setTrpNametoEdit([]);
+    setMemberID([]);
+    setMemberName([]);
   };
 
   React.useEffect(() => {
@@ -114,10 +116,7 @@ export default function EditTripMem({
             aria-controls="panel1bh-content"
             id="panel1bh-header"
           >
-            <Typography
-              fontSize={handleFont}
-              sx={{ flexShrink: 0 }}
-            >
+            <Typography fontSize={handleFont} sx={{ flexShrink: 0 }}>
               Edit Event's member
             </Typography>
           </AccordionSummary>
@@ -158,6 +157,9 @@ export default function EditTripMem({
                 value={memberName}
                 onChange={handleChangeMemName}
                 renderValue={(selected) => {
+                  selected.map((newSelect) => !!newSelect ?? newSelect);
+                  console.log("memberName = ", memberName);
+                  console.log("selected = ", selected);
                   return selected.join(",");
                 }}
               >
@@ -174,7 +176,7 @@ export default function EditTripMem({
               onClick={handleEdit}
               type="button"
               color="info"
-              variant="outlined"
+              variant="contained"
             >
               Edit Event's member&nbsp;
               <SendIcon />
@@ -212,7 +214,7 @@ function getMemberName(trp_name, trips, member) {
     let memID = member[index].id;
     for (let index2 in newMemId) {
       if (memID == newMemId[index2]) {
-        newMemNM[index] = member[index].mem_name;
+        newMemNM[index2] = member[index].mem_name; // add only the ID is the same 
       }
     }
   }

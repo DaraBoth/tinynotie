@@ -200,7 +200,7 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
               onClick={handleEdit}
               type="button"
               color="info"
-              variant="outlined"
+              variant="contained"
             >
               Edit Member's paid&nbsp;
               <SendIcon />

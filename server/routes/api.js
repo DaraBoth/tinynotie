@@ -14,7 +14,7 @@ const pool = new Pool({
 router.get("/getGroupByUserId", async (req, res) => {
   const { user_id } = req.query;
   try {
-    let sql = `SELECT id, grp_name, status, discription, admin_id, create_date FROM grp_infm where admin_id=${Number(user_id)} order by id;`
+    let sql = `SELECT id, grp_name, status, description, admin_id, create_date FROM grp_infm where admin_id=${Number(user_id)} order by id;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
@@ -30,7 +30,7 @@ router.get("/getGroupByUserId", async (req, res) => {
 });
 
 router.post("/addGroupByUserId", async (req, res) => {
-  const { user_id, grp_name, status = 1, discription, member } = req.body;
+  const { user_id, grp_name, status = 1, description, member } = req.body;
   const create_date = format(new Date());
   const newMember = JSON.parse(member);
   try {
@@ -42,10 +42,10 @@ router.post("/addGroupByUserId", async (req, res) => {
     sql += `  INSERT INTO grp_infm (`;
     sql += `    grp_name,`;
     sql += `    status,`;
-    sql += `    discription,`;
+    sql += `    description,`;
     sql += `    admin_id,`;
     sql += `    create_date`;
-    sql += `  ) VALUES('${grp_name}', ${status}, '${discription}', ${user_id}, '${create_date}') RETURNING id INTO group_id; `;
+    sql += `  ) VALUES('${grp_name}', ${status}, '${description}', ${user_id}, '${create_date}') RETURNING id INTO group_id; `;
     for (let i in newMember) {
       sql += `INSERT INTO member_infm (`
       sql += `    mem_name,`
@@ -70,10 +70,10 @@ router.post("/addGroupByUserId", async (req, res) => {
 });
 
 router.post("/addTripByGroupId", async (req, res) => {
-  const { trp_name, spend, mem_id, discription, group_id } = req.body;
+  const { trp_name, spend, mem_id, description, group_id } = req.body;
   const create_date = format(new Date());
   try {
-    let sql = `SELECT id, trp_name, spend, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}' and trp_name='${trp_name}';`
+    let sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date FROM trp_infm where group_id='${group_id}' and trp_name='${trp_name}';`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
@@ -81,8 +81,8 @@ router.post("/addTripByGroupId", async (req, res) => {
       }
       if (!results.rows.length > 0) {
         let sql2 = `INSERT INTO trp_infm
-        (trp_name, spend, mem_id, discription, group_id, create_date)
-        VALUES('${trp_name}', ${spend}, '${mem_id}', '${discription}', ${group_id}, '${create_date}');`
+        (trp_name, spend, mem_id, description, group_id, create_date)
+        VALUES('${trp_name}', ${spend}, '${mem_id}', '${description}', ${group_id}, '${create_date}');`
         pool.query(sql2.toString(), (error, results) => {
           if (error) {
             res.status(500).json({ status: false, error: error.message });
@@ -174,7 +174,7 @@ router.post("/editTripByGroupId", async (req, res) => {
 
 router.get("/getAllTrip", async (req, res) => {
   try {
-    let sql = `SELECT id, trp_name, spend, mem_id, discription, group_id, create_date
+    let sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date
     FROM trp_infm;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
@@ -192,7 +192,7 @@ router.get("/getAllTrip", async (req, res) => {
 router.get("/getTripByGroupId", async (req, res) => {
   const { group_id } = req.query;
   try {
-    let sql = `SELECT id, trp_name, spend, mem_id, discription, group_id, create_date FROM trp_infm where group_id='${group_id}' order by id;`
+    let sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date FROM trp_infm where group_id='${group_id}' order by id;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });

@@ -26,11 +26,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
     }, [resultMember.data])
 
     const handleFormSubmit = debounce(async (values) => {
-        const { grp_name, discription } = values;
+        const { grp_name, description } = values;
         const members = newMember;
-        if (grp_name && discription) {
+        if (grp_name && description) {
             setnewGroupName(grp_name);
-            triggerCreateGroup({ user_id: secret, grp_name, discription, status: 1, member: JSON.stringify(members) })
+            triggerCreateGroup({ user_id: secret, grp_name, description, status: 1, member: JSON.stringify(members) })
         }
     }, 500);
 
@@ -83,12 +83,12 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                                 />
                                 <TextField
                                     id="standard-multiline-static"
-                                    label="Discription"
+                                    label="Description"
                                     color="info"
                                     multiline
                                     onChange={handleChange}
-                                    value={values.discription}
-                                    name="discription"
+                                    value={values.description}
+                                    name="description"
                                     variant="standard"
                                     sx={{ gridColumn: "span 2" }}
                                 />
@@ -157,11 +157,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
 
 const checkoutSchema = yup.object().shape({
     grp_name: yup.string().required("required"),
-    discription: yup.string()
+    description: yup.string()
 });
 const initialValues = {
     grp_name: "",
-    discription: "",
+    description: "",
 };
 
 function debounce(func, timeout = 300) {
