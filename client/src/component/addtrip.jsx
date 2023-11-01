@@ -74,7 +74,7 @@ export default function AddTrip({
       group_id,
     });
     setValue("")
-    setMoney("")
+    setMoney(0)
   };
 
   const handleSubmit = (event) => {
