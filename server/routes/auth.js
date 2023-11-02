@@ -1,14 +1,18 @@
 import pg from "pg"
 import express from "express"
-
+let { PGHOST, PGDATABASE, PGUSER, PGPASSWORD, ENDPOINT_ID } = process.env;
 const router = express.Router();
 const Pool = pg.Pool
 const pool = new Pool({
-  user : "DaraBoth",
-  host : "ep-fragrant-resonance-04414960-pooler.ap-southeast-1.aws.neon.tech",
-  database : "noteappdb",
-  password : "dL3EGeX2Qrwq",
-  port : 5432
+  host: PGHOST,
+  database: PGDATABASE,
+  username: PGUSER,
+  password: PGPASSWORD,
+  port: 5432,
+  ssl: 'require',
+  connection: {
+    options: `project=${ENDPOINT_ID}`,
+  },
 })
 
 router.post("/login", async (req, res) => {

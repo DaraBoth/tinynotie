@@ -1,14 +1,18 @@
 import pg from "pg"
 import express from "express"
-
+let { PGHOST, PGDATABASE, PGUSER, PGPASSWORD, ENDPOINT_ID } = process.env;
 const router = express.Router();
 const Pool = pg.Pool
 const pool = new Pool({
-  user : "DaraBoth",
-  host : "ep-fragrant-resonance-04414960-pooler.ap-southeast-1.aws.neon.tech",
-  database : "noteappdb",
-  password : "dL3EGeX2Qrwq",
-  port : 5432
+  host: PGHOST,
+  database: PGDATABASE,
+  username: PGUSER,
+  password: PGPASSWORD,
+  port: 5432,
+  ssl: 'require',
+  connection: {
+    options: `project=${ENDPOINT_ID}`,
+  },
 })
 
 router.get("/getAllMembers", async (req, res) => {
@@ -23,6 +27,7 @@ router.get("/getAllMembers", async (req, res) => {
       let newData = JSON.parse(results.rows[0].data)
       res.send(newData);
     })
+    pool.end()
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ error: error.message });
