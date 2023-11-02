@@ -4,10 +4,10 @@ import express from "express"
 const router = express.Router();
 const Pool = pg.Pool
 const pool = new Pool({
-  user : "kjjelxjh",
-  host : "chunee.db.elephantsql.com",
-  database : "kjjelxjh",
-  password : "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
+  user : "DaraBoth",
+  host : "ep-fragrant-resonance-04414960.ap-southeast-1.aws.neon.tech",
+  database : "noteappdb",
+  password : "dL3EGeX2Qrwq",
   port : 5432
 })
 
