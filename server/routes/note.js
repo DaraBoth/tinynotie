@@ -5,7 +5,7 @@ const router = express.Router();
 const Pool = pg.Pool
 const pool = new Pool({
   user : "DaraBoth",
-  host : "ep-fragrant-resonance-04414960.ap-southeast-1.aws.neon.tech",
+  host : "ep-fragrant-resonance-04414960-pooler.ap-southeast-1.aws.neon.tech",
   database : "noteappdb",
   password : "dL3EGeX2Qrwq",
   port : 5432
@@ -14,7 +14,7 @@ const pool = new Pool({
 router.get("/getAllMembers", async (req, res) => {
   const { user_id } = req.query;
   try {
-    let sql = `SELECT "data" FROM public.members where user_id='${user_id}';`
+    let sql = `SELECT "data" FROM members where user_id='${user_id}';`
     pool.query(sql.toString(),(error,results)=>{
       if(error) {
         res.status(500).json({ error: error.message });
@@ -33,7 +33,7 @@ router.get("/getAllMembers", async (req, res) => {
 router.get("/getJoinedMembers", async (req, res) => {
   const { user_id } = req.query;
   try {
-    let sql = `SELECT "data" FROM public."joinedMembers" where user_id='${user_id}';`
+    let sql = `SELECT "data" FROM public"joinedMembers" where user_id='${user_id}';`
     pool.query(sql.toString(),(error,results)=>{
       if(error) {
         res.status(500).json({ error: error.message });
@@ -52,7 +52,7 @@ router.get("/getJoinedMembers", async (req, res) => {
 router.get("/getTripsByUserId", async (req, res) => {
   const { user_id } = req.query;
   try {
-    let sql = `SELECT "data" FROM public.trips where user_id='${user_id}';`
+    let sql = `SELECT "data" FROM trips where user_id='${user_id}';`
     pool.query(sql.toString(),(error,results)=>{
       if(error) {
         res.status(500).json({ error: error.message });
@@ -76,7 +76,7 @@ router.get("/addMember", async (req, res) => {
       res.status(200).json({status:false,message:'Error name = '+name+' money = '+money})
       return;
     }
-    let sql = `SELECT "data" FROM public.members where user_id='${user_id}';`
+    let sql = `SELECT "data" FROM members where user_id='${user_id}';`
       pool.query(sql.toString(),(error,results)=>{
         if(error) {
           res.status(500).json({ error: error.message });
@@ -91,7 +91,7 @@ router.get("/addMember", async (req, res) => {
       }
       newData[newData.length] = {name , money:Number(money)};
       let text=JSON.stringify(newData);
-      let sql2 = `UPDATE public.members SET "data"='${text}' where "user_id" = '${user_id}';`;
+      let sql2 = `UPDATE members SET "data"='${text}' where "user_id" = '${user_id}';`;
       pool.query(sql2.toString(),(error,results)=>{
         if(error) {
           res.status(500).json({ error: error.message });
@@ -115,7 +115,7 @@ router.get("/editMember", async (req, res) => {
       res.status(200).json({status:false,message:'Error name = '+editName+' money = '+editMoney})
       return;
     }
-    let sql = `SELECT "data" FROM public.members where user_id='${user_id}';`
+    let sql = `SELECT "data" FROM members where user_id='${user_id}';`
       pool.query(sql.toString(),(error,results)=>{
         if(error) {
           res.status(500).json({ error: error.message });
@@ -131,7 +131,7 @@ router.get("/editMember", async (req, res) => {
       }
       if(deleted){
         let text=JSON.stringify(newData);
-        let sql2 = `UPDATE public.members SET "data"='${text}' where "user_id" = '${user_id}';`;
+        let sql2 = `UPDATE members SET "data"='${text}' where "user_id" = '${user_id}';`;
         pool.query(sql2.toString(),(error,results)=>{
           if(error) {
             res.status(500).json({ error: error.message });
@@ -153,7 +153,7 @@ router.get("/editMember", async (req, res) => {
 router.get("/deleteMember", async (req, res) => {
   const { user_id , name } = req.query;
   try {
-    let sql = `SELECT "data" FROM public.members where user_id='${user_id}';`
+    let sql = `SELECT "data" FROM members where user_id='${user_id}';`
       pool.query(sql.toString(),(error,results)=>{
         if(error) {
           res.status(500).json({ error: error.message });
@@ -169,7 +169,7 @@ router.get("/deleteMember", async (req, res) => {
       }
       if(deleted){
         let text=JSON.stringify(newData);
-        let sql2 = `UPDATE public.members SET "data"='${text}' where "user_id" = '${user_id}';`;
+        let sql2 = `UPDATE members SET "data"='${text}' where "user_id" = '${user_id}';`;
         pool.query(sql2.toString(),(error,results)=>{
           if(error) {
             res.status(500).json({ error: error.message });

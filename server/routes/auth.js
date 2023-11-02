@@ -5,7 +5,7 @@ const router = express.Router();
 const Pool = pg.Pool
 const pool = new Pool({
   user : "DaraBoth",
-  host : "ep-fragrant-resonance-04414960.ap-southeast-1.aws.neon.tech",
+  host : "ep-fragrant-resonance-04414960-pooler.ap-southeast-1.aws.neon.tech",
   database : "noteappdb",
   password : "dL3EGeX2Qrwq",
   port : 5432
