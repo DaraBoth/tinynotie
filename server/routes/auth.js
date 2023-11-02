@@ -1,18 +1,14 @@
 import pg from "pg"
 import express from "express"
-let { PGHOST, PGDATABASE, PGUSER, PGPASSWORD, ENDPOINT_ID } = process.env;
+
 const router = express.Router();
 const Pool = pg.Pool
 const pool = new Pool({
-  host: PGHOST,
-  database: PGDATABASE,
-  username: PGUSER,
-  password: PGPASSWORD,
-  port: 5432,
-  ssl: 'require',
-  connection: {
-    options: `project=${ENDPOINT_ID}`,
-  },
+  user : "kjjelxjh",
+  host : "chunee.db.elephantsql.com",
+  database : "kjjelxjh",
+  password : "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
+  port : 5432
 })
 
 router.post("/login", async (req, res) => {
