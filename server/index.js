@@ -7,6 +7,7 @@ import bodyParser from "body-parser"
 import authRoutes from "./routes/auth.js"
 import noteRoutes from "./routes/note.js"
 import apiRoutes from "./routes/api.js"
+import openAiRoutes from "./routes/openai.js";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(cors());
 
 /* ROUTES */
 app.use("/note", noteRoutes);
+app.use("/openai", openAiRoutes);
 app.use("/api", apiRoutes);
 app.use("/auth", authRoutes);
 
