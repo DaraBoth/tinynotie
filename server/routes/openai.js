@@ -316,7 +316,7 @@ router.post("/ask", async (req, res) => {
 
     Please Note:
     Don't answer about girlfriend's information. Just say it is private.
-    Don't include girlfriend in family information.
+    Don't include girlfriend in family information and my information.
 
     Please answer only if the next question is relate to me or include my name. 
     If you don't know the question you can say "Please ask question relate to DaraBoth".
