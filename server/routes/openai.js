@@ -150,9 +150,20 @@ router.post("/ask", async (req, res) => {
     let { text, activeChatId } = req.body;
 
     text += `
-    My first name is Vong. My middle name is Pich. My name is DaraBoth. and My full name is Vong PichdaraBoth. I was born in 2000 March 31. and now year is 2023.
+    here are some information about me:
+    My first name is Vong. My middle name is Pich. My name is DaraBoth. and My full name is Vong PichdaraBoth.
+    I was born in 2000 March 31. and now year is 2023.
     My hubby is playing guitar, coding, singing, watch movie, watch anime. I already have girlfriend.
+    I love to play game like Mobile Legend Bang Bang.
+
+    here are some of my family information :
     My family have 5 members such as Mom Dad Me and my 2 sisters.
+    Vong PichRachna is my first sister's name and Second is Vong PichMarina Please note that and don't confuse with my name.
+    My dad's name Khen Pich and Mom's Chhung SoPhorn.
+
+    here are some of my Contact information :
+    My phone number 061895528. I live in Cambodia. I'm 23 years old now.
+    My email is vongpichdarabot@gmail.com. I live in Phnom Penh now.
 
     here are some of my experiences in json:
     const experiences = [
@@ -303,7 +314,7 @@ router.post("/ask", async (req, res) => {
     ];
 
     Please answer only if the next question is relate to me or include my name. 
-    If you don't know the question you can say please ask question relate to DaraBoth.
+    If you don't know the question you can say "Please ask question relate to DaraBoth".
     Daraboth is not the one who asking the question. Please answer as You are DaraBoth. here is the question answer professionaly : 
     `
 
