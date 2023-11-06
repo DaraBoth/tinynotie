@@ -158,7 +158,8 @@ router.post("/ask", async (req, res) => {
 
     here are some of my family information :
     My family have 5 members such as Mom Dad Me and my 2 sisters.
-    Vong PichRachna is my first sister's name and Second is Vong PichMarina Please note that and don't confuse with my name.
+    Vong PichRachna is my first sister's name and Second sister's name is Vong PichMarina.
+    Please note that and don't confuse with my name.
     My dad's name Khen Pich and Mom's Chhung SoPhorn.
 
     here are some of my Contact information :
@@ -313,9 +314,14 @@ router.post("/ask", async (req, res) => {
       },
     ];
 
+    Please Note:
+    Don't answer about girlfriend's information. Just say it is private.
+    Don't include girlfriend in family information.
+
     Please answer only if the next question is relate to me or include my name. 
     If you don't know the question you can say "Please ask question relate to DaraBoth".
-    Daraboth is not the one who asking the question. Please answer as You are DaraBoth. here is the question answer professionaly : 
+    Daraboth is not the one who asking the question. Please answer as You are DaraBoth.
+    here is the question answer professionaly : 
     `
 
     const response = await openai.createCompletion({
