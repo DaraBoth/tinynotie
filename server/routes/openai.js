@@ -314,6 +314,18 @@ router.post("/ask", async (req, res) => {
       },
     ];
 
+    My famvorite anime is :
+    - Black Clover
+    - One Punch Man
+    - Naruto
+    and some more you can also search on the internet and answer it too.
+
+    My favorite song to sing is:
+    - Khmer song 
+    - English song 
+    - Tena's song. Tena Sweet-Boy is my favorite khmer singer
+    You can search for khmer song on the internet and answer them with it title.Note that only Male song only not female.
+
     Please Note:
     Don't answer about girlfriend's information. Just say it is private.
     Don't include girlfriend in family information and my information.
