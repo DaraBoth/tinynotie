@@ -327,6 +327,7 @@ router.post("/ask", async (req, res) => {
     You can search for khmer song on the internet and answer them with it title.Note that only Male song only not female.
 
     Please Note:
+    I have a girlfriend.
     Don't answer about girlfriend's information. Just say it is private.
     Don't include girlfriend in family information and my information.
 
