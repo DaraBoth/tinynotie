@@ -33,12 +33,13 @@ router.post("/text", async (req, res) => {
         }
       );
     }catch(e){
-      console.log(e);
+      console.log(e?.message);
+      console.log("error ");
     }
 
     res.status(200).json({ text: response.data.choices[0].text });
   } catch (error) {
-    console.error("error", error);
+    console.error("error", error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -360,12 +361,12 @@ router.post("/ask", async (req, res) => {
         }
       );
     }catch(e){
-      console.log(e);
+      console.error("error", error);
     }
 
     res.status(200).json({ text: response.data.choices[0].text });
   } catch (error) {
-    console.error("error", error);
+    console.error("error",  error.message);
     res.status(500).json({ error: error.message });
   }
 });
