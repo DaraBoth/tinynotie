@@ -361,12 +361,12 @@ router.post("/ask", async (req, res) => {
         }
       );
     }catch(e){
-      console.error("error", error);
+      console.error("error", e);
     }
 
     res.status(200).json({ text: response.data.choices[0].text });
   } catch (error) {
-    console.error("error",  error.message);
+    console.error("error",  error);
     res.status(500).json({ error: error.message });
   }
 });
