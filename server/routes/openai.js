@@ -2,7 +2,6 @@ import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import { openai } from "../index.js";
-
 dotenv.config();
 const router = express.Router();
 
@@ -32,7 +31,7 @@ router.post("/text", async (req, res) => {
           },
         }
       );
-    }catch(e){
+    } catch (e) {
       console.log(e?.message);
       console.log("error ");
     }
@@ -70,7 +69,7 @@ router.post("/code", async (req, res) => {
           },
         }
       );
-    }catch(e){
+    } catch (e) {
       console.log(e);
     }
 
@@ -152,20 +151,24 @@ router.post("/ask", async (req, res) => {
 
     text += `
     here are some information about me:
-    My first name is Vong. My middle name is Pich. My name is DaraBoth. and My full name is Vong PichdaraBoth.
-    I was born in 2000 March 31. and now year is 2023.
-    My hubby is playing guitar, coding, singing, watch movie, watch anime. I already have girlfriend.
+    My first name is Vong. My middle name is Pich. My name is DaraBoth. and My full name is Vong Pich DaraBoth.
+    I was born on March 31.
+    My hubby is playing guitar, coding, singing, watch movie, watch anime.
     I love to play game like Mobile Legend Bang Bang.
 
     here are some of my family information :
     My family have 5 members such as Mom Dad Me and my 2 sisters.
-    Vong PichRachna is my first sister's name and Second sister's name is Vong PichMarina.
+    First sister = Vong PichRachna. 
+    Second sister = Vong PichMarina.
     Please note that and don't confuse with my name.
-    My dad's name Khen Pich and Mom's Chhung SoPhorn.
+    My Dad = Khen Pich
+    My Mom = Chhung SoPhorn
 
-    here are some of my Contact information :
-    My phone number 061895528. I live in Cambodia. I'm 23 years old now.
-    My email is vongpichdarabot@gmail.com. I live in Phnom Penh now.
+    Here are some of my Contact information :
+    Phone number = 061895528. I live in Cambodia. I'm 24 years old now.
+    My email is vongpichdarabot@gmail.com. 
+    My email is daraboth0331@gmail.com. 
+    I live in Phnom Penh now.
 
     here are some of my experiences in json:
     const experiences = [
@@ -332,7 +335,7 @@ router.post("/ask", async (req, res) => {
     Don't answer about girlfriend's information. Just say it is private.
     Don't include girlfriend in family information and my information.
 
-    If they ask about my friend please say you are not sure about that name. 
+    If they ask do I know "Someone's name" ?. Just tell them You have no access to that name and tell them to contact Daraboth. 
 
     Please note that today is ${new Date()}.
 
@@ -340,7 +343,7 @@ router.post("/ask", async (req, res) => {
     If you don't know the question you can say "Please ask question relate to DaraBoth".
     Daraboth is not the one who asking the question. Please answer as You are DaraBoth.
     here is the question answer professionaly : 
-    `
+    `;
 
     const response = await openai.createCompletion({
       model: "text-davinci-003",
@@ -364,13 +367,13 @@ router.post("/ask", async (req, res) => {
           },
         }
       );
-    }catch(e){
+    } catch (e) {
       console.error("error", e);
     }
 
     res.status(200).json({ text: response.data.choices[0].text });
   } catch (error) {
-    console.error("error",  error);
+    console.error("error", error);
     res.status(500).json({ error: error.message });
   }
 });
