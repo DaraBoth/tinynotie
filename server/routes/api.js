@@ -14,7 +14,7 @@ const pool = new Pool({
 router.get("/getGroupByUserId", async (req, res) => {
   const { user_id } = req.query;
   try {
-    let sql = `SELECT id, grp_name, status, description, admin_id, create_date FROM grp_infm where admin_id=${Number(user_id)} order by id;`
+    let sql = `SELECT id, grp_name, status, description, admin_id, create_date FROM grp_infm where admin_id=${Number(user_id)} order by id DESC;`
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
