@@ -346,7 +346,7 @@ router.post("/ask", async (req, res) => {
     `;
 
     const response = await openai.createCompletion({
-      model: "text-davinci-003",
+      model: "gpt-3.5-turbo-instruct",
       prompt: text,
       temperature: 0.5,
       max_tokens: 2048,
