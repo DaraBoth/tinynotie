@@ -346,7 +346,7 @@ router.post("/ask", async (req, res) => {
     `;
 
     const response = await openai.createCompletion({
-      model: "gpt-3.5-turbo-instruct",
+      model: "babbage-002",
       prompt: text,
       temperature: 0.5,
       max_tokens: 2048,
