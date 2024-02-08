@@ -165,7 +165,7 @@ router.post("/ask", async (req, res) => {
     My Mom = Chhung SoPhorn
 
     Here are some of my Contact information :
-    Phone number = 061895528. I live in Cambodia. I'm 24 years old now.
+    Phone number = 061895528. I live in Cambodia.
     My email is vongpichdarabot@gmail.com. 
     My email is daraboth0331@gmail.com. 
     I live in Phnom Penh now.
@@ -346,7 +346,7 @@ router.post("/ask", async (req, res) => {
     `;
 
     const response = await openai.createCompletion({
-      model: "babbage-002",
+      model: "gpt-3.5-turbo-instruct",
       prompt: text,
       temperature: 0.5,
       max_tokens: 2048,
