@@ -1,9 +1,16 @@
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-import { openai } from "../index.js";
+// import { openai } from "../index.js";
+import { Configuration, OpenAIApi } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import emailjs, { EmailJSResponseStatus } from "@emailjs/nodejs";
+
+/* OPEN AI CONFIGURATION */
+const configuration = new Configuration({
+  apiKey: process.env.OPEN_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
 dotenv.config();
 const router = express.Router();
