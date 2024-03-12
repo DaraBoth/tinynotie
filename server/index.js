@@ -10,7 +10,6 @@ import noteRoutes from "./routes/note.js"
 import apiRoutes from "./routes/api.js"
 import openAiRoutes from "./routes/openai.js";
 
-
 const app = express();
 
 /* CONFIGURATIONS */
