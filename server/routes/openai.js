@@ -21,7 +21,11 @@ router.post("/text", async (req, res) => {
     
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const result = await model.generateContent(text);
+    const result = await model.generateContent(`
+    Note: 
+    Please answer with html and using tailwind class to style it.
+    ${text}
+    `);
     const response = await result.response;
     // sendEmail(text, response.text());
 
@@ -222,17 +226,6 @@ router.post("/ask", async (req, res) => {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     sendEmail(text, response.text());
-
-    // const response = await openai.createCompletion({
-    //   model: "gpt-3.5-turbo-instruct",
-    //   prompt: text,
-    //   temperature: 0.5,
-    //   max_tokens: 2048,
-    //   top_p: 1,
-    //   frequency_penalty: 0.5,
-    //   presence_penalty: 0,
-    // });
-
     try {
       await axios.post(
         `https://api.chatengine.io/chats/${activeChatId}/messages/`,
