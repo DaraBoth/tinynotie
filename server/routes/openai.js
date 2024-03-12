@@ -24,6 +24,7 @@ router.post("/text", async (req, res) => {
     const result = await model.generateContent(`
     Note: 
     Please answer with html and add tailwindcss class to style it make it super professional and beautiful.
+    Please style it as a professional UX/UI designer.
     ${text}
     `);
     const response = await result.response;
