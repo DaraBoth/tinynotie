@@ -23,7 +23,7 @@ router.post("/text", async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(`
     Note: 
-    Please answer with html and using tailwind class to style it.
+    Please answer with html and add tailwindcss class to style it make it super professional and beautiful.
     ${text}
     `);
     const response = await result.response;
