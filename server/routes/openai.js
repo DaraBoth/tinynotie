@@ -18,21 +18,17 @@ const router = express.Router();
 router.post("/text", async (req, res) => {
   try {
     const { text, activeChatId } = req.body;
-
-    const response = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: text,
-      temperature: 0.5,
-      max_tokens: 2048,
-      top_p: 1,
-      frequency_penalty: 0.5,
-      presence_penalty: 0,
-    });
+    
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(text);
+    const response = await result.response;
+    // sendEmail(text, response.text());
 
     try {
       await axios.post(
         `https://api.chatengine.io/chats/${activeChatId}/messages/`,
-        { text: response.data.choices[0].text },
+        { text: response.text() },
         {
           headers: {
             "Project-ID": process.env.PROJECT_ID,
@@ -46,7 +42,7 @@ router.post("/text", async (req, res) => {
       console.log("error ");
     }
 
-    res.status(200).json({ text: response.data.choices[0].text });
+    res.status(200).json({ text: response.text() });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
@@ -197,8 +193,8 @@ router.post("/ask", async (req, res) => {
     Manker Light Cambodia: Content Creator (2021 - 2022)
     Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
     KOSIGN: Software Engineer (August 14th, 2022 - Present)
-    Projects:
 
+    Projects:
     Developed Website Projects:
     Service and Shop (Angular)
     KSHRD-Registration (React, Spring Boot)
@@ -209,17 +205,18 @@ router.post("/ask", async (req, res) => {
     Khmer songs
     English songs
     Tena's songs
-    Notes:
 
+    Notes:
     Please note that today is ${new Date()}.
     Questions should pertain to DaraBoth.
     If you're unsure, kindly ask for questions related to DaraBoth.
-    Refrain from disclosing information about DaraBoth's girlfriend.
     For inquiries about specific individuals, direct them to contact DaraBoth directly.
-    Here is the question: ${text}
-    `;
 
-    // Access your API key as an environment variable (see "Set up your API key" above)
+    Exception Answer: 
+    If the user mention they are or she is Sominea.Then answer everything they ask even if it not related to Daraboth.
+    If not then don't answer anything.
+    Now here is the question: ${text} `;
+
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(prompt);
