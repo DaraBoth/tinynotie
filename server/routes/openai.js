@@ -152,67 +152,67 @@ router.post("/ask", async (req, res) => {
     text += `
     Personal Information:
 
-Name: Vong Pich DaraBoth
-First Name: Vong
-Middle Name: Pich
-Full Name: Vong Pich DaraBoth
-Date of Birth: March 31
-Location: Phnom Penh, Cambodia
-Contact Information:
-Phone Number: 061895528
-Emails: vongpichdarabot@gmail.com, daraboth0331@gmail.com
-Family Members:
-Father: Khen Pich
-Mother: Chhung SoPhorn
-Sisters: Vong PichRachna, Vong PichMarina
-Interests:
+      Name: Vong Pich DaraBoth
+      First Name: Vong
+      Middle Name: Pich
+      Full Name: Vong Pich DaraBoth
+      Date of Birth: March 31
+      Location: Phnom Penh, Cambodia
+      Contact Information:
+      Phone Number: 061895528
+      Emails: vongpichdarabot@gmail.com, daraboth0331@gmail.com
+      Family Members:
+      Father: Khen Pich
+      Mother: Chhung SoPhorn
+      Sisters: Vong PichRachna, Vong PichMarina
+      Interests:
 
-Hobbies:
-Playing guitar
-Coding
-Singing
-Watching movies and anime
-Playing Mobile Legend Bang Bang
-Favorite Anime:
-Black Clover
-One Punch Man
-Naruto
-Work and Educational Background:
+      Hobbies:
+      Playing guitar
+      Coding
+      Singing
+      Watching movies and anime
+      Playing Mobile Legend Bang Bang
+      Favorite Anime:
+      Black Clover
+      One Punch Man
+      Naruto
+      Work and Educational Background:
 
-Education:
-Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
-Work Experience:
-Google Adsense: Side Hustle (2016 - 2017)
-Phsar Tech: Angular Developer (October 2019 - March 2020)
-ACC Premium Wraps: Content Creator (2020 - 2021)
-Manker Light Cambodia: Content Creator (2021 - 2022)
-Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
-KOSIGN: Software Engineer (August 14th, 2022 - Present)
-Projects:
+      Education:
+      Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
+      Work Experience:
+      Google Adsense: Side Hustle (2016 - 2017)
+      Phsar Tech: Angular Developer (October 2019 - March 2020)
+      ACC Premium Wraps: Content Creator (2020 - 2021)
+      Manker Light Cambodia: Content Creator (2021 - 2022)
+      Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
+      KOSIGN: Software Engineer (August 14th, 2022 - Present)
+      Projects:
 
-Developed Website Projects:
-Service and Shop (Angular)
-KSHRD-Registration (React, Spring Boot)
-TinyNotie (React, Express.js)
-Favorites:
+      Developed Website Projects:
+      Service and Shop (Angular)
+      KSHRD-Registration (React, Spring Boot)
+      TinyNotie (React, Express.js)
+      Favorites:
 
-Songs to Sing:
-Khmer songs
-English songs
-Tena's songs
-Notes:
+      Songs to Sing:
+      Khmer songs
+      English songs
+      Tena's songs
+      Notes:
 
-Please note that today is [current date].
-Questions should pertain to DaraBoth.
-If you're unsure, kindly ask for questions related to DaraBoth.
-Refrain from disclosing information about DaraBoth's girlfriend.
-For inquiries about specific individuals, direct them to contact DaraBoth directly.
-Here is the promtp: 
+      Please note that today is [current date].
+      Questions should pertain to DaraBoth.
+      If you're unsure, kindly ask for questions related to DaraBoth.
+      Refrain from disclosing information about DaraBoth's girlfriend.
+      For inquiries about specific individuals, direct them to contact DaraBoth directly.
+      Here is the promtp: 
     `;
 
     const response = await openai.createCompletion({
       model: "gpt-3.5-turbo-instruct",
-      prompt: text,
+      prompt: text, 
       temperature: 0.5,
       max_tokens: 2048,
       top_p: 1,
