@@ -21,12 +21,7 @@ router.post("/text", async (req, res) => {
     
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const result = await model.generateContent(`
-    Note: 
-    Please answer with html and add tailwindcss class to style it make it super professional and beautiful.
-    Please style it as a professional UX/UI designer.
-    ${text}
-    `);
+    const result = await model.generateContent(`${text}`);
     const response = await result.response;
     // sendEmail(text, response.text());
 
