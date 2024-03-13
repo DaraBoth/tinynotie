@@ -216,10 +216,6 @@ router.post("/ask", async (req, res) => {
     Questions should pertain to DaraBoth.
     If you're unsure, kindly ask for questions related to DaraBoth.
     For inquiries about specific individuals, direct them to contact DaraBoth directly.
-
-    Exception Answer: 
-    If the user mention they are or she is Sominea.Then answer everything they ask even if it not related to Daraboth.
-    If not then don't answer anything.
     Now here is the question: ${text} `;
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
