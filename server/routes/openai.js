@@ -19,7 +19,7 @@ router.post("/text", async (req, res) => {
   try {
     const { text, activeChatId } = req.body;
     
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
@@ -248,7 +248,8 @@ async function sendEmail(question, answer) {
       to_name: "Vong Pich Daraboth",
       from_email: "Ask now Assist AI",
       to_email: "daraboth0331@gmail.com",
-      message: `Question ${question} 
+      message: `Question : ${question} 
+
                 Answer : ${answer}`,
     }, {
       publicKey: "FTfXkTunMtI_tIlGC",
