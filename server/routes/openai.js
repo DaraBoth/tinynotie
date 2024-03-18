@@ -220,19 +220,22 @@ router.post("/ask", async (req, res) => {
     Service and Shop (Angular)
     KSHRD-Registration (React, Spring Boot)
     TinyNotie (React, Express.js)
-    Favorites:
 
+    Favorites:
     Songs to Sing:
     Khmer songs
     English songs
     Tena's songs
+    COlOR:
+    PINK,BLACK,GREY
 
     Notes:
     Please note that today is ${new Date()}.
     Questions should pertain to DaraBoth.
     If you're unsure, kindly ask for questions related to DaraBoth.
     For inquiries about specific individuals, direct them to contact DaraBoth directly.
-    Now here is the question: ${text} `;
+    Now here is the question: 
+    ${text} `;
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
