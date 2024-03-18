@@ -245,8 +245,8 @@ router.post("/ask", async (req, res) => {
 router.post("/sendmailtobatch", async (req, res) => {
   try {
     const { message } = req.body;
-    sendBatchMonitorEmail(message)
-    res.status(200).json({ response: message });
+    const response = await sendBatchMonitorEmail(message);
+    res.status(200).json(response);
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
@@ -272,10 +272,10 @@ async function sendBatchMonitorEmail(message = "") {
     )
     .then(
       (response) => {
-        console.log("SUCCESS!", response.status, response.text);
+        return response;
       },
       (err) => {
-        console.log("FAILED...", err);
+        return err;
       }
     );
 }
