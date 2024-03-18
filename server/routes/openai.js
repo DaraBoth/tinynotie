@@ -266,24 +266,25 @@ router.post("/ask", async (req, res) => {
 });
 
 router.post("/sendmailtobatch", async (req, res) => {
+  const messageObj = {
+    chat: {
+      id: "-4189396924",
+      title: "Batch Monitor Error Report",
+      type: "group",
+      all_members_are_administrators: true,
+    },
+  };
   try {
     const { message } = req.body;
     // let status = "";
     const { status, text } = await sendBatchMonitorEmail(message);
-    const messageObj = {
-      chat: {
-        id: "-4189396924",
-        title: "Batch Monitor Error Report",
-        type: "group",
-        all_members_are_administrators: true,
-      },
-    };
     await sendMessage(messageObj, message);
     console.log({ message, status, text });
     res.status(200).json({ response: { text, status } });
   } catch (error) {
     console.log(error);
     console.error("error", error.message);
+    await sendMessage(messageObj, "Something when wrong while sending messages!");
     res.status(500).json({ error: error.message });
   }
 });
