@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { Configuration, OpenAIApi } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import emailjs, { EmailJSResponseStatus } from "@emailjs/nodejs";
+import moment from "moment";
 
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
@@ -18,7 +19,7 @@ const router = express.Router();
 router.post("/text", async (req, res) => {
   try {
     const { text, activeChatId } = req.body;
-    
+
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(`${text}`);
@@ -241,20 +242,63 @@ router.post("/ask", async (req, res) => {
   }
 });
 
+router.post("/sendmailtobatch", async (req, res) => {
+  try {
+    const { message } = req.body;
+    sendBatchMonitorEmail(message)
+    res.status(200).json({ response: message });
+  } catch (error) {
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function sendBatchMonitorEmail(message = "") {
+  emailjs
+    .send(
+      process.env.BATCH_SERVICE_ID,
+      process.env.BATCH_TEMPLATE_ID,
+      {
+        from_name: "Batch Monitor",
+        to_name: "Admin B2B",
+        message: message,
+        reply_to: "b2bbatchmonitor@gmail.com",
+        current_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+      },
+      {
+        publicKey: process.env.BATCH_PUBLIC_KEY,
+        privateKey: process.env.BATCH_PRIVATE_KEY, // optional, highly recommended for security reasons
+      }
+    )
+    .then(
+      (response) => {
+        console.log("SUCCESS!", response.status, response.text);
+      },
+      (err) => {
+        console.log("FAILED...", err);
+      }
+    );
+}
+
 async function sendEmail(question, answer) {
   emailjs
-    .send("service_1q4mqel", "template_nw1vp7x", {
-      from_name: "Ask Now",
-      to_name: "Vong Pich Daraboth",
-      from_email: "Ask now Assist AI",
-      to_email: "daraboth0331@gmail.com",
-      message: `Question : ${question} 
+    .send(
+      "service_1q4mqel",
+      "template_nw1vp7x",
+      {
+        from_name: "Ask Now",
+        to_name: "Vong Pich Daraboth",
+        from_email: "Ask now Assist AI",
+        to_email: "daraboth0331@gmail.com",
+        message: `Question : ${question} 
 
                 Answer : ${answer}`,
-    }, {
-      publicKey: "FTfXkTunMtI_tIlGC",
-      privateKey: "FfAmlGo-tjwOoIQZjQRu2", // optional, highly recommended for security reasons
-    })
+      },
+      {
+        publicKey: "FTfXkTunMtI_tIlGC",
+        privateKey: "FfAmlGo-tjwOoIQZjQRu2", // optional, highly recommended for security reasons
+      }
+    )
     .then(
       (response) => {
         console.log("SUCCESS!", response.status, response.text);
