@@ -288,7 +288,7 @@ router.post("/sendmailtobatch", async (req, res) => {
   }
 });
 
-router.post("/testbot", async (req, res) => {
+router.post("/botlistening", async (req, res) => {
   try {
     const { body } = req;
     if (body) {
@@ -367,7 +367,7 @@ const handleMessage = function (messageObj, messageText) {
   switch (Chat_ID) {
     case "-4189396924":
       // send error message logic
-      return sendMessage(messageObj);
+      break;
     default:
       if (messageText.charAt(0) === "/") {
         const command = messageText.substr(1);
