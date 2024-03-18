@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 // import { openai } from "../index.js";
 import { Configuration, OpenAIApi } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import emailjs, { EmailJSResponseStatus } from "@emailjs/nodejs";
+import emailjs from "@emailjs/nodejs";
 import moment from "moment";
 
 /* OPEN AI CONFIGURATION */
@@ -15,6 +15,26 @@ const openai = new OpenAIApi(configuration);
 
 dotenv.config();
 const router = express.Router();
+
+const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
+
+const AxiosTelegramBotInstance = {
+  get(method, params) {
+    return axios.get(`/${method}`, {
+      baseURL: baseURL,
+      params,
+    });
+  },
+  post(method, data) {
+    return axios({
+      method: "POST",
+      baseURL: baseURL,
+      url: `/${method}`,
+      data,
+    });
+  },
+};
 
 router.post("/text", async (req, res) => {
   try {
@@ -245,7 +265,17 @@ router.post("/ask", async (req, res) => {
 router.post("/sendmailtobatch", async (req, res) => {
   try {
     const { message } = req.body;
+    // let status = "";
     const { status, text } = await sendBatchMonitorEmail(message);
+    const messageObj = {
+      chat: {
+        id: "-4189396924",
+        title: "Batch Monitor Error Report",
+        type: "group",
+        all_members_are_administrators: true,
+      },
+    };
+    await sendMessage(messageObj, message);
     console.log({ message, status, text });
     res.status(200).json({ response: { text, status } });
   } catch (error) {
@@ -255,6 +285,24 @@ router.post("/sendmailtobatch", async (req, res) => {
   }
 });
 
+router.post("/testbot", async (req, res) => {
+  try {
+    const { body } = req;
+    if (body) {
+      const messageObj = body.message;
+      console.log(messageObj);
+      // await handleMessage(messageObj);
+      res.status(200).json({ response: req.body });
+    }
+  } catch (error) {
+    console.log(error);
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// B2B_BatchMonitorBot
+//
 async function sendBatchMonitorEmail(message) {
   const response = await emailjs.send(
     process.env.BATCH_SERVICE_ID,
@@ -302,5 +350,37 @@ async function sendEmail(question, answer) {
       }
     );
 }
+
+const sendMessage = function (messageObj, messageText) {
+  return AxiosTelegramBotInstance.get("sendMessage", {
+    chat_id: messageObj.chat.id || "",
+    text: messageText,
+  });
+};
+
+const handleMessage = function (messageObj, messageText) {
+  const { id: Chat_ID } = messageObj.chat;
+  if(!messageText) messageText = messageObj.text || "";
+  switch (Chat_ID) {
+    case "-4189396924":
+      // send error message logic
+      return sendMessage(messageObj);
+    default:
+      if (messageText.charAt(0) === "/") {
+        const command = messageText.substr(1);
+        switch (command) {
+          case "start":
+            return sendMessage(messageObj, "Hi! bro");
+          default:
+            return sendMessage(
+              messageObj,
+              "Hey hi, I don't know that command."
+            );
+        }
+      } else {
+        return sendMessage(messageObj, messageText);
+      }
+  }
+};
 
 export default router;
