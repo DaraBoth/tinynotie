@@ -245,15 +245,17 @@ router.post("/ask", async (req, res) => {
 router.post("/sendmailtobatch", async (req, res) => {
   try {
     const { message } = req.body;
-    const response = await sendBatchMonitorEmail(message);
-    res.status(200).json({ response });
+    const { status, text } = await sendBatchMonitorEmail(message);
+    console.log({ message, status, text });
+    res.status(200).json({ response: { text, status } });
   } catch (error) {
+    console.log(error);
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-async function sendBatchMonitorEmail(message = "") {
+async function sendBatchMonitorEmail(message) {
   const response = await emailjs.send(
     process.env.BATCH_SERVICE_ID,
     process.env.BATCH_TEMPLATE_ID,
@@ -269,7 +271,6 @@ async function sendBatchMonitorEmail(message = "") {
       privateKey: process.env.BATCH_PRIVATE_KEY, // optional, highly recommended for security reasons
     }
   );
-  console.log({ response });
   return response;
 }
 
