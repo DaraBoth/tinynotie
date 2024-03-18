@@ -246,7 +246,6 @@ router.post("/sendmailtobatch", async (req, res) => {
   try {
     const { message } = req.body;
     const response = await sendBatchMonitorEmail(message);
-    console.log({ response });
     res.status(200).json({ response });
   } catch (error) {
     console.error("error", error.message);
@@ -255,30 +254,23 @@ router.post("/sendmailtobatch", async (req, res) => {
 });
 
 async function sendBatchMonitorEmail(message = "") {
-  emailjs
-    .send(
-      process.env.BATCH_SERVICE_ID,
-      process.env.BATCH_TEMPLATE_ID,
-      {
-        from_name: "Batch Monitor",
-        to_name: "Admin B2B",
-        message: message,
-        reply_to: "b2bbatchmonitor@gmail.com",
-        current_date: moment().format("YYYY-MM-DD HH:mm:ss"),
-      },
-      {
-        publicKey: process.env.BATCH_PUBLIC_KEY,
-        privateKey: process.env.BATCH_PRIVATE_KEY, // optional, highly recommended for security reasons
-      }
-    )
-    .then(
-      (response) => {
-        return response;
-      },
-      (err) => {
-        return err;
-      }
-    );
+  const response = await emailjs.send(
+    process.env.BATCH_SERVICE_ID,
+    process.env.BATCH_TEMPLATE_ID,
+    {
+      from_name: "Batch Monitor",
+      to_name: "Admin B2B",
+      message: message,
+      reply_to: "b2bbatchmonitor@gmail.com",
+      current_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+    },
+    {
+      publicKey: process.env.BATCH_PUBLIC_KEY,
+      privateKey: process.env.BATCH_PRIVATE_KEY, // optional, highly recommended for security reasons
+    }
+  );
+  console.log({ response });
+  return response;
 }
 
 async function sendEmail(question, answer) {
