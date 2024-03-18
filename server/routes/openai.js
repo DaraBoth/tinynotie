@@ -246,7 +246,8 @@ router.post("/sendmailtobatch", async (req, res) => {
   try {
     const { message } = req.body;
     const response = await sendBatchMonitorEmail(message);
-    res.status(200).json(response);
+    console.log({ response });
+    res.status(200).json({ response });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
