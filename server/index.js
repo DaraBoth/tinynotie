@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.js"
 import noteRoutes from "./routes/note.js"
 import apiRoutes from "./routes/api.js"
 import openAiRoutes from "./routes/openai.js";
+import telegrambotRoutes from "./routes/telegrambot.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/note", noteRoutes);
 app.use("/openai", openAiRoutes);
 app.use("/api", apiRoutes);
 app.use("/auth", authRoutes);
+app.use("/bot", telegrambotRoutes);
 
 /* SERVER SETUP */
 const PORT = process.env.PORT || 9000;

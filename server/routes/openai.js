@@ -6,6 +6,7 @@ import { Configuration, OpenAIApi } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import emailjs from "@emailjs/nodejs";
 import moment from "moment";
+import { copyFileSync } from "fs";
 
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
@@ -276,15 +277,29 @@ router.post("/sendmailtobatch", async (req, res) => {
   };
   try {
     const { message } = req.body;
+    if (req.body) {
+      if (req.body.JSONData) {
+        const { JSONData } = req.body;
+        console.log(JSONData);
+        if(JSONData._tran_req_data){
+          const { _tran_req_data } = JSONData;
+          console.log(_tran_req_data);
+        }
+      }
+    }
     // let status = "";
-    const { status, text } = await sendBatchMonitorEmail(message);
-    await sendMessage(messageObj, message);
-    console.log({ message, status, text });
-    res.status(200).json({ response: { text, status } });
+    // const { status, text } = await sendBatchMonitorEmail(message);
+    // await sendMessage(messageObj, message);
+    // console.log({ message, status, text });
+    // res.status(200).json({ response: { text, status } });
+    res.status(200).json({ response: req.body });
   } catch (error) {
     console.log(error);
     console.error("error", error.message);
-    await sendMessage(messageObj, "Something when wrong while sending messages!");
+    await sendMessage(
+      messageObj,
+      "Something when wrong while sending messages!"
+    );
     res.status(500).json({ error: error.message });
   }
 });
@@ -364,7 +379,7 @@ const sendMessage = function (messageObj, messageText) {
 
 const handleMessage = function (messageObj, messageText) {
   const { id: Chat_ID } = messageObj.chat;
-  if(!messageText) messageText = messageObj.text || "";
+  if (!messageText) messageText = messageObj.text || "";
   switch (Chat_ID) {
     case "-4189396924":
       // send error message logic
