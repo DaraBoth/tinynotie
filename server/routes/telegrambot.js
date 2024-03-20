@@ -26,40 +26,6 @@ const AxiosTelegramBotInstance = {
   },
 };
 
-router.post("/text", async (req, res) => {
-    try {
-      const { text, activeChatId } = req.body;
-  
-      const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      const result = await model.generateContent(`${text}`);
-      const response = await result.response;
-      // sendEmail(text, response.text());
-  
-      try {
-        await axios.post(
-          `https://api.chatengine.io/chats/${activeChatId}/messages/`,
-          { text: response.text() },
-          {
-            headers: {
-              "Project-ID": process.env.PROJECT_ID,
-              "User-Name": process.env.BOT_USER_NAME,
-              "User-Secret": process.env.BOT_USER_SECRET,
-            },
-          }
-        );
-      } catch (e) {
-        console.log(e?.message);
-        console.log("error ");
-      }
-  
-      res.status(200).json({ text: response.text() });
-    } catch (error) {
-      console.error("error", error.message);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
 router.post("/assist", async (req, res) => {
   try {
     const { body } = req;
