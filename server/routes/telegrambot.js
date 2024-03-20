@@ -31,6 +31,7 @@ router.post("/assist", async (req, res) => {
     const { body } = req;
     if (body) {
       const messageObj = body.message;
+
       const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       const result = await model.generateContent(`
@@ -41,13 +42,25 @@ router.post("/assist", async (req, res) => {
         Name=Sominea
         Fullname=Soeurng Sominea
         You are an AI-Assist-Bot.
-        There are a message [${messageObj.text}] 
-        from ${messageObj.from.first_name} ${messageObj.from.last_name}
+
+        There are a message from ${messageObj.from.first_name} ${messageObj.from.last_name}
+        And message is ${messageObj.text}
         please reply using text message only.
       `);
       const response = await result.response;
-      console.log(messageObj);
-      await handleMessage(messageObj,response.text());
+      await handleMessage(messageObj, response.text());
+      if (messageObj.chat.id != "-4126147861") {
+        const alertMessage = `
+        Message From ${messageObj.from.first_name} ${messageObj.from.last_name}
+        Message
+        ${messageObj.text}
+        Response
+        ${response.text()}`;
+        await sendMessage(
+          { ...messageObj, chat: { id: -4126147861 } },
+          alertMessage
+        );
+      }
       res.status(200).json({ response: req.body });
     }
   } catch (error) {
