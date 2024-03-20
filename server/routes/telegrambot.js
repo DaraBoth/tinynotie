@@ -51,11 +51,11 @@ router.post("/assist", async (req, res) => {
       await handleMessage(messageObj, response.text());
       if (messageObj.chat.id != "-4126147861") {
         const alertMessage = `
-        Message From ${messageObj.from.first_name} ${messageObj.from.last_name}
-        Message
-        ${messageObj.text}
-        Response
-        ${response.text()}`;
+    Message From ${messageObj.from.first_name} ${messageObj.from.last_name}
+    Message :
+    ${messageObj.text}
+    Response :
+    ${response.text()}`;
         await sendMessage(
           { ...messageObj, chat: { id: -4126147861 } },
           alertMessage
