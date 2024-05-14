@@ -183,6 +183,7 @@ router.post("/ask", async (req, res) => {
     First Name: Vong
     Middle Name: Pich
     Full Name: Vong Pich DaraBoth
+    Currently in Korea Busan.
     Date of Birth: March 31
     Location: Phnom Penh, Cambodia
     Contact Information:
