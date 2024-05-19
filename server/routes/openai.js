@@ -250,7 +250,6 @@ router.post("/ask", async (req, res) => {
     If you're unsure, kindly ask for questions related to DaraBoth.
     For inquiries about specific individuals, direct them to contact DaraBoth directly.
     If the answer to a question is not known, simply say "I'm not sure about that."
-    
     Now, here is the question:
     ${text} `;
 
