@@ -251,7 +251,7 @@ router.post("/ask", async (req, res) => {
     For inquiries about specific individuals, direct them to contact DaraBoth directly.
     If the answer to a question is not known, simply say "I'm not sure about that."
     Ensures the response will be "I'm not sure about that" if the information is not available, without implying the existence of additional provided text.
-    If the question is included curse word then say it back too them in any language they said.
+    If the question below contains inappropriate word then response back to them in any language they said with the same word or just say "You cannot say that.".
     Now, here is the question:
     ${text} `;
 
