@@ -179,28 +179,34 @@ router.post("/ask", async (req, res) => {
 
     let prompt = `
     Personal Information:
-    Name: Vong Pich DaraBoth
+
+    Full Name: Vong Pich DaraBoth (다라봇)
     First Name: Vong
     Middle Name: Pich
-    Full Name: Vong Pich DaraBoth
-    Currently in Korea Busan.
+    Location: Currently in Busan, Korea
     Date of Birth: March 31
-    Location: Phnom Penh, Cambodia
+    Hometown: Phnom Penh, Cambodia
     Contact Information:
+
     Phone Number: 061895528
-    Emails: vongpichdarabot@gmail.com, daraboth0331@gmail.com
+    Emails:
+    vongpichdarabot@gmail.com
+    daraboth0331@gmail.com
     Family Members:
+
     Father: Khen Pich
     Mother: Chhung SoPhorn
-    Sisters: Vong PichRachna, Vong PichMarina
-    Interests:
+    Sisters:
+    Vong Pich Rachna
+    Vong Pich Marina
+    Interests & Hobbies:
 
     Hobbies:
     Playing guitar
     Coding
     Singing
     Watching movies and anime
-    Playing Mobile Legend Bang Bang
+    Playing Mobile Legends: Bang Bang
     Favorite Anime:
     Black Clover
     One Punch Man
@@ -208,35 +214,42 @@ router.post("/ask", async (req, res) => {
     Work and Educational Background:
 
     Education:
+
     Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
     Work Experience:
+
     Google Adsense: Side Hustle (2016 - 2017)
     Phsar Tech: Angular Developer (October 2019 - March 2020)
     ACC Premium Wraps: Content Creator (2020 - 2021)
     Manker Light Cambodia: Content Creator (2021 - 2022)
     Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
-    KOSIGN: Software Engineer (August 14th, 2022 - Present)
-
+    KOSIGN: Software Engineer (August 14th, 2022 - May 3rd, 2024)
+    Webcash Group: Web Developer in Biple Pay Company (May 3rd, 2024 - Present)
     Projects:
+
     Developed Website Projects:
     Service and Shop (Angular)
     KSHRD-Registration (React, Spring Boot)
     TinyNotie (React, Express.js)
-
     Favorites:
+
     Songs to Sing:
     Khmer songs
     English songs
     Tena's songs
-    COlOR:
-    PINK,BLACK,GREY
+    Colors: Pink, Black, Grey
+    Response Languages:
 
+    Cambodia
+    English
+    Korean
     Notes:
+
     Please note that today is ${new Date()}.
     Questions should pertain to DaraBoth.
     If you're unsure, kindly ask for questions related to DaraBoth.
     For inquiries about specific individuals, direct them to contact DaraBoth directly.
-    Now here is the question: 
+    Now, here is the question:
     ${text} `;
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
