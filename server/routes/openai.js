@@ -178,66 +178,77 @@ router.post("/ask", async (req, res) => {
     let { text, activeChatId } = req.body;
 
     let prompt = `
-    Personal Information:
-    Name: Vong Pich DaraBoth
-    First Name: Vong
-    Middle Name: Pich
-    Full Name: Vong Pich DaraBoth
-    Currently in Korea Busan.
-    Date of Birth: March 31
-    Location: Phnom Penh, Cambodia
-    Contact Information:
-    Phone Number: 061895528
-    Emails: vongpichdarabot@gmail.com, daraboth0331@gmail.com
-    Family Members:
-    Father: Khen Pich
-    Mother: Chhung SoPhorn
-    Sisters: Vong PichRachna, Vong PichMarina
-    Interests:
+    ### Personal Information
+    - **Name**: Vong Pich DaraBoth
+    - **First Name**: Vong
+    - **Middle Name**: Pich
+    - **Full Name**: Vong Pich DaraBoth
+    - **Currently living in**: Busan, Korea
+    - **Date of Birth**: March 31
+    - **Location**: Phnom Penh, Cambodia
 
-    Hobbies:
-    Playing guitar
-    Coding
-    Singing
-    Watching movies and anime
-    Playing Mobile Legend Bang Bang
-    Favorite Anime:
-    Black Clover
-    One Punch Man
-    Naruto
-    Work and Educational Background:
+    ### Contact Information
+    - **Phone Number**: 061895528
+    - **Emails**:
+      - vongpichdarabot@gmail.com
+      - daraboth0331@gmail.com
 
-    Education:
-    Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
-    Work Experience:
-    Google Adsense: Side Hustle (2016 - 2017)
-    Phsar Tech: Angular Developer (October 2019 - March 2020)
-    ACC Premium Wraps: Content Creator (2020 - 2021)
-    Manker Light Cambodia: Content Creator (2021 - 2022)
-    Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
-    KOSIGN: Software Engineer (August 14th, 2022 - Present)
+    ### Family Members
+    - **Father**: Khen Pich
+    - **Mother**: Chhung SoPhorn
+    - **Sisters**:
+      - Vong PichRachna
+      - Vong PichMarina
 
-    Projects:
-    Developed Website Projects:
-    Service and Shop (Angular)
-    KSHRD-Registration (React, Spring Boot)
-    TinyNotie (React, Express.js)
+    ### Interests and Hobbies
+    - **Hobbies**:
+      - Playing guitar
+      - Coding
+      - Singing
+      - Watching movies and anime
+      - Playing Mobile Legend Bang Bang
+    - **Favorite Anime**:
+      - Naruto
+      - One Punch Man
+      - Black Clover
+      - Mashle
+      - Solo Leveling
 
-    Favorites:
-    Songs to Sing:
-    Khmer songs
-    English songs
-    Tena's songs
-    COlOR:
-    PINK,BLACK,GREY
+    ### Work and Educational Background
+    - **Education**: Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
+    - **Work Experience**:
+      - Google Adsense: Side Hustle (2016 - 2017)
+      - Phsar Tech: Angular Developer (October 2019 - March 2020)
+      - ACC Premium Wraps: Content Creator (2020 - 2021)
+      - Manker Light Cambodia: Content Creator (2021 - 2022)
+      - Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
+      - KOSIGN: Software Engineer (August 14th, 2022 - Present)
+      - Webcash Group(Biple Pay Co.LTD): Web Developer (May 03th, 2024 - Present)
 
-    Notes:
-    Please note that today is ${new Date()}.
-    Questions should pertain to DaraBoth.
-    If you're unsure, kindly ask for questions related to DaraBoth.
-    For inquiries about specific individuals, direct them to contact DaraBoth directly.
-    Now here is the question: 
-    ${text} `;
+    ### Projects
+    - **Developed Website Projects**:
+      - Service and Shop (Angular)
+      - KSHRD-Registration (React, Spring Boot)
+      - TinyNotie (React, Express.js)
+
+    ### Favorites
+    - **Songs to Sing**:
+      - Khmer songs
+      - English songs
+      - Tena's songs
+    - **Favorite Colors**: Pink, Black, Dark Blue
+
+    ### Notes
+    - **Current Date**: ${new Date()}
+    - **Questions**: Should pertain to DaraBoth. If unsure, kindly ask for questions related to DaraBoth.
+    - **Contact**: For inquiries about specific individuals, direct them to contact DaraBoth directly.
+
+    ---
+
+    ### Question
+    ${text}
+
+    ---`;
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -352,7 +363,7 @@ async function sendEmail(question, answer) {
         to_name: "Vong Pich Daraboth",
         from_email: "Ask now Assist AI",
         to_email: "daraboth0331@gmail.com",
-        message: `Question : ${question} 
+        message: `Question : ${question}
 
                 Answer : ${answer}`,
       },
