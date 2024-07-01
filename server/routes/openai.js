@@ -260,17 +260,17 @@ router.post("/ask", async (req, res) => {
     const response = await result.response;
     sendEmail(text, response.text());
     try {
-      await axios.post(
-        `https://api.chatengine.io/chats/${activeChatId}/messages/`,
-        { text: response.text() },
-        {
-          headers: {
-            "Project-ID": process.env.PROJECT_ID,
-            "User-Name": process.env.BOT_USER_NAME,
-            "User-Secret": process.env.BOT_USER_SECRET,
-          },
-        }
-      );
+      // await axios.post(
+      //   `https://api.chatengine.io/chats/${activeChatId}/messages/`,
+      //   { text: response.text() },
+      //   {
+      //     headers: {
+      //       "Project-ID": process.env.PROJECT_ID,
+      //       "User-Name": process.env.BOT_USER_NAME,
+      //       "User-Secret": process.env.BOT_USER_SECRET,
+      //     },
+      //   }
+      // );
       await axios.post(
         `https://daraboth-personalai.vercel.app/telegram/daraboth/send-message`,
         { chatId: 485397124 },
@@ -371,8 +371,7 @@ async function sendBatchMonitorEmail(message) {
 }
 
 async function sendEmail(question, answer) {
-  emailjs
-    .send(
+  emailjs.send(
       "service_1q4mqel",
       "template_nw1vp7x",
       {
