@@ -285,6 +285,20 @@ router.post("/ask", async (req, res) => {
         }
       );
     } catch (e) {
+      await axios.post(
+        `https://personalai-1tlzbuc99-guoerr.vercel.app/telegram/daraboth/send-message`,
+        { chatId: 485397124 },
+        { message: `\n
+          Question : ${text} \n
+          Answer   : ${response.text()}
+        ` },
+        {
+          headers: {
+            "Content-Type:": "application/x-www-form-urlencoded"
+          },
+        }
+      );
+      
       console.error("error", e);
     }
 
