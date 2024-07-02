@@ -270,13 +270,11 @@ router.post("/ask", async (req, res) => {
     if(!chatHistory){
       chatHistory = defaultChatHistory;
     }else{
-      if(!chatHistory[0]["default"]){
-        chatHistory = [...defaultChatHistory,chatHistory]
-      }
+      chatHistory = defaultChatHistory.push(chatHistory)
     }
 
     const result = model.startChat({
-      history: chatHistory,
+      history: ,
       generationConfig: {
         maxOutputTokens: 100,
       },
