@@ -255,15 +255,11 @@ router.post("/ask", async (req, res) => {
       ---`;
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    // const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    // const result = await model.generateContent(prompt);
-    // const response = await result.response;
-    const chat = genAI.startChat();
-    // const chatInput = "How can I learn more about Node.js?";
-    const result = await chat.sendMessage(text);
-    const response = await result.response;
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" })
+    const result = model.startChat()
+    const chat = await result.sendMessage(text);
+    const response = await chat.response;
     console.log('response: ', JSON.stringify(response));
-
     sendEmail(text, response.text());
     try {
       // await axios.post(
