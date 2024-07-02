@@ -247,7 +247,7 @@ You will provide information based on the context given below. Do not indicate t
 - **Contact**: For inquiries about specific individuals, direct them to contact DaraBoth directly.
 ---`;
 
-let defaultChatHistory = [
+const defaultChatHistory = [
   {
     role: "user",
     parts: [{ text: prompt }],
@@ -255,7 +255,7 @@ let defaultChatHistory = [
   },
   {
     role: "model",
-    parts: [{ text: "Great to meet you. What would you like to know?" }],
+    parts: [{ text: "Great to meet you. I will remember you my boss." }],
   },
 ]
 
@@ -271,15 +271,18 @@ router.post("/ask", async (req, res) => {
       chatHistory = defaultChatHistory;
     }else{
       if( Array.isArray(chatHistory) ){
-        chatHistory.unshift({
-          role: "model",
-          parts: [{ text: "Great to meet you. What would you like to know?" }],
-        })
-        chatHistory.unshift({
-          role: "user",
-          parts: [{ text: prompt }],
-          default: "true"
-        })
+        for(let i=defaultChatHistory.length- 1; i >= 0;i--){
+          chatHistory.unshift(defaultChatHistory[i])
+        }
+        // chatHistory.unshift({
+        //   role: "model",
+        //   parts: [{ text: "Great to meet you. What would you like to know?" }],
+        // })
+        // chatHistory.unshift({
+        //   role: "user",
+        //   parts: [{ text: prompt }],
+        //   default: "true"
+        // })
       }
     }
 
