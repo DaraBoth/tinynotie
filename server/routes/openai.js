@@ -20,6 +20,7 @@ dotenv.config();
 const router = express.Router();
 
 const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const DARABOTH_AI_TOKEN = process.env.DARABOTH_AI_TOKEN;
 const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
 
 const AxiosTelegramBotInstance = {
@@ -280,7 +281,7 @@ const defaultChatHistory = [
   },
   {
     role: "user",
-    parts: [{ text: "From now on please reply with human language. Not markdown." }],
+    parts: [{ text: "From now on please reply with human language. Not markdown. Please note that from now on Daraboth is not the one who talk with you anymore." }],
   },
   {
     role: "model",
