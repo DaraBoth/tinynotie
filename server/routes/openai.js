@@ -249,7 +249,7 @@ You will provide information based on the context given below. Do not indicate t
 
 let defaultChatHistory = [
   {
-    role: "user",
+    role: "owner",
     parts: [{ text: prompt }],
   },
   {
@@ -261,12 +261,19 @@ let defaultChatHistory = [
 router.post("/ask", async (req, res) => {
   
   try {
+
     let { text, activeChatId , chatHistory } = req.body;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" })
+
     if(!chatHistory){
       chatHistory = defaultChatHistory;
+    }else{
+      if(chatHistory[0].role != "owner"){
+        chatHistory = [...defaultChatHistory,chatHistory]
+      }
     }
+
     const result = model.startChat({
       history: chatHistory,
       generationConfig: {
