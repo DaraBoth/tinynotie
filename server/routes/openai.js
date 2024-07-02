@@ -273,10 +273,7 @@ router.post("/ask", async (req, res) => {
         maxOutputTokens: 100,
       },
     })
-    chatHstory = await result.getHistory();
-    console.log({chatHstory});
     const chat = await result.sendMessage(text);
-    
     const response = await chat.response;
     console.log('response: ', JSON.stringify(response));
     sendEmail(text, response.text());
