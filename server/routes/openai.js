@@ -273,6 +273,8 @@ router.post("/ask", async (req, res) => {
       chatHistory = defaultChatHistory.push(chatHistory)
     }
 
+    console.log({chatHistory})
+
     const result = model.startChat({
       history: chatHistory,
       generationConfig: {
