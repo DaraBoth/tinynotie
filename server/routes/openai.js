@@ -249,8 +249,9 @@ You will provide information based on the context given below. Do not indicate t
 
 let defaultChatHistory = [
   {
-    role: "owner",
+    role: "user",
     parts: [{ text: prompt }],
+    default: "true"
   },
   {
     role: "model",
@@ -269,7 +270,7 @@ router.post("/ask", async (req, res) => {
     if(!chatHistory){
       chatHistory = defaultChatHistory;
     }else{
-      if(chatHistory[0].role != "owner"){
+      if(!chatHistory[0]["default"]){
         chatHistory = [...defaultChatHistory,chatHistory]
       }
     }
