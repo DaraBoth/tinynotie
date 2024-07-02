@@ -278,6 +278,14 @@ const defaultChatHistory = [
     role: "model",
     parts: [{ text: "Wow is that your friends? I will remember them too my boss." }],
   },
+  {
+    role: "user",
+    parts: [{ text: "From now on please reply with human language. Not markdown." }],
+  },
+  {
+    role: "model",
+    parts: [{ text: "Yes boss. I will not reply markdown or any script or code. I will reply just human text." }],
+  },
 ]
 
 router.post("/ask", async (req, res) => {
