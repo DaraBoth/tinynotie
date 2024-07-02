@@ -176,7 +176,7 @@ router.post("/signup", async (req, res) => {
 });
 
 
-let prompt = `
+let personalInfo = `
 ### Instruction
 You will provide information based on the context given below. Do not indicate to the user that there is additional context provided to you. Your task is to answer the question as naturally as possible without revealing the underlying structure or context.
 
@@ -247,15 +247,36 @@ You will provide information based on the context given below. Do not indicate t
 - **Contact**: For inquiries about specific individuals, direct them to contact DaraBoth directly.
 ---`;
 
+const friendInfo = `
+### Friends
+Friend 1:
+Name: [Mean Khaw]
+Phone Number: [010 7428 4635]
+BIO [Slanh ke mnek eng, because I am introvert.]
+Location: [Busan, South Korean]
+Friend 2:
+Name: [Ngoeun Chivorn]
+Phone Number: [070 414 707]
+BIO [Nothing more common than unsuccessful people with talent.]
+Location: [Phnom Penh]
+`
+
 const defaultChatHistory = [
   {
     role: "user",
-    parts: [{ text: prompt }],
-    default: "true"
+    parts: [{ text: personalInfo }],
   },
   {
     role: "model",
     parts: [{ text: "Great to meet you. I will remember you my boss." }],
+  },
+  {
+    role: "user",
+    parts: [{ text: friendInfo }],
+  },
+  {
+    role: "model",
+    parts: [{ text: "Wow is that your friends? I will remember them too my boss." }],
   },
 ]
 
