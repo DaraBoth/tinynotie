@@ -256,8 +256,26 @@ router.post("/ask", async (req, res) => {
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" })
-    const result = model.startChat()
+    // const history = 
+    const result = model.startChat({
+      history: [
+        {
+          role: "user",
+          parts: [{ text: "Hello, My name is Daraboth." }],
+        },
+        {
+          role: "model",
+          parts: [{ text: "Great to meet you. What would you like to know?" }],
+        },
+      ],
+      generationConfig: {
+        maxOutputTokens: 100,
+      },
+    })
+    const history = await result.getHistory();
+    console.log({history});
     const chat = await result.sendMessage(text);
+    
     const response = await chat.response;
     console.log('response: ', JSON.stringify(response));
     sendEmail(text, response.text());
