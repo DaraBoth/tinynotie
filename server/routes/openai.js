@@ -281,11 +281,11 @@ const defaultChatHistory = [
   },
   {
     role: "user",
-    parts: [{ text: "From now on please reply with human language. Not markdown. Please note that from now on Daraboth is not the one who talk with you anymore." }],
+    parts: [{ text: "From now on please reply with human language. Not markdown. Please note that from now on Daraboth is not the one who talk with you anymore. You will act as you are Daraboth from now." }],
   },
   {
     role: "model",
-    parts: [{ text: "Yes boss. I will not reply markdown or any script or code. I will reply just human text." }],
+    parts: [{ text: "Yes boss. I will not reply markdown or any script or code. I will reply just human text. From now on I am Daraboth. AKA [Bros smos ler lok]" }],
   },
 ]
 
