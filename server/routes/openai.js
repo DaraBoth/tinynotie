@@ -270,7 +270,17 @@ router.post("/ask", async (req, res) => {
     if(!chatHistory){
       chatHistory = defaultChatHistory;
     }else{
-      chatHistory = defaultChatHistory.push(chatHistory)
+      if( Array.isArray(chatHistory) ){
+        chatHistory.unshift({
+          role: "model",
+          parts: [{ text: "Great to meet you. What would you like to know?" }],
+        })
+        chatHistory.unshift({
+          role: "user",
+          parts: [{ text: prompt }],
+          default: "true"
+        })
+      }
     }
 
     console.log({chatHistory})
