@@ -47,22 +47,22 @@ router.post("/text", async (req, res) => {
     const response = await result.response;
     // sendEmail(text, response.text());
 
-    try {
-      await axios.post(
-        `https://api.chatengine.io/chats/${activeChatId}/messages/`,
-        { text: response.text() },
-        {
-          headers: {
-            "Project-ID": process.env.PROJECT_ID,
-            "User-Name": process.env.BOT_USER_NAME,
-            "User-Secret": process.env.BOT_USER_SECRET,
-          },
-        }
-      );
-    } catch (e) {
-      console.log(e?.message);
-      console.log("error ");
-    }
+    // try {
+    //   await axios.post(
+    //     `https://api.chatengine.io/chats/${activeChatId}/messages/`,
+    //     { text: response.text() },
+    //     {
+    //       headers: {
+    //         "Project-ID": process.env.PROJECT_ID,
+    //         "User-Name": process.env.BOT_USER_NAME,
+    //         "User-Secret": process.env.BOT_USER_SECRET,
+    //       },
+    //     }
+    //   );
+    // } catch (e) {
+    //   console.log(e?.message);
+    //   console.log("error ");
+    // }
 
     res.status(200).json({ text: response.text() });
   } catch (error) {
@@ -255,9 +255,15 @@ router.post("/ask", async (req, res) => {
       ---`;
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const result = await model.generateContent(prompt);
+    // const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // const result = await model.generateContent(prompt);
+    // const response = await result.response;
+    const chat = genAI.startChat();
+    // const chatInput = "How can I learn more about Node.js?";
+    const result = await chat.sendMessage(text);
     const response = await result.response;
+    console.log('response: ', JSON.stringify(response));
+
     sendEmail(text, response.text());
     try {
       // await axios.post(
@@ -271,33 +277,33 @@ router.post("/ask", async (req, res) => {
       //     },
       //   }
       // );
-      await axios.post(
-        `https://personalai-1tlzbuc99-guoerr.vercel.app/telegram/daraboth/send-message`,
-        { chatId: 485397124 },
-        { message: `\n
-          Question : ${text} \n
-          Answer   : ${response.text()}
-        ` },
-        {
-          headers: {
-            "Content-Type:": "application/x-www-form-urlencoded"
-          },
-        }
-      );
+      // await axios.post(
+      //   `https://personalai-1tlzbuc99-guoerr.vercel.app/telegram/daraboth/send-message`,
+      //   { chatId: 485397124 },
+      //   { message: `\n
+      //     Question : ${text} \n
+      //     Answer   : ${response.text()}
+      //   ` },
+      //   {
+      //     headers: {
+      //       "Content-Type:": "application/x-www-form-urlencoded"
+      //     },
+      //   }
+      // );
     } catch (e) {
-      await axios.post(
-        `https://personalai-1tlzbuc99-guoerr.vercel.app/telegram/daraboth/send-message`,
-        { chatId: 485397124 },
-        { message: `\n
-          Question : ${text} \n
-          Answer   : ${response.text()}
-        ` },
-        {
-          headers: {
-            "Content-Type:": "application/x-www-form-urlencoded"
-          },
-        }
-      );
+      // await axios.post(
+      //   `https://personalai-1tlzbuc99-guoerr.vercel.app/telegram/daraboth/send-message`,
+      //   { chatId: 485397124 },
+      //   { message: `\n
+      //     Question : ${text} \n
+      //     Answer   : ${response.text()}
+      //   ` },
+      //   {
+      //     headers: {
+      //       "Content-Type:": "application/x-www-form-urlencoded"
+      //     },
+      //   }
+      // );
       
       console.error("error", e);
     }
