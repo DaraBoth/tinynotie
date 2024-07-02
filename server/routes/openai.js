@@ -274,7 +274,7 @@ router.post("/ask", async (req, res) => {
     }
 
     const result = model.startChat({
-      history: ,
+      history: chatHistory,
       generationConfig: {
         maxOutputTokens: 100,
       },
