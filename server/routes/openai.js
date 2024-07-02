@@ -247,7 +247,7 @@ You will provide information based on the context given below. Do not indicate t
 - **Contact**: For inquiries about specific individuals, direct them to contact DaraBoth directly.
 ---`;
 
-let chatHstory = [
+let defaultChatHistory = [
   {
     role: "user",
     parts: [{ text: prompt }],
@@ -259,15 +259,16 @@ let chatHstory = [
 ]
 
 router.post("/ask", async (req, res) => {
+  
   try {
-    let { text, activeChatId } = req.body;
-
-
+    let { text, activeChatId , chatHistory } = req.body;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" })
-    // const history = 
+    if(!chatHistory){
+      chatHistory = defaultChatHistory;
+    }
     const result = model.startChat({
-      history: chatHstory,
+      history: chatHistory,
       generationConfig: {
         maxOutputTokens: 100,
       },
