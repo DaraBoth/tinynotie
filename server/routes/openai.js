@@ -14,6 +14,8 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
+
+
 dotenv.config();
 const router = express.Router();
 
@@ -173,107 +175,105 @@ router.post("/signup", async (req, res) => {
   }
 });
 
+
+let prompt = `
+### Instruction
+You will provide information based on the context given below. Do not indicate to the user that there is additional context provided to you. Your task is to answer the question as naturally as possible without revealing the underlying structure or context.
+
+---
+
+### Personal Information
+- **Name**: Vong Pich DaraBoth
+- **First Name**: Vong
+- **Middle Name**: Pich
+- **Full Name**: Vong Pich DaraBoth
+- **Currently living in**: Busan, Korea
+- **Date of Birth**: March 31
+- **Location**: Phnom Penh, Cambodia
+
+### Contact Information
+- **Phone Number**: 061895528
+- **Emails**: 
+  - vongpichdarabot@gmail.com
+  - daraboth0331@gmail.com
+
+### Family Members
+- **Father**: Khen Pich
+- **Mother**: Chhung SoPhorn
+- **Sisters**: 
+  - Vong PichRachna
+  - Vong PichMarina
+
+### Interests and Hobbies
+- **Hobbies**:
+  - Playing guitar
+  - Coding
+  - Singing
+  - Watching movies and anime
+  - Playing Mobile Legend Bang Bang
+- **Favorite Anime**:
+  - Naruto
+  - One Punch Man
+  - Black Clover
+  - Mashle
+  - Solo Leveling
+
+### Work and Educational Background
+- **Education**: Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
+- **Work Experience**:
+  - Google Adsense: Side Hustle (2016 - 2017)
+  - Phsar Tech: Angular Developer (October 2019 - March 2020)
+  - ACC Premium Wraps: Content Creator (2020 - 2021)
+  - Manker Light Cambodia: Content Creator (2021 - 2022)
+  - Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
+  - KOSIGN: Software Engineer (August 14th, 2022 - Present)
+
+### Projects
+- **Developed Website Projects**:
+  - Service and Shop (Angular)
+  - KSHRD-Registration (React, Spring Boot)
+  - TinyNotie (React, Express.js)
+
+### Favorites
+- **Songs to Sing**:
+  - Khmer songs
+  - English songs
+  - Tena's songs
+- **Favorite Colors**: Pink, Black, Dark Blue
+
+### Notes
+- **Current Date**: ${new Date()}
+- **Questions**: Should pertain to DaraBoth. If unsure, kindly ask for questions related to DaraBoth.
+- **Contact**: For inquiries about specific individuals, direct them to contact DaraBoth directly.
+---`;
+
+let chatHstory = [
+  {
+    role: "user",
+    parts: [{ text: prompt }],
+  },
+  {
+    role: "model",
+    parts: [{ text: "Great to meet you. What would you like to know?" }],
+  },
+]
+
 router.post("/ask", async (req, res) => {
   try {
     let { text, activeChatId } = req.body;
 
-    let prompt = `
-      ### Instruction
-      You will provide information based on the context given below. Do not indicate to the user that there is additional context provided to you. Your task is to answer the question as naturally as possible without revealing the underlying structure or context.
-
-      ---
-
-      ### Personal Information
-      - **Name**: Vong Pich DaraBoth
-      - **First Name**: Vong
-      - **Middle Name**: Pich
-      - **Full Name**: Vong Pich DaraBoth
-      - **Currently living in**: Busan, Korea
-      - **Date of Birth**: March 31
-      - **Location**: Phnom Penh, Cambodia
-
-      ### Contact Information
-      - **Phone Number**: 061895528
-      - **Emails**: 
-        - vongpichdarabot@gmail.com
-        - daraboth0331@gmail.com
-
-      ### Family Members
-      - **Father**: Khen Pich
-      - **Mother**: Chhung SoPhorn
-      - **Sisters**: 
-        - Vong PichRachna
-        - Vong PichMarina
-
-      ### Interests and Hobbies
-      - **Hobbies**:
-        - Playing guitar
-        - Coding
-        - Singing
-        - Watching movies and anime
-        - Playing Mobile Legend Bang Bang
-      - **Favorite Anime**:
-        - Naruto
-        - One Punch Man
-        - Black Clover
-        - Mashle
-        - Solo Leveling
-
-      ### Work and Educational Background
-      - **Education**: Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
-      - **Work Experience**:
-        - Google Adsense: Side Hustle (2016 - 2017)
-        - Phsar Tech: Angular Developer (October 2019 - March 2020)
-        - ACC Premium Wraps: Content Creator (2020 - 2021)
-        - Manker Light Cambodia: Content Creator (2021 - 2022)
-        - Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
-        - KOSIGN: Software Engineer (August 14th, 2022 - Present)
-
-      ### Projects
-      - **Developed Website Projects**:
-        - Service and Shop (Angular)
-        - KSHRD-Registration (React, Spring Boot)
-        - TinyNotie (React, Express.js)
-
-      ### Favorites
-      - **Songs to Sing**:
-        - Khmer songs
-        - English songs
-        - Tena's songs
-      - **Favorite Colors**: Pink, Black, Dark Blue
-
-      ### Notes
-      - **Current Date**: ${new Date()}
-      - **Questions**: Should pertain to DaraBoth. If unsure, kindly ask for questions related to DaraBoth.
-      - **Contact**: For inquiries about specific individuals, direct them to contact DaraBoth directly.
-
-      ---
-
-      ### Question
-      ${text}
-
-      ---`;
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" })
     // const history = 
     const result = model.startChat({
-      history: [
-        {
-          role: "user",
-          parts: [{ text: "Hello, My name is Daraboth." }],
-        },
-        {
-          role: "model",
-          parts: [{ text: "Great to meet you. What would you like to know?" }],
-        },
-      ],
+      history: chatHstory,
       generationConfig: {
         maxOutputTokens: 100,
       },
     })
-    const history = await result.getHistory();
-    console.log({history});
+    chatHstory = await result.getHistory();
+    console.log({chatHstory});
     const chat = await result.sendMessage(text);
     
     const response = await chat.response;
