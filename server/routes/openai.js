@@ -252,7 +252,7 @@ const friendInfo = `
 Friend 1:
 Name: [Mean Khaw]
 Phone Number: [010 7428 4635]
-BIO [Slanh ke mnek eng, because I am introvert.]
+BIO [Fall in love with her alone, because I am introvert.]
 Location: [Busan, South Korean]
 Friend 2:
 Name: [Ngoeun Chivorn]
