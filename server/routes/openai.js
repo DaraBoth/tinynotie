@@ -49,10 +49,8 @@ router.post("/text", async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
-
-    console.log({test});
+    console.log({text});
     console.log({res:response.text()});
-
     // sendEmail(text, response.text());
 
     // try {
