@@ -22,6 +22,7 @@ const router = express.Router();
 const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const DARABOTH_AI_TOKEN = process.env.DARABOTH_AI_TOKEN;
 const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
+const baseURL2 = `https://api.telegram.org/bot${DARABOTH_AI_TOKEN}`;
 
 const AxiosTelegramBotInstance = {
   get(method, params) {
@@ -48,6 +49,10 @@ router.post("/text", async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
+
+    console.log({test});
+    console.log({res:response.text()});
+
     // sendEmail(text, response.text());
 
     // try {
@@ -304,15 +309,6 @@ router.post("/ask", async (req, res) => {
         for(let i=defaultChatHistory.length- 1; i >= 0;i--){
           chatHistory.unshift(defaultChatHistory[i])
         }
-        // chatHistory.unshift({
-        //   role: "model",
-        //   parts: [{ text: "Great to meet you. What would you like to know?" }],
-        // })
-        // chatHistory.unshift({
-        //   role: "user",
-        //   parts: [{ text: prompt }],
-        //   default: "true"
-        // })
       }
     }
 
@@ -324,52 +320,13 @@ router.post("/ask", async (req, res) => {
         maxOutputTokens: 100,
       },
     })
+    // const chat = await result.sendMessageStream(text);
+
     const chat = await result.sendMessage(text);
+
     const response = await chat.response;
     console.log('response: ', JSON.stringify(response));
     sendEmail(text, response.text());
-    try {
-      // await axios.post(
-      //   `https://api.chatengine.io/chats/${activeChatId}/messages/`,
-      //   { text: response.text() },
-      //   {
-      //     headers: {
-      //       "Project-ID": process.env.PROJECT_ID,
-      //       "User-Name": process.env.BOT_USER_NAME,
-      //       "User-Secret": process.env.BOT_USER_SECRET,
-      //     },
-      //   }
-      // );
-      // await axios.post(
-      //   `https://personalai-1tlzbuc99-guoerr.vercel.app/telegram/daraboth/send-message`,
-      //   { chatId: 485397124 },
-      //   { message: `\n
-      //     Question : ${text} \n
-      //     Answer   : ${response.text()}
-      //   ` },
-      //   {
-      //     headers: {
-      //       "Content-Type:": "application/x-www-form-urlencoded"
-      //     },
-      //   }
-      // );
-    } catch (e) {
-      // await axios.post(
-      //   `https://personalai-1tlzbuc99-guoerr.vercel.app/telegram/daraboth/send-message`,
-      //   { chatId: 485397124 },
-      //   { message: `\n
-      //     Question : ${text} \n
-      //     Answer   : ${response.text()}
-      //   ` },
-      //   {
-      //     headers: {
-      //       "Content-Type:": "application/x-www-form-urlencoded"
-      //     },
-      //   }
-      // );
-      
-      console.error("error", e);
-    }
 
     res.status(200).json({ text: response.text() });
   } catch (error) {
