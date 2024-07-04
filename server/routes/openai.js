@@ -41,6 +41,22 @@ const AxiosTelegramBotInstance = {
   },
 };
 
+router.get("/text", async (req, res) => {
+  try {
+    const { text } = req.query;
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(`${text}`);
+    const response = await result.response;
+    console.log({text});
+    console.log({res:response.text()});
+    res.status(200).json({ text: response.text() });
+  } catch (error) {
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/text", async (req, res) => {
   try {
     const { text, activeChatId } = req.body;
