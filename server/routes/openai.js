@@ -43,9 +43,43 @@ const AxiosTelegramBotInstance = {
 
 router.get("/text", async (req, res) => {
   try {
-    const { text } = req.query;
+    let { text , random } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    if(random){
+      const prompt = `
+        ### Instruction ###
+        Generate a piece of content on one of the following topics:
+        - Programming
+        - Computer Science
+        - AI-related News
+        - Daily Motivational Story
+
+        ### Context ###
+        1. **Programming**: Write about the latest trends, new libraries, or frameworks.
+        2. **Computer Science**: Cover recent breakthroughs or interesting research.
+        3. **AI-related News**: Report on a new AI model or an advancement in the field.
+        4. **Daily Motivational Story**: Create a story about someone overcoming challenges in their tech career.
+
+        ### Example ###
+        1. **Programming**: 
+          Python continues to evolve with new libraries like FastAPI for web development and Pydantic for data validation. These tools are making it easier for developers to build robust applications quickly.
+
+        2. **Computer Science**:
+          Scientists at MIT have developed a new quantum algorithm that reduces computation time for complex problems from days to hours. This advancement could revolutionize fields like cryptography and materials science.
+
+        3. **AI-related News**:
+          OpenAI's latest model, GPT-5, has set a new benchmark in natural language processing. With its advanced capabilities, it can perform tasks ranging from translation to creative writing with human-like proficiency.
+
+        4. **Daily Motivational Story**:
+          Jane, a self-taught programmer, struggled for years to break into the tech industry. Despite numerous rejections, she continued to learn and improve her skills. Her persistence paid off when she landed a job at a leading tech company, proving that determination can overcome any obstacle.
+
+        ### Instructions ###
+        Choose one of the topics and generate a piece of content following the context and examples provided. Ensure that the content is informative, engaging, and relevant to the chosen topic.`
+        text = prompt
+    }
+
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
     console.log({text});
