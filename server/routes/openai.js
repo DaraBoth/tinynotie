@@ -47,7 +47,7 @@ router.get("/text", async (req, res) => {
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    if(random){
+    if(random == true){
       const prompt = `
         ### Instruction ###
         Generate a piece of content on one of the following topics:
