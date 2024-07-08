@@ -12,6 +12,33 @@ const pool = new Pool({
   port: 5432,
 });
 
+
+router.get("/test_db_online", async (req, res) => {
+  const { user, host, database, password, port, sql } = req.query;
+  try {
+    const testPool = new Pool({
+      user: user,
+      host: host,
+      database: database,
+      password: password,
+      port: port,
+    })
+    testPool.query(sql.toString(), (error, results) => {
+      if (error) {
+        console.log({error});
+        res.status(500).json({ error: error.message });
+        throw error;
+      }
+      console.log({sql});
+      console.log({data: results.rows});
+      res.send({ status: true, data: results.rows });
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get("/getGroupByUserId", async (req, res) => {
   const { user_id } = req.query;
   try {
