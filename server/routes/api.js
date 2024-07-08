@@ -31,7 +31,8 @@ router.get("/test_db_online", async (req, res) => {
       }
       console.log({sql});
       console.log({data: results.rows});
-      res.send({ status: true, data: results.rows });
+      console.log({ results });
+      res.send({ status: true, data: results.rows ,results });
     });
   } catch (error) {
     console.error("error", error);
