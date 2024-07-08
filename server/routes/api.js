@@ -22,10 +22,15 @@ router.get("/test_db_online", async (req, res) => {
       database: database,
       password: password,
       port: port,
+      ssl: {
+        rejectUnauthorized: false
+      }
     })
+    testPool.connect()
     testPool.query(sql.toString(), (error, results) => {
       if (error) {
         console.log({error});
+        testPool.end()
         res.status(500).json({ error: error.message });
         throw error;
       }
@@ -34,8 +39,11 @@ router.get("/test_db_online", async (req, res) => {
       console.log({ results });
       res.send({ status: true, data: results.rows ,results });
     });
+    testPool.end()
+
   } catch (error) {
     console.error("error", error);
+    testPool.end()
     res.status(500).json({ error: error.message });
   }
 });
