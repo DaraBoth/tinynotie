@@ -12,39 +12,49 @@ const pool = new Pool({
   port: 5432,
 });
 
-
 router.get("/test_db_online", async (req, res) => {
   const { user, host, database, password, port, sql } = req.query;
+  const testPool = new Pool({
+    user: user,
+    host: host,
+    database: database,
+    password: password,
+    port: port,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
+  let client;
   try {
-    const testPool = new Pool({
-      user: user,
-      host: host,
-      database: database,
-      password: password,
-      port: port,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    })
-    testPool.connect()
-    testPool.query(sql.toString(), (error, results) => {
-      if (error) {
-        console.log({error});
-        testPool.end()
-        res.status(500).json({ error: error.message });
-        throw error;
-      }
-      console.log({sql});
-      console.log({data: results.rows});
-      console.log({ results });
-      res.send({ status: true, data: results.rows ,results });
-    });
-    testPool.end()
+
+    // Get a client from the pool
+    client = await testPool.connect();
+    console.log("Connected successfully");
+
+    // Run your query
+    const results = await client.query(sql);
+    console.log({ sql });
+    console.log({ data: results.rows });
+    console.log({ results });
+
+    res.send({ results });
+    console.log("SQL executed successfully!");
 
   } catch (error) {
-    console.error("error", error);
-    testPool.end()
+
+    console.error("Connection error", error.stack);
     res.status(500).json({ error: error.message });
+
+  } finally {
+
+    // Release the client back to the pool
+    if (client) {
+      client.release();
+    }
+
+    // End the pool
+    testPool.end();
+
   }
 });
 
