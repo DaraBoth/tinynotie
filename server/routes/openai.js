@@ -41,37 +41,37 @@ const AxiosTelegramBotInstance = {
   },
 };
 
-const functionDeclarations = [
-  {
-    functionDeclarations: [
-      {
-        name: "get_current_weather",
-        description: 'get weather in a given location',
-        parameters: {
-          type: FunctionDeclarationSchemaType.OBJECT,
-          properties: {
-            location: {type: FunctionDeclarationSchemaType.STRING},
-            unit: {
-              type: FunctionDeclarationSchemaType.STRING,
-              enum: ['celsius', 'fahrenheit'],
-            },
-          },
-          required: ['location'],
-        },
-      },
-    ],
-  },
-];
+// const functionDeclarations = [
+//   {
+//     functionDeclarations: [
+//       {
+//         name: "get_current_weather",
+//         description: 'get weather in a given location',
+//         parameters: {
+//           type: FunctionDeclarationSchemaType.OBJECT,
+//           properties: {
+//             location: {type: FunctionDeclarationSchemaType.STRING},
+//             unit: {
+//               type: FunctionDeclarationSchemaType.STRING,
+//               enum: ['celsius', 'fahrenheit'],
+//             },
+//           },
+//           required: ['location'],
+//         },
+//       },
+//     ],
+//   },
+// ];
 
-const functionResponseParts = [
-  {
-    functionResponse: {
-      name: "get_current_weather",
-      response:
-          {name: "get_current_weather", content: {weather: "super nice"}},
-    },
-  },
-];
+// const functionResponseParts = [
+//   {
+//     functionResponse: {
+//       name: "get_current_weather",
+//       response:
+//           {name: "get_current_weather", content: {weather: "super nice"}},
+//     },
+//   },
+// ];
 
 
 router.get("/text", async (req, res) => {
