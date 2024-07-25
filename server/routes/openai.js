@@ -306,6 +306,7 @@ You will provide information based on the context given below. Do not indicate t
   - Solo Leveling
 
 ### Work and Educational Background
+- **Education**: BakTouk High School and also Kindergarten School
 - **Education**: Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
 - **Work Experience**:
   - Google Adsense: Side Hustle (2016 - 2017)
