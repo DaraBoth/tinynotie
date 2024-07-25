@@ -41,6 +41,39 @@ const AxiosTelegramBotInstance = {
   },
 };
 
+const functionDeclarations = [
+  {
+    functionDeclarations: [
+      {
+        name: "get_current_weather",
+        description: 'get weather in a given location',
+        parameters: {
+          type: FunctionDeclarationSchemaType.OBJECT,
+          properties: {
+            location: {type: FunctionDeclarationSchemaType.STRING},
+            unit: {
+              type: FunctionDeclarationSchemaType.STRING,
+              enum: ['celsius', 'fahrenheit'],
+            },
+          },
+          required: ['location'],
+        },
+      },
+    ],
+  },
+];
+
+const functionResponseParts = [
+  {
+    functionResponse: {
+      name: "get_current_weather",
+      response:
+          {name: "get_current_weather", content: {weather: "super nice"}},
+    },
+  },
+];
+
+
 router.get("/text", async (req, res) => {
   try {
     let { text , random } = req.query;
@@ -348,7 +381,7 @@ router.post("/ask", async (req, res) => {
 
     let { text, activeChatId , chatHistory } = req.body;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" })
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-001" })
 
     if(!chatHistory){
       chatHistory = defaultChatHistory;
@@ -517,5 +550,12 @@ const handleMessage = function (messageObj, messageText) {
       }
   }
 };
+
+
+
+
+
+
+
 
 export default router;

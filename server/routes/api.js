@@ -20,9 +20,9 @@ router.get("/test_db_online", async (req, res) => {
     database: database,
     password: password,
     port: port,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+    ssl:{
+      rejectUnauthorized: false
+    }
   });
   let client;
   try {
