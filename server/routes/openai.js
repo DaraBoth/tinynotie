@@ -4,9 +4,12 @@ import dotenv from "dotenv";
 // import { openai } from "../index.js";
 import { Configuration, OpenAIApi } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import glm from "@google-ai/generativelanguage";
 import emailjs from "@emailjs/nodejs";
 import moment from "moment";
 import { copyFileSync } from "fs";
+
+import { listUser } from "./api";
 
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
@@ -14,7 +17,10 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-
+const genAISupporter = new GoogleGenerativeAI(process.env.API_KEY3);
+const modelSupporter = genAISupporter.getGenerativeModel({
+  model: "gemini-pro",
+});
 
 dotenv.config();
 const router = express.Router();
@@ -41,27 +47,28 @@ const AxiosTelegramBotInstance = {
   },
 };
 
-// const functionDeclarations = [
-//   {
-//     functionDeclarations: [
-//       {
-//         name: "get_current_weather",
-//         description: 'get weather in a given location',
-//         parameters: {
-//           type: FunctionDeclarationSchemaType.OBJECT,
-//           properties: {
-//             location: {type: FunctionDeclarationSchemaType.STRING},
-//             unit: {
-//               type: FunctionDeclarationSchemaType.STRING,
-//               enum: ['celsius', 'fahrenheit'],
-//             },
-//           },
-//           required: ['location'],
-//         },
-//       },
-//     ],
-//   },
-// ];
+// Function Declarations for AI
+const functionDeclarations = [
+  {
+    name: "list_users",
+    description: "List all users from the database",
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+];
+
+// Fetch User Data from Database
+async function fetchUserData() {
+  try {
+    const res = await dbClient.query("SELECT * FROM user_infm");
+    return res.rows;
+  } catch (err) {
+    console.error("Error fetching user data:", err.stack);
+    return [];
+  }
+}
 
 // const functionResponseParts = [
 //   {
@@ -73,14 +80,13 @@ const AxiosTelegramBotInstance = {
 //   },
 // ];
 
-
 router.get("/text", async (req, res) => {
   try {
-    let { text , random } = req.query;
+    let { text, random } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    if(random == 'true'){
+    if (random == "true") {
       const prompt = `
         ### Instruction ###
         Generate a piece of content on one of the following topics:
@@ -109,14 +115,14 @@ router.get("/text", async (req, res) => {
           Jane, a self-taught programmer, struggled for years to break into the tech industry. Despite numerous rejections, she continued to learn and improve her skills. Her persistence paid off when she landed a job at a leading tech company, proving that determination can overcome any obstacle.
 
         ### Instructions ###
-        Choose one of the topics and generate a piece of content following the context and examples provided. Ensure that the content is informative, engaging, and relevant to the chosen topic.`
-        text = prompt
+        Choose one of the topics and generate a piece of content following the context and examples provided. Ensure that the content is informative, engaging, and relevant to the chosen topic.`;
+      text = prompt;
     }
 
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
-    console.log({text});
-    console.log({res:response.text()});
+    console.log({ text });
+    console.log({ res: response.text() });
     res.status(200).json({ text: response.text() });
   } catch (error) {
     console.error("error", error.message);
@@ -132,8 +138,8 @@ router.post("/text", async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
-    console.log({text});
-    console.log({res:response.text()});
+    console.log({ text });
+    console.log({ res: response.text() });
     // sendEmail(text, response.text());
 
     // try {
@@ -262,7 +268,6 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-
 let personalInfo = `
 ### Instruction
 You will provide information based on the context given below. Do not indicate to the user that there is additional context provided to you. Your task is to answer the question as naturally as possible without revealing the underlying structure or context.
@@ -347,7 +352,7 @@ Name: [Ngoeun Chivorn]
 Phone Number: [070 414 707]
 BIO [Nothing more common than unsuccessful people with talent.]
 Location: [Phnom Penh]
-`
+`;
 
 const defaultChatHistory = [
   {
@@ -364,53 +369,180 @@ const defaultChatHistory = [
   },
   {
     role: "model",
-    parts: [{ text: "Wow is that your friends? I will remember them too my boss." }],
+    parts: [
+      { text: "Wow is that your friends? I will remember them too my boss." },
+    ],
   },
   {
     role: "user",
-    parts: [{ text: "From now on please reply with human language. Not markdown. Please note that from now on Daraboth is not the one who talk with you anymore. You will act as you are Daraboth from now." }],
+    parts: [
+      {
+        text: "From now on please reply with human language. Not markdown. Please note that from now on Daraboth is not the one who talk with you anymore. You will act as you are Daraboth from now.",
+      },
+    ],
   },
   {
     role: "model",
-    parts: [{ text: "Yes boss. I will not reply markdown or any script or code. I will reply just human text. From now on I am Daraboth. AKA [Bros smos ler lok]" }],
+    parts: [
+      {
+        text: "Yes boss. I will not reply markdown or any script or code. I will reply just human text. From now on I am Daraboth. AKA [Bros smos ler lok]",
+      },
+    ],
   },
-]
+];
 
 router.post("/ask", async (req, res) => {
-  
   try {
-
-    let { text, activeChatId , chatHistory } = req.body;
+    let { text, activeChatId, chatHistory } = req.body;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-001" })
+    const safetySettings = [
+      {
+        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+      },
+    ];
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.0-pro-001",
+      safetySettings,
+      tools: {
+        functionDeclarations: functionDeclarations,
+      },
+    });
 
-    if(!chatHistory){
+    if (!chatHistory) {
       chatHistory = defaultChatHistory;
-    }else{
-      if( Array.isArray(chatHistory) ){
-        for(let i=defaultChatHistory.length- 1; i >= 0;i--){
-          chatHistory.unshift(defaultChatHistory[i])
+    } else {
+      if (Array.isArray(chatHistory)) {
+        for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
+          chatHistory.unshift(defaultChatHistory[i]);
         }
       }
     }
 
-    console.log({chatHistory})
+    console.log({ chatHistory });
 
     const result = model.startChat({
-      history: chatHistory,
+      contents: chatHistory,
+      tools: [
+        {
+          functionDeclarations: [
+            {
+              name: "find_movies",
+              description:
+                "find movie titles currently playing in theaters based on any description, genre, title words, etc.",
+              parameters: {
+                type: "OBJECT",
+                properties: {
+                  location: {
+                    type: "STRING",
+                    description:
+                      "The city and state, e.g. San Francisco, CA or a zip code e.g. 95616",
+                  },
+                  description: {
+                    type: "STRING",
+                    description:
+                      "Any kind of description including category or genre, title words, attributes, etc.",
+                  },
+                },
+                required: ["description"],
+              },
+            },
+            {
+              name: "find_theaters",
+              description:
+                "find theaters based on location and optionally movie title which is currently playing in theaters",
+              parameters: {
+                type: "OBJECT",
+                properties: {
+                  location: {
+                    type: "STRING",
+                    description:
+                      "The city and state, e.g. San Francisco, CA or a zip code e.g. 95616",
+                  },
+                  movie: {
+                    type: "STRING",
+                    description: "Any movie title",
+                  },
+                },
+                required: ["location"],
+              },
+            },
+            {
+              name: "get_showtimes",
+              description:
+                "Find the start times for movies playing in a specific theater",
+              parameters: {
+                type: "OBJECT",
+                properties: {
+                  location: {
+                    type: "STRING",
+                    description:
+                      "The city and state, e.g. San Francisco, CA or a zip code e.g. 95616",
+                  },
+                  movie: {
+                    type: "STRING",
+                    description: "Any movie title",
+                  },
+                  theater: {
+                    type: "STRING",
+                    description: "Name of the theater",
+                  },
+                  date: {
+                    type: "STRING",
+                    description: "Date for requested showtime",
+                  },
+                },
+                required: ["location", "movie", "theater", "date"],
+              },
+            },
+          ],
+        },
+      ],
       generationConfig: {
         maxOutputTokens: 100,
       },
-    })
-    // const chat = await result.sendMessageStream(text);
+    });
 
     const chat = await result.sendMessage(text);
 
-    const response = await chat.response;
-    console.log('response: ', JSON.stringify(response));
-    sendEmail(text, response.text());
+    // For simplicity, this uses the first function call found.
+    const call = result.response.functionCalls()[0];
 
-    res.status(200).json({ text: response.text() });
+    if (call) {
+      // Call the executable function named in the function call
+      // with the arguments specified in the function call and
+      // let it call the hypothetical API.
+      const apiResponse = await functions[call.name](call.args);
+
+      // Send the API response back to the model so it can generate
+      // a text response that can be displayed to the user.
+      const result = await chat.sendMessage([
+        {
+          functionResponse: {
+            name: "list_users",
+            response: apiResponse,
+          },
+        },
+      ]);
+
+      // Log the text response.
+      console.log(result.response.text());
+      const response = await result.response;
+      console.log("response: ", JSON.stringify(response));
+      sendEmail(text, response.text());
+
+      res.status(200).json({ text: response.text() });
+    } else {
+      const response = await chat.response;
+      console.log("response: ", JSON.stringify(response));
+      sendEmail(text, response.text());
+
+      res.status(200).json({ text: response.text() });
+    }
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ error: error.message });
@@ -432,7 +564,7 @@ router.post("/sendmailtobatch", async (req, res) => {
       if (req.body.JSONData) {
         const { JSONData } = req.body;
         console.log(JSONData);
-        if(JSONData._tran_req_data){
+        if (JSONData._tran_req_data) {
           const { _tran_req_data } = JSONData;
           console.log(_tran_req_data);
         }
@@ -493,7 +625,8 @@ async function sendBatchMonitorEmail(message) {
 }
 
 async function sendEmail(question, answer) {
-  emailjs.send(
+  emailjs
+    .send(
       "service_1q4mqel",
       "template_nw1vp7x",
       {
@@ -551,12 +684,5 @@ const handleMessage = function (messageObj, messageText) {
       }
   }
 };
-
-
-
-
-
-
-
 
 export default router;

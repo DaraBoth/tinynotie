@@ -116,6 +116,19 @@ router.post("/addGroupByUserId", async (req, res) => {
   }
 });
 
+export function listUser(){
+  try {
+    let sql = `SELECT *
+    FROM user_infm;`;
+    pool.query(sql.toString(), (error, results) => {
+      return results.rows
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
 router.post("/addTripByGroupId", async (req, res) => {
   const { trp_name, spend, mem_id, description, group_id } = req.body;
   const create_date = format(new Date());
