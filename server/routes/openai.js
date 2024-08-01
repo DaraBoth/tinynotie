@@ -9,8 +9,6 @@ import emailjs from "@emailjs/nodejs";
 import moment from "moment";
 import { copyFileSync } from "fs";
 
-import { listUser } from "./api";
-
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
   apiKey: process.env.OPEN_API_KEY,
