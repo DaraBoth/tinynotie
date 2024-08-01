@@ -497,39 +497,39 @@ router.post("/ask", async (req, res) => {
     const chat = await result.sendMessage(text);
 
     // For simplicity, this uses the first function call found.
-    const call = result.response.functionCalls()[0];
+    // const call = result.response.functionCalls()[0];
 
-    if (call) {
-      // Call the executable function named in the function call
-      // with the arguments specified in the function call and
-      // let it call the hypothetical API.
-      const apiResponse = await functions[call.name](call.args);
+    // if (call) {
+    //   // Call the executable function named in the function call
+    //   // with the arguments specified in the function call and
+    //   // let it call the hypothetical API.
+    //   const apiResponse = await functions[call.name](call.args);
 
-      // Send the API response back to the model so it can generate
-      // a text response that can be displayed to the user.
-      const result = await chat.sendMessage([
-        {
-          functionResponse: {
-            name: "list_users",
-            response: apiResponse,
-          },
-        },
-      ]);
+    //   // Send the API response back to the model so it can generate
+    //   // a text response that can be displayed to the user.
+    //   const result = await chat.sendMessage([
+    //     {
+    //       functionResponse: {
+    //         name: "list_users",
+    //         response: apiResponse,
+    //       },
+    //     },
+    //   ]);
 
-      // Log the text response.
-      console.log(result.response.text());
-      const response = await result.response;
-      console.log("response: ", JSON.stringify(response));
-      sendEmail(text, response.text());
+    //   // Log the text response.
+    //   console.log(result.response.text());
+    //   const response = await result.response;
+    //   console.log("response: ", JSON.stringify(response));
+    //   sendEmail(text, response.text());
 
-      res.status(200).json({ text: response.text() });
-    } else {
+    //   res.status(200).json({ text: response.text() });
+    // } else {
       const response = await chat.response;
       console.log("response: ", JSON.stringify(response));
       sendEmail(text, response.text());
 
       res.status(200).json({ text: response.text() });
-    }
+    // }
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ error: error.message });
