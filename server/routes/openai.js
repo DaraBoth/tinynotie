@@ -393,19 +393,8 @@ router.post("/ask", async (req, res) => {
   try {
     let { text, activeChatId, chatHistory } = req.body;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const safetySettings = [
-      {
-        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-    ];
     const model = genAI.getGenerativeModel({
       model: "gemini-1.0-pro-001",
-      safetySettings,
       tools: {
         functionDeclarations: functionDeclarations,
       },
