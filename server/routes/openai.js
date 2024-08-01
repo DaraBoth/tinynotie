@@ -528,7 +528,7 @@ router.post("/ask", async (req, res) => {
       console.log("response: ", JSON.stringify(response));
       sendEmail(text, response.text());
 
-      res.status(200).json({ text: response.text() });
+      res.status(200).json({ text: response.text() ,response});
     // }
   } catch (error) {
     console.error("error", error);
