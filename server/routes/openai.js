@@ -414,7 +414,7 @@ router.post("/ask", async (req, res) => {
 
     const result = model.startChat({
       chatHistory: chatHistory,
-      enable_automatic_function_calling:True,
+      enable_automatic_function_calling:true,
       tools: [
         {
           functionDeclarations: [
