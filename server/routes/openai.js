@@ -412,8 +412,8 @@ router.post("/ask", async (req, res) => {
 
     console.log({ chatHistory });
 
-    const result = model.startChat({
-      chatHistory: chatHistory,
+    const result = model.generateContent({
+      contents: chatHistory,
       enable_automatic_function_calling:true,
       tools: [
         {
