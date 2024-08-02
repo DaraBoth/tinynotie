@@ -409,7 +409,129 @@ const defaultChatHistory = [
 router.post("/ask", async (req, res) => {
   try {
     let { text, activeChatId, chatHistory } = req.body;
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+      const responseText = callAI(text,chatHistory)
+      console.log("response: ", responseText);
+      sendEmail(text, responseText);
+      res.status(200).json({ text: responseText });
+    // }
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/darabothlistening", async (req, res) => {
+  try {
+    const { body } = req;
+    if (body) {
+      const messageObj = body.message;
+      console.log(messageObj);
+      // await handleMessage(messageObj);
+      res.status(200).json({ response: req.body });
+    }
+  } catch (error) {
+    console.log(error);
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// B2B_BatchMonitorBot
+//
+async function sendBatchMonitorEmail(message) {
+  const response = await emailjs.send(
+    process.env.BATCH_SERVICE_ID,
+    process.env.BATCH_TEMPLATE_ID,
+    {
+      from_name: "Batch Monitor",
+      to_name: "Admin B2B",
+      message: message,
+      reply_to: "b2bbatchmonitor@gmail.com",
+      current_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+    },
+    {
+      publicKey: process.env.BATCH_PUBLIC_KEY,
+      privateKey: process.env.BATCH_PRIVATE_KEY, // optional, highly recommended for security reasons
+    }
+  );
+  return response;
+}
+
+async function sendEmail(question, answer) {
+  emailjs
+    .send(
+      "service_1q4mqel",
+      "template_nw1vp7x",
+      {
+        from_name: "Ask Now",
+        to_name: "Vong Pich Daraboth",
+        from_email: "Ask now Assist AI",
+        to_email: "daraboth0331@gmail.com",
+        message: `Question : ${question}
+
+                Answer : ${answer}`,
+      },
+      {
+        publicKey: "FTfXkTunMtI_tIlGC",
+        privateKey: "FfAmlGo-tjwOoIQZjQRu2", // optional, highly recommended for security reasons
+      }
+    )
+    .then(
+      (response) => {
+        console.log("SUCCESS!", response.status, response.text);
+      },
+      (err) => {
+        console.log("FAILED...", err);
+      }
+    );
+}
+
+const sendMessage = function (messageObj, messageText) {
+  return AxiosTelegramBotInstance.get("sendMessage", {
+    chat_id: messageObj.chat.id || "",
+    text: messageText,
+  });
+};
+
+const darabothSendMessage = function (messageObj, messageText) {
+  return AxiosTelegramBotInstance2.get("sendMessage", {
+    chat_id: messageObj.chat.id || "",
+    text: messageText,
+  });
+};
+
+const handleMessage = function (messageObj) {
+  const { id: Chat_ID } = messageObj.chat;
+  let messageText = messageObj.text || "";
+  switch (Chat_ID) {
+    case "-4189396924":
+      // send error message logic
+      break;
+    case -1001754103737: // BTB
+      // send error message logic
+      break;
+    default:
+      if (messageText.charAt(0) == "/") {
+        const command = messageText.substr(1);
+        switch (command) {
+          case "start":
+            return darabothSendMessage(messageObj, "Hi! bro");
+          default:
+            return darabothSendMessage(
+              messageObj,
+              "Hey hi, I don't know that command."
+            );
+        }
+      } else {
+        const responseText = callAI(messageText,defaultChatHistory)
+        return darabothSendMessage(messageObj, responseText);
+      }
+  }
+};
+
+async function callAI(text,chatHistory){
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({
       model: "gemini-1.0-pro-001",
       tools: {
@@ -513,205 +635,8 @@ router.post("/ask", async (req, res) => {
     });
 
     const chat = await result.sendMessage(text);
-
-    // For simplicity, this uses the first function call found.
-    // const call = result.response.functionCalls()[0];
-
-    // if (call) {
-    //   // Call the executable function named in the function call
-    //   // with the arguments specified in the function call and
-    //   // let it call the hypothetical API.
-    //   const apiResponse = await functions[call.name](call.args);
-
-    //   // Send the API response back to the model so it can generate
-    //   // a text response that can be displayed to the user.
-    //   const result = await chat.sendMessage([
-    //     {
-    //       functionResponse: {
-    //         name: "list_users",
-    //         response: apiResponse,
-    //       },
-    //     },
-    //   ]);
-
-    //   // Log the text response.
-    //   console.log(result.response.text());
-    //   const response = await result.response;
-    //   console.log("response: ", JSON.stringify(response));
-    //   sendEmail(text, response.text());
-
-    //   res.status(200).json({ text: response.text() });
-    // } else {
-      const response = await chat.response;
-      console.log("response: ", JSON.stringify(response));
-      sendEmail(text, response.text());
-
-      res.status(200).json({ text: response.text() ,response});
-    // }
-  } catch (error) {
-    console.error("error", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post("/sendmailtobatch", async (req, res) => {
-  const messageObj = {
-    chat: {
-      id: "-4189396924",
-      title: "Batch Monitor Error Report",
-      type: "group",
-      all_members_are_administrators: true,
-    },
-  };
-  try {
-    const { message } = req.body;
-    if (req.body) {
-      if (req.body.JSONData) {
-        const { JSONData } = req.body;
-        console.log(JSONData);
-        if (JSONData._tran_req_data) {
-          const { _tran_req_data } = JSONData;
-          console.log(_tran_req_data);
-        }
-      }
-    }
-    // let status = "";
-    // const { status, text } = await sendBatchMonitorEmail(message);
-    // await sendMessage(messageObj, message);
-    // console.log({ message, status, text });
-    // res.status(200).json({ response: { text, status } });
-    res.status(200).json({ response: req.body });
-  } catch (error) {
-    console.log(error);
-    console.error("error", error.message);
-    await sendMessage(
-      messageObj,
-      "Something when wrong while sending messages!"
-    );
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post("/botlistening", async (req, res) => {
-  try {
-    const { body } = req;
-    if (body) {
-      const messageObj = body.message;
-      console.log(messageObj);
-      // await handleMessage(messageObj);
-      res.status(200).json({ response: req.body });
-    }
-  } catch (error) {
-    console.log(error);
-    console.error("error", error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post("/darabothlistening", async (req, res) => {
-  try {
-    const { body } = req;
-    if (body) {
-      const messageObj = body.message;
-      console.log(messageObj);
-      // await handleMessage(messageObj);
-      res.status(200).json({ response: req.body });
-    }
-  } catch (error) {
-    console.log(error);
-    console.error("error", error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-// B2B_BatchMonitorBot
-//
-async function sendBatchMonitorEmail(message) {
-  const response = await emailjs.send(
-    process.env.BATCH_SERVICE_ID,
-    process.env.BATCH_TEMPLATE_ID,
-    {
-      from_name: "Batch Monitor",
-      to_name: "Admin B2B",
-      message: message,
-      reply_to: "b2bbatchmonitor@gmail.com",
-      current_date: moment().format("YYYY-MM-DD HH:mm:ss"),
-    },
-    {
-      publicKey: process.env.BATCH_PUBLIC_KEY,
-      privateKey: process.env.BATCH_PRIVATE_KEY, // optional, highly recommended for security reasons
-    }
-  );
-  return response;
-}
-
-async function sendEmail(question, answer) {
-  emailjs
-    .send(
-      "service_1q4mqel",
-      "template_nw1vp7x",
-      {
-        from_name: "Ask Now",
-        to_name: "Vong Pich Daraboth",
-        from_email: "Ask now Assist AI",
-        to_email: "daraboth0331@gmail.com",
-        message: `Question : ${question}
-
-                Answer : ${answer}`,
-      },
-      {
-        publicKey: "FTfXkTunMtI_tIlGC",
-        privateKey: "FfAmlGo-tjwOoIQZjQRu2", // optional, highly recommended for security reasons
-      }
-    )
-    .then(
-      (response) => {
-        console.log("SUCCESS!", response.status, response.text);
-      },
-      (err) => {
-        console.log("FAILED...", err);
-      }
-    );
-}
-
-const sendMessage = function (messageObj, messageText) {
-  return AxiosTelegramBotInstance.get("sendMessage", {
-    chat_id: messageObj.chat.id || "",
-    text: messageText,
-  });
-};
-
-const darabothSendMessage = function (messageObj, messageText) {
-  return AxiosTelegramBotInstance2.get("sendMessage", {
-    chat_id: messageObj.chat.id || "",
-    text: messageText,
-  });
-};
-
-const handleMessage = function (messageObj, messageText) {
-  const { id: Chat_ID } = messageObj.chat;
-  if (!messageText) messageText = messageObj.text || "";
-  switch (Chat_ID) {
-    case "-4189396924":
-      // send error message logic
-      break;
-    default:
-      if (messageText.charAt(0) === "/") {
-        const command = messageText.substr(1);
-        switch (command) {
-          case "start":
-            return darabothSendMessage(messageObj, "Hi! bro");
-          default:
-            return darabothSendMessage(
-              messageObj,
-              "Hey hi, I don't know that command."
-            );
-        }
-      } else {
-        return darabothSendMessage(messageObj, messageText);
-      }
-  }
-};
+    const response = await chat.response;
+    return response.text();
+} 
 
 export default router;
