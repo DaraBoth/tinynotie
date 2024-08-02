@@ -45,6 +45,23 @@ const AxiosTelegramBotInstance = {
   },
 };
 
+const AxiosTelegramBotInstance2 = {
+  get(method, params) {
+    return axios.get(`/${method}`, {
+      baseURL: baseURL2,
+      params,
+    });
+  },
+  post(method, data) {
+    return axios({
+      method: "POST",
+      baseURL: baseURL2,
+      url: `/${method}`,
+      data,
+    });
+  },
+};
+
 // Function Declarations for AI
 const functionDeclarations = [
   {
@@ -412,8 +429,8 @@ router.post("/ask", async (req, res) => {
 
     console.log({ chatHistory });
 
-    const result = model.generateContent({
-      contents: chatHistory,
+    const result = model.startChat({
+      chatHistory: chatHistory,
       enable_automatic_function_calling:true,
       tools: [
         {
@@ -648,6 +665,13 @@ const sendMessage = function (messageObj, messageText) {
   });
 };
 
+const darabothSendMessage = function (messageObj, messageText) {
+  return AxiosTelegramBotInstance2.get("sendMessage", {
+    chat_id: messageObj.chat.id || "",
+    text: messageText,
+  });
+};
+
 const handleMessage = function (messageObj, messageText) {
   const { id: Chat_ID } = messageObj.chat;
   if (!messageText) messageText = messageObj.text || "";
@@ -660,15 +684,15 @@ const handleMessage = function (messageObj, messageText) {
         const command = messageText.substr(1);
         switch (command) {
           case "start":
-            return sendMessage(messageObj, "Hi! bro");
+            return darabothSendMessage(messageObj, "Hi! bro");
           default:
-            return sendMessage(
+            return darabothSendMessage(
               messageObj,
               "Hey hi, I don't know that command."
             );
         }
       } else {
-        return sendMessage(messageObj, messageText);
+        return darabothSendMessage(messageObj, messageText);
       }
   }
 };
