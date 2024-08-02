@@ -7,7 +7,15 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import glm from "@google-ai/generativelanguage";
 import emailjs from "@emailjs/nodejs";
 import moment from "moment";
-import { copyFileSync } from "fs";
+
+const Pool = pg.Pool;
+const pool = new Pool({
+  user: "kjjelxjh",
+  host: "chunee.db.elephantsql.com",
+  database: "kjjelxjh",
+  password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
+  port: 5432,
+});
 
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
@@ -61,39 +69,6 @@ const AxiosTelegramBotInstance2 = {
     });
   },
 };
-
-// Function Declarations for AI
-const functionDeclarations = [
-  {
-    name: "list_users",
-    description: "List all users from the database",
-    parameters: {
-      type: "object",
-      properties: {},
-    },
-  },
-];
-
-// Fetch User Data from Database
-async function fetchUserData() {
-  try {
-    const res = await dbClient.query("SELECT * FROM user_infm");
-    return res.rows;
-  } catch (err) {
-    console.error("Error fetching user data:", err.stack);
-    return [];
-  }
-}
-
-// const functionResponseParts = [
-//   {
-//     functionResponse: {
-//       name: "get_current_weather",
-//       response:
-//           {name: "get_current_weather", content: {weather: "super nice"}},
-//     },
-//   },
-// ];
 
 router.get("/text", async (req, res) => {
   try {
@@ -409,10 +384,10 @@ const defaultChatHistory = [
 router.post("/ask", async (req, res) => {
   try {
     let { text, activeChatId, chatHistory } = req.body;
-      const response = await callAI(text,chatHistory)
-      console.log("response: ", response);
-      sendEmail(text, response.text());
-      res.status(200).json({ text: response.text() });
+    const response = await callAI(text, chatHistory);
+    console.log("response: ", response);
+    sendEmail(text, response.text());
+    res.status(200).json({ text: response.text() });
     // }
   } catch (error) {
     console.error("error", error);
@@ -435,7 +410,6 @@ router.post("/darabothlistening", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 // B2B_BatchMonitorBot
 //
@@ -524,36 +498,84 @@ const handleMessage = async function (messageObj) {
             );
         }
       } else {
-        const responseText = await callAI(messageText,defaultChatHistory)
+
+        // let chatHistory
+
+        // const sqlgetChat = `select chat_history from json_data where chat_id = ${Chat_ID};`
+        // pool.query(sqlgetChat.toString(), (error, results) => {
+        //   if (error) {
+        //     console.log(error);
+        //     return error
+        //   }
+        //   if(results.rows.length > 0){
+        //     chatHistory = results.rows
+        //   }
+        // });
+
+        // if (!chatHistory) {
+          // chatHistory = defaultChatHistory
+          // const sql = `INSERT INTO json_data (chat_id, chat_history) VALUES ('${Chat_ID}', '${chatHistory}');`
+          // pool.query(sql.toString(), (error, results) => {
+          //   if (error) {
+          //     console.log(error);
+          //     return error
+          //   }
+          // });
+        // } else {
+        //   if (Array.isArray(chatHistory)) {
+        //     for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
+        //       chatHistory.unshift(defaultChatHistory[i]);
+        //     }
+        //   }
+        // }
+        
+
+        const responseText = await callAI(messageText, defaultChatHistory);
+
+
+
+
+
+
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
 };
 
-async function callAI(text,chatHistory){
+function saveChatHistory(){
+  pool.query(sql.toString(), (error, results) => {
+    if (error) {
+      res.status(500).json({ error: error.message });
+      throw error;
+    }
+    res.send({ status: true, data: results.rows });
+  });
+}
+
+async function callAI(text, chatHistory) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.0-pro-001",
-    });
-    if (!chatHistory) {
-      chatHistory = defaultChatHistory;
-    } else {
-      if (Array.isArray(chatHistory)) {
-        for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
-          chatHistory.unshift(defaultChatHistory[i]);
-        }
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.0-pro-001",
+  });
+  if (!chatHistory) {
+    chatHistory = defaultChatHistory;
+  } else {
+    if (Array.isArray(chatHistory)) {
+      for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
+        chatHistory.unshift(defaultChatHistory[i]);
       }
     }
-    console.log(JSON.stringify(chatHistory));
-    const result = model.startChat({
-      history: chatHistory,
-      generationConfig: {
-        maxOutputTokens: 100,
-      },
-    });
+  }
+  console.log(JSON.stringify(chatHistory));
+  const result = model.startChat({
+    history: chatHistory,
+    generationConfig: {
+      maxOutputTokens: 100,
+    },
+  });
 
-    const chat = await result.sendMessage(text);
-    return await chat.response;
-} 
+  const chat = await result.sendMessage(text);
+  return await chat.response;
+}
 
 export default router;
