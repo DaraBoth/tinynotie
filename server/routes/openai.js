@@ -409,10 +409,10 @@ const defaultChatHistory = [
 router.post("/ask", async (req, res) => {
   try {
     let { text, activeChatId, chatHistory } = req.body;
-      const responseText = callAI(text,chatHistory)
-      console.log("response: ", responseText);
-      sendEmail(text, responseText);
-      res.status(200).json({ text: responseText });
+      const response = await callAI(text,chatHistory)
+      console.log("response: ", response);
+      sendEmail(text, response.text());
+      res.status(200).json({ text: response.text() });
     // }
   } catch (error) {
     console.error("error", error);
@@ -426,7 +426,7 @@ router.post("/darabothlistening", async (req, res) => {
     if (body) {
       const messageObj = body.message;
       console.log(messageObj);
-      // await handleMessage(messageObj);
+      await handleMessage(messageObj);
       res.status(200).json({ response: req.body });
     }
   } catch (error) {
@@ -501,7 +501,7 @@ const darabothSendMessage = function (messageObj, messageText) {
   });
 };
 
-const handleMessage = function (messageObj) {
+const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
   let messageText = messageObj.text || "";
   switch (Chat_ID) {
@@ -524,8 +524,8 @@ const handleMessage = function (messageObj) {
             );
         }
       } else {
-        const responseText = callAI(messageText,defaultChatHistory)
-        return darabothSendMessage(messageObj, responseText);
+        const responseText = await callAI(messageText,defaultChatHistory)
+        return darabothSendMessage(messageObj, responseText.text());
       }
   }
 };
@@ -635,8 +635,7 @@ async function callAI(text,chatHistory){
     });
 
     const chat = await result.sendMessage(text);
-    const response = await chat.response;
-    return response.text();
+    return await chat.response;
 } 
 
 export default router;
