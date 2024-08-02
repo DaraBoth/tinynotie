@@ -534,11 +534,7 @@ async function callAI(text,chatHistory){
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({
       model: "gemini-1.0-pro-001",
-      tools: {
-        functionDeclarations: functionDeclarations,
-      },
     });
-
     if (!chatHistory) {
       chatHistory = defaultChatHistory;
     } else {
@@ -548,9 +544,7 @@ async function callAI(text,chatHistory){
         }
       }
     }
-
     console.log(JSON.stringify(chatHistory));
-
     const result = model.startChat({
       chatHistory: chatHistory,
       generationConfig: {
