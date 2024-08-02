@@ -24,7 +24,7 @@ dotenv.config();
 const router = express.Router();
 
 const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const DARABOTH_AI_TOKEN = process.env.DARABOTH_AI_TOKEN;
+const DARABOTH_AI_TOKEN = process.env.TELEGRAM_BOT_TOKEN3;
 const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
 const baseURL2 = `https://api.telegram.org/bot${DARABOTH_AI_TOKEN}`;
 
