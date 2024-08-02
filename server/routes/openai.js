@@ -608,6 +608,23 @@ router.post("/botlistening", async (req, res) => {
   }
 });
 
+router.post("/darabothlistening", async (req, res) => {
+  try {
+    const { body } = req;
+    if (body) {
+      const messageObj = body.message;
+      console.log(messageObj);
+      // await handleMessage(messageObj);
+      res.status(200).json({ response: req.body });
+    }
+  } catch (error) {
+    console.log(error);
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // B2B_BatchMonitorBot
 //
 async function sendBatchMonitorEmail(message) {
