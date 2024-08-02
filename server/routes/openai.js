@@ -546,7 +546,7 @@ async function callAI(text,chatHistory){
     }
     console.log(JSON.stringify(chatHistory));
     const result = model.startChat({
-      chatHistory: chatHistory,
+      history: chatHistory,
       generationConfig: {
         maxOutputTokens: 100,
       },
