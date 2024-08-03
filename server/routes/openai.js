@@ -505,7 +505,7 @@ const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
   let messageText = messageObj.text || "";
   switch (Chat_ID) {
-    case "406610085":
+    case -406610085:
       if (messageText.charAt(0) == "/ask") {
         const responseText = await callAI(messageText,defaultChatHistory)
         return darabothSendMessage(messageObj, responseText.text());
