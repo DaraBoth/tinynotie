@@ -574,20 +574,20 @@ const getChat = function ({ chat_id }) {
 
 const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
-  let messageText = messageObj.text+"" || "";
+  let messageText = messageObj.text + "" || "";
   const results = (await getChat({ chat_id: Chat_ID })).results
   let chatHistory
   if (!results) {
     chatHistory = defaultChatHistory
-    saveChat(chatHistory)
+    saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
   }
 
   switch (Chat_ID) {
     case -406610085:
-      if ( messageText.startsWith("/ask") ) {
+      if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory)
         chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
-        saveChat(chatHistory)
+        saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
         return darabothSendMessage(messageObj, responseText.text());
       }
       // send error message logic
@@ -610,7 +610,7 @@ const handleMessage = async function (messageObj) {
       } else {
         const responseText = await callAI(messageText, defaultChatHistory)
         chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
-        saveChat(chatHistory)
+        saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
