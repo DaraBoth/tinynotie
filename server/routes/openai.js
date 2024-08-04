@@ -7,9 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import glm from "@google-ai/generativelanguage";
 import emailjs from "@emailjs/nodejs";
 import moment from "moment";
-import { copyFileSync } from "fs";
-import { promises } from "dns";
-import { rejects } from "assert";
+import pg from "pg";
 
 const Pool = pg.Pool;
 const pool = new Pool({
