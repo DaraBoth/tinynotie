@@ -8,6 +8,18 @@ import glm from "@google-ai/generativelanguage";
 import emailjs from "@emailjs/nodejs";
 import moment from "moment";
 import { copyFileSync } from "fs";
+import { promises } from "dns";
+import { rejects } from "assert";
+
+const Pool = pg.Pool;
+const pool = new Pool({
+  user: "kjjelxjh",
+  host: "chunee.db.elephantsql.com",
+  database: "kjjelxjh",
+  password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
+  port: 5432,
+});
+
 
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
@@ -409,10 +421,10 @@ const defaultChatHistory = [
 router.post("/ask", async (req, res) => {
   try {
     let { text, activeChatId, chatHistory } = req.body;
-      const response = await callAI(text,chatHistory)
-      console.log("response: ", response);
-      sendEmail(text, response.text());
-      res.status(200).json({ text: response.text() });
+    const response = await callAI(text, chatHistory)
+    console.log("response: ", response);
+    sendEmail(text, response.text());
+    res.status(200).json({ text: response.text() });
     // }
   } catch (error) {
     console.error("error", error);
@@ -501,13 +513,83 @@ const darabothSendMessage = function (messageObj, messageText) {
   });
 };
 
+const runQuery = function ({ sql }) {
+  return new Promise(async (resolve, rejects) => {
+    let client
+    try {
+      client = await pool.connect();
+      client.query(sql.toString(), (error, results) => {
+        if (error) {
+          return rejects(error)
+        }
+        return resolve(results);
+      });
+    } catch (error) {
+      console.log(error.stack);
+      return rejects(error);
+    } finally {
+      if (client) {
+        client.release();
+      }
+      pool.end();
+    }
+  })
+}
+
+const saveChat = function ({ chat_id, chat_history }) {
+  const sql = `
+  INSERT INTO json_data (chat_id, chat_history)
+    VALUES ('${chat_id}', '${chat_history}')
+  ON CONFLICT (chat_id)
+  DO UPDATE SET
+    chat_history = EXCLUDED.chat_history
+  RETURNING id, chat_id, chat_history;
+  `
+  runQuery({ sql }).then((res) => {
+    return {
+      isError: false,
+      results: res.rows
+    };
+  }).catch((err) => {
+    return {
+      isError: true,
+      reason: err
+    };
+  }).finally()
+}
+
+const getChat = function ({ chat_id }) {
+  const sql = ` select id, chat_id, chat_history from json_data where chat_id = '${chat_id}'; `
+  runQuery({ sql }).then((res) => {
+    return {
+      isError: false,
+      results: res.rows
+    };
+  }).catch((err) => {
+    return {
+      isError: true,
+      reason: err,
+      results: null
+    };
+  }).finally()
+}
+
 const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
   let messageText = messageObj.text || "";
+  const { results } = getChat({ chat_id: Chat_ID })
+  let chatHistory
+  if (!results) {
+    chatHistory = defaultChatHistory
+    saveChat(chatHistory)
+  }
+
   switch (Chat_ID) {
     case -406610085:
       if (messageText.charAt(0) == "/ask") {
-        const responseText = await callAI(messageText,defaultChatHistory)
+        const responseText = await callAI(messageText, chatHistory)
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
+        saveChat(chatHistory)
         return darabothSendMessage(messageObj, responseText.text());
       }
       // send error message logic
@@ -528,36 +610,38 @@ const handleMessage = async function (messageObj) {
             );
         }
       } else {
-        const responseText = await callAI(messageText,defaultChatHistory)
+        const responseText = await callAI(messageText, defaultChatHistory)
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
+        saveChat(chatHistory)
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
 };
 
-async function callAI(text,chatHistory){
+async function callAI(text, chatHistory) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.0-pro-001",
-    });
-    if (!chatHistory) {
-      chatHistory = defaultChatHistory;
-    } else {
-      if (Array.isArray(chatHistory)) {
-        for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
-          chatHistory.unshift(defaultChatHistory[i]);
-        }
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.0-pro-001",
+  });
+  if (!chatHistory) {
+    chatHistory = defaultChatHistory;
+  } else {
+    if (Array.isArray(chatHistory)) {
+      for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
+        chatHistory.unshift(defaultChatHistory[i]);
       }
     }
-    console.log(JSON.stringify(chatHistory));
-    const result = model.startChat({
-      history: chatHistory,
-      generationConfig: {
-        maxOutputTokens: 100,
-      },
-    });
+  }
+  console.log(JSON.stringify(chatHistory));
+  const result = model.startChat({
+    history: chatHistory,
+    generationConfig: {
+      maxOutputTokens: 100,
+    },
+  });
 
-    const chat = await result.sendMessage(text);
-    return await chat.response;
-} 
+  const chat = await result.sendMessage(text);
+  return await chat.response;
+}
 
 export default router;
