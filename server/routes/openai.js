@@ -642,7 +642,6 @@ async function callAI(text, chatHistory) {
       }
     }
   }
-  console.log(JSON.stringify(chatHistory));
   const result = model.startChat({
     history: chatHistory,
     generationConfig: {
