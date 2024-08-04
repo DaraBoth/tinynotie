@@ -555,7 +555,7 @@ const saveChat = function ({ chat_id, chat_history }) {
   console.log("query ::: "+sql);
   runQuery({ sql }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
-    console.log("THis is history"+his);
+    // console.log("THis is history"+his);
     return {
       isError: false,
       results: JSON.parse(res.rows[0].chat_history)
