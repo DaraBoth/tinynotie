@@ -514,8 +514,15 @@ const darabothSendMessage = function (messageObj, messageText) {
 const runQuery = function ({ sql }) {
   return new Promise(async (resolve, rejects) => {
     let client
+    const thisPool = new Pool({
+      user: "kjjelxjh",
+      host: "chunee.db.elephantsql.com",
+      database: "kjjelxjh",
+      password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
+      port: 5432,
+    });
     try {
-      client = await pool.connect();
+      client = await thisPool.connect();
       client.query(sql.toString(), (error, results) => {
         if (error) {
           return rejects(error)
@@ -529,7 +536,7 @@ const runQuery = function ({ sql }) {
       if (client) {
         client.release();
       }
-      pool.end();
+      thisPool.end();
     }
   })
 }
