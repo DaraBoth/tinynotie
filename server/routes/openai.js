@@ -618,6 +618,7 @@ const handleMessage = async function (messageObj) {
         const responseText = await callAI(messageText, defaultChatHistory)
         chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
+        console.log(chatHistory);
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
