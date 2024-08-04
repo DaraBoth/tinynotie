@@ -527,6 +527,7 @@ const runQuery = function ({ sql }) {
         if (error) {
           return rejects(error)
         }
+        console.log({results});
         return resolve(results);
       });
     } catch (error) {
