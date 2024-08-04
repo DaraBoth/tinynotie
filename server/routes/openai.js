@@ -435,7 +435,7 @@ router.post("/darabothlistening", async (req, res) => {
     const { body } = req;
     if (body) {
       const messageObj = body.message;
-      console.log(messageObj);
+      // console.log(messageObj);
       await handleMessage(messageObj);
       res.status(200).json({ response: req.body });
     }
@@ -555,7 +555,7 @@ const saveChat = function ({ chat_id, chat_history }) {
   console.log("query ::: "+sql);
   runQuery({ sql }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
-    console.log(his);
+    console.log("THis is history"+his);
     return {
       isError: false,
       results: JSON.parse(res.rows[0].chat_history)
@@ -623,7 +623,6 @@ const handleMessage = async function (messageObj) {
         const responseText = await callAI(messageText, defaultChatHistory)
         chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
-        // console.log(chatHistory);
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
