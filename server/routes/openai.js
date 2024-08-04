@@ -576,7 +576,7 @@ const getChat = function ({ chat_id }) {
 
 const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
-  let messageText = messageObj.text || "";
+  let messageText = messageObj.text+"" || "";
   const { results } = getChat({ chat_id: Chat_ID })
   let chatHistory
   if (!results) {
@@ -586,7 +586,7 @@ const handleMessage = async function (messageObj) {
 
   switch (Chat_ID) {
     case -406610085:
-      if (messageText.charAt(0) == "/ask") {
+      if ( messageText.startsWith("/ask") ) {
         const responseText = await callAI(messageText, chatHistory)
         chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
         saveChat(chatHistory)
