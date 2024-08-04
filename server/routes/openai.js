@@ -546,7 +546,7 @@ const saveChat = function ({ chat_id, chat_history }) {
   runQuery({ sql }).then((res) => {
     return {
       isError: false,
-      results: res.rows
+      results: JSON.parse(res.rows[0].chat_history)
     };
   }).catch((err) => {
     return {
@@ -561,7 +561,7 @@ const getChat = function ({ chat_id }) {
   return runQuery({ sql }).then((res) => {
     return {
       isError: false,
-      results: JSON.parse(res.rows)
+      results: JSON.parse(res.rows[0].chat_history)
     };
   }).catch((err) => {
     return {
