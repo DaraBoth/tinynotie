@@ -542,6 +542,7 @@ const runQuery = function ({ sql }) {
 }
 
 const saveChat = function ({ chat_id, chat_history }) {
+
   const sql = `
   INSERT INTO json_data (chat_id, chat_history)
     VALUES ('${chat_id}', '${JSON.stringify(chat_history)}')
@@ -550,7 +551,10 @@ const saveChat = function ({ chat_id, chat_history }) {
     chat_history = EXCLUDED.chat_history
   RETURNING id, chat_id, chat_history;
   `
+  console.log("query ::: "+sql);
   runQuery({ sql }).then((res) => {
+    const his = JSON.parse(res.rows[0].chat_history)
+    console.log(his);
     return {
       isError: false,
       results: JSON.parse(res.rows[0].chat_history)
@@ -618,7 +622,7 @@ const handleMessage = async function (messageObj) {
         const responseText = await callAI(messageText, defaultChatHistory)
         chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
-        console.log(chatHistory);
+        // console.log(chatHistory);
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
