@@ -558,7 +558,7 @@ const saveChat = function ({ chat_id, chat_history }) {
 
 const getChat = function ({ chat_id }) {
   const sql = ` select id, chat_id, chat_history from json_data where chat_id = '${chat_id}'; `
-  runQuery({ sql }).then((res) => {
+  return runQuery({ sql }).then((res) => {
     return {
       isError: false,
       results: res.rows
@@ -575,7 +575,7 @@ const getChat = function ({ chat_id }) {
 const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
   let messageText = messageObj.text+"" || "";
-  const { results } = getChat({ chat_id: Chat_ID })
+  const results = (await getChat({ chat_id: Chat_ID })).results
   let chatHistory
   if (!results) {
     chatHistory = defaultChatHistory
