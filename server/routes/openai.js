@@ -527,7 +527,7 @@ const runQuery = function ({ sql }) {
         if (error) {
           return rejects(error)
         }
-        console.log({results});
+        // console.log({results});
         return resolve(results);
       });
     } catch (error) {
@@ -552,10 +552,10 @@ const saveChat = function ({ chat_id, chat_history }) {
     chat_history = EXCLUDED.chat_history
   RETURNING id, chat_id, chat_history;
   `
-  console.log("query ::: "+sql);
+  // console.log("query ::: "+sql);
   runQuery({ sql }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
-    // console.log("THis is history"+his);
+    console.log("THis is history woekkk");
     return {
       isError: false,
       results: JSON.parse(res.rows[0].chat_history)
