@@ -7,6 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import glm from "@google-ai/generativelanguage";
 import emailjs from "@emailjs/nodejs";
 import moment from "moment";
+import pg from "pg";
 
 const Pool = pg.Pool;
 const pool = new Pool({
@@ -16,6 +17,7 @@ const pool = new Pool({
   password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
   port: 5432,
 });
+
 
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
@@ -384,7 +386,7 @@ const defaultChatHistory = [
 router.post("/ask", async (req, res) => {
   try {
     let { text, activeChatId, chatHistory } = req.body;
-    const response = await callAI(text, chatHistory);
+    const response = await callAI(text, chatHistory)
     console.log("response: ", response);
     sendEmail(text, response.text());
     res.status(200).json({ text: response.text() });
@@ -400,7 +402,7 @@ router.post("/darabothlistening", async (req, res) => {
     const { body } = req;
     if (body) {
       const messageObj = body.message;
-      console.log(messageObj);
+      // console.log(messageObj);
       await handleMessage(messageObj);
       res.status(200).json({ response: req.body });
     }
@@ -475,11 +477,96 @@ const darabothSendMessage = function (messageObj, messageText) {
   });
 };
 
+const runQuery = function ({ sql }) {
+  return new Promise(async (resolve, rejects) => {
+    let client
+    const thisPool = new Pool({
+      user: "kjjelxjh",
+      host: "chunee.db.elephantsql.com",
+      database: "kjjelxjh",
+      password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
+      port: 5432,
+    });
+    try {
+      client = await thisPool.connect();
+      client.query(sql.toString(), (error, results) => {
+        if (error) {
+          return rejects(error)
+        }
+        console.log("success");
+        return resolve(results);
+      });
+    } catch (error) {
+      console.log(error.stack);
+      return rejects(error);
+    } finally {
+      if (client) {
+        client.release();
+      }
+      thisPool.end();
+    }
+  })
+}
+
+const saveChat = function ({ chat_id, chat_history }) {
+
+  const sql = `
+  INSERT INTO json_data (chat_id, chat_history)
+    VALUES ('${chat_id}', '${JSON.stringify(chat_history)}')
+  ON CONFLICT (chat_id)
+  DO UPDATE SET
+    chat_history = EXCLUDED.chat_history;
+  `
+  // console.log("query ::: "+sql);
+  runQuery({ sql }).then((res) => {
+    const his = JSON.parse(res.rows[0].chat_history)
+    console.log("THis is history woekkk");
+    return {
+      isError: false,
+      results: JSON.parse(res.rows[0].chat_history)
+    };
+  }).catch((err) => {
+    return {
+      isError: true,
+      reason: err
+    };
+  }).finally()
+}
+
+const getChat = async function ({ chat_id }) {
+  const sql = ` select id, chat_id, chat_history from json_data where chat_id = '${chat_id}'; `
+  return runQuery({ sql }).then((res) => {
+    return {
+      isError: false,
+      results: JSON.parse(res.rows[0].chat_history)
+    };
+  }).catch((err) => {
+    return {
+      isError: true,
+      reason: err,
+      results: null
+    };
+  }).finally()
+}
+
 const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
-  let messageText = messageObj.text || "";
+  let messageText = messageObj.text + "" || "";
+  const results = (await getChat({ chat_id: Chat_ID })).results
+  let chatHistory
+  if (!results) {
+    chatHistory = defaultChatHistory
+    saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
+  }
+
   switch (Chat_ID) {
-    case "-4189396924":
+    case -406610085:
+      if (messageText.startsWith("/ask")) {
+        const responseText = await callAI(messageText, chatHistory)
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
+        saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
+        return darabothSendMessage(messageObj, responseText.text());
+      }
       // send error message logic
       break;
     case -1001754103737: // BTB
@@ -498,45 +585,9 @@ const handleMessage = async function (messageObj) {
             );
         }
       } else {
-
-        // let chatHistory
-
-        // const sqlgetChat = `select chat_history from json_data where chat_id = ${Chat_ID};`
-        // pool.query(sqlgetChat.toString(), (error, results) => {
-        //   if (error) {
-        //     console.log(error);
-        //     return error
-        //   }
-        //   if(results.rows.length > 0){
-        //     chatHistory = results.rows
-        //   }
-        // });
-
-        // if (!chatHistory) {
-          // chatHistory = defaultChatHistory
-          // const sql = `INSERT INTO json_data (chat_id, chat_history) VALUES ('${Chat_ID}', '${chatHistory}');`
-          // pool.query(sql.toString(), (error, results) => {
-          //   if (error) {
-          //     console.log(error);
-          //     return error
-          //   }
-          // });
-        // } else {
-        //   if (Array.isArray(chatHistory)) {
-        //     for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
-        //       chatHistory.unshift(defaultChatHistory[i]);
-        //     }
-        //   }
-        // }
-        
-
-        const responseText = await callAI(messageText, defaultChatHistory);
-
-
-
-
-
-
+        const responseText = await callAI(messageText, defaultChatHistory)
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
+        saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
@@ -552,7 +603,7 @@ function saveChatHistory(){
   });
 }
 
-async function callAI(text, chatHistory) {
+async function callAI(text,  chatHistory)  {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-1.0-pro-001",
@@ -566,7 +617,6 @@ async function callAI(text, chatHistory) {
       }
     }
   }
-  console.log(JSON.stringify(chatHistory));
   const result = model.startChat({
     history: chatHistory,
     generationConfig: {
@@ -575,7 +625,7 @@ async function callAI(text, chatHistory) {
   });
 
   const chat = await result.sendMessage(text);
-  return await chat.response;
+  return chat.response;
 }
 
 export default router;
