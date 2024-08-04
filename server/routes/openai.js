@@ -563,7 +563,7 @@ const saveChat = function ({ chat_id, chat_history }) {
   }).finally()
 }
 
-const getChat = function ({ chat_id }) {
+const getChat = async function ({ chat_id }) {
   const sql = ` select id, chat_id, chat_history from json_data where chat_id = '${chat_id}'; `
   return runQuery({ sql }).then((res) => {
     return {
@@ -646,7 +646,7 @@ async function callAI(text, chatHistory) {
   });
 
   const chat = await result.sendMessage(text);
-  return await chat.response;
+  return chat.response;
 }
 
 export default router;
