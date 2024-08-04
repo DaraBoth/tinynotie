@@ -537,7 +537,7 @@ const runQuery = function ({ sql }) {
 const saveChat = function ({ chat_id, chat_history }) {
   const sql = `
   INSERT INTO json_data (chat_id, chat_history)
-    VALUES ('${chat_id}', '${chat_history}')
+    VALUES ('${chat_id}', '${JSON.stringify(chat_history)}')
   ON CONFLICT (chat_id)
   DO UPDATE SET
     chat_history = EXCLUDED.chat_history
@@ -561,7 +561,7 @@ const getChat = function ({ chat_id }) {
   return runQuery({ sql }).then((res) => {
     return {
       isError: false,
-      results: res.rows
+      results: JSON.parse(res.rows)
     };
   }).catch((err) => {
     return {
