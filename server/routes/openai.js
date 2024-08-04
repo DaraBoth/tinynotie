@@ -527,7 +527,7 @@ const runQuery = function ({ sql }) {
         if (error) {
           return rejects(error)
         }
-        // console.log({results});
+        console.log("success");
         return resolve(results);
       });
     } catch (error) {
@@ -549,8 +549,7 @@ const saveChat = function ({ chat_id, chat_history }) {
     VALUES ('${chat_id}', '${JSON.stringify(chat_history)}')
   ON CONFLICT (chat_id)
   DO UPDATE SET
-    chat_history = EXCLUDED.chat_history
-  RETURNING id, chat_id, chat_history;
+    chat_history = EXCLUDED.chat_history;
   `
   // console.log("query ::: "+sql);
   runQuery({ sql }).then((res) => {
