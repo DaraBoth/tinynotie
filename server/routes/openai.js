@@ -498,18 +498,17 @@ const runQuery = function ({ sql }) {
           console.log("success :: "+results);
           resolve(results);
         }
+        
       });
     } catch (error) {
       console.log("SQL false :: "+error.stack);
       rejects(error);
-    } finally {
-      if (client) {
-        client.release();
-      }
-      thisPool.end();
-      console.log("Connection Ended!");
-      
-    }
+    } 
+    // if (client) {
+    //   client.release();
+    // }
+    // thisPool.end();
+    // console.log("Connection Ended!");
   })
 }
 
