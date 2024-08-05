@@ -497,7 +497,6 @@ const runQuery = function ({ sql }) {
 }
 
 const saveChat = function ({ chat_id, chat_history }) {
-
   const sql = `
   INSERT INTO json_data (chat_id, chat_history)
     VALUES ('${chat_id}', '${JSON.stringify(chat_history)}')
@@ -514,9 +513,8 @@ const saveChat = function ({ chat_id, chat_history }) {
   }).catch((err) => {
     response.isError = true
     response.reason = err
-  }).finally()
+  });
   return response;
-
 }
 
 const getChat = async function ({ chat_id }) {
@@ -528,6 +526,7 @@ const getChat = async function ({ chat_id }) {
   };
   runQuery({ sql }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
+    console.log(res.rows);
     console.log("THis is history woekkk"+his);
     response.isError = false
     response.results = his
