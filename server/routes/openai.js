@@ -540,14 +540,14 @@ const getChat = async function ({ chat_id }) {
 const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
   let messageText = messageObj.text + "" || "";
-  const results = (await getChat({ chat_id: Chat_ID })).results
+  const results = await getChat({ chat_id: Chat_ID })
   let chatHistory = []
-  if (!results || results == []) {
+  if (!results.results || results.results == []) {
     chatHistory = defaultChatHistory
     saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
   }else {
-    console.log("results =: "+results);
-    chatHistory = results;
+    console.log("results =: "+results.results);
+    chatHistory = results.results;
     console.log("Chat 1 : "+chatHistory);
   }
 
