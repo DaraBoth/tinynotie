@@ -504,13 +504,16 @@ const saveChat = async ({ chat_id, chat_history }) => {
     DO UPDATE SET
       chat_history = EXCLUDED.chat_history;
   `;
+  let heee = {chat:chat_history}
+  console.log({heee});
+  
   const values = [chat_id, JSON.stringify({chat:chat_history})];
 
   try {
     await runQuery({ sql, values });
     return { isError: false, reason: "" };
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     return { isError: true, reason: error.message };
   }
 };
