@@ -529,9 +529,10 @@ const getChat = async function ({
   const values = [chat_id];
   runQuery({ sql, values })
     .then((res) => {
-      const his = JSON.parse(res.rows[0].chat_history);
+      const his = res.rows[0].chat_history;
       response.isError = false;
-      console.log({his});
+      console.log("2 na ? "+his);
+      console.log("1 na ? "+his.chat);
       response.results = his.chat;
       onSuccess(response);
     })
