@@ -517,13 +517,14 @@ const saveChat = async ({ chat_id, chat_history }) => {
 };
 
 const getChat = async function ({ chat_id }) {
-  const sql = ` select id, chat_id, chat_history from json_data where chat_id = '${chat_id}' ; `
+  const sql = ` select id, chat_id, chat_history from json_data where chat_id = $1 ; `
   const response = {
     isError: false,
     results: [],
     reason: ""
   };
-  runQuery({ sql , values : [chat_id] }).then((res) => {
+  const values = [chat_id];
+  runQuery({ sql , values }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
     response.isError = false
     response.results = his
