@@ -504,9 +504,6 @@ const saveChat = async ({ chat_id, chat_history }) => {
     DO UPDATE SET
       chat_history = EXCLUDED.chat_history;
   `;
-  let heee = {chat:chat_history}
-  console.log({heee});
-  
   const values = [chat_id, JSON.stringify({chat:chat_history})];
 
   try {
@@ -534,6 +531,7 @@ const getChat = async function ({
     .then((res) => {
       const his = JSON.parse(res.rows[0].chat_history);
       response.isError = false;
+      console.log({his});
       response.results = his.chat;
       onSuccess(response);
     })
