@@ -563,7 +563,7 @@ const handleMessage = async function (messageObj) {
 
   switch (Chat_ID) {
     case "-406610085":     // Family
-    case "-1001754103737": // BTB
+    case "-1001754103737": // BTB Class
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory);
         if(Array.isArray(chatHistory)){
