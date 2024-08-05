@@ -529,7 +529,7 @@ const getChat = async function ({
   const values = [chat_id];
   runQuery({ sql, values })
     .then((res) => {
-      const his = JSON.parse(JSON.stringify(res.rows[0].chat_history));
+      const his = JSON.parse(res.rows[0].chat_history);
       response.isError = false;
       response.results = his;
       onSuccess(response);
