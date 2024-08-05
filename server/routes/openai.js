@@ -527,7 +527,12 @@ const getChat = async function ({ chat_id }) {
   runQuery({ sql }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
     console.log(res.rows);
-    console.log("THis is history woekkk"+his);
+    console.log("THis is history woekkk"+res.rows[0].chat_history);
+    if(Array.isArray(his)){
+      his.forEach((i,v)=>{
+        console.log(v);
+      })
+    }
     response.isError = false
     response.results = his
   }).catch((err) => {
