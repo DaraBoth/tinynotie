@@ -546,21 +546,20 @@ const handleMessage = async function (messageObj) {
   let messageText = messageObj.text + "" || "";
   let chatHistory = [];
 
-  getChat({ 
-    chat_id: Chat_ID, 
-    onSuccess: ({results}) => {
-      if(results != []){
+  getChat({
+    chat_id: Chat_ID,
+    onSuccess: ({ results }) => {
+      if (results != []) {
         chatHistory = results;
-      }else{
+      } else {
         chatHistory = defaultChatHistory;
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
       }
     },
     onError: (response) => {
-      console.log({response});
-    }
+      console.log({ response });
+    },
   });
-  
 
   switch (Chat_ID) {
     case -406610085:
@@ -592,12 +591,15 @@ const handleMessage = async function (messageObj) {
             );
         }
       } else {
-        const responseText = await callAI(messageText, defaultChatHistory);
-        chatHistory.push({ role: "user", parts: [{ text: messageText }] });
-        chatHistory.push({
-          role: "model",
-          parts: [{ text: responseText.text() }],
-        });
+        console.log("chatHistory :: "+chatHistory);
+        const responseText = await callAI(messageText, chatHistory);
+        if(Array.isArray(chatHistory)){
+          chatHistory.push({ role: "user", parts: [{ text: messageText }] });
+          chatHistory.push({
+            role: "model",
+            parts: [{ text: responseText.text() }],
+          });
+        }
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
         console.log("Chat 2 : " + JSON.stringify(chatHistory));
         return darabothSendMessage(messageObj, responseText.text());
