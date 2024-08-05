@@ -618,6 +618,12 @@ async function callAI(text, chatHistory) {
   });
   if (!chatHistory) {
     chatHistory = defaultChatHistory;
+  }else{
+    if(Array.isArray(chatHistory)){
+      defaultChatHistory.forEach((value,index)=>{
+        chatHistory.unshift(value)
+      })
+    }
   }
 
   const result = model.startChat({
