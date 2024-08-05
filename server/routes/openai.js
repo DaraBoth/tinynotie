@@ -482,8 +482,10 @@ const runQuery = async ({ sql, values }) => {
     const result = await new Promise((resolve, reject) => {
       pool.query(sql, values, (error, results) => {
         if (error) {
+          console.log(error);
           reject(error);
         } else {
+          console.log("sql was a success");
           resolve(results);
         }
       });
@@ -514,7 +516,6 @@ const saveChat = async ({ chat_id, chat_history }) => {
   }
 };
 
-
 const getChat = async function ({ chat_id }) {
   const sql = ` select id, chat_id, chat_history from json_data where chat_id = $1; `
   const response = {
@@ -524,13 +525,6 @@ const getChat = async function ({ chat_id }) {
   };
   runQuery({ sql , values : [chat_id] }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
-    console.log(res.rows);
-    console.log("THis is history woekkk"+res.rows[0].chat_history);
-    if(Array.isArray(his)){
-      his.forEach((i,v)=>{
-        console.log(v);
-      })
-    }
     response.isError = false
     response.results = his
   }).catch((err) => {
@@ -556,7 +550,7 @@ const handleMessage = async function (messageObj) {
     case -406610085:
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory)
-        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() }] })
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
         return darabothSendMessage(messageObj, responseText.text());
       }
@@ -579,7 +573,7 @@ const handleMessage = async function (messageObj) {
         }
       } else {
         const responseText = await callAI(messageText, defaultChatHistory)
-        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() },], })
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() }] })
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
         return darabothSendMessage(messageObj, responseText.text());
       }
