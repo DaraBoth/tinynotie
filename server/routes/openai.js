@@ -543,6 +543,7 @@ const handleMessage = async function (messageObj) {
     chatHistory = defaultChatHistory
     saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
   }else {
+    console.log("results =: "+results);
     chatHistory = results;
     console.log("Chat 1 : "+chatHistory);
   }
