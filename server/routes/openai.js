@@ -531,7 +531,7 @@ const saveChat = function ({ chat_id, chat_history }) {
     response.isError = false
     response.results = JSON.parse(res.rows[0].chat_history)
   }).catch((err) => {
-    response.isError = false
+    response.isError = true
     response.reason = err
   }).finally()
   return response;
