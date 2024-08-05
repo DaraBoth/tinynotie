@@ -526,7 +526,7 @@ const getChat = async function ({ chat_id }) {
   const values = [chat_id];
   runQuery({ sql , values }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
-    console.log("History ==== "+res.rows[0]);
+    console.log("History ==== "+JSON.stringify(res.rows[0]));
     response.isError = false
     response.results = his
   }).catch((err) => {
@@ -555,7 +555,8 @@ const handleMessage = async function (messageObj) {
     case -406610085:
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory)
-        chatHistory = [...chatHistory,{ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() }] }]
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] })
+        chatHistory.push({ role: "model", parts: [{ text: responseText.text() }] })
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
         return darabothSendMessage(messageObj, responseText.text());
       }
@@ -578,9 +579,10 @@ const handleMessage = async function (messageObj) {
         }
       } else {
         const responseText = await callAI(messageText, defaultChatHistory)
-        chatHistory = [...chatHistory,{ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() }] }]
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] })
+        chatHistory.push({ role: "model", parts: [{ text: responseText.text() }] })
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
-        console.log("Chat 2 : "+chatHistory);
+        console.log("Chat 2 : "+JSON.stringify(chatHistory));
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
