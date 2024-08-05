@@ -18,7 +18,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
   apiKey: process.env.OPEN_API_KEY,
@@ -386,7 +385,7 @@ const defaultChatHistory = [
 router.post("/ask", async (req, res) => {
   try {
     let { text, activeChatId, chatHistory } = req.body;
-    const response = await callAI(text, chatHistory)
+    const response = await callAI(text, chatHistory);
     console.log("response: ", response);
     sendEmail(text, response.text());
     res.status(200).json({ text: response.text() });
@@ -492,7 +491,7 @@ const runQuery = async ({ sql, values }) => {
     });
     return result;
   } catch (error) {
-    console.error('Error executing query:', error);
+    console.error("Error executing query:", error);
     throw error; // Re-throw the error to be handled by the caller
   }
 };
@@ -509,58 +508,70 @@ const saveChat = async ({ chat_id, chat_history }) => {
 
   try {
     await runQuery({ sql, values });
-    return { isError: false, reason: '' };
+    return { isError: false, reason: "" };
   } catch (error) {
     console.error(error);
     return { isError: true, reason: error.message };
   }
 };
 
-const getChat = async function ({ chat_id }) {
-  const sql = ` select id, chat_id, chat_history from json_data where chat_id = $1 ; `
+const getChat = async function ({
+  chat_id,
+  onSuccess = function () {},
+  onError = function () {},
+}) {
+  const sql = ` select id, chat_id, chat_history from json_data where chat_id = $1 ; `;
   const response = {
     isError: false,
     results: [],
-    reason: ""
+    reason: "",
   };
   const values = [chat_id];
-  runQuery({ sql , values }).then((res) => {
-    const his = JSON.parse(JSON.stringify(res.rows[0].chat_history))
-    console.log("History === "+his);
-    response.isError = false
-    response.results = his
-
-    console.log("response.results == "+response.results);
-    
-  }).catch((err) => {
-    response.isError = true
-    response.reason = err
-  }).finally()
-  console.log({response});
-  return response;
-}
+  runQuery({ sql, values })
+    .then((res) => {
+      const his = JSON.parse(JSON.stringify(res.rows[0].chat_history));
+      response.isError = false;
+      response.results = his;
+      onSuccess(response);
+    })
+    .catch((err) => {
+      response.isError = true;
+      response.reason = err;
+      onError(response);
+    });
+};
 
 const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
   let messageText = messageObj.text + "" || "";
-  const results = await getChat({ chat_id: Chat_ID })
-  let chatHistory = []
-  if (!results.results || results.results == []) {
-    chatHistory = defaultChatHistory
-    saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
-  }else {
-    console.log("results =: "+results.results);
-    chatHistory = results.results;
-    console.log("Chat 1 : "+chatHistory);
-  }
+  let chatHistory = [];
+
+  getChat({ 
+    chat_id: Chat_ID, 
+    onSuccess: ({results}) => {
+      if(results != []){
+        chatHistory = results;
+      }else{
+        chatHistory = defaultChatHistory;
+        saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+      }
+    },
+    onError: (response) => {
+      console.log({response});
+    }
+  });
+  
 
   switch (Chat_ID) {
     case -406610085:
       if (messageText.startsWith("/ask")) {
-        const responseText = await callAI(messageText, chatHistory)
-        chatHistory.push({ role: "user", parts: [{ text: messageText }] })
-        chatHistory.push({ role: "model", parts: [{ text: responseText.text() }] })
-        saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
+        const responseText = await callAI(messageText, chatHistory);
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] });
+        chatHistory.push({
+          role: "model",
+          parts: [{ text: responseText.text() }],
+        });
+        saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
         return darabothSendMessage(messageObj, responseText.text());
       }
       // send error message logic
@@ -581,17 +592,20 @@ const handleMessage = async function (messageObj) {
             );
         }
       } else {
-        const responseText = await callAI(messageText, defaultChatHistory)
-        chatHistory.push({ role: "user", parts: [{ text: messageText }] })
-        chatHistory.push({ role: "model", parts: [{ text: responseText.text() }] })
-        saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
-        console.log("Chat 2 : "+JSON.stringify(chatHistory));
+        const responseText = await callAI(messageText, defaultChatHistory);
+        chatHistory.push({ role: "user", parts: [{ text: messageText }] });
+        chatHistory.push({
+          role: "model",
+          parts: [{ text: responseText.text() }],
+        });
+        saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+        console.log("Chat 2 : " + JSON.stringify(chatHistory));
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
 };
 
-function saveChatHistory(){
+function saveChatHistory() {
   pool.query(sql.toString(), (error, results) => {
     if (error) {
       res.status(500).json({ error: error.message });
@@ -601,7 +615,7 @@ function saveChatHistory(){
   });
 }
 
-async function callAI(text,  chatHistory)  {
+async function callAI(text, chatHistory) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-1.0-pro-001",
