@@ -518,19 +518,24 @@ const saveChat = function ({ chat_id, chat_history }) {
     chat_history = EXCLUDED.chat_history;
   `
   // console.log("query ::: "+sql);
+
+  const response = {
+    isError: false,
+    results: [],
+    reason: ""
+  };
+
   runQuery({ sql }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
     console.log("THis is history woekkk");
-    return {
-      isError: false,
-      results: JSON.parse(res.rows[0].chat_history)
-    };
+    response.isError = false
+    response.results = JSON.parse(res.rows[0].chat_history)
   }).catch((err) => {
-    return {
-      isError: true,
-      reason: err
-    };
+    response.isError = false
+    response.reason = err
   }).finally()
+  return response;
+
 }
 
 const getChat = async function ({ chat_id }) {
