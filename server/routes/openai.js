@@ -477,55 +477,52 @@ const darabothSendMessage = function (messageObj, messageText) {
   });
 };
 
-const runQuery = function ({ sql }) {
-  return new Promise(async (resolve, rejects) => {
-    try {
-      pool.query(sql.toString(), (error, results) => {
+const runQuery = async ({ sql, values }) => {
+  try {
+    const result = await new Promise((resolve, reject) => {
+      pool.query(sql, values, (error, results) => {
         if (error) {
-          console.log("error :: "+error);
-          console.log("sql :: "+sql);
-          rejects(error)
-        }else {
-          console.log("success :: "+results);
+          reject(error);
+        } else {
           resolve(results);
         }
       });
-    } catch (error) {
-      console.log("SQL false :: "+error.stack);
-      rejects(error);
-    } 
-  })
-}
+    });
+    return result;
+  } catch (error) {
+    console.error('Error executing query:', error);
+    throw error; // Re-throw the error to be handled by the caller
+  }
+};
 
-const saveChat = function ({ chat_id, chat_history }) {
+const saveChat = async ({ chat_id, chat_history }) => {
   const sql = `
-  INSERT INTO json_data (chat_id, chat_history)
-    VALUES ('${chat_id}', '${JSON.stringify(chat_history)}')
-  ON CONFLICT (chat_id)
-  DO UPDATE SET
-    chat_history = EXCLUDED.chat_history;
-  `
-  const response = {
-    isError: false,
-    reason: ""
-  };
-  runQuery({ sql }).then((res) => {
-    response.isError = false
-  }).catch((err) => {
-    response.isError = true
-    response.reason = err
-  });
-  return response;
-}
+    INSERT INTO json_data (chat_id, chat_history)
+    VALUES ($1, $2)
+    ON CONFLICT (chat_id)
+    DO UPDATE SET
+      chat_history = EXCLUDED.chat_history;
+  `;
+  const values = [chat_id, JSON.stringify(chat_history)];
+
+  try {
+    await runQuery({ sql, values });
+    return { isError: false, reason: '' };
+  } catch (error) {
+    console.error(error);
+    return { isError: true, reason: error.message };
+  }
+};
+
 
 const getChat = async function ({ chat_id }) {
-  const sql = ` select id, chat_id, chat_history from json_data where chat_id = '${chat_id}'; `
+  const sql = ` select id, chat_id, chat_history from json_data where chat_id = $1; `
   const response = {
     isError: false,
     results: [],
     reason: ""
   };
-  runQuery({ sql }).then((res) => {
+  runQuery({ sql , values : [chat_id] }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
     console.log(res.rows);
     console.log("THis is history woekkk"+res.rows[0].chat_history);
