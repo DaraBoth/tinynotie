@@ -529,10 +529,12 @@ const getChat = async function ({
   const values = [chat_id];
   runQuery({ sql, values })
     .then((res) => {
-      const his = res.rows[0].chat_history;
-      response.isError = false;
-      response.results = his.chat;
-      onSuccess(response);
+      if(res.rows.length > 0){
+        const his = res.rows[0].chat_history;
+        response.isError = false;
+        response.results = his.chat;
+        onSuccess(response);
+      }
     })
     .catch((err) => {
       response.isError = true;
@@ -551,9 +553,11 @@ const handleMessage = async function (messageObj) {
     onSuccess: ({ results }) => {
       if (results != [] && results.length > 0) {
         chatHistory = results;
+        console.log("nis ");
       } else {
         chatHistory = defaultChatHistory;
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+        console.log("or nis? ");
       }
     },
     onError: (response) => {
