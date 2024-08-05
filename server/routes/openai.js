@@ -114,7 +114,8 @@ router.get("/text", async (req, res) => {
     const response = await result.response;
     console.log({ text });
     console.log({ res: response.text() });
-    res.status(200).json({ text: response.text() });
+    // res.status(200).json({ text: response.text() });
+    res.status(200).json({ text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap." });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
