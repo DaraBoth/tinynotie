@@ -489,22 +489,26 @@ const runQuery = function ({ sql }) {
     });
     try {
       client = await thisPool.connect();
+      console.log("Connection Connected");
       client.query(sql.toString(), (error, results) => {
         if (error) {
-          console.log(error);
-          return rejects(error)
+          console.log("error :: "+error);
+          rejects(error)
+        }else {
+          console.log("success :: "+results);
+          resolve(results);
         }
-        console.log("success");
-        return resolve(results);
       });
     } catch (error) {
-      console.log(error.stack);
-      return rejects(error);
+      console.log("SQL false :: "+error.stack);
+      rejects(error);
     } finally {
       if (client) {
         client.release();
       }
       thisPool.end();
+      console.log("Connection Ended!");
+      
     }
   })
 }
@@ -557,7 +561,7 @@ const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj.chat;
   let messageText = messageObj.text + "" || "";
   const results = (await getChat({ chat_id: Chat_ID })).results
-  let chatHistory
+  let chatHistory = []
   if (!results) {
     chatHistory = defaultChatHistory
     saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
