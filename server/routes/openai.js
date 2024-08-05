@@ -526,8 +526,6 @@ const saveChat = function ({ chat_id, chat_history }) {
     reason: ""
   };
   runQuery({ sql }).then((res) => {
-    const his = JSON.parse(res.rows[0].chat_history)
-    console.log("THis is history woekkk");
     response.isError = false
   }).catch((err) => {
     response.isError = true
@@ -546,9 +544,9 @@ const getChat = async function ({ chat_id }) {
   };
   runQuery({ sql }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
-    console.log("THis is history woekkk");
+    console.log("THis is history woekkk"+his);
     response.isError = false
-    response.results = JSON.parse(res.rows[0].chat_history)
+    response.results = his
   }).catch((err) => {
     response.isError = true
     response.reason = err
