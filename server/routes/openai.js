@@ -563,6 +563,8 @@ const handleMessage = async function (messageObj) {
       }
     },
     onError: (response) => {
+      console.log("error?");
+      
       console.log({ response });
     },
   });
