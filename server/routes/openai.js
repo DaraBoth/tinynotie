@@ -491,6 +491,7 @@ const runQuery = function ({ sql }) {
       client = await thisPool.connect();
       client.query(sql.toString(), (error, results) => {
         if (error) {
+          console.log(error);
           return rejects(error)
         }
         console.log("success");
@@ -517,19 +518,14 @@ const saveChat = function ({ chat_id, chat_history }) {
   DO UPDATE SET
     chat_history = EXCLUDED.chat_history;
   `
-  // console.log("query ::: "+sql);
-
   const response = {
     isError: false,
-    results: [],
     reason: ""
   };
-
   runQuery({ sql }).then((res) => {
     const his = JSON.parse(res.rows[0].chat_history)
     console.log("THis is history woekkk");
     response.isError = false
-    response.results = JSON.parse(res.rows[0].chat_history)
   }).catch((err) => {
     response.isError = true
     response.reason = err
@@ -540,18 +536,21 @@ const saveChat = function ({ chat_id, chat_history }) {
 
 const getChat = async function ({ chat_id }) {
   const sql = ` select id, chat_id, chat_history from json_data where chat_id = '${chat_id}'; `
-  return runQuery({ sql }).then((res) => {
-    return {
-      isError: false,
-      results: JSON.parse(res.rows[0].chat_history)
-    };
+  const response = {
+    isError: false,
+    results: [],
+    reason: ""
+  };
+  runQuery({ sql }).then((res) => {
+    const his = JSON.parse(res.rows[0].chat_history)
+    console.log("THis is history woekkk");
+    response.isError = false
+    response.results = JSON.parse(res.rows[0].chat_history)
   }).catch((err) => {
-    return {
-      isError: true,
-      reason: err,
-      results: null
-    };
+    response.isError = true
+    response.reason = err
   }).finally()
+  return response;
 }
 
 const handleMessage = async function (messageObj) {
