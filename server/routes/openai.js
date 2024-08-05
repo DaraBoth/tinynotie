@@ -517,7 +517,7 @@ const saveChat = async ({ chat_id, chat_history }) => {
 };
 
 const getChat = async function ({ chat_id }) {
-  const sql = ` select id, chat_id, chat_history from json_data where chat_id = $1; `
+  const sql = ` select id, chat_id, chat_history from json_data where chat_id = '${chat_id}' ; `
   const response = {
     isError: false,
     results: [],
