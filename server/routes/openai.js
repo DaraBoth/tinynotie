@@ -551,6 +551,7 @@ const handleMessage = async function (messageObj) {
   getChat({
     chat_id: Chat_ID,
     onSuccess: ({ results }) => {
+      console.log(typeof results);
       if (results != []) {
         chatHistory = results;
         console.log("nis ");
