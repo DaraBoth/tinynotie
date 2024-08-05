@@ -534,6 +534,7 @@ const getChat = async function ({
         response.isError = false;
         response.results = his.chat;
         onSuccess(response);
+        console.log("sam "+response);
       }
     })
     .catch((err) => {
