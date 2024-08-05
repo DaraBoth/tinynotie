@@ -483,6 +483,7 @@ const runQuery = function ({ sql }) {
       pool.query(sql.toString(), (error, results) => {
         if (error) {
           console.log("error :: "+error);
+          console.log("sql :: "+sql);
           rejects(error)
         }else {
           console.log("success :: "+results);
