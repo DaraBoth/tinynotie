@@ -531,13 +531,12 @@ const getChat = async function ({
   const values = [chat_id];
   runQuery({ sql, values })
     .then((res) => {
+      response.isError = false;
       if(res.rowCount >= 1){
         const his = res.rows[0].chat_history;
-        response.isError = false;
         response.results = his.chat;
-        onSuccess(response);
-        console.log("sam "+response);
       }
+      onSuccess(response);
     })
     .catch((err) => {
       response.isError = true;
@@ -554,19 +553,15 @@ const handleMessage = async function (messageObj) {
   getChat({
     chat_id: Chat_ID,
     onSuccess: ({ results }) => {
-      console.log(typeof results);
       if (results != []) {
         chatHistory = results;
-        console.log("nis ");
       } else {
         chatHistory = defaultChatHistory;
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
-        console.log("or nis? ");
       }
     },
     onError: (response) => {
       console.log("error?");
-      
       console.log({ response });
     },
   });
@@ -607,7 +602,6 @@ const handleMessage = async function (messageObj) {
             role: "model",
             parts: [{ text: responseText.text() }],
           });
-          console.log(chatHistory);
         }
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
         return darabothSendMessage(messageObj, responseText.text());
