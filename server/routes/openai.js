@@ -504,7 +504,7 @@ const saveChat = async ({ chat_id, chat_history }) => {
     DO UPDATE SET
       chat_history = EXCLUDED.chat_history;
   `;
-  const values = [chat_id, JSON.stringify(chat_history)];
+  const values = [chat_id, chat_history];
 
   try {
     await runQuery({ sql, values });
@@ -529,7 +529,7 @@ const getChat = async function ({
   const values = [chat_id];
   runQuery({ sql, values })
     .then((res) => {
-      const his = JSON.parse(res.rows[0].chat_history);
+      const his = res.rows[0].chat_history;
       response.isError = false;
       response.results = his;
       onSuccess(response);
