@@ -529,6 +529,9 @@ const getChat = async function ({ chat_id }) {
     console.log("History === "+his);
     response.isError = false
     response.results = his
+
+    console.log("response.results == "+response.results);
+    
   }).catch((err) => {
     response.isError = true
     response.reason = err
