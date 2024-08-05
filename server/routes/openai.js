@@ -555,8 +555,10 @@ const handleMessage = async function (messageObj) {
     onSuccess: ({ results }) => {
       if (results != []) {
         chatHistory = results;
+        console.log("jommm");
       } else {
         chatHistory = defaultChatHistory;
+        console.log("juiii");
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
       }
     },
