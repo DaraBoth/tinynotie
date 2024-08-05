@@ -562,21 +562,20 @@ const handleMessage = async function (messageObj) {
   });
 
   switch (Chat_ID) {
-    case -406610085:
+    case "-406610085":     // Family
+    case "-1001754103737": // BTB
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory);
-        chatHistory.push({ role: "user", parts: [{ text: messageText }] });
-        chatHistory.push({
-          role: "model",
-          parts: [{ text: responseText.text() }],
-        });
+        if(Array.isArray(chatHistory)){
+          chatHistory.push({ role: "user", parts: [{ text: messageText }] });
+          chatHistory.push({
+            role: "model",
+            parts: [{ text: responseText.text() }],
+          });
+        }
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
         return darabothSendMessage(messageObj, responseText.text());
       }
-      // send error message logic
-      break;
-    case -1001754103737: // BTB
-      // send error message logic
       break;
     default:
       if (messageText.charAt(0) == "/") {
@@ -591,7 +590,6 @@ const handleMessage = async function (messageObj) {
             );
         }
       } else {
-        console.log("chatHistory :: "+chatHistory);
         const responseText = await callAI(messageText, chatHistory);
         if(Array.isArray(chatHistory)){
           chatHistory.push({ role: "user", parts: [{ text: messageText }] });
@@ -599,23 +597,13 @@ const handleMessage = async function (messageObj) {
             role: "model",
             parts: [{ text: responseText.text() }],
           });
+          console.log(chatHistory);
         }
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
-        console.log("Chat 2 : " + chatHistory);
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
 };
-
-function saveChatHistory() {
-  pool.query(sql.toString(), (error, results) => {
-    if (error) {
-      res.status(500).json({ error: error.message });
-      throw error;
-    }
-    res.send({ status: true, data: results.rows });
-  });
-}
 
 async function callAI(text, chatHistory) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
@@ -624,17 +612,12 @@ async function callAI(text, chatHistory) {
   });
   if (!chatHistory) {
     chatHistory = defaultChatHistory;
-  } else {
-    if (Array.isArray(chatHistory)) {
-      for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
-        chatHistory.unshift(defaultChatHistory[i]);
-      }
-    }
   }
+
   const result = model.startChat({
     history: chatHistory,
     generationConfig: {
-      maxOutputTokens: 100,
+      maxOutputTokens: 250,
     },
   });
 
