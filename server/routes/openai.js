@@ -601,7 +601,7 @@ const handleMessage = async function (messageObj) {
           });
         }
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
-        console.log("Chat 2 : " + JSON.stringify(chatHistory));
+        console.log("Chat 2 : " + chatHistory);
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
