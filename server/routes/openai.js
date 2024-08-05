@@ -531,6 +531,7 @@ const getChat = async function ({ chat_id }) {
     response.isError = true
     response.reason = err
   }).finally()
+  console.log({response});
   return response;
 }
 
