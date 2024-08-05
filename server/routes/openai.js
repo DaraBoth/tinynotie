@@ -1,4 +1,4 @@
-import express from "express";
+import express, { response } from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 // import { openai } from "../index.js";
@@ -569,18 +569,11 @@ const handleMessage = async function (messageObj) {
   });
 
   switch (Chat_ID) {
-    case "-406610085":     // Family
-    case "-1001754103737": // BTB Class
+    case -406610085:     // Family
+    case -1001754103737: // BTB Class
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory);
-        if(Array.isArray(chatHistory)){
-          chatHistory.push({ role: "user", parts: [{ text: messageText }] });
-          chatHistory.push({
-            role: "model",
-            parts: [{ text: responseText.text() }],
-          });
-        }
-        saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+        templateSaveChat({chatHistory,messageText,responseText:response.text()})
         return darabothSendMessage(messageObj, responseText.text());
       }
       break;
@@ -598,18 +591,22 @@ const handleMessage = async function (messageObj) {
         }
       } else {
         const responseText = await callAI(messageText, chatHistory);
-        if(Array.isArray(chatHistory)){
-          chatHistory.push({ role: "user", parts: [{ text: messageText }] });
-          chatHistory.push({
-            role: "model",
-            parts: [{ text: responseText.text() }],
-          });
-        }
-        saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+        templateSaveChat({chatHistory,messageText,responseText:response.text()})
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
 };
+
+function templateSaveChat ({chatHistory,messageText,responseText}) {
+  if(Array.isArray(chatHistory)){
+    chatHistory.push({ role: "user", parts: [{ text: messageText }] });
+    chatHistory.push({
+      role: "model",
+      parts: [{ text: responseText }],
+    });
+  }
+  saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+}
 
 async function callAI(text, chatHistory) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
