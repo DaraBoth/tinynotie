@@ -555,7 +555,7 @@ const handleMessage = async function (messageObj) {
     case -406610085:
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory)
-        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() }] })
+        chatHistory = [...chatHistory,{ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() }] }]
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
         return darabothSendMessage(messageObj, responseText.text());
       }
@@ -578,7 +578,7 @@ const handleMessage = async function (messageObj) {
         }
       } else {
         const responseText = await callAI(messageText, defaultChatHistory)
-        chatHistory.push({ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() }] })
+        chatHistory = [...chatHistory,{ role: "user", parts: [{ text: messageText }] }, { role: "model", parts: [{ text: responseText.text() }] }]
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
         console.log("Chat 2 : "+chatHistory);
         return darabothSendMessage(messageObj, responseText.text());
