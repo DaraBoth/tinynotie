@@ -529,7 +529,7 @@ const getChat = async function ({
   const values = [chat_id];
   runQuery({ sql, values })
     .then((res) => {
-      if(res.rows.length > 0){
+      if(res.rowCount >= 1){
         const his = res.rows[0].chat_history;
         response.isError = false;
         response.results = his.chat;
@@ -551,7 +551,7 @@ const handleMessage = async function (messageObj) {
   getChat({
     chat_id: Chat_ID,
     onSuccess: ({ results }) => {
-      if (results != [] && results.length > 0) {
+      if (results != []) {
         chatHistory = results;
         console.log("nis ");
       } else {
