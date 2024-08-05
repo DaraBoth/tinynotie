@@ -479,6 +479,7 @@ const darabothSendMessage = function (messageObj, messageText) {
 
 const runQuery = async ({ sql, values }) => {
   try {
+    console.log({sql});
     const result = await new Promise((resolve, reject) => {
       pool.query(sql, values, (error, results) => {
         if (error) {
