@@ -531,8 +531,6 @@ const getChat = async function ({
     .then((res) => {
       const his = res.rows[0].chat_history;
       response.isError = false;
-      console.log("2 na ? "+his);
-      console.log("1 na ? "+his.chat);
       response.results = his.chat;
       onSuccess(response);
     })
@@ -551,7 +549,7 @@ const handleMessage = async function (messageObj) {
   getChat({
     chat_id: Chat_ID,
     onSuccess: ({ results }) => {
-      if (results != []) {
+      if (results != [] && results.length > 0) {
         chatHistory = results;
       } else {
         chatHistory = defaultChatHistory;
