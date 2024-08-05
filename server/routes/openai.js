@@ -562,7 +562,7 @@ const handleMessage = async function (messageObj) {
   let messageText = messageObj.text + "" || "";
   const results = (await getChat({ chat_id: Chat_ID })).results
   let chatHistory = []
-  if (!results) {
+  if (!results || results == []) {
     chatHistory = defaultChatHistory
     saveChat({ chat_id: Chat_ID, chat_history: chatHistory })
   }else {
