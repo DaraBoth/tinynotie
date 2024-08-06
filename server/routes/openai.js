@@ -579,6 +579,7 @@ const handleMessage = async function (messageObj) {
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory);
         templateSaveChat({
+          Chat_ID,
           chatHistory,
           messageText,
           responseText: responseText.text(),
@@ -601,6 +602,7 @@ const handleMessage = async function (messageObj) {
       } else {
         const responseText = await callAI(messageText, chatHistory);
         templateSaveChat({
+          Chat_ID,
           chatHistory,
           messageText,
           responseText: responseText.text(),
@@ -610,7 +612,7 @@ const handleMessage = async function (messageObj) {
   }
 };
 
-function templateSaveChat({ chatHistory, messageText, responseText }) {
+function templateSaveChat({ Chat_ID, chatHistory, messageText, responseText }) {
   if (Array.isArray(chatHistory)) {
     chatHistory.push({ role: "user", parts: [{ text: messageText }] });
     chatHistory.push({
