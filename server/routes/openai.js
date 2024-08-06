@@ -480,7 +480,7 @@ const darabothSendMessage = function (messageObj, messageText) {
 const runQuery = async ({ sql, values }) => {
   try {
     console.log({sql});
-    const result = await new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       pool.query(sql, values, (error, results) => {
         if (error) {
           console.log(error);
@@ -491,7 +491,6 @@ const runQuery = async ({ sql, values }) => {
         }
       });
     });
-    return result;
   } catch (error) {
     console.error("Error executing query:", error);
     throw error; // Re-throw the error to be handled by the caller
@@ -555,15 +554,12 @@ const handleMessage = async function (messageObj) {
     onSuccess: ({ results }) => {
       if (results != []) {
         chatHistory = results;
-        console.log("jommm");
       } else {
         chatHistory = defaultChatHistory;
-        console.log("juiii");
         saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
       }
     },
     onError: (response) => {
-      console.log("error?");
       console.log({ response });
     },
   });
