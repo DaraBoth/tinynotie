@@ -115,7 +115,11 @@ router.get("/text", async (req, res) => {
     console.log({ text });
     console.log({ res: response.text() });
     // res.status(200).json({ text: response.text() });
-    res.status(200).json({ text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap." });
+    res
+      .status(200)
+      .json({
+        text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap.",
+      });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
@@ -478,9 +482,9 @@ const darabothSendMessage = function (messageObj, messageText) {
 };
 
 const runQuery = async ({ sql, values }) => {
-  try {
-    console.log({sql});
-    await new Promise((resolve, reject) => {
+  console.log({ sql });
+  return new Promise((resolve, reject) => {
+    try {
       pool.query(sql, values, (error, results) => {
         if (error) {
           console.log(error);
@@ -490,11 +494,11 @@ const runQuery = async ({ sql, values }) => {
           resolve(results);
         }
       });
-    });
-  } catch (error) {
-    console.error("Error executing query:", error);
-    throw error; // Re-throw the error to be handled by the caller
-  }
+    } catch (error) {
+      console.error("Error executing query:", error);
+      reject(error);
+    }
+  });
 };
 
 const saveChat = async ({ chat_id, chat_history }) => {
@@ -505,7 +509,7 @@ const saveChat = async ({ chat_id, chat_history }) => {
     DO UPDATE SET
       chat_history = EXCLUDED.chat_history;
   `;
-  const values = [chat_id, JSON.stringify({chat:chat_history})];
+  const values = [chat_id, JSON.stringify({ chat: chat_history })];
 
   try {
     await runQuery({ sql, values });
@@ -531,11 +535,16 @@ const getChat = async function ({
   runQuery({ sql, values })
     .then((res) => {
       response.isError = false;
-      if(res.rowCount >= 1){
-        const his = res.rows[0].chat_history;
-        response.results = his.chat;
+      if (res && res?.rowCount) {
+        if (res.rowCount >= 1) {
+          const his = res.rows[0].chat_history;
+          response.results = his.chat;
+          onSuccess(response);
+        } else {
+          response.results = [];
+          onSuccess(response);
+        }
       }
-      onSuccess(response);
     })
     .catch((err) => {
       response.isError = true;
@@ -565,11 +574,15 @@ const handleMessage = async function (messageObj) {
   });
 
   switch (Chat_ID) {
-    case -406610085:     // Family
+    case -406610085: // Family
     case -1001754103737: // BTB Class
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory);
-        templateSaveChat({chatHistory,messageText, responseText: responseText.text()})
+        templateSaveChat({
+          chatHistory,
+          messageText,
+          responseText: responseText.text(),
+        });
         return darabothSendMessage(messageObj, responseText.text());
       }
       break;
@@ -587,14 +600,18 @@ const handleMessage = async function (messageObj) {
         }
       } else {
         const responseText = await callAI(messageText, chatHistory);
-        templateSaveChat({chatHistory,messageText, responseText: responseText.text()})
+        templateSaveChat({
+          chatHistory,
+          messageText,
+          responseText: responseText.text(),
+        });
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
 };
 
-function templateSaveChat ({chatHistory,messageText,responseText}) {
-  if(Array.isArray(chatHistory)){
+function templateSaveChat({ chatHistory, messageText, responseText }) {
+  if (Array.isArray(chatHistory)) {
     chatHistory.push({ role: "user", parts: [{ text: messageText }] });
     chatHistory.push({
       role: "model",
@@ -611,11 +628,11 @@ async function callAI(text, chatHistory) {
   });
   if (!chatHistory) {
     chatHistory = defaultChatHistory;
-  }else{
-    if(Array.isArray(chatHistory)){
-      defaultChatHistory.forEach((value,index)=>{
-        chatHistory.unshift(value)
-      })
+  } else {
+    if (Array.isArray(chatHistory)) {
+      defaultChatHistory.forEach((value, index) => {
+        chatHistory.unshift(value);
+      });
     }
   }
 
