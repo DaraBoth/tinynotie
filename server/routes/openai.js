@@ -573,7 +573,7 @@ const handleMessage = async function (messageObj) {
     case -1001754103737: // BTB Class
       if (messageText.startsWith("/ask")) {
         const responseText = await callAI(messageText, chatHistory);
-        templateSaveChat({chatHistory,messageText,responseText:response.text()})
+        templateSaveChat({chatHistory,messageText, responseText: responseText.text()})
         return darabothSendMessage(messageObj, responseText.text());
       }
       break;
@@ -591,7 +591,7 @@ const handleMessage = async function (messageObj) {
         }
       } else {
         const responseText = await callAI(messageText, chatHistory);
-        templateSaveChat({chatHistory,messageText,responseText:response.text()})
+        templateSaveChat({chatHistory,messageText, responseText: responseText.text()})
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
