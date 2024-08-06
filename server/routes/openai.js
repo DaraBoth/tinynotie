@@ -632,7 +632,7 @@ async function callAI(text, chatHistory) {
     chatHistory = defaultChatHistory;
   } else {
     if (Array.isArray(chatHistory)) {
-      defaultChatHistory.forEach((value, index) => {
+      defaultChatHistory.slice().reverse().forEach((value, index) => {
         chatHistory.unshift(value);
       });
     }
