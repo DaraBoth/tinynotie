@@ -26,7 +26,7 @@ const AxiosTelegramBotInstance = {
   },
 };
 
-router.post("/sendMessage", async (req, res) => {
+router.get("/sendMessage", async (req, res) => {
   try {
     const { body } = req;
     if (body) {
