@@ -115,11 +115,9 @@ router.get("/text", async (req, res) => {
     console.log({ text });
     console.log({ res: response.text() });
     // res.status(200).json({ text: response.text() });
-    res
-      .status(200)
-      .json({
-        text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap.",
-      });
+    res.status(200).json({
+      text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap.",
+    });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
@@ -417,6 +415,42 @@ router.post("/darabothlistening", async (req, res) => {
   }
 });
 
+router.get("/sendMessage", async (req, res) => {
+  try {
+    const { query } = req;
+    if (query) {
+      console.log(JSON.stringify(query));
+      const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const prompt = `
+        This data is about cleaning schedule in a house.
+        And it's a trigger you only see this because there is change updated in excel.
+        
+        ${JSON.stringify(query)}
+        
+        Please response back to user as who is response for cleaning the house this week.
+        `;
+      text = prompt;
+
+      const result = await model.generateContent(`${text}`);
+      const response = await result.response;
+
+      const messageObj = {
+        chat: {
+          id: 7114395001,
+        },
+      };
+
+      darabothSendMessage(messageObj,response.text());
+      res.status(200).json({ request: req.query , text : response.text()});
+    }
+  } catch (error) {
+    console.log(error);
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // B2B_BatchMonitorBot
 //
 async function sendBatchMonitorEmail(message) {
@@ -554,7 +588,7 @@ const getChat = async function ({
 };
 
 const handleMessage = async function (messageObj) {
-  if(!messageObj) return;
+  if (!messageObj) return;
   const { id: Chat_ID } = messageObj?.chat;
   let messageText = messageObj?.text + "" || "";
   let chatHistory = [];
