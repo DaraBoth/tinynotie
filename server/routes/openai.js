@@ -420,29 +420,14 @@ router.post("/sendMessage", async (req, res) => {
     const data = req.body.data; // Get the data object from the request body
     console.log("Received data:", data);
 
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const prompt = `
-        This data is about cleaning schedule in a house.
-        And it's a trigger you only see this because there is change updated in excel.
-        Look to the Array in each object is there information so if the isTurnToClean key is true then it mean their turn to clean.
-        
-        Here is the data in JSON :
-        ${JSON.stringify(data)}
-        
-        Please response back to user as who is response for cleaning the house this week.
-        `;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-
     const messageObj = {
       chat: {
         id: 485397124,
       },
     };
 
-    darabothSendMessage(messageObj, response.text());
+    let resText =  await getCleaningProm(data) ;
+    darabothSendMessage(messageObj,resText);
 
     res.status(200).send("Data received successfully");
   } catch (error) {
@@ -450,6 +435,34 @@ router.post("/sendMessage", async (req, res) => {
     res.status(500).send("Error processing data");
   }
 });
+
+async function getCleaningProm(data){
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const prompt = `
+      This data is about cleaning schedule in a house.
+      And it's a trigger you only see this because there is change updated in excel.
+      Look to the Array in each object is there information so if the isTurnToClean key is true then it mean their turn to clean.
+      
+      Here is the data in JSON :
+      ${JSON.stringify(data)}
+      
+      Please response back to user as who is response for cleaning the house this week.
+      `;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  return response.text();
+}
+
+async function getCleaningData () {
+  // The URL of your Google Apps Script API
+  const apiUrl = 'https://script.google.com/macros/s/AKfycbzEuJaStTk5vGJ8DPnOq8n4kVp1qnZkiG_xmL5zLmW8z3pcptyy9z00NmwZ2ZOlrBxK/exec';
+
+  // Make the API call using axios
+  const response = await axios.get(apiUrl);
+  return response.data;
+}
 
 // B2B_BatchMonitorBot
 //
@@ -628,6 +641,10 @@ const handleMessage = async function (messageObj) {
         switch (command) {
           case "start":
             return darabothSendMessage(messageObj, "Hi! bro");
+          case "whoclean":
+            const cleaningData = await getCleaningData();
+            const resText = await getCleaningProm(cleaningData);
+            return darabothSendMessage(messageObj,resText);
           default:
             return darabothSendMessage(
               messageObj,
