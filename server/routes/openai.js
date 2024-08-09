@@ -430,9 +430,8 @@ router.get("/sendMessage", async (req, res) => {
         
         Please response back to user as who is response for cleaning the house this week.
         `;
-      text = prompt;
 
-      const result = await model.generateContent(`${text}`);
+      const result = await model.generateContent(prompt);
       const response = await result.response;
 
       const messageObj = {

@@ -26,20 +26,6 @@ const AxiosTelegramBotInstance = {
   },
 };
 
-router.get("/sendMessage", async (req, res) => {
-  try {
-    const { query } = req;
-    if (query) {
-      console.log(query);
-      res.status(200).json({ response: req.query });
-    }
-  } catch (error) {
-    console.log(error);
-    console.error("error", error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 router.post("/assist", async (req, res) => {
   try {
     const { body } = req;
