@@ -419,14 +419,28 @@ router.get("/sendMessage", async (req, res) => {
   try {
     const { query } = req;
     if (query) {
-      console.log(JSON.stringify(query));
+      const testdata = JSON.stringify(query.data);
+
+      if(Array.isArray(JSON.parse(testdata))){
+        testdata.forEach((value,index)=>{
+          console.log(value)
+        })
+      } 
+      if(Array.isArray(query.data)) {
+        testdata.forEach((value,index)=>{
+          console.log("1 = "+value)
+        })
+      }
+
+      console.log(testdata);
+
       const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       const prompt = `
         This data is about cleaning schedule in a house.
         And it's a trigger you only see this because there is change updated in excel.
         
-        ${JSON.stringify(query)}
+        ${testdata}
         
         Please response back to user as who is response for cleaning the house this week.
         `;
