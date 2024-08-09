@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 dotenv.config();
 const router = express.Router();
 
-const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN2;
+const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN3;
 const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
 
 const AxiosTelegramBotInstance = {
@@ -25,6 +25,20 @@ const AxiosTelegramBotInstance = {
     });
   },
 };
+
+router.post("/sendMessage", async (req, res) => {
+  try {
+    const { body } = req;
+    if (body) {
+      console.log(body);
+      res.status(200).json({ response: req.body });
+    }
+  } catch (error) {
+    console.log(error);
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 router.post("/assist", async (req, res) => {
   try {
@@ -51,15 +65,15 @@ router.post("/assist", async (req, res) => {
       await handleMessage(messageObj, response.text());
       if (messageObj.chat.id != "-4126147861") {
         const alertMessage = `
-    Message From ${messageObj.from.first_name} ${messageObj.from.last_name}
-    Message :
-    ${messageObj.text}
-    Response :
-    ${response.text()}`;
-        await sendMessage(
-          { ...messageObj, chat: { id: -4126147861 } },
-          alertMessage
-        );
+          Message From ${messageObj.from.first_name} ${messageObj.from.last_name}
+          Message :
+          ${messageObj.text}
+          Response :
+          ${response.text()}`;
+              await sendMessage(
+                { ...messageObj, chat: { id: -4126147861 } },
+                alertMessage
+              );
       }
       res.status(200).json({ response: req.body });
     }
