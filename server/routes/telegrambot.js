@@ -28,10 +28,10 @@ const AxiosTelegramBotInstance = {
 
 router.get("/sendMessage", async (req, res) => {
   try {
-    const { params } = req;
-    if (params) {
-      console.log(params);
-      res.status(200).json({ response: req.params });
+    const { query } = req;
+    if (query) {
+      console.log(query);
+      res.status(200).json({ response: req.query });
     }
   } catch (error) {
     console.log(error);

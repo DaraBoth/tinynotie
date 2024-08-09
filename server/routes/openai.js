@@ -554,6 +554,7 @@ const getChat = async function ({
 };
 
 const handleMessage = async function (messageObj) {
+  if(!messageObj) return;
   const { id: Chat_ID } = messageObj?.chat;
   let messageText = messageObj?.text + "" || "";
   let chatHistory = [];
