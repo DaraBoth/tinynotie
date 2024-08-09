@@ -415,18 +415,18 @@ router.post("/darabothlistening", async (req, res) => {
   }
 });
 
-router.get("/sendMessage", async (req, res) => {
+router.post("/sendMessage", async (req, res) => {
   try {
-    const { query } = req;
-    if (query) {
-      const testdata = JSON.stringify(query.data);
+    const { body } = req;
+    if (body) {
+      const testdata = body.data;
 
       if(Array.isArray(JSON.parse(testdata))){
         testdata.forEach((value,index)=>{
           console.log(value)
         })
       } 
-      if(Array.isArray(query.data)) {
+      if(Array.isArray(body.data)) {
         testdata.forEach((value,index)=>{
           console.log("1 = "+value)
         })
