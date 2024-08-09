@@ -426,7 +426,8 @@ router.post("/sendMessage", async (req, res) => {
         This data is about cleaning schedule in a house.
         And it's a trigger you only see this because there is change updated in excel.
         
-        ${data}
+        Here is the data in JSON :
+        ${JSON.stringify(data)}
         
         Please response back to user as who is response for cleaning the house this week.
         `;
