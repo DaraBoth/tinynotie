@@ -417,50 +417,35 @@ router.post("/darabothlistening", async (req, res) => {
 
 router.post("/sendMessage", async (req, res) => {
   try {
-    const { body } = req;
-    if (body) {
-      const testdata = body.data;
+    const data = req.body.data; // Get the data object from the request body
+    console.log("Received data:", data);
 
-      if(Array.isArray(JSON.parse(testdata))){
-        testdata.forEach((value,index)=>{
-          console.log(value)
-        })
-      } 
-      if(Array.isArray(body.data)) {
-        testdata.forEach((value,index)=>{
-          console.log("1 = "+value)
-        })
-      }
-
-      console.log(testdata);
-
-      const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      const prompt = `
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const prompt = `
         This data is about cleaning schedule in a house.
         And it's a trigger you only see this because there is change updated in excel.
         
-        ${testdata}
+        ${data}
         
         Please response back to user as who is response for cleaning the house this week.
         `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
 
-      const messageObj = {
-        chat: {
-          id: 485397124,
-        },
-      };
+    const messageObj = {
+      chat: {
+        id: 485397124,
+      },
+    };
 
-      darabothSendMessage(messageObj,response.text());
-      res.status(200).json({ request: req.query , text : response.text()});
-    }
+    darabothSendMessage(messageObj, response.text());
+
+    res.status(200).send("Data received successfully");
   } catch (error) {
-    console.log(error);
-    console.error("error", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("Error parsing JSON:", error);
+    res.status(500).send("Error processing data");
   }
 });
 
