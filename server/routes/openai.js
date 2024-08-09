@@ -425,6 +425,7 @@ router.post("/sendMessage", async (req, res) => {
     const prompt = `
         This data is about cleaning schedule in a house.
         And it's a trigger you only see this because there is change updated in excel.
+        Look to the Array in each object is there information so if the isTurnToClean key is true then it mean their turn to clean.
         
         Here is the data in JSON :
         ${JSON.stringify(data)}
