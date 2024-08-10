@@ -442,12 +442,13 @@ async function getCleaningProm(data, apiKey) {
   const prompt = `
       This data is about cleaning schedule in a house.
       And it's a trigger when there is change updated in excel.
-      The number is refer to their step one after another. The number if it meet the last index it will go back to the first person.
+      The number is refer to their step one after another. 
+      The number if it meet the last index it will go back to the first person.
       THe memberName is the house member's name.
       Look to the array in each object the "isTurnToClean" key is there turn to clean.
       So answer to the question depend on the user want.
       
-      In that data logic is that the user have to clean from Tuesday until next week Monday morning. That mean a week.
+      In that data logic is that one user have to clean from Tuesday until next week Monday morning. It mean that they have to clean for 1 week each.
 
       Here is this week date = ${new Date()}
 
