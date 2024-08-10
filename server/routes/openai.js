@@ -426,8 +426,8 @@ router.post("/sendMessage", async (req, res) => {
       },
     };
 
-    let resText =  await getCleaningProm(data,process.env.API_KEY2) ;
-    darabothSendMessage(messageObj,resText);
+    let resText = await getCleaningProm(data, process.env.API_KEY2);
+    darabothSendMessage(messageObj, resText);
 
     res.status(200).send("Data received successfully");
   } catch (error) {
@@ -436,7 +436,7 @@ router.post("/sendMessage", async (req, res) => {
   }
 });
 
-async function getCleaningProm(data,apiKey){
+async function getCleaningProm(data, apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey ?? process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
   const prompt = `
@@ -455,7 +455,7 @@ async function getCleaningProm(data,apiKey){
   return response.text();
 }
 
-async function getCleaningData () {
+async function getCleaningData() {
   // The URL of your Google Apps Script API
   const apiUrl = 'https://script.google.com/macros/s/AKfycbzEuJaStTk5vGJ8DPnOq8n4kVp1qnZkiG_xmL5zLmW8z3pcptyy9z00NmwZ2ZOlrBxK/exec';
 
@@ -569,8 +569,8 @@ const saveChat = async ({ chat_id, chat_history }) => {
 
 const getChat = async function ({
   chat_id,
-  onSuccess = function () {},
-  onError = function () {},
+  onSuccess = function () { },
+  onError = function () { },
 }) {
   const sql = ` select id, chat_id, chat_history from json_data where chat_id = $1 ; `;
   const response = {
@@ -637,33 +637,31 @@ const handleMessage = async function (messageObj) {
       break;
     default:
       if (messageText.charAt(0) == "/") {
-        const command = messageText.substr(1);
-        switch (command) {
-          case "start":
-            return darabothSendMessage(messageObj, "Hi! bro");
-          case "whoclean":
-            const cleaningData = await getCleaningData();
-
-            let cleanObject = {}
-
-            if(Array.isArray(cleaningData)){
-              cleaningData.forEach((value,index)=>{
-                console.log(value);
-                if(value.isTurnToClean){
-                  value = cleanObject
-                }
-              })
-            }
-            if(!cleanObject?.memberName){
-              return darabothSendMessage(messageObj,`Waittttt!`);
-            }
-            return darabothSendMessage(messageObj,`${cleanObject.memberName} is cleaning is week!`);
-            // const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
-          default:
-            return darabothSendMessage(
-              messageObj,
-              "Hey hi, I don't know that command."
-            );
+        const command = messageText.slice(1);
+        if (command.includes("start")) {
+          return darabothSendMessage(messageObj, "Hi! bro");
+        } else if (command.includes("whoclean")) {
+          const cleaningData = await getCleaningData();
+          let cleanObject = {}
+          if (Array.isArray(cleaningData)) {
+            cleaningData.forEach((value, index) => {
+              console.log(value);
+              if (value.isTurnToClean) {
+                value = cleanObject
+              }
+            })
+          }
+          if (!cleanObject?.memberName) {
+            return darabothSendMessage(messageObj, `Waittttt!`);
+          }
+          return darabothSendMessage(messageObj, `${cleanObject.memberName} is cleaning is week!`);
+        }
+        else {
+          // const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
+          return darabothSendMessage(
+            messageObj,
+            "Hey hi, I don't know that command."
+          );
         }
       } else {
         // const responseText = await callAI(messageText, chatHistory);
