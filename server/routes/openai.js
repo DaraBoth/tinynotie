@@ -459,7 +459,7 @@ async function getCleaningProm(data, apiKey) {
 
 async function getCleaningData() {
   // The URL of your Google Apps Script API
-  const apiUrl = 'https://script.google.com/macros/s/AKfycbzEuJaStTk5vGJ8DPnOq8n4kVp1qnZkiG_xmL5zLmW8z3pcptyy9z00NmwZ2ZOlrBxK/exec';
+  const apiUrl = 'https://script.google.com/macros/s/AKfycby3FbiurAmW9TEAYvx35DDYNlZq1xzx1haNzlJkME9csjRLDJKPzzCKe8HPnLplZaDw8g/exec';
 
   // Make the API call using axios
   const response = await axios.get(apiUrl);
@@ -644,11 +644,11 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, "Hi! bro");
         } else if (command.includes("whoclean")) {
           const cleaningData = await getCleaningData();
-          console.log({cleaningData});
+          console.log(JSON.parse(cleaningData));
           
           // const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
           let cleanObject = {}
-          if (Array.isArray(cleaningData)) {
+          if (Array.isArray(JSON.parse(cleaningData))) {
             cleaningData.forEach((value, index) => {
               console.log(value);
               if (value.isTurnToClean) {
