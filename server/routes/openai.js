@@ -643,8 +643,19 @@ const handleMessage = async function (messageObj) {
             return darabothSendMessage(messageObj, "Hi! bro");
           case "whoclean":
             const cleaningData = await getCleaningData();
-            const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
-            return darabothSendMessage(messageObj,resText);
+
+            let cleanObject = {}
+
+            if(Array.isArray(cleaningData)){
+              cleaningData.forEach((value,index)=>{
+                console.log(value);
+                if(value.isTurnToClean){
+                  value = cleanObject
+                }
+              })
+            }
+            // const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
+            return darabothSendMessage(messageObj,`${memberName} is cleaning is week!`);
           default:
             return darabothSendMessage(
               messageObj,
