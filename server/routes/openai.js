@@ -650,7 +650,7 @@ const handleMessage = async function (messageObj) {
             cleaningData.forEach((value, index) => {
               console.log(value);
               if (value.isTurnToClean) {
-                value = cleanObject
+                cleanObject = value; 
               }
             })
           }
