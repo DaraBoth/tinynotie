@@ -452,6 +452,8 @@ async function getCleaningProm(data, apiKey) {
 
   const result = await model.generateContent(prompt);
   const response = await result.response;
+  console.log("response text : "+response.text());
+  
   return response.text();
 }
 
