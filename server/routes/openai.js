@@ -643,7 +643,7 @@ const handleMessage = async function (messageObj) {
             return darabothSendMessage(messageObj, "Hi! bro");
           case "whoclean":
             const cleaningData = await getCleaningData();
-            const resText = await getCleaningProm(cleaningData,process.env.API_KEY1);
+            const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
             return darabothSendMessage(messageObj,resText);
           default:
             return darabothSendMessage(
