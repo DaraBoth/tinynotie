@@ -644,6 +644,8 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, "Hi! bro");
         } else if (command.includes("whoclean")) {
           const cleaningData = await getCleaningData();
+          console.log({cleaningData});
+          
           // const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
           let cleanObject = {}
           if (Array.isArray(cleaningData)) {
