@@ -655,7 +655,7 @@ const handleMessage = async function (messageObj) {
               })
             }
             // const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
-            return darabothSendMessage(messageObj,`${memberName} is cleaning is week!`);
+            return darabothSendMessage(messageObj,`${cleanObject.memberName} is cleaning is week!`);
           default:
             return darabothSendMessage(
               messageObj,
