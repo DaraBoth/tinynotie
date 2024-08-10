@@ -643,12 +643,10 @@ const handleMessage = async function (messageObj) {
         if (command.includes("start")) {
           return darabothSendMessage(messageObj, "Hi! bro");
         } else if (command.includes("whoclean")) {
-          const cleaningData = await getCleaningData();
-          console.log(JSON.parse(cleaningData));
-          
+          const cleaningData = JSON.parse(await getCleaningData());
           // const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
           let cleanObject = {}
-          if (Array.isArray(JSON.parse(cleaningData))) {
+          if (Array.isArray(cleaningData)) {
             cleaningData.forEach((value, index) => {
               console.log(value);
               if (value.isTurnToClean) {
