@@ -441,13 +441,20 @@ async function getCleaningProm(data, apiKey) {
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
   const prompt = `
       This data is about cleaning schedule in a house.
-      And it's a trigger you only see this because there is change updated in excel.
-      Look to the Array in each object is there information so if the isTurnToClean key is true then it mean their turn to clean.
+      And it's a trigger when there is change updated in excel.
+      The number is refer to their step one after another. The number if it meet the last index it will go back to the first person.
+      THe memberName is the house member's name.
+      Look to the array in each object the "isTurnToClean" key is there turn to clean.
+      So answer to the question depend on the user want.
       
+      In that data logic is that the user have to clean from Tuesday until next week Monday morning. That mean a week.
+
+      Here is this week date = ${new Date()}
+
       Here is the data in JSON :
       ${JSON.stringify(data)}
       
-      Please response back to user as who is response for cleaning the house this week.
+      Please response back to user as report text.
       `;
 
   const result = await model.generateContent(prompt);
