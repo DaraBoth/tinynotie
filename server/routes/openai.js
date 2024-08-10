@@ -657,7 +657,7 @@ const handleMessage = async function (messageObj) {
           if (!cleanObject?.memberName) {
             return darabothSendMessage(messageObj, `Waittttt!`);
           }
-          return darabothSendMessage(messageObj, resText.text() );
+          return darabothSendMessage(messageObj, resText );
         }
         else {
           return darabothSendMessage(
