@@ -644,7 +644,7 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, "Hi! bro");
         } else if (command.includes("whoclean")) {
           const cleaningData = JSON.parse(await getCleaningData());
-          // const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
+          const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
           let cleanObject = {}
           if (Array.isArray(cleaningData)) {
             cleaningData.forEach((value, index) => {
@@ -657,7 +657,7 @@ const handleMessage = async function (messageObj) {
           if (!cleanObject?.memberName) {
             return darabothSendMessage(messageObj, `Waittttt!`);
           }
-          return darabothSendMessage(messageObj, `${cleanObject.memberName} is cleaning is week!`);
+          return darabothSendMessage(messageObj, resText.text() );
         }
         else {
           return darabothSendMessage(
