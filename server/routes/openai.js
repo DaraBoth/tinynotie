@@ -448,7 +448,9 @@ async function getCleaningProm(data, msg) {
       Look to the array in each object the "isTurnToClean" key is there turn to clean.
       So answer to the question depend on the user want.
       
-      In that data logic is that one user have to clean from Tuesday until next week Monday morning. It mean that they have to clean for 1 week each.
+      In that data logic is that 1 person have to clean 7 days.
+      Starting from Tuesday -> nextweek Monday Total 7 days in a week. 
+      Note** Everyone need to clean 7 days a week not a day a week.
 
       Here is this week date = ${new Date()}
 
