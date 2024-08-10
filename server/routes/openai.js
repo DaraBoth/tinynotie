@@ -452,6 +452,12 @@ async function getCleaningProm(data, msg) {
       Starting from Tuesday -> nextweek Monday Total 7 days in a week. 
       Note** Everyone need to clean 7 days a week not a day a week.
 
+      **Example 
+      example Date = 2024/08/10 
+      number 1 cleaning this week
+      the next person will be clean next week which is 2024/08/17
+      the previous person cleaning date would be 2024/08/03 
+
       Here is this week date = ${new Date()}
 
       Here is the data in JSON :
