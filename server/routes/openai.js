@@ -426,7 +426,7 @@ router.post("/sendMessage", async (req, res) => {
       },
     };
 
-    let resText = await getCleaningProm(data, process.env.API_KEY2);
+    let resText = await getCleaningProm(data, "Who is cleaning this week?");
     darabothSendMessage(messageObj, resText);
 
     res.status(200).send("Data received successfully");
@@ -436,7 +436,7 @@ router.post("/sendMessage", async (req, res) => {
   }
 });
 
-async function getCleaningProm(data, apiKey) {
+async function getCleaningProm(data, msg) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
   const prompt = `
@@ -455,6 +455,9 @@ async function getCleaningProm(data, apiKey) {
       Here is the data in JSON :
       ${JSON.stringify(data)}
       
+      Here is the user request:
+      ${msg}
+
       Please response back to user as report text.
       `;
 
@@ -652,7 +655,7 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, "Hi! bro");
         } else if (command.includes("whoclean")) {
           const cleaningData = JSON.parse(await getCleaningData());
-          const resText = await getCleaningProm(cleaningData,process.env.API_KEY3);
+          const resText = await getCleaningProm(cleaningData,command.replace("whoclean",""));
           let cleanObject = {}
           if (Array.isArray(cleaningData)) {
             cleaningData.forEach((value, index) => {
