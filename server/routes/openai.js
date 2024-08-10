@@ -664,14 +664,14 @@ const handleMessage = async function (messageObj) {
           );
         }
       } else {
-        // const responseText = await callAI(messageText, chatHistory);
-        // templateSaveChat({
-        //   Chat_ID,
-        //   chatHistory,
-        //   messageText,
-        //   responseText: responseText.text(),
-        // });
-        return darabothSendMessage(messageObj, "he");
+        const responseText = await callAI(messageText, chatHistory);
+        templateSaveChat({
+          Chat_ID,
+          chatHistory,
+          messageText,
+          responseText: responseText.text(),
+        });
+        return darabothSendMessage(messageObj, responseText.text());
       }
   }
 };
