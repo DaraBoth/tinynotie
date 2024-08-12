@@ -438,7 +438,7 @@ router.post("/sendMessage", async (req, res) => {
 
 async function getCleaningProm(data, msg) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
   const prompt = `
       This data is about cleaning schedule in a house.
       And it's a trigger when there is change updated in excel.
@@ -447,19 +447,6 @@ async function getCleaningProm(data, msg) {
       THe memberName is the house member's name.
       Look to the array in each object the "isTurnToClean" key is there turn to clean.
       So answer to the question depend on the user want.
-      
-      In that data logic is that 1 person have to clean 7 days.
-      Starting from Tuesday -> nextweek Monday Total 7 days in a week. 
-      Note** Everyone need to clean 7 days a week not a day a week.
-
-      <example>
-        ExampleCurrentDate => 2024/08/10 
-        And the number 1 person is cleaning this week
-        If they as for next person it will be 2024/08/17 and user is number 2
-        the previous person cleaning date would be 2024/08/03 and user was the last number in the array. 
-        Because the current is number 1.
-      </example>
-
       Here is this week date = ${new Date()}
 
       Here is the data in JSON :
