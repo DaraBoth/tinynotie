@@ -651,7 +651,7 @@ const handleMessage = async function (messageObj) {
         if (command.includes("start")) {
           return darabothSendMessage(messageObj, "Hi! bro");
         } else if (command.includes("whoclean")) {
-          const cleaningData = JSON.parse(await getCleaningData());
+          const cleaningData = await getCleaningData();
           const resText = await getCleaningProm(cleaningData,command.replace("whoclean",""));
           let cleanObject = {}
           if (Array.isArray(cleaningData)) {
