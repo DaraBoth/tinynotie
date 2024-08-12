@@ -467,7 +467,7 @@ async function getCleaningProm(data, msg) {
 
 async function getCleaningData() {
   // The URL of your Google Apps Script API
-  const apiUrl = 'https://script.google.com/macros/s/AKfycby3FbiurAmW9TEAYvx35DDYNlZq1xzx1haNzlJkME9csjRLDJKPzzCKe8HPnLplZaDw8g/exec';
+  const apiUrl = 'https://script.googleusercontent.com/macros/echo?user_content_key=9Ovb5GOK5_AzG_J5F4vZevLD1BJUHGBDOy4f5aRPnLWsRfk--3E3D2RRmKQT1v7yDu8JWId5KVOpqqhu4Qj-_irNgX_4yipGm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnH0F3hTo8--0NaCjX14wIwYF8cC0JS_Qnf8nhHxq_fatmaA3v2xa3l1a5JW_7uN3odVGcm-yqcxT-eXcEBicvLoqH09rX9KD8dz9Jw9Md8uu&lib=MgKmp91GXkA9SSJzubbc_qu8MXP5Cr7Q7';
 
   // Make the API call using axios
   const response = await axios.get(apiUrl);
