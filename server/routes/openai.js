@@ -465,6 +465,29 @@ async function getCleaningProm(data, msg) {
   return response.text();
 }
 
+
+async function getTranslate(str){
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+  const prompt = `
+      Instruction
+      Translate the following English text into Korean using a very polite and formal business tone.
+
+      Example
+      English: "We kindly request your assistance in reviewing the attached document at your earliest convenience."
+      Korean: "첨부된 문서를 가능한 한 빨리 검토해 주시기를 부탁드립니다."
+
+      Text to Translate
+      [${str}]
+      `;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  console.log("response text : "+response.text());
+  
+  return response.text();
+}
+
 async function getCleaningData() {
   // The URL of your Google Apps Script API
   const apiUrl = 'https://script.googleusercontent.com/macros/echo?user_content_key=9Ovb5GOK5_AzG_J5F4vZevLD1BJUHGBDOy4f5aRPnLWsRfk--3E3D2RRmKQT1v7yDu8JWId5KVOpqqhu4Qj-_irNgX_4yipGm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnH0F3hTo8--0NaCjX14wIwYF8cC0JS_Qnf8nhHxq_fatmaA3v2xa3l1a5JW_7uN3odVGcm-yqcxT-eXcEBicvLoqH09rX9KD8dz9Jw9Md8uu&lib=MgKmp91GXkA9SSJzubbc_qu8MXP5Cr7Q7';
@@ -649,29 +672,24 @@ const handleMessage = async function (messageObj) {
       if (messageText.charAt(0) == "/") {
         const command = messageText.slice(1);
         if (command.includes("start")) {
-          return darabothSendMessage(messageObj, "Hi! bro");
+          return darabothSendMessage(messageObj, "Hi! bro")
         } else if (command.includes("whoclean")) {
+
           const cleaningData = await getCleaningData();
-          const resText = await getCleaningProm(cleaningData,command.replace("whoclean",""));
-          let cleanObject = {}
-          if (Array.isArray(cleaningData)) {
-            cleaningData.forEach((value, index) => {
-              console.log(value);
-              if (value.isTurnToClean) {
-                cleanObject = value; 
-              }
-            })
-          }
-          if (!cleanObject?.memberName) {
-            return darabothSendMessage(messageObj, `Waittttt!`);
-          }
+          const resText = await getCleaningProm(cleaningData,command.replace("whoclean","who clean"));
+          return darabothSendMessage(messageObj, resText );
+
+        } else if(command.includes("translate")) {
+          const resText = await getTranslate(str);
           return darabothSendMessage(messageObj, resText );
         }
         else {
+
           return darabothSendMessage(
             messageObj,
             "Hey hi, I don't know that command."
           );
+
         }
       } else {
         const responseText = await callAI(messageText, chatHistory);
@@ -685,6 +703,8 @@ const handleMessage = async function (messageObj) {
       }
   }
 };
+
+
 
 function templateSaveChat({ Chat_ID, chatHistory, messageText, responseText }) {
   if (Array.isArray(chatHistory)) {
