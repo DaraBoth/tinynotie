@@ -287,21 +287,15 @@ router.post("/askDatabase", async (req, res) => {
 
     const cleanedResponse = response.text().replace(/```json|```/g, "");
 
-    try {
-      const jsonData = JSON.parse(cleanedResponse);
-      console.log(jsonData);
+    const jsonData = JSON.parse(cleanedResponse);
+    console.log(jsonData);
 
-      const sqlQuery = jsonData.sql;
-      console.log(sqlQuery); // Output: SELECT * FROM Users;
-
-    } catch (error) {
-      console.error("Error parsing JSON:", error);
-
-    }
+    const sqlQuery = jsonData.sql;
+    console.log(sqlQuery); 
     
     // const AI_Response_Object = JSON.parse(response.text());
 
-    res.status(200).json({ text: cleanedResponse });
+    res.status(200).json({ AI_Answer: jsonData });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
