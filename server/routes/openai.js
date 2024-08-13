@@ -471,16 +471,27 @@ async function getTranslate(str){
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
   const prompt = `
       Instruction
-      Translate the following English text into Korean using a very polite and formal business tone.
+      Translate the following English text into Korean using a polite and formal tone, suitable for business or work communications. Ensure the translation reflects the respectful and professional style used in the examples provided.
 
-      Example
-      English: "We kindly request your assistance in reviewing the attached document at your earliest convenience."
-      Korean: "첨부된 문서를 가능한 한 빨리 검토해 주시기를 부탁드립니다."
+      Examples
+      English: "Development has been completed. Please test."
+      Korean: "개발 완료 되었습니다. 테스트 부탁드립니다."
+
+      English: "The requested data has been shared."
+      Korean: "요청하신 데이터 공유드립니다."
+
+      English: "The part you shared has been corrected."
+      Korean: "공유해주신 부분 수정되었습니다."
+
+      English: "Applied to the development."
+      Korean: "개발계 적용되었습니다."
+
+      English: "Please confirm after the corrections have been made."
+      Korean: "수정완료 했습니다. 확인부탁드립니다."
 
       Text to Translate
       [${str}]
       `;
-
   const result = await model.generateContent(prompt);
   const response = await result.response;
   console.log("response text : "+response.text());
