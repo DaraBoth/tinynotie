@@ -303,6 +303,7 @@ router.post("/askDatabase", async (req, res) => {
 
     if(jsonData["executable"] == "true"){
       try {
+        console.log("start ...");
         pool.query(sqlQuery, (error, results) => {
           if (error) {
             console.log(error);
@@ -312,11 +313,13 @@ router.post("/askDatabase", async (req, res) => {
           } else {
             switch (jsonData["sqlType"]) {
               case "SELECT":
+                console.log(results.rowCount);
                 if(results.rowCount > 0){
                   responseData.data = results.rows;
                 }      
                 break;
               default:
+                console.log(results);
                 responseData.message = `${jsonData["sqlType"]} is success!`
                 break;
             }
