@@ -160,6 +160,141 @@ router.post("/text", async (req, res) => {
   }
 });
 
+router.post("/askDatabase", async (req, res) => {
+  try {
+    const { userAsk } = req.body;
+
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+
+    const prompt = `
+    Instruction
+    You are tasked with analyzing user input to determine if it should generate a SQL query. Your response must always be in JSON format, containing the following fields:
+
+    sqlType: The type of SQL operation (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE).
+    sql: The SQL query that should be executed based on the user input.
+    executable: A boolean indicating whether the SQL query can be executed (true for executable, false for non-executable or irrelevant input).
+    responseMessage: A message to provide additional context or feedback to the user. If the input is not relevant to the database (e.g., a personal question), include an appropriate response in this field and leave sqlType and sql empty.
+    Database Schema
+    The database schema is defined as follows:
+
+    Table Name: Users
+    Columns:
+    user_id (INT, AUTO_INCREMENT, PRIMARY KEY)
+    name (VARCHAR(255))
+    email (VARCHAR(255), UNIQUE)
+    phone (VARCHAR(20))
+    created_at (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
+
+    Table Name: Categories
+    Columns:
+    category_id (INT, AUTO_INCREMENT, PRIMARY KEY)
+    category_name (VARCHAR(50))
+    description (VARCHAR(255))
+
+    Table Name: Transactions
+    Columns:
+    transaction_id (INT, AUTO_INCREMENT, PRIMARY KEY)
+    user_id (INT, FOREIGN KEY REFERENCES Users(user_id))
+    category_id (INT, FOREIGN KEY REFERENCES Categories(category_id))
+    amount (DECIMAL(10, 2))
+    description (VARCHAR(255))
+    transaction_date (DATE)
+    created_at (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
+
+    Table Name: BorrowLend
+    Columns:
+    borrow_lend_id (INT, AUTO_INCREMENT, PRIMARY KEY)
+    transaction_id (INT, FOREIGN KEY REFERENCES Transactions(transaction_id))
+    borrower_id (INT, FOREIGN KEY REFERENCES Users(user_id))
+    lender_id (INT, FOREIGN KEY REFERENCES Users(user_id))
+    due_date (DATE)
+    status (ENUM('Pending', 'Paid'), DEFAULT 'Pending')
+
+    Table Name: Purchases
+    Columns:
+    purchase_id (INT, AUTO_INCREMENT, PRIMARY KEY)
+    transaction_id (INT, FOREIGN KEY REFERENCES Transactions(transaction_id))
+    item_name (VARCHAR(255))
+    quantity (INT, DEFAULT 1)
+    unit_price (DECIMAL(10, 2))
+    total_price (DECIMAL(10, 2))
+
+    Table Name: Payments
+    Columns:
+    payment_id (INT, AUTO_INCREMENT, PRIMARY KEY)
+    borrow_lend_id (INT, FOREIGN KEY REFERENCES BorrowLend(borrow_lend_id))
+    payment_amount (DECIMAL(10, 2))
+    payment_date (DATE)
+
+    Use this schema to generate accurate SQL queries based on the user's input.
+
+    Examples of Desired Output
+    User Input: "I want to see all user info."
+    AI JSON Response:
+
+    json
+    Copy code
+    {
+        "sqlType": "SELECT",
+        "sql": "select * from Users;",
+        "executable": "true",
+        "responseMessage": ""
+    }
+    User Input: "Add a new user with name John."
+    AI JSON Response:
+
+    json
+    Copy code
+    {
+        "sqlType": "INSERT",
+        "sql": "insert into Users (name) values ('John');",
+        "executable": "true",
+        "responseMessage": ""
+    }
+    User Input: "What is your name?"
+    AI JSON Response:
+
+    json
+    Copy code
+    {
+        "sqlType": "",
+        "sql": "",
+        "executable": "false",
+        "responseMessage": "Sorry I am just a Database, I don't have a name."
+    }
+    User Input: "Delete the user with ID 5."
+    AI JSON Response:
+
+    json
+    Copy code
+    {
+        "sqlType": "DELETE",
+        "sql": "delete from Users where id = 5;",
+        "executable": "true",
+        "responseMessage": ""
+    }
+    Guidelines
+    If the user input is a valid request for database action (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE), identify the sqlType and generate the corresponding SQL query using the provided schema.
+    If the user input does not pertain to database actions or cannot be processed as an SQL command, return a responseMessage explaining the situation, and set executable to false.
+    Ensure that the response is always well-formed JSON with the correct fields.
+    Text to Analyze
+    [${userAsk}]
+    `
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    // const AI_Response_Object = JSON.parse(response.text());
+
+
+
+    res.status(200).json({ text: response.text() });
+  } catch (error) {
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/code", async (req, res) => {
   try {
     const { text, activeChatId } = req.body;
