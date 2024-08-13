@@ -292,10 +292,47 @@ router.post("/askDatabase", async (req, res) => {
 
     const sqlQuery = jsonData.sql;
     console.log(sqlQuery); 
-    
-    // const AI_Response_Object = JSON.parse(response.text());
 
-    res.status(200).json({ AI_Answer: jsonData });
+    const responseData = {
+      AI_Answer: jsonData,
+      status : "",
+      executeStatus: true,
+      data :  [],
+      message : ""
+    }
+
+    if(jsonData["executable"] == "true"){
+      try {
+        pool.query(sqlQuery, (error, results) => {
+          if (error) {
+            console.log(error);
+            responseData.executeStatus = false;
+            responseData.status = `Error SQL : ${error}`
+          } else {
+            switch (jsonData["sqlType"]) {
+              case "SELECT":
+                if(results.rowCount > 0){
+                  responseData.data = results.rows;
+                }      
+                break;
+              default:
+                responseData.message = `${jsonData["sqlType"]} is success!`
+                break;
+            }
+          }
+        });
+      } catch (error) {
+        console.error("Error executing query:", error);
+        responseData.status = `Error Pool : ${error}`
+        responseData.executeStatus = false;
+      }
+
+    }else if(jsonData["executable"] == "false"){
+      responseData.executeStatus == false;
+      responseData.message = jsonData["responseMessage"]
+    }
+    
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
