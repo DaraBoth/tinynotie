@@ -308,6 +308,7 @@ router.post("/askDatabase", async (req, res) => {
             console.log(error);
             responseData.executeStatus = false;
             responseData.status = `Error SQL : ${error}`
+            res.status(200).json(responseData);
           } else {
             switch (jsonData["sqlType"]) {
               case "SELECT":
@@ -319,20 +320,21 @@ router.post("/askDatabase", async (req, res) => {
                 responseData.message = `${jsonData["sqlType"]} is success!`
                 break;
             }
+            res.status(200).json(responseData);
           }
         });
       } catch (error) {
         console.error("Error executing query:", error);
         responseData.status = `Error Pool : ${error}`
         responseData.executeStatus = false;
+        res.status(200).json(responseData);
       }
-
     }else if(jsonData["executable"] == "false"){
       responseData.executeStatus == false;
       responseData.message = jsonData["responseMessage"]
+      res.status(200).json(responseData);
     }
     
-    res.status(200).json(responseData);
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
