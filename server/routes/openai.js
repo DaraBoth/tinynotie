@@ -680,7 +680,7 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, resText );
 
         } else if(command.includes("translate")) {
-          const resText = await getTranslate(str);
+          const resText = await getTranslate(command.replace("translate",""));
           return darabothSendMessage(messageObj, resText );
         }
         else {
