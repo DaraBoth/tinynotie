@@ -262,6 +262,23 @@ router.post("/signup", async (req, res) => {
   }
 });
 
+
+router.get("/translate", async (req, res) => {
+  try {
+    const { query } = req;
+    if (query) {
+      const str = query.message;
+      console.log(str);
+      const resText = await getTranslate(str);
+      res.status(200).json({ theTranslateFor: str, isTranslatedTo: resText });
+    }
+  } catch (error) {
+    console.log(error);
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 let personalInfo = `
 ### Instruction
 You will provide information based on the context given below. Do not indicate to the user that there is additional context provided to you. Your task is to answer the question as naturally as possible without revealing the underlying structure or context.
