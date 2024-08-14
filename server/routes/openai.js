@@ -329,7 +329,7 @@ router.post("/askDatabase", async (req, res) => {
         res.status(200).json(responseData);
       }
     }else if(jsonData["executable"] == "false" || jsonData["executable"] == false){
-      responseData.executeStatus == false;
+      responseData.executeStatus = false;
       responseData.message = jsonData["responseMessage"]
       res.status(200).json(responseData);
     }
