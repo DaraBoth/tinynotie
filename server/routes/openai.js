@@ -239,60 +239,58 @@ async function AI_Database(userAsk, chatHistory = []) {
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
   const prompt = `
-    Instruction
-    You are tasked with analyzing user input to determine if it should generate a SQL query for a PostgreSQL database. Your response must always be in JSON format, containing the following fields:
+    Instruction:
+    You are tasked with analyzing user input and generating a complex SQL solution for a PostgreSQL database. Your response must always be in JSON format with the following fields:
 
-    sqlType: The type of SQL operation (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE).
-    sql: The SQL query that should be executed based on the user input, ensuring compatibility with a standard version of PostgreSQL (e.g., version 12 or earlier). The SQL query must be provided as a single line of text without any formatting to minimize errors during execution.
-    executable: A boolean indicating whether the SQL query can be executed (true for executable, false for non-executable or irrelevant input).
-    responseMessage: A message to provide additional context or feedback to the user, if necessary. For example, if the currency is not specified in the user’s request, note that KRW (Korean Won) is being used as the default.
-    Additional Instructions
-    Currency Handling: The SQL query must return both the total amount spent and the associated currency. If the user does not specify a currency, use KRW (Korean Won) as the default.
-    Single-Line SQL: Always return the SQL query in a single line, without any line breaks or unnecessary formatting. This helps reduce errors when the SQL is executed.
-    
+    1, sqlType: The type of SQL operation (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE). If multiple operations are required, specify them in an array.
+    2, sql: A complete SQL solution that addresses the user's request. This can include:
+      - Multiple SQL statements.
+      - Complex SQL structures such as CTEs, subqueries, or user-defined functions.
+      - SQL that combines different operations to achieve the desired output.
+        Ensure that the SQL solution is compatible with PostgreSQL version 12 or earlier, formatted as a single block of text without line breaks.
+    3, executable: Boolean indicating whether the SQL solution can be executed directly (true for executable, false for non-executable or irrelevant input).
+    4, responseMessage: Additional context or feedback to the user, including explanations for complex logic, or default actions taken (e.g., using KRW as the default currency).
+   
+    Additional Instructions:
+    Complex Queries: Generate SQL that can handle multifaceted user requests, such as combining information from multiple tables, performing calculations, and using advanced SQL features like window functions, CTEs, or recursive queries.
+    Dynamic Handling: If a single SQL query is insufficient, break the task into multiple SQL statements or use functions to encapsulate complex logic.
+    Currency Handling: Ensure that the SQL solution returns both the total amount spent and the associated currency. If the currency is not specified, default to KRW (Korean Won).
+ 
     ${dataBaseSchema}
 
-    Validation Process
-    1, Schema Adherence: Ensure that the SQL queries reference only the columns and tables defined in the provided schema. Do not reference non-existent columns or tables.
-    2, SQL Compatibility: Ensure the generated SQL is compatible with PostgreSQL version 12 or earlier. Avoid using features or syntax introduced in later versions.
-    3, Syntax Check: Double-check the syntax of the SQL query to ensure it is correct and will not result in errors.
-    4, Contextual Relevance: Ensure the SQL query accurately reflects what the user asked for. If the user’s request cannot be fulfilled by the database, return a relevant message and set executable to false.
-    5, Currency Handling: The SQL query must return both the total amount spent and the currency type. If the user does not specify a currency, default to KRW (Korean Won).
-    
+    Validation Process:
+    Schema Adherence: Ensure the SQL solution references only the columns and tables defined in the provided schema.
+    SQL Compatibility: Verify that the SQL syntax is compatible with PostgreSQL version 12 or earlier.
+    Syntax Check: Ensure that each SQL statement in the solution has correct syntax and will not result in errors.
+    Contextual Relevance: Ensure the SQL solution accurately reflects the user’s request; return a relevant message and set executable to false if not possible.
+    Currency Handling: Include total amount spent and currency in the SQL solution, defaulting to KRW if unspecified.
+
     Examples of Desired Output
-    1, User Input: "How much did I spend this month?"
+    1, User Input: "I want to know how much I spent today and who I borrowed from, and what I spent that money for?"
+    AI JSON Response:
+    {
+       "sqlType": "SELECT",
+       "sql": "WITH DailySpending AS (SELECT SUM(T.amount) AS total_spent, C.currency_code FROM Transactions T JOIN Currencies C ON T.currency_code = C.currency_code WHERE T.transaction_date = current_date GROUP BY C.currency_code), BorrowedDetails AS (SELECT BL.borrower_id, U.name AS borrower_name, T.description, T.amount FROM BorrowLend BL JOIN Transactions T ON BL.transaction_id = T.transaction_id JOIN Users U ON BL.borrower_id = U.user_id WHERE T.transaction_date = current_date) SELECT DS.total_spent, DS.currency_code, BD.borrower_name, BD.description, BD.amount FROM DailySpending DS CROSS JOIN BorrowedDetails BD;",
+       "executable": true,
+       "responseMessage": "This query provides your total spending today, details on who you borrowed from, and what the money was spent on."
+    }
+
+    2, User Input: "How much did I spend in the last month, broken down by category?"
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT C.currency_code, SUM(T.amount) AS total_amount FROM Transactions T JOIN Currencies C ON T.currency_code = C.currency_code WHERE date_part('month', T.transaction_date) = date_part('month', current_date) GROUP BY C.currency_code;",
-        "executable": "true",
-        "responseMessage": ""
+        "sql": "SELECT C.category_name, SUM(T.amount) AS total_spent, Cur.currency_code FROM Transactions T JOIN Categories C ON T.category_id = C.category_id JOIN Currencies Cur ON T.currency_code = Cur.currency_code WHERE date_part('month', T.transaction_date) = date_part('month', current_date - interval '1 month') GROUP BY C.category_name, Cur.currency_code;",
+        "executable": true,
+        "responseMessage": "This query breaks down your spending over the last month by category."
     }
 
-    2, User Input: "How much did I spend in USD this month?"
-    AI JSON Response:
-    {
-        "sqlType": "SELECT",
-        "sql": "SELECT C.currency_code, SUM(T.amount) AS total_amount FROM Transactions T JOIN Currencies C ON T.currency_code = C.currency_code WHERE T.currency_code = 'USD' AND date_part('month', T.transaction_date) = date_part('month', current_date) GROUP BY C.currency_code;",
-        "executable": "true",
-        "responseMessage": ""
-    }
-
-    3, User Input: "How much did I lend out this month?"
-    AI JSON Response:
-    {
-        "sqlType": "SELECT",
-        "sql": "SELECT C.currency_code, SUM(T.amount) AS total_amount FROM Transactions T JOIN BorrowLend BL ON T.transaction_id = BL.transaction_id JOIN Currencies C ON T.currency_code = C.currency_code WHERE BL.lender_id = 123 AND date_part('month', T.transaction_date) = date_part('month', current_date) GROUP BY C.currency_code;",
-        "executable": "true",
-        "responseMessage": ""
-    }
-
-    Guidelines
-    Ensure all SQL queries are compatible with PostgreSQL version 12 or earlier.
-    Validate the SQL query syntax before including it in the JSON response.
-    Use the provided database schema to generate accurate and relevant SQL queries. Do not reference non-existent columns or tables.
-    Always return SQL queries in a single line to reduce execution errors.
-    Ensure that the SQL query includes both the total amount spent and the currency. Default to KRW if no currency is specified by the user.
+    Guidelines:
+    Generate complex SQL solutions that may involve multiple steps or operations.
+    Ensure all SQL statements are compatible with PostgreSQL version 12 or earlier.
+    Validate SQL syntax before including it in the JSON response.
+    Use the provided schema to generate accurate and relevant SQL queries.
+    Always format SQL queries as a single block of text.
+    Ensure the SQL solution includes both the total amount spent and the currency. Default to KRW if no currency is specified by the user.
     
     Text to Analyze
     [${userAsk}]
