@@ -164,10 +164,20 @@ router.post("/askDatabase", async (req, res) => {
   try {
     const { userAsk } = req.body;
 
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+    const responseData = await AI_Database(userAsk, []);
 
-    const prompt = `
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function AI_Database(userAsk, chatHistory = []) {
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+
+  const prompt = `
     Instruction
     You are tasked with analyzing user input to determine if it should generate a SQL query. Your response must always be in JSON format, containing the following fields:
 
@@ -282,64 +292,163 @@ router.post("/askDatabase", async (req, res) => {
     [${userAsk}]
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
 
-    const cleanedResponse = response.text().replace(/```json|```/g, "");
+  const cleanedResponse = response.text().replace(/```json|```/g, "");
 
-    const jsonData = JSON.parse(cleanedResponse);
-    console.log(jsonData);
+  const jsonData = JSON.parse(cleanedResponse);
+  console.log(jsonData);
 
-    let sqlQuery = jsonData.sql;
-    console.log(sqlQuery); 
+  let sqlQuery = jsonData.sql;
+  console.log(sqlQuery);
 
-    const responseData = {
-      AI_Answer: jsonData,
-      status : "",
-      executeStatus: true,
-      data :  [],
-      message : ""
-    }
+  const responseData = {
+    AI_Answer: jsonData,
+    status: "",
+    executeStatus: true,
+    data: [],
+    message: "",
+  };
 
-    if(jsonData["executable"] == true || jsonData["executable"] == "true"){
+  if (jsonData["executable"] == true || jsonData["executable"] == "true") {
+    if (sqlQuery.includes('"')) sqlQuery = sqlQuery.replace('"', '"');
 
-      if(sqlQuery.includes("\"")) sqlQuery = sqlQuery.replace('\"','"');
+    try {
+      const results = await pool.query(sqlQuery);
 
-      try {
+      switch (jsonData.sqlType) {
+        case "SELECT":
 
-        const results = await pool.query(sqlQuery);
-
-        switch (jsonData.sqlType) {
-          case "SELECT":
-            console.log(results.rowCount);
-            if(results.rowCount > 0){
-              responseData.data = results.rows;
-            }      
-            break;
-          default:
-            console.log(results);
-            responseData.message = `${jsonData["sqlType"]} is success!`
-            break;
-        }
-
-      } catch (error) {
-        console.error("Error executing query:", error);
-        responseData.status = `Error Pool : ${error}`
-        responseData.executeStatus = false;
-        res.status(200).json(responseData);
+          responseData.data = results.rows;
+          
+          const prompt = `
+            User Ask For: [${userAsk}]
+            Database Response: [${results.rows}]
+          `;
+          
+          const resText = await AI_Human_readble(prompt,chatHistory);
+          responseData.message = resText.text();
+        
+          break;
+        default:
+          console.log(results);
+          responseData.message = `${jsonData["sqlType"]} is success!`;
+          break;
       }
-    }else if(jsonData["executable"] == "false" || jsonData["executable"] == false){
+    } catch (error) {
+      console.error("Error executing query:", error);
+      responseData.status = `Error Pool : ${error}`;
       responseData.executeStatus = false;
-      responseData.message = jsonData["responseMessage"]
-      res.status(200).json(responseData);
     }
-    
-    res.status(200).json(responseData);
-  } catch (error) {
-    console.error("error", error.message);
-    res.status(500).json({ error: error.message });
+  } else if (
+    jsonData["executable"] == "false" ||
+    jsonData["executable"] == false
+  ) {
+    responseData.executeStatus = false;
+    responseData.message = jsonData["responseMessage"];
   }
-});
+
+  return responseData;
+}
+
+async function AI_Human_readble(prompt, chatHistory) {
+
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY1);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.0-pro-001",
+  });
+
+  const template = `
+        Instruction
+        You are tasked with generating a human-readable text response based on the following parameters:
+
+        User Ask For: This is what the user is asking for in natural language.
+        Database Response: This is the data returned from the database, provided in JSON format or as an array. The data might sometimes be empty.
+        Your job is to interpret the database response and craft a natural, human-like message that answers the user's query based on the available data. If the database response is empty or does not contain the requested information, politely inform the user.
+
+        Examples of Desired Output
+        User Ask For: "Can you show me the details of the last order?"
+        Database Response:
+
+        json
+        Copy code
+        {
+            "order_id": 12345,
+            "user_id": 6789,
+            "product_name": "Wireless Mouse",
+            "order_date": "2024-08-01"
+        }
+        AI Response:
+        "The details of the last order are as follows: Order ID 12345, for a Wireless Mouse, placed on August 1, 2024."
+
+        User Ask For: "Do we have any recent sign-ups?"
+        Database Response: []
+        AI Response:
+        "It seems there are no recent sign-ups at the moment."
+
+        User Ask For: "What is the total revenue?"
+        Database Response:
+
+        json
+        Copy code
+        {
+            "total_revenue": 45000
+        }
+        AI Response:
+        "The total revenue currently stands at $45,000."
+
+        User Ask For: "Show me all user info."
+        Database Response:
+
+        json
+        Copy code
+        [
+            {"id": 1, "name": "John Doe", "email": "john@example.com"},
+            {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
+        ]
+        AI Response:
+        "Here are the details of all users: 1. John Doe (john@example.com), 2. Jane Smith (jane@example.com)."
+
+        User Ask For: "What is your name?"
+        Database Response: null
+        AI Response:
+        "I'm an AI assistant, so I don't have a name. How can I assist you today?"
+
+        Guidelines
+        Use the data from the "Database Response" to generate a clear and concise human-readable message that directly answers the user's query.
+        If the database response is empty, politely inform the user that the requested data is not available.
+        Ensure the response is natural, polite, and appropriate for a professional setting.`;
+
+  const defaultChatHistory = [
+    {
+      role: "user",
+      parts: [{ text: template }],
+    },
+    {
+      role: "model",
+      parts: [{ text: "Yes noted boss." }],
+    },
+  ];
+
+  if (Array.isArray(chatHistory) && chatHistory.length > 0) {
+    for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
+      chatHistory.unshift(defaultChatHistory[i]);
+    }
+  } else {
+    chatHistory = defaultChatHistory;
+  }
+
+  const result = model.startChat({
+    history: chatHistory,
+    generationConfig: {
+      maxOutputTokens: 250,
+    },
+  });
+
+  const chat = await result.sendMessage(prompt);
+  return chat.response;
+}
 
 router.post("/code", async (req, res) => {
   try {
