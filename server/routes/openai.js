@@ -321,7 +321,7 @@ async function AI_Database(userAsk, chatHistory = []) {
         case "SELECT":
 
           responseData.data = results.rows;
-          
+
           const prompt = `
             User Ask For: [${userAsk}]
             Database Response: [${results.rows}]
@@ -354,7 +354,7 @@ async function AI_Database(userAsk, chatHistory = []) {
 
 async function AI_Human_readble(prompt, chatHistory) {
 
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY1);
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-1.0-pro-001",
   });
