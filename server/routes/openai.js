@@ -317,7 +317,7 @@ async function AI_Database(userAsk, chatHistory = []) {
   if (jsonData["executable"] == true || jsonData["executable"] == "true") {
 
     // validate first
-    if (sqlQuery.includes('"')) sqlQuery = sqlQuery.replace('"', '"');
+    if (sqlQuery.includes('\"')) sqlQuery = sqlQuery.replace('\"', '"');
     if (Array.isArray(jsonData.sqlType)) jsonData.sqlType = jsonData.sqlType[0];
 
     try {
