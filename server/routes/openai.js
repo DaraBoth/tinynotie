@@ -174,7 +174,7 @@ router.post("/askDatabase", async (req, res) => {
 });
 
 const dataBaseSchema = `Database Schema
-    The database schema is defined as follows:
+    Please adhere strictly to the following schema when generating SQL queries:
 
     Table Name: Users
     Columns:
@@ -232,7 +232,7 @@ const dataBaseSchema = `Database Schema
     payment_date (DATE)
 
     Use this schema to generate accurate SQL queries based on the user's input. Ensure that the SQL queries are compatible with PostgreSQL version 12 or earlier.
-`
+`;
 
 async function AI_Database(userAsk, chatHistory = []) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
@@ -253,71 +253,44 @@ async function AI_Database(userAsk, chatHistory = []) {
     ${dataBaseSchema}
 
     Validation Process
-    SQL Compatibility: Ensure the generated SQL is compatible with PostgreSQL version 12 or earlier. Avoid using features or syntax introduced in later versions.
-    Syntax Check: Double-check the syntax of the SQL query to ensure it is correct and will not result in errors.
-    Contextual Relevance: Ensure the SQL query accurately reflects what the user asked for. If the user’s request cannot be fulfilled by the database, return a relevant message and set executable to false.
-    Currency Handling: The SQL query must return both the total amount spent and the currency type. If the user does not specify a currency, default to KRW (Korean Won).
+    1, Schema Adherence: Ensure that the SQL queries reference only the columns and tables defined in the provided schema. Do not reference non-existent columns or tables.
+    2, SQL Compatibility: Ensure the generated SQL is compatible with PostgreSQL version 12 or earlier. Avoid using features or syntax introduced in later versions.
+    3, Syntax Check: Double-check the syntax of the SQL query to ensure it is correct and will not result in errors.
+    4, Contextual Relevance: Ensure the SQL query accurately reflects what the user asked for. If the user’s request cannot be fulfilled by the database, return a relevant message and set executable to false.
+    5, Currency Handling: The SQL query must return both the total amount spent and the currency type. If the user does not specify a currency, default to KRW (Korean Won).
     
     Examples of Desired Output
-    User Input: "How much did I spend this month?"
+    1, User Input: "How much did I spend this month?"
     AI JSON Response:
-
-    json
-    Copy code
     {
         "sqlType": "SELECT",
-        "sql": "SELECT currency, SUM(amount) FROM spending WHERE user_id = 123 AND date_part('month', date) = date_part('month', current_date) GROUP BY currency;",
+        "sql": "SELECT C.currency_code, SUM(T.amount) AS total_amount FROM Transactions T JOIN Currencies C ON T.currency_code = C.currency_code WHERE date_part('month', T.transaction_date) = date_part('month', current_date) GROUP BY C.currency_code;",
         "executable": "true",
         "responseMessage": ""
     }
-    User Input: "How much did I spend in USD this month?"
-    AI JSON Response:
 
-    json
-    Copy code
+    2, User Input: "How much did I spend in USD this month?"
+    AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT currency, SUM(amount) FROM spending WHERE user_id = 123 AND date_part('month', date) = date_part('month', current_date) AND currency = 'USD' GROUP BY currency;",
+        "sql": "SELECT C.currency_code, SUM(T.amount) AS total_amount FROM Transactions T JOIN Currencies C ON T.currency_code = C.currency_code WHERE T.currency_code = 'USD' AND date_part('month', T.transaction_date) = date_part('month', current_date) GROUP BY C.currency_code;",
         "executable": "true",
         "responseMessage": ""
     }
-    User Input: "What is your name?"
-    AI JSON Response:
 
-    json
-    Copy code
-    {
-        "sqlType": "",
-        "sql": "",
-        "executable": "false",
-        "responseMessage": "Sorry, I am just a database and do not have a name."
-    }
-    User Input: "How much did I spend in KRW this month?"
+    3, User Input: "How much did I lend out this month?"
     AI JSON Response:
-
-    json
-    Copy code
     {
         "sqlType": "SELECT",
-        "sql": "SELECT currency, SUM(amount) FROM spending WHERE user_id = 123 AND date_part('month', date) = date_part('month', current_date) AND currency = 'KRW' GROUP BY currency;",
+        "sql": "SELECT C.currency_code, SUM(T.amount) AS total_amount FROM Transactions T JOIN BorrowLend BL ON T.transaction_id = BL.transaction_id JOIN Currencies C ON T.currency_code = C.currency_code WHERE BL.lender_id = 123 AND date_part('month', T.transaction_date) = date_part('month', current_date) GROUP BY C.currency_code;",
         "executable": "true",
         "responseMessage": ""
     }
-    User Input: "How much did I spend this month?" (No currency specified)
-    AI JSON Response:
 
-    json
-    Copy code
-    {
-        "sqlType": "SELECT",
-        "sql": "SELECT currency, SUM(amount) FROM spending WHERE user_id = 123 AND date_part('month', date) = date_part('month', current_date) AND currency = 'KRW' GROUP BY currency;",
-        "executable": "true",
-        "responseMessage": "Currency was not specified, defaulting to KRW (Korean Won)."
-    }
     Guidelines
     Ensure all SQL queries are compatible with PostgreSQL version 12 or earlier.
     Validate the SQL query syntax before including it in the JSON response.
-    Use the database schema provided to generate accurate and relevant SQL queries.
+    Use the provided database schema to generate accurate and relevant SQL queries. Do not reference non-existent columns or tables.
     Always return SQL queries in a single line to reduce execution errors.
     Ensure that the SQL query includes both the total amount spent and the currency. Default to KRW if no currency is specified by the user.
     
@@ -352,17 +325,16 @@ async function AI_Database(userAsk, chatHistory = []) {
 
       switch (jsonData.sqlType) {
         case "SELECT":
-
           responseData.data = results.rows;
 
           const prompt = `
             User Ask For: [${userAsk}]
             Database Response: [${JSON.stringify(results.rows)}]
           `;
-          
-          const resText = await AI_Human_readble(prompt,chatHistory);
+
+          const resText = await AI_Human_readble(prompt, chatHistory);
           responseData.message = resText.text();
-        
+
           break;
         default:
           console.log(results);
@@ -386,7 +358,6 @@ async function AI_Database(userAsk, chatHistory = []) {
 }
 
 async function AI_Human_readble(prompt, chatHistory) {
-
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-1.0-pro-001",
