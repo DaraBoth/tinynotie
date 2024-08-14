@@ -179,12 +179,13 @@ async function AI_Database(userAsk, chatHistory = []) {
 
   const prompt = `
     Instruction
-    You are tasked with analyzing user input to determine if it should generate a SQL query. Your response must always be in JSON format, containing the following fields:
+    You are tasked with analyzing user input to determine if it should generate a SQL query for a PostgreSQL database. Your response must always be in JSON format, containing the following fields:
 
     sqlType: The type of SQL operation (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE).
-    sql: The SQL query that should be executed based on the user input.
+    sql: The SQL query that should be executed based on the user input, ensuring compatibility with a standard version of PostgreSQL (e.g., version 12 or earlier).
     executable: A boolean indicating whether the SQL query can be executed (true for executable, false for non-executable or irrelevant input).
     responseMessage: A message to provide additional context or feedback to the user. If the input is not relevant to the database (e.g., a personal question), include an appropriate response in this field and leave sqlType and sql empty.
+    
     Database Schema
     The database schema is defined as follows:
 
@@ -239,6 +240,11 @@ async function AI_Database(userAsk, chatHistory = []) {
 
     Use this schema to generate accurate SQL queries based on the user's input.
 
+    Validation Process
+    SQL Compatibility: Ensure the generated SQL is compatible with PostgreSQL version 12 or earlier. Avoid using features or syntax introduced in later versions.
+    Syntax Check: Double-check the syntax of the SQL query to ensure it is correct and will not result in errors.
+    Contextual Relevance: Ensure the SQL query accurately reflects what the user asked for. If the user’s request cannot be fulfilled by the database, return a relevant message and set executable to false.
+
     Examples of Desired Output
     User Input: "I want to see all user info."
     AI JSON Response:
@@ -285,9 +291,11 @@ async function AI_Database(userAsk, chatHistory = []) {
         "responseMessage": ""
     }
     Guidelines
-    If the user input is a valid request for database action (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE), identify the sqlType and generate the corresponding SQL query using the provided schema.
-    If the user input does not pertain to database actions or cannot be processed as an SQL command, return a responseMessage explaining the situation, and set executable to false.
-    Ensure that the response is always well-formed JSON with the correct fields.
+    Ensure all SQL queries are compatible with PostgreSQL version 12 or earlier.
+    Validate the SQL query syntax before including it in the JSON response.
+    Use the database schema provided to generate accurate and relevant SQL queries.
+    If the user’s input does not pertain to a database operation, or if the request cannot be fulfilled, set executable to false and provide a clear responseMessage.
+
     Text to Analyze
     [${userAsk}]
     `;
