@@ -290,7 +290,7 @@ router.post("/askDatabase", async (req, res) => {
     const jsonData = JSON.parse(cleanedResponse);
     console.log(jsonData);
 
-    const sqlQuery = jsonData.sql;
+    let sqlQuery = jsonData.sql;
     console.log(sqlQuery); 
 
     const responseData = {
@@ -302,10 +302,13 @@ router.post("/askDatabase", async (req, res) => {
     }
 
     if(jsonData["executable"] == true || jsonData["executable"] == "true"){
+
+      if(sqlQuery.includes("\"")) sqlQuery = sqlQuery.replace('\"','"');
+
       try {
-        console.log("start ...");
+
         const results = await pool.query(sqlQuery);
-        console.log(results);
+
         switch (jsonData.sqlType) {
           case "SELECT":
             console.log(results.rowCount);
@@ -318,6 +321,7 @@ router.post("/askDatabase", async (req, res) => {
             responseData.message = `${jsonData["sqlType"]} is success!`
             break;
         }
+
       } catch (error) {
         console.error("Error executing query:", error);
         responseData.status = `Error Pool : ${error}`
