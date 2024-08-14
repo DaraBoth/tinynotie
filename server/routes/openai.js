@@ -304,29 +304,20 @@ router.post("/askDatabase", async (req, res) => {
     if(jsonData["executable"] == true || jsonData["executable"] == "true"){
       try {
         console.log("start ...");
-        pool.query(sqlQuery, (error, results) => {
-          if (error) {
-            console.log(error);
-            responseData.executeStatus = false;
-            responseData.status = `Error SQL : ${error}`
-            res.status(200).json(responseData);
-          } else {
+        const results = await pool.query(sqlQuery);
+        console.log(results);
+        switch (jsonData.sqlType) {
+          case "SELECT":
+            console.log(results.rowCount);
+            if(results.rowCount > 0){
+              responseData.data = results.rows;
+            }      
+            break;
+          default:
             console.log(results);
-            switch (jsonData["sqlType"]) {
-              case "SELECT":
-                console.log(results.rowCount);
-                if(results.rowCount > 0){
-                  responseData.data = results.rows;
-                }      
-                break;
-              default:
-                console.log(results);
-                responseData.message = `${jsonData["sqlType"]} is success!`
-                break;
-            }
-            res.status(200).json(responseData);
-          }
-        });
+            responseData.message = `${jsonData["sqlType"]} is success!`
+            break;
+        }
       } catch (error) {
         console.error("Error executing query:", error);
         responseData.status = `Error Pool : ${error}`
