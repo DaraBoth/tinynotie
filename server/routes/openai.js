@@ -203,14 +203,20 @@ async function AI_Database(userAsk, chatHistory = []) {
     category_name (VARCHAR(50))
     description (VARCHAR(255))
 
+    Table Name: Currencies
+    Columns:
+    currency_code (VARCHAR(3), PRIMARY KEY) -- ISO 4217 currency code like 'USD', 'KRW', 'KHR'
+    currency_name (VARCHAR(50), NOT NULL)
+
     Table Name: Transactions
     Columns:
-    transaction_id (INT, AUTO_INCREMENT, PRIMARY KEY)
+    transaction_id (INT, SERIAL, PRIMARY KEY)
     user_id (INT, FOREIGN KEY REFERENCES Users(user_id))
     category_id (INT, FOREIGN KEY REFERENCES Categories(category_id))
-    amount (DECIMAL(10, 2))
+    amount (DECIMAL(10, 2), NOT NULL)
+    currency_code (VARCHAR(3), FOREIGN KEY REFERENCES Currencies(currency_code))
     description (VARCHAR(255))
-    transaction_date (DATE)
+    transaction_date (DATE, NOT NULL)
     created_at (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
 
     Table Name: BorrowLend
