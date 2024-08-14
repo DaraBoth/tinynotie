@@ -291,7 +291,7 @@ async function AI_Database(userAsk, chatHistory = []) {
     Use the provided schema to generate accurate and relevant SQL queries.
     Always format SQL queries as a single block of text.
     Ensure the SQL solution includes both the total amount spent and the currency. Default to KRW if no currency is specified by the user.
-    
+
     Text to Analyze
     [${userAsk}]
     `;
@@ -316,12 +316,18 @@ async function AI_Database(userAsk, chatHistory = []) {
   };
 
   if (jsonData["executable"] == true || jsonData["executable"] == "true") {
+
+    // validate first
     if (sqlQuery.includes('"')) sqlQuery = sqlQuery.replace('"', '"');
+    if (Array.isArray(jsonData.sqlType)) jsonData.sqlType = jsonData.sqlType[0];
 
     try {
       const results = await pool.query(sqlQuery);
 
+      
+
       switch (jsonData.sqlType) {
+        case "MORE":
         case "SELECT":
           responseData.data = results.rows;
 
