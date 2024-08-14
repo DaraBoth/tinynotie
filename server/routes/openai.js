@@ -173,20 +173,7 @@ router.post("/askDatabase", async (req, res) => {
   }
 });
 
-async function AI_Database(userAsk, chatHistory = []) {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
-
-  const prompt = `
-    Instruction
-    You are tasked with analyzing user input to determine if it should generate a SQL query for a PostgreSQL database. Your response must always be in JSON format, containing the following fields:
-
-    sqlType: The type of SQL operation (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE).
-    sql: The SQL query that should be executed based on the user input, ensuring compatibility with a standard version of PostgreSQL (e.g., version 12 or earlier).
-    executable: A boolean indicating whether the SQL query can be executed (true for executable, false for non-executable or irrelevant input).
-    responseMessage: A message to provide additional context or feedback to the user. If the input is not relevant to the database (e.g., a personal question), include an appropriate response in this field and leave sqlType and sql empty.
-    
-    Database Schema
+const dataBaseSchema = `Database Schema
     The database schema is defined as follows:
 
     Table Name: Users
@@ -244,33 +231,53 @@ async function AI_Database(userAsk, chatHistory = []) {
     payment_amount (DECIMAL(10, 2))
     payment_date (DATE)
 
-    Use this schema to generate accurate SQL queries based on the user's input.
+    Use this schema to generate accurate SQL queries based on the user's input. Ensure that the SQL queries are compatible with PostgreSQL version 12 or earlier.
+`
+
+async function AI_Database(userAsk, chatHistory = []) {
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+
+  const prompt = `
+    Instruction
+    You are tasked with analyzing user input to determine if it should generate a SQL query for a PostgreSQL database. Your response must always be in JSON format, containing the following fields:
+
+    sqlType: The type of SQL operation (e.g., SELECT, INSERT, UPDATE, DELETE, CREATE).
+    sql: The SQL query that should be executed based on the user input, ensuring compatibility with a standard version of PostgreSQL (e.g., version 12 or earlier). The SQL query must be provided as a single line of text without any formatting to minimize errors during execution.
+    executable: A boolean indicating whether the SQL query can be executed (true for executable, false for non-executable or irrelevant input).
+    responseMessage: A message to provide additional context or feedback to the user, if necessary. For example, if the currency is not specified in the user’s request, note that KRW (Korean Won) is being used as the default.
+    Additional Instructions
+    Currency Handling: The SQL query must return both the total amount spent and the associated currency. If the user does not specify a currency, use KRW (Korean Won) as the default.
+    Single-Line SQL: Always return the SQL query in a single line, without any line breaks or unnecessary formatting. This helps reduce errors when the SQL is executed.
+    
+    ${dataBaseSchema}
 
     Validation Process
     SQL Compatibility: Ensure the generated SQL is compatible with PostgreSQL version 12 or earlier. Avoid using features or syntax introduced in later versions.
     Syntax Check: Double-check the syntax of the SQL query to ensure it is correct and will not result in errors.
     Contextual Relevance: Ensure the SQL query accurately reflects what the user asked for. If the user’s request cannot be fulfilled by the database, return a relevant message and set executable to false.
-
+    Currency Handling: The SQL query must return both the total amount spent and the currency type. If the user does not specify a currency, default to KRW (Korean Won).
+    
     Examples of Desired Output
-    User Input: "I want to see all user info."
+    User Input: "How much did I spend this month?"
     AI JSON Response:
 
     json
     Copy code
     {
         "sqlType": "SELECT",
-        "sql": "select * from Users;",
+        "sql": "SELECT currency, SUM(amount) FROM spending WHERE user_id = 123 AND date_part('month', date) = date_part('month', current_date) GROUP BY currency;",
         "executable": "true",
         "responseMessage": ""
     }
-    User Input: "Add a new user with name John."
+    User Input: "How much did I spend in USD this month?"
     AI JSON Response:
 
     json
     Copy code
     {
-        "sqlType": "INSERT",
-        "sql": "insert into Users (name) values ('John');",
+        "sqlType": "SELECT",
+        "sql": "SELECT currency, SUM(amount) FROM spending WHERE user_id = 123 AND date_part('month', date) = date_part('month', current_date) AND currency = 'USD' GROUP BY currency;",
         "executable": "true",
         "responseMessage": ""
     }
@@ -283,25 +290,37 @@ async function AI_Database(userAsk, chatHistory = []) {
         "sqlType": "",
         "sql": "",
         "executable": "false",
-        "responseMessage": "Sorry I am just a Database, I don't have a name."
+        "responseMessage": "Sorry, I am just a database and do not have a name."
     }
-    User Input: "Delete the user with ID 5."
+    User Input: "How much did I spend in KRW this month?"
     AI JSON Response:
 
     json
     Copy code
     {
-        "sqlType": "DELETE",
-        "sql": "delete from Users where id = 5;",
+        "sqlType": "SELECT",
+        "sql": "SELECT currency, SUM(amount) FROM spending WHERE user_id = 123 AND date_part('month', date) = date_part('month', current_date) AND currency = 'KRW' GROUP BY currency;",
         "executable": "true",
         "responseMessage": ""
+    }
+    User Input: "How much did I spend this month?" (No currency specified)
+    AI JSON Response:
+
+    json
+    Copy code
+    {
+        "sqlType": "SELECT",
+        "sql": "SELECT currency, SUM(amount) FROM spending WHERE user_id = 123 AND date_part('month', date) = date_part('month', current_date) AND currency = 'KRW' GROUP BY currency;",
+        "executable": "true",
+        "responseMessage": "Currency was not specified, defaulting to KRW (Korean Won)."
     }
     Guidelines
     Ensure all SQL queries are compatible with PostgreSQL version 12 or earlier.
     Validate the SQL query syntax before including it in the JSON response.
     Use the database schema provided to generate accurate and relevant SQL queries.
-    If the user’s input does not pertain to a database operation, or if the request cannot be fulfilled, set executable to false and provide a clear responseMessage.
-
+    Always return SQL queries in a single line to reduce execution errors.
+    Ensure that the SQL query includes both the total amount spent and the currency. Default to KRW if no currency is specified by the user.
+    
     Text to Analyze
     [${userAsk}]
     `;
