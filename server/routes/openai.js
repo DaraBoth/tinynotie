@@ -311,6 +311,7 @@ router.post("/askDatabase", async (req, res) => {
             responseData.status = `Error SQL : ${error}`
             res.status(200).json(responseData);
           } else {
+            console.log(results);
             switch (jsonData["sqlType"]) {
               case "SELECT":
                 console.log(results.rowCount);
