@@ -301,7 +301,7 @@ router.post("/askDatabase", async (req, res) => {
       message : ""
     }
 
-    if(jsonData["executable"] == "true"){
+    if(jsonData["executable"] == true || jsonData["executable"] == "true"){
       try {
         console.log("start ...");
         pool.query(sqlQuery, (error, results) => {
@@ -338,6 +338,7 @@ router.post("/askDatabase", async (req, res) => {
       res.status(200).json(responseData);
     }
     
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
