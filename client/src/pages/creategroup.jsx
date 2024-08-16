@@ -1,4 +1,4 @@
-import { Autocomplete, Box, Button, Chip, FormControl, Stack, TextField, useMediaQuery } from '@mui/material'
+import { Autocomplete, Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, Stack, TextField, useMediaQuery } from '@mui/material'
 import React, { useEffect, useState } from 'react'
 import { useGetAllMemberMutation, usePostAddGroupMutation } from '../api/api';
 import { Formik } from 'formik';
@@ -26,11 +26,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
     }, [resultMember.data])
 
     const handleFormSubmit = debounce(async (values) => {
-        const { grp_name, description } = values;
+        const { grp_name, currency } = values;
         const members = newMember;
-        if (grp_name && description) {
+        if (grp_name && currency && Array.isArray(members) && members.length > 0) {
             setnewGroupName(grp_name);
-            triggerCreateGroup({ user_id: secret, grp_name, description, status: 1, member: JSON.stringify(members) })
+            triggerCreateGroup({ user_id: secret, grp_name, currency, status: 1, member: JSON.stringify(members) })
         }
     }, 500);
 
@@ -81,17 +81,18 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                                     color="info"
                                     sx={{ gridColumn: "span 2" }}
                                 />
-                                <TextField
-                                    id="standard-multiline-static"
-                                    label="Description"
-                                    color="info"
-                                    multiline
+                                <InputLabel id="demo-simple-select-standard-label">Currency</InputLabel>
+                                <Select
+                                    labelId="demo-simple-select-standard-label"
+                                    id="demo-simple-select-standard"
+                                    value={values.currency}
+                                    defaultValue='$'
                                     onChange={handleChange}
-                                    value={values.description}
-                                    name="description"
-                                    variant="standard"
-                                    sx={{ gridColumn: "span 2" }}
-                                />
+                                    label="Currency"
+                                    >
+                                    <MenuItem value={"$"}>US Dollar</MenuItem>
+                                    <MenuItem value={"W"}>Korean Won</MenuItem>
+                                </Select>
                                 <Autocomplete
                                     multiple
                                     id="tags-filled"
@@ -157,11 +158,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
 
 const checkoutSchema = yup.object().shape({
     grp_name: yup.string().required("required"),
-    description: yup.string()
+    currency: yup.string().required("required"),
 });
 const initialValues = {
     grp_name: "",
-    description: "",
+    currency: "",
 };
 
 function debounce(func, timeout = 300) {
