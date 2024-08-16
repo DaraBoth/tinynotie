@@ -148,7 +148,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
           </Typography>
         ) : (
           data
-            ?.reverse().map((item, index) => {
+            ?.map((item, index) => {
               return (
                 <ListItem
                   key={item.id}
