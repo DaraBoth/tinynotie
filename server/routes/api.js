@@ -67,7 +67,7 @@ router.get("/test_db_online", async (req, res) => {
 router.get("/getGroupByUserId", async (req, res) => {
   const { user_id } = req.query;
   try {
-    let sql = `SELECT id, grp_name, status, currency, admin_id, create_date FROM grp_infm where admin_id=${user_id}::int order by id DESC;`;
+    let sql = `SELECT id, grp_name, status, currency, admin_id, create_date FROM grp_infm where admin_id=${user_id}::int order by id ASC;`;
     pool.query(sql.toString(), (error, results) => {
       if (error) {
         res.status(500).json({ error: error.message });
