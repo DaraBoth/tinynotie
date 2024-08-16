@@ -26,13 +26,15 @@ export default function CreateGroup({ secret, setGroupInfo }) {
     }, [resultMember.data])
 
     const handleFormSubmit = debounce(async (values) => {
-        const { grp_name, currency } = values;
+        const { grp_name } = values;
         const members = newMember;
         if (grp_name && currency && Array.isArray(members) && members.length > 0) {
             setnewGroupName(grp_name);
             triggerCreateGroup({ user_id: secret, grp_name, currency, status: 1, member: JSON.stringify(members) })
         }
     }, 500);
+
+
 
     useEffect(() => {
         if (resultGroup.data?.status) {
@@ -81,14 +83,17 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                                     color="info"
                                     sx={{ gridColumn: "span 2" }}
                                 />
-                                <FormControl variant="standard" >
+                                <FormControl variant="standard" sx={{ gridColumn: "span 2" }} >
                                     <InputLabel id="demo-simple-select-standard-label">Currency</InputLabel>
                                     <Select
                                         labelId="demo-simple-select-standard-label"
                                         id="demo-simple-select-standard"
                                         value={values.currency}
                                         defaultValue='$'
-                                        onChange={handleChange}
+                                        name='currency'
+                                        onChange={({target})=>{
+                                            handleChange(target.value)
+                                        }}
                                         label="Currency"
                                         >
                                         <MenuItem value={"$"}>US Dollar</MenuItem>
