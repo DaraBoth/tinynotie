@@ -82,7 +82,7 @@ router.get("/getGroupByUserId", async (req, res) => {
 });
 
 router.post("/addGroupByUserId", async (req, res) => {
-  const { user_id, grp_name, status = 1, description, member } = req.body;
+  const { user_id, grp_name, status = 1, description, currency = 'W', member } = req.body;
   const create_date = format(new Date());
   const newMember = JSON.parse(member);
   try {
@@ -95,9 +95,10 @@ router.post("/addGroupByUserId", async (req, res) => {
     sql += `    grp_name,`;
     sql += `    status,`;
     sql += `    description,`;
+    sql += `    currency,`;
     sql += `    admin_id,`;
     sql += `    create_date`;
-    sql += `  ) VALUES('${grp_name}', ${status}, '${description}', ${user_id}, '${create_date}') RETURNING id INTO group_id; `;
+    sql += `  ) VALUES('${grp_name}', ${status}, '${description}', '${currency}', ${user_id}, '${create_date}') RETURNING id INTO group_id; `;
     for (let i in newMember) {
       sql += `INSERT INTO member_infm (`;
       sql += `    mem_name,`;
