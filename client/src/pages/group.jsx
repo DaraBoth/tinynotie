@@ -208,14 +208,14 @@ function calculateMoney(allMembers, trips) {
     return {
       id: id + 1,
       name: member.mem_name,
-      paid: currency(paid, { symbol: "$" }).format(),
+      paid: currency(paid,  { symbol: "W" }).format(),
       ...kitLuy,
       remain: formatMoney(luySol > 0 ? luySol : unPaid),
       unpaid: formatMoney(luySol > 0 ? unPaid : luySol),
     };
   });
   totalMember = newData.length;
-  totalSpend = "-" + currency(totalPaid,{symbol:"$"}).subtract(totalRemain).format();
+  totalSpend = "-" + currency(totalPaid, { symbol: "W" }).subtract(totalRemain).format();
   totalPaid = formatMoney(totalPaid);
   totalRemain = formatMoney(totalRemain);
   totalUnPaid = formatMoney(totalUnPaid);
@@ -227,7 +227,7 @@ function calculateMoney(allMembers, trips) {
 }
 
 function formatMoney(money, option = 2) {
-  const USD = (value) => currency(value, { symbol: "$" }).format();
+  const USD = (value) => currency(value,  { symbol: "W" }).format();
   if (!money) return "-/-  ";
   if (option === 1) {
     return "-" + USD(money);
