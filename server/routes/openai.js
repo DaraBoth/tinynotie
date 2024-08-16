@@ -384,7 +384,7 @@ async function AI_Database(userAsk, chatHistory = []) {
     message: "",
   };
 
-  if (jsonData["executable"] == true || jsonData["executable"] == "true") {
+  if ([true, "true"].includes(jsonData["executable"])) {
     // validate first
     if (sqlQuery.includes('"')) sqlQuery = sqlQuery.replace('"', '"');
     if (sqlQuery.includes(" n")) sqlQuery = sqlQuery.replace(" n", " ");
@@ -405,14 +405,13 @@ async function AI_Database(userAsk, chatHistory = []) {
 
             const resText = await AI_Human_readble(prompt, chatHistory);
             responseData.message = resText.text();
-
           });
           break;
         default:
-          executeUpdate(sqlQuery, []).then((rows)=>{
+          executeUpdate(sqlQuery, []).then((rows) => {
             console.log(rows);
             responseData.message = `${jsonData["sqlType"]} is success!`;
-          })
+          });
           break;
       }
     } catch (error) {
@@ -420,10 +419,7 @@ async function AI_Database(userAsk, chatHistory = []) {
       responseData.status = `Error Pool : ${error}`;
       responseData.executeStatus = false;
     }
-  } else if (
-    jsonData["executable"] == "false" ||
-    jsonData["executable"] == false
-  ) {
+  } else if ([false, "false"].includes(jsonData["executable"])) {
     responseData.executeStatus = false;
     responseData.message = jsonData["responseMessage"];
   }
