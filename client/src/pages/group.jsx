@@ -1,25 +1,21 @@
-import React, { useEffect, useState } from "react";
-import Topbar from "../global/Topbar";
-import TableComponent from "../component/table";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
-  Icon,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  colors,
-  useMediaQuery,
+  Paper,
+  Grid,
   useTheme,
+  useMediaQuery,
 } from "@mui/material";
+import Topbar from "../global/Topbar";
+import TableComponent from "../component/table";
 import { tokens } from "../theme";
-import { useGetMemberMutation, useGetTripMutation } from "../api/api";
+import {
+  useGetMemberMutation,
+  useGetTripMutation,
+} from "../api/api";
 import ToolTip from "../component/toolTip";
 import AddTrip from "../component/addtrip";
-import PaidIcon from "@mui/icons-material/Paid";
 import EditTripMem from "../component/editTripMem";
-import PaymentIcon from "@mui/icons-material/Payment";
-import MoneyOffCsredIcon from "@mui/icons-material/MoneyOffCsred";
 import DeleteMember from "../component/deleteMember";
 import currency from "currency.js";
 
@@ -27,6 +23,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [triggerTrip, resultTrip] = useGetTripMutation();
+  const isNonMobile = useMediaQuery("(min-width:600px)");
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
   const [trip, setTrip] = useState([]);
@@ -35,145 +32,124 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   useEffect(() => {
     triggerTrip({ group_id: groupInfo.group_id });
     triggerMember({ group_id: groupInfo.group_id });
-  }, []);
+  }, [triggerTrip, triggerMember, groupInfo.group_id]);
 
   useEffect(() => {
-    if (resultTrip.data?.status) {
-      setTrip(resultTrip.data?.data);
+    if (resultTrip?.data?.status) {
+      setTrip(resultTrip.data.data);
     }
-  }, [resultTrip.data]);
+  }, [resultTrip]);
 
   useEffect(() => {
-    if (resultMember.data?.status) {
-      setMember(resultMember.data?.data);
+    if (resultMember?.data?.status) {
+      setMember(resultMember.data.data);
     }
-  }, [resultMember.data]);
+  }, [resultMember]);
 
-  const { info, newData } = calculateMoney(member, trip, currencyType);
-  const rows = newData;
-  const columns = functionRenderColumns(rows);
+  const { info, newData } = useMemo(
+    () => calculateMoney(member, trip, currencyType),
+    [member, trip, currencyType]
+  );
+  const columns = useMemo(() => functionRenderColumns(newData), [newData]);
+
+  const tripColumns = useMemo(() => [
+    { field: "id", headerName: "ID", width: 70, align: 'left', headerAlign: 'left' },  // Adjusted alignment
+    { field: "trp_name", headerName: "Trip Name", width: 150 },
+    { field: "spend", headerName: "Spend", width: 100 ,
+      valueGetter: ({value}) => {
+        return formatMoney(value, 2, currencyType)
+      }
+    },
+    { 
+      field: "mem_id", 
+      headerName: "Joined", 
+      width: 150, 
+      valueGetter: (params) => {
+        const joinedMemId = JSON.parse(params.value)
+        const memberCount = Array.isArray(joinedMemId) ? joinedMemId.length : 0;
+        return `${memberCount} Member${memberCount !== 1 ? 's' : ''}`;
+      },
+    },
+    { field: "create_date", headerName: "Created Date", width: 150 },
+  ], [member]);
 
   return (
     <main className="content">
       <Topbar user={user} groupInfo={groupInfo} setGroupInfo={setGroupInfo} />
-      <div className="body">
-        <TitleComponent info={info} />
-        <TableComponent rows={rows ?? []} columns={columns ?? []} />
-        <ToolTip
-          triggerMember={triggerMember}
-          member={member}
-          group_id={groupInfo.group_id}
-        />
-        <AddTrip
-          triggerTrip={triggerTrip}
-          member={member}
-          secret={secret}
-          trip={trip}
-          group_id={groupInfo.group_id}
-        />
-        <EditTripMem
-          triggerTrip={triggerTrip}
-          member={member}
-          secret={secret}
-          trip={trip}
-          group_id={groupInfo.group_id}
-        />
-        <DeleteMember
-          triggerMember={triggerMember}
-          member={member}
-          group_id={groupInfo.group_id}
-        />
-      </div>
+      <Box sx={{ padding: "20px" }}>
+        <Grid container spacing={2} sx={{ height: "100%" }}>
+          {/* Main Table (70% width) */}
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ padding: "20px", height: "100%" }}>
+              <TableComponent rows={newData || []} columns={columns || []} height={isNonMobile ? "71vh" : "calc(10 * 50px)"} />
+            </Paper>
+          </Grid>
+
+          {/* Side Tables (30% width, stacked) */}
+          <Grid item xs={12} md={4}>
+            <Grid container direction="column" spacing={2}>
+              <Grid item xs={6}>
+                <Paper sx={{ padding: "20px", height: "100%" }}>
+                  <TableComponent rows={Array.isArray(trip) ? trip : []} columns={tripColumns || []} height="calc(60vh / 2)" />
+                </Paper>
+              </Grid>
+              <Grid item xs={6}>
+                <Paper sx={{ padding: "20px", height: "100%" }}>
+                  <TotalSpendTable info={info} />
+                </Paper>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Grid>
+
+        {/* Revert back to old functionality */}
+        <Box mt={3} gap={2}>
+          <ToolTip
+            triggerMember={triggerMember}
+            member={member}
+            group_id={groupInfo.group_id}
+          />
+          <AddTrip
+            triggerTrip={triggerTrip}
+            member={member}
+            secret={secret}
+            trip={trip}
+            group_id={groupInfo.group_id}
+          />
+          <EditTripMem
+            triggerTrip={triggerTrip}
+            member={member}
+            secret={secret}
+            trip={trip}
+            group_id={groupInfo.group_id}
+          />
+          <DeleteMember
+            triggerMember={triggerMember}
+            member={member}
+            group_id={groupInfo.group_id}
+          />
+        </Box>
+      </Box>
     </main>
   );
 }
 
-const TitleComponent = ({ info }) => {
+const TotalSpendTable = ({ info }) => {
   const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
-  const isNonMobile = useMediaQuery("(min-width:600px)");
-  const isGalaxyFold = useMediaQuery("(max-width:280px)");
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+  const rows = [
+    { id: 1, label: "Total Paid", value: totalPaid },
+    { id: 2, label: "Total UnPaid", value: totalUnPaid },
+    { id: 3, label: "Total Spend", value: totalSpend },
+    { id: 4, label: "Total Remain", value: totalRemain },
+  ];
+  const columns = [
+    { field: "label", headerName: "Description", width: 150 },
+    { field: "value", headerName: "Amount", width: 150 },
+  ];
 
-  return (
-    <Box
-      display="grid"
-      gap="10px"
-      gridTemplateColumns="repeat(4, 1fr)"
-      sx={{
-        position: "sticky",
-        top: "15px",
-        backgroundColor: colors.backrgound,
-        borderRadius: "10px",
-        zIndex: 1,
-        "& > .MuiListItem-root": {
-          gridColumn: isNonMobile ? "span 1" : "span 2",
-          border: `2px solid ${colors.blueAccent[500]}`,
-          borderRadius: "10px",
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          overflowY: isGalaxyFold ? "scroll" : undefined,
-          boxSizing: "border-box",
-        },
-        "& > .MuiListItem-root::-webkit-scrollbar": {
-          display: "none",
-        },
-        "& > .MuiListItem-root .MuiBox-root": {
-          gridColumn: "span 1",
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          placeItems: "center",
-          gap: "5px",
-          position: "relative",
-        },
-        "& > .MuiListItem-root .MuiBox-root div ": {
-          position: "absolute",
-          display: isGalaxyFold ? "none" : undefined,
-          top: "-110%",
-          left: "0%",
-          backgroundColor: colors.backrgound,
-          padding: "0px 5px",
-          paddingTop: "1px",
-          borderRadius: "5px",
-          zIndex: "5",
-        },
-        "& > .MuiListItem-root .MuiListItemText-root ": {
-          gridColumn: "span 2",
-          textAlign: "right",
-        },
-      }}
-    >
-      <ListItem>
-        <Box>
-          <div>Paid</div>
-          <PaymentIcon sx={{ fill: colors.blueAccent[500] }} />
-        </Box>
-        <ListItemText primary={`${totalPaid}`} />
-      </ListItem>
-      <ListItem color={colors.primary[400]}>
-        <Box>
-          <div>UnPaid</div>
-          <PaidIcon sx={{ fill: "#ffa900" }} />
-        </Box>
-        <ListItemText primary={`${totalUnPaid} `} />
-      </ListItem>
-      <ListItem>
-        <Box>
-          <div>Spend</div>
-          <MoneyOffCsredIcon sx={{ fill: colors.redAccent[500] }} />
-        </Box>
-        <ListItemText primary={`${totalSpend}`} />
-      </ListItem>
-      <ListItem>
-        <Box>
-          <div>Remain</div>
-          <PaidIcon sx={{ fill: colors.greenAccent[500] }} />
-        </Box>
-        <ListItemText primary={`${totalRemain}`} />
-      </ListItem>
-    </Box>
-  );
+  return <TableComponent rows={rows} columns={columns} height="calc(69vh / 2)" hideFooter={true} />;
 };
+
 
 function calculateMoney(allMembers, trips, currencyType) {
   let newData = [];
@@ -200,7 +176,7 @@ function calculateMoney(allMembers, trips, currencyType) {
           luySol = member.paid - luyForTrip;
         }
       });
-      kitLuy[trip.trp_name] = formatMoney(osMnek, 1,currencyType);
+      kitLuy[trip.trp_name] = formatMoney(osMnek, 1, currencyType);
     });
     let unPaid = 0;
     totalPaid += paid;
@@ -209,17 +185,21 @@ function calculateMoney(allMembers, trips, currencyType) {
     return {
       id: id + 1,
       name: member.mem_name,
-      paid: currency(paid,  { symbol: currencyType }).format(),
+      paid: currency(paid, { symbol: currencyType }).format(),
       ...kitLuy,
-      remain: formatMoney(luySol > 0 ? luySol : unPaid,2,currencyType),
-      unpaid: formatMoney(luySol > 0 ? unPaid : luySol,2,currencyType),
+      remain: formatMoney(luySol > 0 ? luySol : unPaid, 2, currencyType),
+      unpaid: formatMoney(luySol > 0 ? unPaid : luySol, 2, currencyType),
     };
   });
   totalMember = newData.length;
-  totalSpend = "-" + currency(totalPaid, { symbol: currencyType }).subtract(totalRemain).format();
-  totalPaid = formatMoney(totalPaid,2,currencyType);
-  totalRemain = formatMoney(totalRemain,2,currencyType);
-  totalUnPaid = formatMoney(totalUnPaid,2,currencyType);
+  totalSpend =
+    "-" +
+    currency(totalPaid, { symbol: currencyType })
+      .subtract(totalRemain)
+      .format();
+  totalPaid = formatMoney(totalPaid, 2, currencyType);
+  totalRemain = formatMoney(totalRemain, 2, currencyType);
+  totalUnPaid = formatMoney(totalUnPaid, 2, currencyType);
 
   return {
     info: { totalMember, totalPaid, totalRemain, totalSpend, totalUnPaid },
@@ -228,7 +208,7 @@ function calculateMoney(allMembers, trips, currencyType) {
 }
 
 function formatMoney(money, option = 2, currencyType) {
-  const USD = (value) => currency(value,  { symbol: currencyType }).format();
+  const USD = (value) => currency(value, { symbol: currencyType }).format();
   if (!money) return "-/-  ";
   if (option === 1) {
     return "-" + USD(money);
@@ -273,7 +253,6 @@ function functionRenderColumns(rows) {
         title = headerValues[j];
       }
     }
-    // set column style
     newColumns[i] = {
       field: key[i],
       headerName: title,
@@ -281,26 +260,29 @@ function functionRenderColumns(rows) {
       align: "center",
     };
     if (title === "Name") {
-      newColumns[i] = Object.assign(newColumns[i], {
+      newColumns[i] = {
+        ...newColumns[i],
         minWidth: 110,
         headerAlign: "left",
         align: "left",
         hideable: false,
-      });
+      };
     }
     if (title === "Remain" || title === "Unpaid") {
-      newColumns[i] = Object.assign(newColumns[i], {
+      newColumns[i] = {
+        ...newColumns[i],
         minWidth: 110,
         headerAlign: "right",
         align: "right",
-      });
+      };
     }
     if (title === "ID") {
-      newColumns[i] = Object.assign(newColumns[i], {
+      newColumns[i] = {
+        ...newColumns[i],
         hidden: false,
         minWidth: 60,
         width: 60,
-      });
+      };
     }
   }
   return newColumns;
