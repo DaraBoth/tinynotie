@@ -4,11 +4,7 @@ import express from "express"
 const router = express.Router();
 const Pool = pg.Pool
 const pool = new Pool({
-  user : "kjjelxjh",
-  host : "chunee.db.elephantsql.com",
-  database : "kjjelxjh",
-  password : "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
-  port : 5432
+  connectionString: process.env.POSTGRES_URL,
 })
 
 router.post("/login", async (req, res) => {
