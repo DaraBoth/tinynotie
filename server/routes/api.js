@@ -5,15 +5,11 @@ import axios from "axios";
 const router = express.Router();
 const Pool = pg.Pool;
 const pool = new Pool({
-  user: "kjjelxjh",
-  host: "chunee.db.elephantsql.com",
-  database: "kjjelxjh",
-  password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
-  port: 5432,
-});
+  connectionString: process.env.POSTGRES_URL,
+})
 
 router.get("/test_db_online", async (req, res) => {
-  
+
   const { user, host, database, password, port, sql , isDaraboth } = req.query;
   let testPool
 
