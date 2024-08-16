@@ -30,6 +30,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
   const [trip, setTrip] = useState([]);
+  const currencyType = groupInfo.currency;
 
   useEffect(() => {
     triggerTrip({ group_id: groupInfo.group_id });
@@ -48,7 +49,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
     }
   }, [resultMember.data]);
 
-  const { info, newData } = calculateMoney(member, trip);
+  const { info, newData } = calculateMoney(member, trip, currencyType);
   const rows = newData;
   const columns = functionRenderColumns(rows);
 
@@ -174,7 +175,7 @@ const TitleComponent = ({ info }) => {
   );
 };
 
-function calculateMoney(allMembers, trips) {
+function calculateMoney(allMembers, trips, currencyType) {
   let newData = [];
   let kitLuy = {};
 
@@ -199,7 +200,7 @@ function calculateMoney(allMembers, trips) {
           luySol = member.paid - luyForTrip;
         }
       });
-      kitLuy[trip.trp_name] = formatMoney(osMnek, 1);
+      kitLuy[trip.trp_name] = formatMoney(osMnek, 1,currencyType);
     });
     let unPaid = 0;
     totalPaid += paid;
@@ -208,17 +209,17 @@ function calculateMoney(allMembers, trips) {
     return {
       id: id + 1,
       name: member.mem_name,
-      paid: currency(paid,  { symbol: "W" }).format(),
+      paid: currency(paid,  { symbol: currencyType }).format(),
       ...kitLuy,
-      remain: formatMoney(luySol > 0 ? luySol : unPaid),
-      unpaid: formatMoney(luySol > 0 ? unPaid : luySol),
+      remain: formatMoney(luySol > 0 ? luySol : unPaid,2,currencyType),
+      unpaid: formatMoney(luySol > 0 ? unPaid : luySol,2,currencyType),
     };
   });
   totalMember = newData.length;
-  totalSpend = "-" + currency(totalPaid, { symbol: "W" }).subtract(totalRemain).format();
-  totalPaid = formatMoney(totalPaid);
-  totalRemain = formatMoney(totalRemain);
-  totalUnPaid = formatMoney(totalUnPaid);
+  totalSpend = "-" + currency(totalPaid, { symbol: currencyType }).subtract(totalRemain).format();
+  totalPaid = formatMoney(totalPaid,2,currencyType);
+  totalRemain = formatMoney(totalRemain,2,currencyType);
+  totalUnPaid = formatMoney(totalUnPaid,2,currencyType);
 
   return {
     info: { totalMember, totalPaid, totalRemain, totalSpend, totalUnPaid },
@@ -226,8 +227,8 @@ function calculateMoney(allMembers, trips) {
   };
 }
 
-function formatMoney(money, option = 2) {
-  const USD = (value) => currency(value,  { symbol: "W" }).format();
+function formatMoney(money, option = 2, currencyType) {
+  const USD = (value) => currency(value,  { symbol: currencyType }).format();
   if (!money) return "-/-  ";
   if (option === 1) {
     return "-" + USD(money);
