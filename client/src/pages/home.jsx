@@ -132,7 +132,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
         display={"grid"}
         gridTemplateColumns={gridColItem}
         gridAutoFlow={"dense"}
-        direction={"rtl"}
+        direction={"ltr"}
         gap={"10px"}
       >
         {data.length === 0 ? (
