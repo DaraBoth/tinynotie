@@ -8,84 +8,19 @@ import glm from "@google-ai/generativelanguage";
 import emailjs from "@emailjs/nodejs";
 import moment from "moment";
 import pg from "pg";
-import sqlite3 from "sqlite3";
-const db = new sqlite3.Database("mydatabase.db");
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE Users (
-        user_id INTEGER PRIMARY KEY,
-        name VARCHAR(255),
-        email VARCHAR(255) UNIQUE,
-        phone VARCHAR(20),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE Categories (
-        category_id INTEGER PRIMARY KEY,
-        category_name VARCHAR(50),
-        description VARCHAR(255)
-    );
-
-    CREATE TABLE Currencies (
-        currency_code VARCHAR(3) PRIMARY KEY,
-        currency_name VARCHAR(50) NOT NULL
-    );
-
-    CREATE TABLE Transactions (
-        transaction_id INTEGER PRIMARY KEY,
-        user_id INTEGER,
-        category_id INTEGER,
-        amount DECIMAL(10, 2) NOT NULL,
-        currency_code VARCHAR(3),
-        description VARCHAR(255),
-        transaction_date DATE NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES Users(user_id),
-        FOREIGN KEY (category_id) REFERENCES Categories(category_id),
-        FOREIGN KEY (currency_code) REFERENCES Currencies(currency_code)
-    );
-
-    CREATE TABLE BorrowLend (
-        borrow_lend_id INTEGER PRIMARY KEY,
-        transaction_id INTEGER,
-        borrower_id INTEGER,
-        lender_id INTEGER,
-        due_date DATE,
-        status TEXT DEFAULT 'Pending',
-        FOREIGN KEY (transaction_id) REFERENCES Transactions(transaction_id),
-        FOREIGN KEY (borrower_id) REFERENCES Users(user_id),
-        FOREIGN KEY (lender_id) REFERENCES Users(user_id)
-    );
-
-    CREATE TABLE Purchases (
-        purchase_id INTEGER PRIMARY KEY,
-        transaction_id INTEGER,
-        item_name VARCHAR(255),
-        quantity INTEGER DEFAULT 1,
-        unit_price DECIMAL(10, 2),
-        total_price DECIMAL(10, 2),
-        FOREIGN KEY (transaction_id) REFERENCES Transactions(transaction_id)
-    );
-
-    CREATE TABLE Payments (
-        payment_id INTEGER PRIMARY KEY,
-        borrow_lend_id INTEGER,
-        payment_amount DECIMAL(10, 2),
-        payment_date DATE,
-        FOREIGN KEY (borrow_lend_id) REFERENCES BorrowLend(borrow_lend_id)
-    );
-  
-  `);
-});
-
 const Pool = pg.Pool;
+
 const pool = new Pool({
-  user: "kjjelxjh",
-  host: "chunee.db.elephantsql.com",
-  database: "kjjelxjh",
-  password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
-  port: 5432,
-});
+  connectionString: process.env.POSTGRES_URL,
+})
+
+// const pool = new Pool({
+//   user: "kjjelxjh",
+//   host: "chunee.db.elephantsql.com",
+//   database: "kjjelxjh",
+//   password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
+//   port: 5432,
+// });
 
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
@@ -384,34 +319,34 @@ async function AI_Database(userAsk, chatHistory = []) {
     message: "",
   };
 
-  if ([true, "true"].includes(jsonData["executable"])) {
+  if (jsonData["executable"] == true || jsonData["executable"] == "true") {
+
     // validate first
-    if (sqlQuery.includes('"')) sqlQuery = sqlQuery.replace('"', '"');
-    if (sqlQuery.includes(" n")) sqlQuery = sqlQuery.replace(" n", " ");
-    if (sqlQuery.includes("\n")) sqlQuery = sqlQuery.replace("\n", " ");
+    if (sqlQuery.includes('\"')) sqlQuery = sqlQuery.replace('\"', '"');
+    if (sqlQuery.includes('\ n')) sqlQuery = sqlQuery.replace('\ n', ' ');
+    if (sqlQuery.includes('\n')) sqlQuery = sqlQuery.replace('\n', ' ');
     if (Array.isArray(jsonData.sqlType)) jsonData.sqlType = jsonData.sqlType[0];
 
     try {
+      const results = await pool.query(sqlQuery);
+
       switch (jsonData.sqlType) {
         case "MORE":
         case "SELECT":
-          executeQuery(sqlQuery, []).then(async (rows) => {
-            responseData.data = rows;
+          responseData.data = results.rows;
 
-            const prompt = `
-              User Ask For: [${userAsk}]
-              Database Response: [${JSON.stringify(rows)}]
-            `;
+          const prompt = `
+            User Ask For: [${userAsk}]
+            Database Response: [${JSON.stringify(results.rows)}]
+          `;
 
-            const resText = await AI_Human_readble(prompt, chatHistory);
-            responseData.message = resText.text();
-          });
+          const resText = await AI_Human_readble(prompt, chatHistory);
+          responseData.message = resText.text();
+
           break;
         default:
-          executeUpdate(sqlQuery, []).then((rows) => {
-            console.log(rows);
-            responseData.message = `${jsonData["sqlType"]} is success!`;
-          });
+          console.log(results);
+          responseData.message = `${jsonData["sqlType"]} is success!`;
           break;
       }
     } catch (error) {
@@ -419,36 +354,15 @@ async function AI_Database(userAsk, chatHistory = []) {
       responseData.status = `Error Pool : ${error}`;
       responseData.executeStatus = false;
     }
-  } else if ([false, "false"].includes(jsonData["executable"])) {
+  } else if (
+    jsonData["executable"] == "false" ||
+    jsonData["executable"] == false
+  ) {
     responseData.executeStatus = false;
     responseData.message = jsonData["responseMessage"];
   }
 
   return responseData;
-}
-
-async function executeQuery(sql, params) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-    });
-  });
-}
-
-async function executeUpdate(sql, params) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({ lastID: this.lastID });
-      }
-    });
-  });
 }
 
 async function AI_Human_readble(prompt, chatHistory) {
