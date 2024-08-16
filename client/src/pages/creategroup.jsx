@@ -81,18 +81,20 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                                     color="info"
                                     sx={{ gridColumn: "span 2" }}
                                 />
-                                <InputLabel id="demo-simple-select-standard-label">Currency</InputLabel>
-                                <Select
-                                    labelId="demo-simple-select-standard-label"
-                                    id="demo-simple-select-standard"
-                                    value={values.currency}
-                                    defaultValue='$'
-                                    onChange={handleChange}
-                                    label="Currency"
-                                    >
-                                    <MenuItem value={"$"}>US Dollar</MenuItem>
-                                    <MenuItem value={"W"}>Korean Won</MenuItem>
-                                </Select>
+                                <FormControl variant="standard" >
+                                    <InputLabel id="demo-simple-select-standard-label">Currency</InputLabel>
+                                    <Select
+                                        labelId="demo-simple-select-standard-label"
+                                        id="demo-simple-select-standard"
+                                        value={values.currency}
+                                        defaultValue='$'
+                                        onChange={handleChange}
+                                        label="Currency"
+                                        >
+                                        <MenuItem value={"$"}>US Dollar</MenuItem>
+                                        <MenuItem value={"W"}>Korean Won</MenuItem>
+                                    </Select>
+                                </FormControl>
                                 <Autocomplete
                                     multiple
                                     id="tags-filled"
