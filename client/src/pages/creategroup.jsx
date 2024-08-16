@@ -13,7 +13,9 @@ export default function CreateGroup({ secret, setGroupInfo }) {
     const [suggestMember, setSuggestMember] = useState([]);
     const [newMember, setNewMember] = useState([]);
     const [newGroupName, setnewGroupName] = useState("");
+    const [currency, setCurrency] = useState("$");
     const navigate = useNavigate();
+
 
     useEffect(() => {
         triggerMember()
@@ -88,15 +90,14 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                                     <Select
                                         labelId="demo-simple-select-standard-label"
                                         id="demo-simple-select-standard"
-                                        value={values.currency}
-                                        defaultValue='$'
+                                        value={currency}
                                         name='currency'
                                         onChange={({target})=>{
-                                            handleChange(target.value)
+                                            setCurrency(target.value)
                                         }}
                                         label="Currency"
                                         >
-                                        <MenuItem value={"$"}>US Dollar</MenuItem>
+                                        <MenuItem value={"$"} defaultChecked >US Dollar</MenuItem>
                                         <MenuItem value={"W"}>Korean Won</MenuItem>
                                     </Select>
                                 </FormControl>
@@ -165,11 +166,9 @@ export default function CreateGroup({ secret, setGroupInfo }) {
 
 const checkoutSchema = yup.object().shape({
     grp_name: yup.string().required("required"),
-    currency: yup.string().required("required"),
 });
 const initialValues = {
     grp_name: "",
-    currency: "",
 };
 
 function debounce(func, timeout = 300) {
