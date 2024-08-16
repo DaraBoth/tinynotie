@@ -13,17 +13,27 @@ const pool = new Pool({
 });
 
 router.get("/test_db_online", async (req, res) => {
-  const { user, host, database, password, port, sql } = req.query;
-  const testPool = new Pool({
-    user: user,
-    host: host,
-    database: database,
-    password: password,
-    port: port,
-    ssl:{
-      rejectUnauthorized: false
-    }
-  });
+  
+  const { user, host, database, password, port, sql , isDaraboth } = req.query;
+  let testPool
+
+  if(isDaraboth){
+    testPool = new Pool({
+      connectionString: process.env.POSTGRES_URL,
+    })
+  }else {
+    testPool = new Pool({
+      user: user,
+      host: host,
+      database: database,
+      password: password,
+      port: port,
+      ssl:{
+        rejectUnauthorized: false
+      }
+    });
+  }
+
   let client;
   try {
 
