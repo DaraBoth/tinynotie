@@ -400,7 +400,7 @@ async function AI_Database(userAsk, chatHistory = []) {
 
             const prompt = `
               User Ask For: [${userAsk}]
-              Database Response: [${JSON.stringify(results.rows)}]
+              Database Response: [${JSON.stringify(rows)}]
             `;
 
             const resText = await AI_Human_readble(prompt, chatHistory);
