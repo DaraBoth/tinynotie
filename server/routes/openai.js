@@ -8,6 +8,75 @@ import glm from "@google-ai/generativelanguage";
 import emailjs from "@emailjs/nodejs";
 import moment from "moment";
 import pg from "pg";
+import sqlite3 from "sqlite3";
+const db = new sqlite3.Database("mydatabase.db");
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE Users (
+        user_id INTEGER PRIMARY KEY,
+        name VARCHAR(255),
+        email VARCHAR(255) UNIQUE,
+        phone VARCHAR(20),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE Categories (
+        category_id INTEGER PRIMARY KEY,
+        category_name VARCHAR(50),
+        description VARCHAR(255)
+    );
+
+    CREATE TABLE Currencies (
+        currency_code VARCHAR(3) PRIMARY KEY,
+        currency_name VARCHAR(50) NOT NULL
+    );
+
+    CREATE TABLE Transactions (
+        transaction_id INTEGER PRIMARY KEY,
+        user_id INTEGER,
+        category_id INTEGER,
+        amount DECIMAL(10, 2) NOT NULL,
+        currency_code VARCHAR(3),
+        description VARCHAR(255),
+        transaction_date DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES Users(user_id),
+        FOREIGN KEY (category_id) REFERENCES Categories(category_id),
+        FOREIGN KEY (currency_code) REFERENCES Currencies(currency_code)
+    );
+
+    CREATE TABLE BorrowLend (
+        borrow_lend_id INTEGER PRIMARY KEY,
+        transaction_id INTEGER,
+        borrower_id INTEGER,
+        lender_id INTEGER,
+        due_date DATE,
+        status TEXT DEFAULT 'Pending',
+        FOREIGN KEY (transaction_id) REFERENCES Transactions(transaction_id),
+        FOREIGN KEY (borrower_id) REFERENCES Users(user_id),
+        FOREIGN KEY (lender_id) REFERENCES Users(user_id)
+    );
+
+    CREATE TABLE Purchases (
+        purchase_id INTEGER PRIMARY KEY,
+        transaction_id INTEGER,
+        item_name VARCHAR(255),
+        quantity INTEGER DEFAULT 1,
+        unit_price DECIMAL(10, 2),
+        total_price DECIMAL(10, 2),
+        FOREIGN KEY (transaction_id) REFERENCES Transactions(transaction_id)
+    );
+
+    CREATE TABLE Payments (
+        payment_id INTEGER PRIMARY KEY,
+        borrow_lend_id INTEGER,
+        payment_amount DECIMAL(10, 2),
+        payment_date DATE,
+        FOREIGN KEY (borrow_lend_id) REFERENCES BorrowLend(borrow_lend_id)
+    );
+  
+  `);
+});
 
 const Pool = pg.Pool;
 const pool = new Pool({
@@ -240,56 +309,57 @@ async function AI_Database(userAsk, chatHistory = []) {
 
   const prompt = `
     Instruction:
-    You are tasked with analyzing user input and generating a complex SQL solution for a PostgreSQL database. Your response must always be in JSON format with the following fields:
+    You are tasked with analyzing user input and generating a complex SQL solution for an SQLite database. Your response must always be in JSON format with the following fields:
 
     sqlType: A string indicating the type of SQL operation. If only one type (e.g., SELECT), return it directly. If multiple operations are needed, return "MORE".
     sql: A complete SQL solution that addresses the user's request. This can include:
     Multiple SQL statements.
-    Complex SQL structures such as CTEs, subqueries, or user-defined functions.
+    Complex SQL structures such as subqueries or common table expressions (CTEs).
     SQL that combines different operations to achieve the desired output.
-    Ensure that the SQL solution is compatible with PostgreSQL version 12 or earlier, formatted as a single block of text without line breaks.
+    Ensure that the SQL solution is compatible with SQLite, formatted as a single block of text without line breaks.
     executable: Boolean indicating whether the SQL solution can be executed directly (true for executable, false for non-executable or irrelevant input).
-    responseMessage: Additional context or feedback to the user, including explanations for complex logic, or default actions taken (e.g., using KRW as the default currency).
+    responseMessage: Additional context or feedback to the user, including explanations for complex logic.
     Additional Instructions:
 
-    Complex Queries: Generate SQL that can handle multifaceted user requests, such as combining information from multiple tables, performing calculations, and using advanced SQL features like window functions, CTEs, or recursive queries.
+    Complex Queries: Generate SQL that can handle multifaceted user requests, such as combining information from multiple tables, performing calculations, and using advanced SQL features like CTEs or window functions.
     Dynamic Handling: If a single SQL query is insufficient, break the task into multiple SQL statements or use functions to encapsulate complex logic.
-    Currency Handling: Ensure that the SQL solution returns both the total amount spent and the associated currency. If the currency is not specified, default to KRW (Korean Won).
-
+    Currency Handling: Although SQLite does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
+    
     ${dataBaseSchema}
 
     Validation Process:
     Schema Adherence: Ensure the SQL solution references only the columns and tables defined in the provided schema.
-    SQL Compatibility: Verify that the SQL syntax is compatible with PostgreSQL version 12 or earlier.
+    SQL Compatibility: Verify that the SQL syntax is compatible with SQLite.
     Syntax Check: Ensure that each SQL statement in the solution has correct syntax and will not result in errors.
     Contextual Relevance: Ensure the SQL solution accurately reflects the user’s request; return a relevant message and set executable to false if not possible.
-    Currency Handling: Include total amount spent and currency in the SQL solution, defaulting to KRW if unspecified.
 
     Examples of Desired Output:
+
     User Input: "I want to know how much I spent from last month until now, and what I spent the money on?"
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "WITH MonthlySpending AS (SELECT SUM(amount) AS total_spent, currency_code FROM Transactions WHERE transaction_date >= current_date - interval '1 month' GROUP BY currency_code), SpendingDetails AS (SELECT T.amount, T.currency_code, T.description, C.category_name FROM Transactions T JOIN Categories C ON T.category_id = C.category_id WHERE T.transaction_date >= current_date - interval '1 month') SELECT MS.total_spent, SD.currency_code, SD.description, SD.category_name FROM MonthlySpending MS JOIN SpendingDetails SD ON MS.currency_code = SD.currency_code;",
+        "sql": "WITH MonthlySpending AS (SELECT SUM(amount) AS total_spent, currency_code FROM Transactions WHERE transaction_date >= date('now', '-1 month') GROUP BY currency_code), SpendingDetails AS (SELECT T.amount, T.currency_code, T.description, C.category_name FROM Transactions T JOIN Categories C ON T.category_id = C.category_id WHERE T.transaction_date >= date('now', '-1 month')) SELECT MS.total_spent, SD.currency_code, SD.description, SD.category_name FROM MonthlySpending MS JOIN SpendingDetails SD ON MS.currency_code = SD.currency_code;",
         "executable": true,
         "responseMessage": "This query provides your total spending from last month until now, including what the money was spent on."
     }
+
     User Input: "How much did I spend in the last month, broken down by category?"
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT C.category_name, SUM(T.amount) AS total_spent, Cur.currency_code FROM Transactions T JOIN Categories C ON T.category_id = C.category_id JOIN Currencies Cur ON T.currency_code = Cur.currency_code WHERE date_part('month', T.transaction_date) = date_part('month', current_date - interval '1 month') GROUP BY C.category_name, Cur.currency_code;",
+        "sql": "SELECT C.category_name, SUM(T.amount) AS total_spent, Cur.currency_code FROM Transactions T JOIN Categories C ON T.category_id = C.category_id JOIN Currencies Cur ON T.currency_code = Cur.currency_code WHERE strftime('%Y-%m', T.transaction_date) = strftime('%Y-%m', date('now', '-1 month')) GROUP BY C.category_name, Cur.currency_code;",
         "executable": true,
         "responseMessage": "This query breaks down your spending over the last month by category."
     }
 
     Guidelines:
     Generate complex SQL solutions that may involve multiple steps or operations.
-    Ensure all SQL statements are compatible with PostgreSQL version 12 or earlier.
+    Ensure all SQL statements are compatible with SQLite.
     Validate SQL syntax before including it in the JSON response.
     Use the provided schema to generate accurate and relevant SQL queries.
     Always format SQL queries as a single block of text.
-    Ensure the SQL solution includes both the total amount spent and the currency. Default to KRW if no currency is specified by the user.
+    Ensure the SQL solution includes both the total amount spent and the currency. Handle currency codes as text and numeric values as appropriate.
 
     Text to Analyze
     [${userAsk}]
@@ -315,33 +385,34 @@ async function AI_Database(userAsk, chatHistory = []) {
   };
 
   if (jsonData["executable"] == true || jsonData["executable"] == "true") {
-
     // validate first
-    if (sqlQuery.includes('\"')) sqlQuery = sqlQuery.replace('\"', '"');
-    if (sqlQuery.includes('\ n')) sqlQuery = sqlQuery.replace('\ n', ' ');
-    if (sqlQuery.includes('\n')) sqlQuery = sqlQuery.replace('\n', ' ');
+    if (sqlQuery.includes('"')) sqlQuery = sqlQuery.replace('"', '"');
+    if (sqlQuery.includes(" n")) sqlQuery = sqlQuery.replace(" n", " ");
+    if (sqlQuery.includes("\n")) sqlQuery = sqlQuery.replace("\n", " ");
     if (Array.isArray(jsonData.sqlType)) jsonData.sqlType = jsonData.sqlType[0];
 
     try {
-      const results = await pool.query(sqlQuery);
-
       switch (jsonData.sqlType) {
         case "MORE":
         case "SELECT":
-          responseData.data = results.rows;
+          executeQuery(sqlQuery, []).then(async (rows) => {
+            responseData.data = rows;
 
-          const prompt = `
-            User Ask For: [${userAsk}]
-            Database Response: [${JSON.stringify(results.rows)}]
-          `;
+            const prompt = `
+              User Ask For: [${userAsk}]
+              Database Response: [${JSON.stringify(results.rows)}]
+            `;
 
-          const resText = await AI_Human_readble(prompt, chatHistory);
-          responseData.message = resText.text();
+            const resText = await AI_Human_readble(prompt, chatHistory);
+            responseData.message = resText.text();
 
+          });
           break;
         default:
-          console.log(results);
-          responseData.message = `${jsonData["sqlType"]} is success!`;
+          executeUpdate(sqlQuery, []).then((rows)=>{
+            console.log(rows);
+            responseData.message = `${jsonData["sqlType"]} is success!`;
+          })
           break;
       }
     } catch (error) {
@@ -358,6 +429,30 @@ async function AI_Database(userAsk, chatHistory = []) {
   }
 
   return responseData;
+}
+
+async function executeQuery(sql, params) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+}
+
+async function executeUpdate(sql, params) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({ lastID: this.lastID });
+      }
+    });
+  });
 }
 
 async function AI_Human_readble(prompt, chatHistory) {
