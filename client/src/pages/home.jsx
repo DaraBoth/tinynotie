@@ -163,6 +163,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                     setGroupInfo({
                       group_id: item.id,
                       grp_name: item.grp_name,
+                      currency: item.currency,
                     });
                     navigate("/group");
                   }}
