@@ -106,83 +106,60 @@ export default function EditTripMem({
           "& > div": { gridColumn: "span 4" },
         }}
       >
-        <Accordion
-          variant="outlined"
-          expanded={expanded === "panel1"}
-          onChange={handleChangeExpand("panel1")}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel1bh-content"
-            id="panel1bh-header"
+        <FormControl>
+          <InputLabel variant="standard" color="info">
+            Pick Event
+          </InputLabel>
+          <Select
+            value={trpNametoEdit}
+            onChange={handleChange}
+            label="trpNametoEdit"
+            variant="standard"
+            color="info"
           >
-            <Typography fontSize={handleFont} sx={{ flexShrink: 0 }}>
-              Edit Event's member
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
+            {trip?.map((item) => (
+              <MenuItem key={item.id} value={item.trp_name}>
+                {item.trp_name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl>
+          <InputLabel variant="standard" color="info">
+            Member
+          </InputLabel>
+          <Select
+            multiple
+            variant="standard"
+            color="info"
+            disabled={isDisable}
+            value={memberName}
+            onChange={handleChangeMemName}
+            renderValue={(selected) => {
+              selected.map((newSelect) => !!newSelect ?? newSelect);
+              console.log("memberName = ", memberName);
+              console.log("selected = ", selected);
+              return selected.join(",");
             }}
           >
-            <FormControl>
-              <InputLabel variant="standard" color="info">
-                Pick Event
-              </InputLabel>
-              <Select
-                value={trpNametoEdit}
-                onChange={handleChange}
-                label="trpNametoEdit"
-                variant="standard"
-                color="info"
-              >
-                {trip?.map((item) => (
-                  <MenuItem key={item.id} value={item.trp_name}>
-                    {item.trp_name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl>
-              <InputLabel variant="standard" color="info">
-                Member
-              </InputLabel>
-              <Select
-                multiple
-                variant="standard"
-                color="info"
-                disabled={isDisable}
-                value={memberName}
-                onChange={handleChangeMemName}
-                renderValue={(selected) => {
-                  selected.map((newSelect) => !!newSelect ?? newSelect);
-                  console.log("memberName = ", memberName);
-                  console.log("selected = ", selected);
-                  return selected.join(",");
-                }}
-              >
-                {member.map((item, index) => (
-                  <MenuItem key={item.id} value={item.mem_name}>
-                    <Checkbox checked={isCheckedMember[index]} />
-                    <ListItemText primary={item.mem_name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button
-              sx={{ gridColumn: "span 4" }}
-              onClick={handleEdit}
-              type="button"
-              color="info"
-              variant="contained"
-            >
-              Edit Event's member&nbsp;
-              <SendIcon />
-            </Button>
-          </AccordionDetails>
-        </Accordion>
+            {member.map((item, index) => (
+              <MenuItem key={item.id} value={item.mem_name}>
+                <Checkbox checked={isCheckedMember[index]} />
+                <ListItemText primary={item.mem_name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Button
+          sx={{ gridColumn: "span 4" }}
+          onClick={handleEdit}
+          type="button"
+          color="info"
+          variant="contained"
+        >
+          Edit Event's member&nbsp;
+          <SendIcon />
+        </Button>
       </Box>
     </React.Fragment>
   );

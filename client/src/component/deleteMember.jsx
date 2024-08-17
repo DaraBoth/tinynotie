@@ -60,68 +60,42 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
           "& > div": { gridColumn: "span 4" },
         }}
       >
-        <Accordion
-          variant="outlined"
-          expanded={expanded === "panel1"}
-          onChange={handleChangeExpand("panel1")}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel1bh-content"
-            id="panel1bh-header"
+        <FormControl>
+          <InputLabel variant="standard" color="info">
+            Pick a member
+          </InputLabel>
+          <Select
+            value={deleteName}
+            onChange={handleChange}
+            label="trpNametoEdit"
+            variant="standard"
+            color="info"
           >
-            <Typography
-              fontSize={handleFont}
-              sx={{ flexShrink: 0 }}
-            >
-              Delete Member
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-            }}
-          >
-            <FormControl>
-              <InputLabel variant="standard" color="info">
-                Pick a member
-              </InputLabel>
-              <Select
-                value={deleteName}
-                onChange={handleChange}
-                label="trpNametoEdit"
-                variant="standard"
-                color="info"
+            <MenuItem disabled={deleteName ? false : true} value={false}>
+              Pick a member
+            </MenuItem>
+            {member?.map((item) => (
+              <MenuItem
+                key={item.id}
+                value={item.id}
+                id={item.id}
+                title={item.mem_name}
               >
-                <MenuItem disabled={deleteName ? false : true} value={false}>
-                  Pick a member
-                </MenuItem>
-                {member?.map((item) => (
-                  <MenuItem
-                    key={item.id}
-                    value={item.id}
-                    id={item.id}
-                    title={item.mem_name}
-                  >
-                    {item.mem_name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button
-              sx={{ gridColumn: "span 4" }}
-              onClick={handleDelete}
-              type="button"
-              variant="contained"
-              color="error"
-            >
-              Delete member&nbsp;
-              <DeleteIcon />
-            </Button>
-          </AccordionDetails>
-        </Accordion>
+                {item.mem_name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Button
+          sx={{ gridColumn: "span 4" }}
+          onClick={handleDelete}
+          type="button"
+          variant="contained"
+          color="error"
+        >
+          Delete member&nbsp;
+          <DeleteIcon />
+        </Button>
       </Box>
     </>
   );

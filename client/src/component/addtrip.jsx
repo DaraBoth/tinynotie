@@ -123,112 +123,89 @@ export default function AddTrip({
           "& > div": { gridColumn: "span 4" },
         }}
       >
-        <Accordion
-          variant="outlined"
-          expanded={expanded === "panel1"}
-          onChange={handleChange("panel1")}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel1bh-content"
-            id="panel1bh-header"
-          >
-            <Typography fontSize={handleFont} sx={{ flexShrink: 0 }}>
-              Edit Event's information
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-            }}
-          >
-            <Autocomplete
-              value={value}
-              onChange={(event, newValue) => {
-                if (typeof newValue === "string") {
-                  setTimeout(() => {
-                    toggleOpen(true);
-                    setDialogValue({
-                      trp_name: newValue,
-                      spended: "",
-                    });
-                  });
-                } else if (newValue && newValue.inputValue) {
-                  toggleOpen(true);
-                  setDialogValue({
-                    trp_name: newValue.inputValue,
-                    spended: "",
-                  });
-                } else {
-                  setValue(newValue);
-                }
-              }}
-              filterOptions={(options, params) => {
-                const filtered = filter(options, params);
+        <Autocomplete
+          value={value}
+          onChange={(event, newValue) => {
+            if (typeof newValue === "string") {
+              setTimeout(() => {
+                toggleOpen(true);
+                setDialogValue({
+                  trp_name: newValue,
+                  spended: "",
+                });
+              });
+            } else if (newValue && newValue.inputValue) {
+              toggleOpen(true);
+              setDialogValue({
+                trp_name: newValue.inputValue,
+                spended: "",
+              });
+            } else {
+              setValue(newValue);
+            }
+          }}
+          filterOptions={(options, params) => {
+            const filtered = filter(options, params);
 
-                if (params.inputValue !== "") {
-                  filtered.push({
-                    inputValue: params.inputValue,
-                    trp_name: `Add "${params.inputValue}"`,
-                  });
-                }
+            if (params.inputValue !== "") {
+              filtered.push({
+                inputValue: params.inputValue,
+                trp_name: `Add "${params.inputValue}"`,
+              });
+            }
 
-                return filtered;
-              }}
-              options={trip}
-              getOptionLabel={(option) => {
-                // e.g value selected with enter, right from the input
-                if (typeof option === "string") {
-                  return option;
-                }
-                if (option.inputValue) {
-                  return option.inputValue;
-                }
-                return option.trp_name;
-              }}
-              selectOnFocus
-              clearOnBlur
-              handleHomeEndKeys
-              renderOption={(props, option) => (
-                <li {...props}>{option.trp_name}</li>
-              )}
-              freeSolo
-              renderInput={(params) => (
-                <TextField
-                  color="info"
-                  {...params}
-                  variant="standard"
-                  label="Edit Event"
-                />
-              )}
-            />
-
+            return filtered;
+          }}
+          options={trip}
+          getOptionLabel={(option) => {
+            // e.g value selected with enter, right from the input
+            if (typeof option === "string") {
+              return option;
+            }
+            if (option.inputValue) {
+              return option.inputValue;
+            }
+            return option.trp_name;
+          }}
+          selectOnFocus
+          clearOnBlur
+          handleHomeEndKeys
+          renderOption={(props, option) => (
+            <li {...props}>{option.trp_name}</li>
+          )}
+          freeSolo
+          renderInput={(params) => (
             <TextField
+              color="info"
+              {...params}
               variant="standard"
-              type="text"
-              label="$ Spend"
-              color="info"
-              value={money}
-              onChange={(e) => {
-                e.target.value = e.target.value.trim();
-                if (isNaN(Number(e.target.value)) && (e.target.value != ".")) return;
-                setMoney(e.target.value);
-              }}
+              label="Edit Event"
             />
-            <Button
-              sx={{ gridColumn: "span 4" }}
-              onClick={handleEdit}
-              type="button"
-              color="info"
-              variant="contained"
-            >
-              Edit Event's Spend&nbsp;
-              <SendIcon />
-            </Button>
-          </AccordionDetails>
-        </Accordion>
+          )}
+        />
+
+        <TextField
+          variant="standard"
+          type="text"
+          label="$ Spend"
+          color="info"
+          value={money}
+          onChange={(e) => {
+            e.target.value = e.target.value.trim();
+            if (isNaN(Number(e.target.value)) && (e.target.value != ".")) return;
+            setMoney(e.target.value);
+          }}
+        />
+        <Button
+          sx={{ gridColumn: "span 4" }}
+          onClick={handleEdit}
+          type="button"
+          color="info"
+          variant="contained"
+        >
+          Edit Event's Spend&nbsp;
+          <SendIcon />
+        </Button>
       </Box>
       <Dialog open={open} onClose={handleClose}>
         <form

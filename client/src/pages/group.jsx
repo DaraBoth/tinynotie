@@ -3,11 +3,23 @@ import {
   Box,
   Paper,
   Grid,
+  Button,
   useTheme,
   useMediaQuery,
+  IconButton,
+  Tooltip,
+  Fab,
+  SpeedDial,
+  SpeedDialIcon,
+  SpeedDialAction,
 } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import PeopleIcon from '@mui/icons-material/People';
 import Topbar from "../global/Topbar";
 import TableComponent from "../component/table";
+import CustomDialog from "../component/CustomDialog";
 import { tokens } from "../theme";
 import {
   useGetMemberMutation,
@@ -27,6 +39,10 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
   const [trip, setTrip] = useState([]);
+  const [openToolTipDialog, setOpenToolTipDialog] = useState(false);
+  const [openAddTripDialog, setOpenAddTripDialog] = useState(false);
+  const [openEditTripDialog, setOpenEditTripDialog] = useState(false);
+  const [openDeleteMemberDialog, setOpenDeleteMemberDialog] = useState(false);
   const currencyType = groupInfo.currency;
 
   useEffect(() => {
@@ -53,48 +69,58 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const columns = useMemo(() => functionRenderColumns(newData), [newData]);
 
   const tripColumns = useMemo(() => [
-    { field: "id", headerName: "ID", width: 70, align: 'left', headerAlign: 'left' },  // Adjusted alignment
+    { field: "id", headerName: "ID", width: 70, align: 'left', headerAlign: 'left' },
     { field: "trp_name", headerName: "Trip Name", width: 150 },
-    { field: "spend", headerName: "Spend", width: 100 ,
-      valueGetter: ({value}) => {
-        return formatMoney(value, 2, currencyType)
-      }
-    },
-    { 
-      field: "mem_id", 
-      headerName: "Joined", 
-      width: 150, 
-      valueGetter: (params) => {
-        const joinedMemId = JSON.parse(params.value)
-        const memberCount = Array.isArray(joinedMemId) ? joinedMemId.length : 0;
-        return `${memberCount} Member${memberCount !== 1 ? 's' : ''}`;
+    {
+      field: "spend", headerName: "Spend", width: 100,
+      valueGetter: ({ value }) => {
+        return formatMoney(value, 2, currencyType);
       },
     },
-    { field: "create_date", headerName: "Created Date", width: 150 },
-  ], [member]);
+    {
+      field: "mem_id",
+      headerName: "Joined",
+      width: 150,
+      renderCell: (params) => {
+        const joinedMemId = JSON.parse(params.value);
+        const memberNames = member.filter(m => joinedMemId.includes(m.id)).map(m => m.name).join(", ");
+        return (
+          <Tooltip title={memberNames || "No members"}>
+            <span>{joinedMemId.length} Member{joinedMemId.length !== 1 ? 's' : ''}</span>
+          </Tooltip>
+        );
+      },
+    },
+    { field: "create_date", headerName: "Created Date", width: 150 }
+  ], [member, currencyType]);
+
+  const actions = [
+    { icon: <AddIcon />, name: 'Add Trip', onClick: () => setOpenAddTripDialog(true) },
+    { icon: <EditIcon />, name: 'Edit Trip', onClick: () => setOpenEditTripDialog(true) },
+    { icon: <PeopleIcon />, name: 'Edit Member', onClick: () => setOpenEditTripDialog(true) },
+    { icon: <DeleteIcon />, name: 'Delete Member', onClick: () => setOpenDeleteMemberDialog(true) },
+  ];
 
   return (
     <main className="content">
       <Topbar user={user} groupInfo={groupInfo} setGroupInfo={setGroupInfo} />
       <Box sx={{ padding: "20px" }}>
         <Grid container spacing={2} sx={{ height: "100%" }}>
-          {/* Main Table (70% width) */}
           <Grid item xs={12} md={8}>
-            <Paper sx={{ padding: "20px", height: "100%" }}>
-              <TableComponent rows={newData || []} columns={columns || []} height={isNonMobile ? "71vh" : "calc(10 * 50px)"} />
+            <Paper sx={{ height: "100%" }}>
+              <TableComponent rows={newData || []} columns={columns || []} height={isNonMobile ? "80vh" : "calc(10 * 50px)"} />
             </Paper>
           </Grid>
 
-          {/* Side Tables (30% width, stacked) */}
           <Grid item xs={12} md={4}>
             <Grid container direction="column" spacing={2}>
               <Grid item xs={6}>
-                <Paper sx={{ padding: "20px", height: "100%" }}>
-                  <TableComponent rows={Array.isArray(trip) ? trip : []} columns={tripColumns || []} height="calc(60vh / 2)" />
+                <Paper sx={{ height: "100%" }}>
+                  <TableComponent rows={Array.isArray(trip) ? trip : []} columns={tripColumns || []} height="calc(80vh / 2)" />
                 </Paper>
               </Grid>
               <Grid item xs={6}>
-                <Paper sx={{ padding: "20px", height: "100%" }}>
+                <Paper sx={{ height: "100%" }}>
                   <TotalSpendTable info={info} />
                 </Paper>
               </Grid>
@@ -102,13 +128,23 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
           </Grid>
         </Grid>
 
-        {/* Revert back to old functionality */}
-        <Box mt={3} gap={2}>
+        <CustomDialog
+          open={openToolTipDialog}
+          onClose={() => setOpenToolTipDialog(false)}
+          title="Tool Tip"
+        >
           <ToolTip
             triggerMember={triggerMember}
             member={member}
             group_id={groupInfo.group_id}
           />
+        </CustomDialog>
+
+        <CustomDialog
+          open={openAddTripDialog}
+          onClose={() => setOpenAddTripDialog(false)}
+          title="Add Trip"
+        >
           <AddTrip
             triggerTrip={triggerTrip}
             member={member}
@@ -116,6 +152,13 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
             trip={trip}
             group_id={groupInfo.group_id}
           />
+        </CustomDialog>
+
+        <CustomDialog
+          open={openEditTripDialog}
+          onClose={() => setOpenEditTripDialog(false)}
+          title="Edit Trip Member"
+        >
           <EditTripMem
             triggerTrip={triggerTrip}
             member={member}
@@ -123,16 +166,40 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
             trip={trip}
             group_id={groupInfo.group_id}
           />
+        </CustomDialog>
+
+        <CustomDialog
+          open={openDeleteMemberDialog}
+          onClose={() => setOpenDeleteMemberDialog(false)}
+          title="Delete Member"
+        >
           <DeleteMember
             triggerMember={triggerMember}
             member={member}
             group_id={groupInfo.group_id}
           />
-        </Box>
+        </CustomDialog>
+
+        <SpeedDial
+          ariaLabel="SpeedDial example"
+          sx={{ position: 'fixed', bottom: 16, right: 16 }}
+          icon={<SpeedDialIcon />}
+        >
+          {actions.map((action) => (
+            <SpeedDialAction
+              key={action.name}
+              icon={action.icon}
+              tooltipTitle={action.name}
+              onClick={action.onClick}
+            />
+          ))}
+        </SpeedDial>
+
       </Box>
     </main>
   );
 }
+
 
 const TotalSpendTable = ({ info }) => {
   const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
@@ -147,8 +214,10 @@ const TotalSpendTable = ({ info }) => {
     { field: "value", headerName: "Amount", width: 150 },
   ];
 
-  return <TableComponent rows={rows} columns={columns} height="calc(69vh / 2)" hideFooter={true} />;
+  return <TableComponent rows={rows} columns={columns} height="calc(70  vh / 2)" hideFooter={true} />;
 };
+
+
 
 
 function calculateMoney(allMembers, trips, currencyType) {
