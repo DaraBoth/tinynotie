@@ -116,7 +116,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
             <Grid container direction="column" spacing={2}>
               <Grid item xs={6}>
                 <Paper sx={{ height: "100%" }}>
-                  <TableComponent rows={Array.isArray(trip) ? trip : []} columns={tripColumns || []} height="calc(80vh / 2)" />
+                  <TableComponent rows={Array.isArray(trip) ? trip : []} columns={tripColumns || []} height="calc(85vh / 2)" />
                 </Paper>
               </Grid>
               <Grid item xs={6}>
@@ -214,7 +214,7 @@ const TotalSpendTable = ({ info }) => {
     { field: "value", headerName: "Amount", width: 150 },
   ];
 
-  return <TableComponent rows={rows} columns={columns} height="calc(70  vh / 2)" hideFooter={true} />;
+  return <TableComponent rows={rows} columns={columns} height="calc(70vh / 2)" hideFooter={true} />;
 };
 
 
