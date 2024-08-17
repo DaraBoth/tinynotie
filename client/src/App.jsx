@@ -20,7 +20,7 @@ function App() {
   const [groupInfo, setGroupInfo] = useState(null);
   const isAuth = Boolean(user) && Boolean(secret);
   const isGroup = isAuth && Boolean(groupInfo);
-  let themeDafault = "dark";
+  let themeDafault = sessionStorage.getItem("theme");
 
   useEffect(() => {
     themeDafault && setMode(themeDafault);
@@ -34,7 +34,7 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        {/* <ColorMode theme={theme} colorMode={colorMode} colors={colors} /> */}
+        <ColorMode theme={theme} colorMode={colorMode} colors={colors} />
         <BrowserRouter>
           <Routes>
             <Route
