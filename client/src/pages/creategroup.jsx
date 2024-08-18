@@ -82,11 +82,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
               }}
             >
               <Typography variant="h4" color="primary" textAlign="center">
-                Create New Group
+                Create New Note
               </Typography>
               <TextField
                 variant="outlined"
-                label="Group's name"
+                label="Note's name"
                 onChange={handleChange}
                 value={values.grp_name}
                 name="grp_name"
@@ -117,7 +117,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                 renderTags={(value, getTagProps) =>
                   value.map((option, index) => (
                     <Chip
-                      variant="outlined"
+                      variant="filled"
                       label={option}
                       {...getTagProps({ index })}
                       color="primary"
@@ -169,7 +169,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                     },
                   }}
                 >
-                  {isSubmitting ? 'Creating...' : 'Create Group'}
+                  {isSubmitting ? 'Creating...' : 'Create Note'}
                 </Button>
                 <Button
                   color="error"
@@ -197,7 +197,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
         onClose={() => setShowSuccess(false)}
       >
         <Alert onClose={() => setShowSuccess(false)} severity="success" sx={{ width: '100%' }}>
-          Group created successfully!
+          Note created successfully!
         </Alert>
       </Snackbar>
       <Snackbar
@@ -214,7 +214,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
 }
 
 const checkoutSchema = yup.object().shape({
-  grp_name: yup.string().required("Group name is required"),
+  grp_name: yup.string().required("Note name is required"),
 });
 
 const initialValues = {
