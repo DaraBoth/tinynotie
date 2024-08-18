@@ -97,7 +97,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const actions = [
     { icon: <AddIcon />, name: 'Add Trip', onClick: () => setOpenAddTripDialog(true) },
     { icon: <EditIcon />, name: 'Edit Trip', onClick: () => setOpenEditTripDialog(true) },
-    { icon: <PeopleIcon />, name: 'Edit Member', onClick: () => setOpenEditTripDialog(true) },
+    { icon: <PeopleIcon />, name: 'Edit Member', onClick: () => setOpenToolTipDialog(true) },
     { icon: <DeleteIcon />, name: 'Delete Member', onClick: () => setOpenDeleteMemberDialog(true) },
   ];
 
