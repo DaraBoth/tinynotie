@@ -105,26 +105,7 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
           marginBottom: "10px",
         }}
       >
-        <Accordion
-          variant="outlined"
-          expanded={expanded === "panel2"}
-          onChange={handleChange("panel2")}
-        >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel2bh-content"
-            id="panel2bh-header"
-          >
-            <Typography fontSize={handleFont} sx={{ flexShrink: 0 }}>Edit Member's information</Typography>
-          </AccordionSummary>
-          <AccordionDetails
-            sx={{
-              display:"flex",
-              flexDirection:"column",
-              gap:"10px"
-            }}
-          >
-            <Autocomplete
+        <Autocomplete
               value={value}
               onChange={(event, newValue) => {
                 if (typeof newValue === "string") {
@@ -205,8 +186,6 @@ export default function ToolTip({ triggerMember, member, group_id, trip_id }) {
               Edit Member's paid&nbsp;
               <SendIcon />
             </Button>
-          </AccordionDetails>
-        </Accordion>
       </Box>
       <Dialog open={open} onClose={handleClose}>
         <form
