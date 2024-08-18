@@ -34,25 +34,36 @@ export default function Login({ setUser, setSecret }) {
     const { username, password } = values;
 
     try {
-      if (isRegister) {
-        await triggerRegister({ usernm: username, passwd: password }).unwrap();
-        setSnackbarMessage("Registration successful! Please login.");
-        setSnackbarSuccess(true);
-        setIsRegister(false);
-      } else {
-        const response = await triggerLogin({ usernm: username, passwd: password }).unwrap();
-        setSnackbarMessage("Login successful!");
-        setSnackbarSuccess(true);
-        setUser(username);
-        setSecret(response._id);
-      }
+        let response;
+        if (isRegister) {
+            response = await triggerRegister({ usernm: username, passwd: password }).unwrap();
+            if (response.status) {
+                setSnackbarMessage("Registration successful! Please login.");
+                setSnackbarSuccess(true);
+                setIsRegister(false);
+            } else {
+                setSnackbarMessage(response.message || "Registration failed. Please try again.");
+                setSnackbarSuccess(false);
+            }
+        } else {
+            response = await triggerLogin({ usernm: username, passwd: password }).unwrap();
+            if (response.status) {
+                setSnackbarMessage("Login successful!");
+                setSnackbarSuccess(true);
+                setUser(username);
+                setSecret(response._id);
+            } else {
+                setSnackbarMessage(response.message || "Login failed. Please check your credentials.");
+                setSnackbarSuccess(false);
+            }
+        }
+        resetForm();
     } catch (error) {
-      setSnackbarMessage(error.data?.message || "An error occurred. Please try again.");
-      setSnackbarSuccess(false);
+        setSnackbarMessage(error.data?.message || "An error occurred. Please try again.");
+        setSnackbarSuccess(false);
     } finally {
-      setLoading(false);
-      resetForm();
-      setOpenSnackbar(true);
+        setLoading(false);
+        setOpenSnackbar(true);
     }
   }, 500);
 
@@ -87,7 +98,10 @@ export default function Login({ setUser, setSecret }) {
                 maxWidth: isNonMobile ? '400px' : '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 3,
+                gap: 2,
+                padding: 3,
+                borderRadius: '8px',
+                backgroundColor: colors.grey[50],
               }}
             >
               <Typography variant="h4" color={colors.primary.main} textAlign="center" fontWeight="bold">
@@ -143,8 +157,10 @@ export default function Login({ setUser, setSecret }) {
                 fullWidth
                 sx={{
                   mt: 2,
-                  height: '48px',
+                  height: '40px',
                   fontWeight: 'bold',
+                  fontSize: '16px',
+                  borderRadius: '8px',
                 }}
                 disabled={loading}
                 startIcon={loading && <CircularProgress size="1rem" />}
@@ -152,7 +168,7 @@ export default function Login({ setUser, setSecret }) {
                 {isRegister ? 'Register' : 'Login'}
               </Button>
               <Box display="flex" justifyContent="center" mt={2}>
-                <Typography variant="body2" color={colors.grey[500]}>
+                <Typography variant="body2" color={colors.grey[600]}>
                   {isRegister ? "Already have an account?" : "Don't have an account?"}
                 </Typography>
                 <Button
@@ -166,6 +182,9 @@ export default function Login({ setUser, setSecret }) {
                     '&:hover': {
                       backgroundColor: 'transparent',
                     },
+                    padding: 0,
+                    minHeight: 'auto',
+                    fontSize: '14px',
                   }}
                 >
                   {isRegister ? "Login" : "Register"}
