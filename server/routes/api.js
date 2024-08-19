@@ -309,13 +309,13 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
     const checkAdminResult = await client.query(checkAdminQuery, [group_id]);
 
     if (checkAdminResult.rows.length === 0) {
-      return res.status(404).json({ status: false, message: "Group not found" });
+      return res.json({ status: false, message: "Group not found" });
     }
 
     const { admin_id, create_date } = checkAdminResult.rows[0];
 
     if (admin_id !== user_id) {
-      return res.status(403).json({ status: false, message: "You do not have permission to delete this group" });
+      return res.json({ status: false, message: "You do not have permission to delete this group" });
     }
 
     // Check if the group is older than 24 hours
@@ -324,7 +324,7 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
     const timeDifference = currentTime - groupCreationTime;
 
     if (timeDifference < 24 * 60 * 60 * 1000) {
-      return res.status(400).json({ status: false, message: "Group cannot be deleted within 24 hours of creation" });
+      return res.json({ status: false, message: "Group cannot be deleted within 24 hours of creation" });
     }
 
     await client.query('BEGIN');
@@ -341,7 +341,7 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error("error", error);
-    res.status(500).json({ status: false, message: "Failed to delete group", error: error.message });
+    res.json({ status: false, message: "Failed to delete group", error: error.message });
   } finally {
     client.release();
   }

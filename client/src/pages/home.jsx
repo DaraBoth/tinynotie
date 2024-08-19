@@ -12,6 +12,8 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useDeleteGroupMutation, useGetGroupMutation } from "../api/api";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +29,9 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   const [triggerUser, resultUser] = useGetGroupMutation();
   const [triggerDeleteGroup, resultGroup] = useDeleteGroupMutation();
   const [data, setData] = useState([]);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSuccess, setSnackbarSuccess] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const navigate = useNavigate();
@@ -35,6 +40,10 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   const widthItem = rspWidth("calc(100%/2)", "100%", "260px");
   const gridColItem = rspWidth("repeat(4,1fr)", "repeat(1,1fr)", "auto");
   const fontSize = rspWidth("normal", "18px", "16px");
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
 
   useEffect(() => {
     triggerUser({ user, user_id: secret });
@@ -64,11 +73,15 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
     navigate("/group");
   };
 
-  const handleDeleteNote = (noteId) => {
-    setData((prevData) => prevData.filter((note) => note.id !== noteId));
-    setOpenDeleteDialog(false);
-    setNoteToDelete(null);
-    triggerDeleteGroup({ group_id: noteId });
+  const handleDeleteNote = async (noteId) => {
+    const response = await triggerDeleteGroup({ group_id: noteId });
+    if(response.data.status){
+      setData((prevData) => prevData.filter((note) => note.id !== noteId));
+      setOpenDeleteDialog(false);
+      setNoteToDelete(null);
+    }
+    setSnackbarMessage(response.data.message);
+    setSnackbarSuccess(response.data.status);
   };
 
   const confirmDeleteNote = (noteId) => {
@@ -254,6 +267,18 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSuccess ? "success" : "error"} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
     </Box>
   );
 }
