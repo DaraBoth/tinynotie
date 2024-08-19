@@ -222,7 +222,7 @@ router.get("/getTripByGroupId", authenticateToken, async (req, res) => {
   const { group_id } = req.query;
 
   try {
-    const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
+    const sql = `SELECT * FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
     const results = await pool.query(sql, [group_id]);
 
     res.send({ status: true, data: results.rows.length > 0 ? results.rows : [] });
