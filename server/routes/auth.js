@@ -1,59 +1,87 @@
-import pg from "pg"
-import express from "express"
+import pg from "pg";
+import express from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
-const Pool = pg.Pool
+const Pool = pg.Pool;
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
-})
+});
 
+// Secret key for JWT (use a strong secret key in production)
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// User login
 router.post("/login", async (req, res) => {
-  const { usernm , passwd } = req.body;
+  const { usernm, passwd } = req.body;
   try {
-    let sql = `SELECT id FROM user_infm where usernm = '${usernm.toLowerCase()}' and passwd = '${passwd}';`
-    pool.query(sql.toString(),(error,results)=>{
-      if(error) {
-        res.status(500).json({ status:false,error: error.message });
-        throw error;
+    const sql = `SELECT id, passwd FROM user_infm WHERE usernm = $1;`;
+    const values = [usernm.toLowerCase()];
+    
+    const { rows } = await pool.query(sql, values);
+    if (rows.length > 0) {
+      const user = rows[0];
+
+      // Compare the hashed password
+      const match = await bcrypt.compare(passwd, user.passwd);
+      if (match) {
+        // Generate JWT token
+        const token = jwt.sign({ _id: user.id, usernm: usernm }, JWT_SECRET, { expiresIn: "1h" });
+        res.send({ status: true, token, usernm, _id: user.id });
+      } else {
+        res.status(401).send({ status: false, message: "Invalid username or password." });
       }
-      if(results.rows.length>0){
-        res.send({status:true,usernm:usernm,_id:results.rows[0].id});
-      }else{
-        res.send({status:false,message:`Username ${usernm} doesn't exist please try register instead!`})
-      }
-    })
+    } else {
+      res.status(404).send({ status: false, message: `Username ${usernm} doesn't exist. Please register instead!` });
+    }
   } catch (error) {
     console.error("error", error);
-    res.status(500).json({ status:false,error: error.message });
+    res.status(500).json({ status: false, error: error.message });
   }
 });
 
+// User registration
 router.post("/register", async (req, res) => {
-  const { usernm , passwd } = req.body;
+  const { usernm, passwd } = req.body;
   try {
-    let sql = `SELECT usernm FROM user_infm where usernm = '${usernm.toLowerCase()}';`
-    pool.query(sql.toString(),(error,results)=>{
-      if(error) {
-        res.status(500).json({ status:false,error: error.message });
-        throw error;
-      }
-      if(!results.rows.length > 0) {
-        let sql2 = `INSERT INTO user_infm( usernm, passwd ) VALUES('${usernm.toLowerCase()}', '${passwd}');`
-        pool.query(sql2.toString(),(error,results)=>{
-          if(error) {
-            res.status(500).json({ status:false,error: error.message });
-            throw error;
-          }
-          res.send({status:true,message:"Registered success!"});
-        })
-      }else {
-        res.send({status:false,message:"Username "+usernm+" is already existed!"});
-      }
-    })
+    const sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
+    const values = [usernm.toLowerCase()];
+    
+    const { rows } = await pool.query(sql, values);
+    if (rows.length === 0) {
+      // Hash the password before storing it
+      const hashedPassword = await bcrypt.hash(passwd, 10);
+
+      const sql2 = `INSERT INTO user_infm (usernm, passwd) VALUES ($1, $2) RETURNING id;`;
+      const values2 = [usernm.toLowerCase(), hashedPassword];
+      
+      const result = await pool.query(sql2, values2);
+      const newUserId = result.rows[0].id;
+
+      // Generate JWT token upon registration
+      const token = jwt.sign({ _id: newUserId, usernm: usernm }, JWT_SECRET, { expiresIn: "1h" });
+
+      res.send({ status: true, message: "Registration successful!", token, _id: newUserId });
+    } else {
+      res.status(409).send({ status: false, message: `Username ${usernm} is already taken!` });
+    }
   } catch (error) {
     console.error("error", error);
-    res.status(500).json({ status:false,error: error.message });
+    res.status(500).json({ status: false, error: error.message });
   }
 });
+
+// Middleware to verify the JWT token (optional)
+const authenticateToken = (req, res, next) => {
+  const token = req.headers['authorization'];
+  if (token == null) return res.status(401).json({ status: false, message: "Token required." });
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ status: false, message: "Invalid token." });
+    req.user = user;
+    next();
+  });
+};
 
 export default router;
