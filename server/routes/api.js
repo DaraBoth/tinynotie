@@ -151,26 +151,6 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
   }
 });
 
-// Edit Trip by Group ID
-router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
-  const { trp_name, spend, group_id } = req.body;
-  try {
-    const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
-    const results = await pool.query(sql, [group_id, trp_name]);
-
-    if (results.rows.length > 0) {
-      const sql2 = `UPDATE trp_infm SET spend=$1 WHERE id=$2;`;
-      await pool.query(sql2, [spend, results.rows[0].id]);
-      res.send({ status: true, message: `Edit ${trp_name} success!` });
-    } else {
-      res.status(404).json({ status: false, message: `Trip ${trp_name} not found!` });
-    }
-  } catch (error) {
-    console.error("error", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Edit Trip Members by Trip ID
 router.post("/editTripMem", authenticateToken, async (req, res) => {
   const { trp_id, trp_name, mem_id } = req.body;
