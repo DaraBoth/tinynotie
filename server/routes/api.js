@@ -292,6 +292,61 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
   }
 });
 
+// Delete Group by ID
+router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
+  const { group_id } = req.body;
+  const user_id = req.user._id;
+
+  const client = await pool.connect();
+
+  try {
+    // Check if the user is the admin and retrieve the group's creation date
+    const checkAdminQuery = `
+      SELECT admin_id, create_date
+      FROM grp_infm
+      WHERE id = $1;
+    `;
+    const checkAdminResult = await client.query(checkAdminQuery, [group_id]);
+
+    if (checkAdminResult.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "Group not found" });
+    }
+
+    const { admin_id, create_date } = checkAdminResult.rows[0];
+
+    if (admin_id !== user_id) {
+      return res.status(403).json({ status: false, message: "You do not have permission to delete this group" });
+    }
+
+    // Check if the group is older than 24 hours
+    const groupCreationTime = new Date(create_date);
+    const currentTime = new Date();
+    const timeDifference = currentTime - groupCreationTime;
+
+    if (timeDifference < 24 * 60 * 60 * 1000) {
+      return res.status(400).json({ status: false, message: "Group cannot be deleted within 24 hours of creation" });
+    }
+
+    await client.query('BEGIN');
+
+    // Delete the group itself
+    const deleteGroupQuery = `
+      DELETE FROM grp_infm CASCADE WHERE id = $1;
+    `;
+    await client.query(deleteGroupQuery, [group_id]);
+
+    await client.query('COMMIT');
+    
+    res.json({ status: true, message: "Group deleted successfully" });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("error", error);
+    res.status(500).json({ status: false, message: "Failed to delete group", error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // External API: Get Post List
 router.get("/post/list", authenticateToken, async (req, res) => {
   const { companyId, projectId, categoryId, status, size, sort } = req.query;

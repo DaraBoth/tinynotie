@@ -2,26 +2,33 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   IconButton,
-  List,
-  ListItem,
-  ListItemText,
   Typography,
   useMediaQuery,
   useTheme,
   Paper,
+  Fab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
-import { useGetGroupMutation } from "../api/api";
+import { useDeleteGroupMutation, useGetGroupMutation } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../theme";
 import AddIcon from "@mui/icons-material/Add";
 import LogoutIcon from "@mui/icons-material/Logout";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { rspWidth } from "../responsive";
 
 export default function Home({ user, setUser, secret, setGroupInfo }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [triggerUser, resultUser] = useGetGroupMutation();
+  const [triggerDeleteGroup, resultGroup] = useDeleteGroupMutation();
   const [data, setData] = useState([]);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState(null);
   const navigate = useNavigate();
   const isNonMobile = useMediaQuery("(min-width:600px)");
 
@@ -55,6 +62,18 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       currency: item.currency,
     });
     navigate("/group");
+  };
+
+  const handleDeleteNote = (noteId) => {
+    setData((prevData) => prevData.filter((note) => note.id !== noteId));
+    setOpenDeleteDialog(false);
+    setNoteToDelete(null);
+    triggerDeleteGroup({ group_id: noteId });
+  };
+
+  const confirmDeleteNote = (noteId) => {
+    setNoteToDelete(noteId);
+    setOpenDeleteDialog(true);
   };
 
   return (
@@ -116,39 +135,6 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
           gap: "20px",
         }}
       >
-        <Paper
-          elevation={3}
-          sx={{
-            cursor: "pointer",
-            width: widthItem,
-            height: isNonMobile ? "calc(100%/3)" : "auto",
-            color: colors.blueAccent[500],
-            border: `1px solid ${colors.blueAccent[600]}`,
-            borderRadius: "12px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            transition: "transform 0.2s, box-shadow 0.2s",
-            "&:hover": {
-              transform: "scale(1.05)",
-              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
-            },
-          }}
-          onClick={handleCreateGroup}
-        >
-          <AddIcon />
-          <Typography
-            variant="body1"
-            display="flex"
-            textAlign="center"
-            fontWeight={500}
-            fontSize={17}
-            sx={{ marginLeft: "10px" }}
-          >
-            New note
-          </Typography>
-        </Paper>
-
         {data.length === 0 ? (
           <Typography
             variant="h6"
@@ -179,46 +165,95 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                     transform: "scale(1.05)",
                     boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
                   },
+                  position: "relative",
                 }}
                 onClick={() => handleGroupClick(item)}
               >
-                <ListItemText
-                  primary={
-                    <Typography variant="h6" fontWeight="bold">
-                      Title: {item.grp_name}
-                    </Typography>
-                  }
-                  secondary={
-                    <>
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        color="text.primary"
-                        display="block"
-                      >
-                        Currency:{" "}
-                        <span style={{ color: colors.grey[300] }}>
-                          {item.currency}
-                        </span>
-                      </Typography>
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        color="text.primary"
-                        display="block"
-                      >
-                        Create Date:{" "}
-                        <span style={{ color: colors.grey[300] }}>
-                          {item.create_date}
-                        </span>
-                      </Typography>
-                    </>
-                  }
-                />
+                <Typography variant="h6" fontWeight="bold">
+                  Title: {item.grp_name}
+                </Typography>
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="text.primary"
+                  display="block"
+                >
+                  Currency:{" "}
+                  <span style={{ color: colors.grey[300] }}>
+                    {item.currency}
+                  </span>
+                </Typography>
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="text.primary"
+                  display="block"
+                >
+                  Create Date:{" "}
+                  <span style={{ color: colors.grey[300] }}>
+                    {item.create_date}
+                  </span>
+                </Typography>
+                <IconButton
+                  aria-label="delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    confirmDeleteNote(item.id);
+                  }}
+                  sx={{
+                    position: "absolute",
+                    top: 5,
+                    right: 5,
+                    color: colors.redAccent[500],
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
               </Paper>
             ))
         )}
       </Box>
+
+      {/* Floating Action Button for New Note */}
+      <Fab
+        color="primary"
+        aria-label="add"
+        onClick={handleCreateGroup}
+        sx={{
+          position: "fixed",
+          bottom: "16px",
+          right: "16px",
+          backgroundColor: colors.blueAccent[500],
+          "&:hover": {
+            backgroundColor: colors.blueAccent[700],
+          },
+        }}
+      >
+        <AddIcon />
+      </Fab>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this note? This action cannot be
+            undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
+          <Button
+            onClick={() => handleDeleteNote(noteToDelete)}
+            color="secondary"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

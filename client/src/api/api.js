@@ -104,6 +104,13 @@ export const api = createApi({
         body: payload,
       }),
     }),
+    deleteGroup: build.mutation({
+      query: (payload) => ({
+        url: "api/deleteGroupById",
+        method: "DELETE",
+        body: payload,
+      }),
+    }),
     postLogin: build.mutation({
       query: (payload) => ({
         url: "auth/login",
@@ -146,4 +153,5 @@ export const {
   useGetAllMemberMutation,
   usePostAddMemberMutation,
   usePostEditMemberMutation,
+  useDeleteGroupMutation,
 } = api;
