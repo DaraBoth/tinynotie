@@ -9,23 +9,18 @@ import Button from "@mui/material/Button";
 import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import {
   usePostAddTripMutation,
-  usePostEditMemberMutation,
   usePostEditTripMutation,
 } from "../api/api";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
-  Divider,
+  CircularProgress,
   Typography,
-  useMediaQuery,
   useTheme,
 } from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 import { tokens } from "../theme";
-import { rspWidth } from "../responsive";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
 const filter = createFilterOptions();
 
 export default function AddTrip({
@@ -35,23 +30,14 @@ export default function AddTrip({
   trip,
   group_id,
 }) {
-  const isNonMobile = useMediaQuery("(min-width:600px)");
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddTrip, resultAddTrip] = usePostAddTripMutation();
   const [triggerEditTrip, resultEditTrip] = usePostEditTripMutation();
-  const [money, setMoney] = React.useState(null);
+  const [money, setMoney] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [expanded, setExpanded] = React.useState(false);
-
-  const handleChange = (panel) => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false);
-  };
-
-  const handleFont = () => {
-    return rspWidth("1.2rem", "1rem", "1rem");
-  };
 
   const handleClose = () => {
     setDialogValue({
@@ -59,6 +45,7 @@ export default function AddTrip({
       spended: "",
     });
     setValue("");
+    setMoney("");
     toggleOpen(false);
   };
 
@@ -67,51 +54,65 @@ export default function AddTrip({
     spended: "",
   });
 
-  const handleEdit = () => {
-    if (!!value.trp_name && null != parseFloat(money)) {
+  const handleTransaction = (type) => {
+    if (!!value?.trp_name && !isNaN(parseFloat(money))) {
+      setLoading(true);
+      const adjustedMoney = parseFloat(money);
+
       triggerEditTrip({
         trp_name: value.trp_name,
-        spend: parseFloat(money),
+        spend: adjustedMoney,
         group_id,
-      });
-      setValue();
-      setMoney("");
+        type,  // "ADD" or "REDUCE"
+      })
+        .finally(() => {
+          setLoading(false);
+          setValue(null);
+          setMoney("");
+        });
     }
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    setValue({
-      trp_name: dialogValue.trp_name,
-      spended: dialogValue.spended,
-    });
+    setLoading(true);
     triggerAddTrip({
       trp_name: dialogValue.trp_name,
-      spend: dialogValue.spended,
+      spend: parseFloat(dialogValue.spended),
       admn_id: secret,
       mem_id: JSON.stringify(convertMemKeyToArray(member, "id")),
       description: "",
       group_id,
-    });
-    setDialogValue({
-      ...dialogValue,
-      trp_name: "",
-      spended: "",
-    });
-    handleClose();
+      type: "ADD", // Default to ADD when creating a new trip
+    })
+      .then((response) => {
+        if (response?.data?.status) {
+          alert("Trip added successfully!");
+        } else {
+          alert("Failed to add trip: " + response?.data?.message);
+        }
+      })
+      .finally(() => {
+        setDialogValue({
+          ...dialogValue,
+          trp_name: "",
+          spended: "",
+        });
+        handleClose();
+        setLoading(false);
+      });
   };
 
   React.useEffect(() => {
-    if (resultAddTrip.data?.status || resultEditTrip.data?.status) {
+    if (resultEditTrip.data?.status) {
+      alert("Transaction successful!");
       triggerTrip({ group_id });
-    }
-    if (resultAddTrip.data?.status === false) {
-      alert(resultAddTrip.data?.message);
+      handleClose();
     }
     if (resultEditTrip.data?.status === false) {
-      alert(resultEditTrip.data?.message);
+      alert("Transaction failed: " + resultEditTrip.data?.message);
     }
-  }, [resultAddTrip, resultEditTrip]);
+  }, [resultEditTrip]);
 
   return (
     <React.Fragment>
@@ -158,7 +159,6 @@ export default function AddTrip({
           }}
           options={trip}
           getOptionLabel={(option) => {
-            // e.g value selected with enter, right from the input
             if (typeof option === "string") {
               return option;
             }
@@ -179,7 +179,7 @@ export default function AddTrip({
               color="info"
               {...params}
               variant="standard"
-              label="Edit Event"
+              label="Select or Add Event"
             />
           )}
         />
@@ -187,35 +187,52 @@ export default function AddTrip({
         <TextField
           variant="standard"
           type="text"
-          label="$ Spend"
+          label="Spend"
           color="info"
           value={money}
           onChange={(e) => {
             e.target.value = e.target.value.trim();
-            if (isNaN(Number(e.target.value)) && (e.target.value != ".")) return;
+            if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
             setMoney(e.target.value);
           }}
+          disabled={loading}
         />
-        <Button
-          sx={{ gridColumn: "span 4" }}
-          onClick={handleEdit}
-          type="button"
-          color="info"
-          variant="contained"
-        >
-          Edit Event's Spend&nbsp;
-          <SendIcon />
-        </Button>
+
+        <Box display="flex" justifyContent="space-between" sx={{ mt: 2 }}>
+          <Button
+            onClick={() => handleTransaction("REDUCE")}
+            color="secondary"
+            variant="contained"
+            startIcon={loading && <CircularProgress size={20} />}
+            disabled={loading}
+            sx={{ flex: 1, mr: 1 }}
+          >
+            <RemoveIcon />
+            Reduce
+          </Button>
+          <Button
+            onClick={() => handleTransaction("ADD")}
+            color="primary"
+            variant="contained"
+            startIcon={loading && <CircularProgress size={20} />}
+            disabled={loading}
+            sx={{ flex: 1, ml: 1 }}
+          >
+            <AddIcon />
+            Add
+          </Button>
+        </Box>
       </Box>
-      <Dialog open={open} onClose={handleClose}>
+
+      <Dialog open={open} onClose={loading ? null : handleClose}>
         <form
           onSubmit={handleSubmit}
           style={{ backgroundColor: colors.primary[400] }}
         >
-          <DialogTitle>Add a event</DialogTitle>
+          <DialogTitle>Add a New Event</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Please help fill out new event and spended money.
+              Please fill out the new event's details.
             </DialogContentText>
             <TextField
               autoFocus
@@ -229,9 +246,10 @@ export default function AddTrip({
                   trp_name: event.target.value,
                 })
               }
-              label="Trip's name"
+              label="Trip's Name"
               type="text"
               variant="standard"
+              fullWidth
             />
             <TextField
               margin="dense"
@@ -247,13 +265,25 @@ export default function AddTrip({
               label="Spend"
               type="number"
               variant="standard"
+              fullWidth
             />
           </DialogContent>
           <DialogActions>
-            <Button color="info" variant="standard" onClick={handleClose}>
+            <Button
+              color="info"
+              variant="outlined"
+              onClick={loading ? null : handleClose}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button color="info" variant="standard" type="submit">
+            <Button
+              color="info"
+              variant="contained"
+              type="submit"
+              startIcon={loading && <CircularProgress size={20} />}
+              disabled={loading}
+            >
               Add
             </Button>
           </DialogActions>

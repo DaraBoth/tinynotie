@@ -186,23 +186,45 @@ router.post("/editTripMem", authenticateToken, async (req, res) => {
 
 // Edit Trip by Group ID
 router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
-  const { trp_name, spend, group_id } = req.body;
+  const { trp_name, spend, group_id, type, update_dttm } = req.body;
 
   try {
-    const sql = `SELECT id FROM trp_infm WHERE group_id = $1 AND trp_name = $2;`;
+    // Fetch the current spend value for the trip
+    const sql = `SELECT id, spend FROM trp_infm WHERE group_id = $1 AND trp_name = $2;`;
     const results = await pool.query(sql, [group_id, trp_name]);
 
-    if (results.rows.length > 0) {
-      const sql2 = `UPDATE trp_infm SET spend = $1 WHERE id = $2;`;
-      await pool.query(sql2, [spend, results.rows[0].id]);
-      res.send({ status: true, message: `Edit ${trp_name} success!` });
-    } else {
-      res.status(404).json({ status: false, message: `Trip ${trp_name} not found!` });
+    if (results.rows.length === 0) {
+      return res.json({ status: false, message: `Trip ${trp_name} not found!` });
     }
+
+    const currentSpend = results.rows[0].spend;
+    let newSpend;
+
+    // Determine the new spend value based on the type
+    if (type === "ADD") {
+      newSpend = currentSpend + spend;
+    } else if (type === "REDUCE") {
+      newSpend = currentSpend - spend;
+
+      // Ensure the new spend value is not below zero
+      if (newSpend < 0) {
+        return res.json({ status: false, message: "Cannot reduce spend below 0" });
+      }
+    } else {
+      return res.json({ status: false, message: "Invalid type specified. Use 'ADD' or 'REDUCE'." });
+    }
+
+    // Update the spend value in the database
+    const sql2 = `UPDATE trp_infm SET spend = $1 , update_dttm = $2 WHERE id = $3;`;
+    await pool.query(sql2, [newSpend, update_dttm ,results.rows[0].id]);
+
+    res.send({ status: true, message: `Edit ${trp_name} success!` });
   } catch (error) {
-    handleError(error, res);
+    console.error("error", error);
+    res.status(500).json({ status: false, message: "An error occurred while updating the trip", error: error.message });
   }
 });
+
 
 // Get All Trips
 router.get("/getAllTrip", authenticateToken, async (req, res) => {
