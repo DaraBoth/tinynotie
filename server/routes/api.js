@@ -87,33 +87,41 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   const create_date = format(new Date());
   const newMember = JSON.parse(member);
 
+  const client = await pool.connect(); // Get a connection client
+
   try {
-    let sql = `
-      DO $$
-      DECLARE
-        group_id INT;
-      BEGIN
-        INSERT INTO grp_infm (
-          grp_name, status, description, currency, admin_id, create_date
-        ) VALUES ($1, $2, $3, $4, $5, $6) 
-        RETURNING id INTO group_id;
+    await client.query('BEGIN'); // Start a transaction
+
+    // Insert into grp_infm and return the inserted group_id
+    const insertGroupQuery = `
+      INSERT INTO grp_infm (grp_name, status, description, currency, admin_id, create_date)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id;
     `;
+    const result = await client.query(insertGroupQuery, [grp_name, status, description, currency, user_id, create_date]);
+    const group_id = result.rows[0].id;
 
-    const memberInserts = newMember.map(mem_name => `
-      INSERT INTO member_infm (mem_name, paid, group_id) 
-      VALUES ('${mem_name}', 0, group_id);
-    `).join('');
+    // Insert each member into member_infm with the returned group_id
+    const insertMemberQuery = `
+      INSERT INTO member_infm (mem_name, paid, group_id)
+      VALUES ($1, $2, $3);
+    `;
+    for (const mem_name of newMember) {
+      await client.query(insertMemberQuery, [mem_name, 0, group_id]);
+    }
 
-    sql += memberInserts;
-    sql += `END $$; SELECT MAX(id) as id FROM grp_infm;`;
+    await client.query('COMMIT'); // Commit the transaction
 
-    const results = await pool.query(sql, [grp_name, status, description, currency, user_id, create_date]);
-    res.send({ status: true, data: results[1].rows[0] });
+    res.send({ status: true, data: { id: group_id } });
   } catch (error) {
+    await client.query('ROLLBACK'); // Rollback the transaction on error
     console.error("error", error);
     res.status(500).json({ error: error.message });
+  } finally {
+    client.release(); // Release the client back to the pool
   }
 });
+
 
 // Add Trip by Group ID
 router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
