@@ -20,6 +20,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { tokens } from "../theme";
+import moment from "moment"
 
 const filter = createFilterOptions();
 
@@ -63,6 +64,7 @@ export default function AddTrip({
         trp_name: value.trp_name,
         spend: adjustedMoney,
         group_id,
+        update_dttm: moment().format("YYYY-MM-DD HH:mm:ss") ,
         type,  // "ADD" or "REDUCE"
       })
         .finally(() => {
@@ -83,7 +85,8 @@ export default function AddTrip({
       mem_id: JSON.stringify(convertMemKeyToArray(member, "id")),
       description: "",
       group_id,
-      type: "ADD", // Default to ADD when creating a new trip
+      update_dttm: moment().format("YYYY-MM-DD HH:mm:ss") ,
+      create_date: moment().format("YYYY-MM-DD") ,
     })
       .then((response) => {
         if (response?.data?.status) {

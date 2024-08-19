@@ -130,17 +130,17 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
 
 // Add Trip by Group ID
 router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
-  const { trp_name, spend, mem_id, description, group_id } = req.body;
-  const create_date = format(new Date());
+  const { trp_name, spend, mem_id, description, group_id , update_dttm } = req.body;
+  let create_date = req.body?.create_date || format(new Date());
   try {
     const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
     const results = await pool.query(sql, [group_id, trp_name]);
 
     if (results.rows.length === 0) {
       const sql2 = `
-        INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date)
-        VALUES ($1, $2, $3, $4, $5, $6);`;
-      await pool.query(sql2, [trp_name, spend, mem_id, description, group_id, create_date]);
+        INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date , update_dttm)
+        VALUES ($1, $2, $3, $4, $5, $6 , $7);`;
+      await pool.query(sql2, [trp_name, spend, mem_id, description, group_id, create_date, update_dttm]);
       res.send({ status: true, message: "Add trip success!" });
     } else {
       res.status(409).json({ status: false, message: `Trip ${trp_name} already exists!` });
