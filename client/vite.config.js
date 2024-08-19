@@ -8,7 +8,10 @@ export default defineConfig({
   server: {
     host:'0.0.0.0',
     strictPort:true,
-    port:2023
+    port:2023,
+    hmr:{
+      overlay:false
+    }
   },
   resolve: {
     alias: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
@@ -16,7 +19,7 @@ export default defineConfig({
   build: {
     manifest: true,
     rollupOptions: {
-      input: '/src/main.jsx',
+      input: path.resolve(__dirname, "src")+'/main.jsx',
       onwarn(warning, warn) {
         // Suppress "Module level directives cause errors when bundled" warnings
         if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
