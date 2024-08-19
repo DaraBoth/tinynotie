@@ -1,7 +1,23 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+// Function to get the JWT token from localStorage
+const getToken = () => localStorage.getItem('token');
+
 export const api = createApi({
-  baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_BASE_URL }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: import.meta.env.VITE_BASE_URL,
+    prepareHeaders: (headers) => {
+      // Get the token from localStorage
+      const token = getToken();
+
+      // If we have a token, set the Authorization header
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+
+      return headers;
+    }
+  }),
   reducerPath: "main",
   tagTypes: [],
   endpoints: (build) => ({
@@ -63,7 +79,7 @@ export const api = createApi({
     }),
     deleteMember: build.mutation({
       query: (payload) => ({
-        url: "api/members/"+payload,
+        url: `api/members/${payload}`,
         method: "DELETE",
       }),
     }),
@@ -94,12 +110,22 @@ export const api = createApi({
         method: "POST",
         body: payload,
       }),
+      // Optionally, store the token after login
+      async onQueryStarted(payload, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          // Assuming the token is in data.token
+          localStorage.setItem('token', data.token);
+        } catch (error) {
+          // Handle error
+        }
+      },
     }),
     postRegister: build.mutation({
       query: (payload) => ({
         url: "auth/register",
-        method: "GET",
-        params: payload,
+        method: "POST",  // Corrected method to POST
+        body: payload,
       }),
     }),
   }),

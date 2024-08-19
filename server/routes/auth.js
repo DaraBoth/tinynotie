@@ -28,8 +28,8 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/register", async (req, res) => {
-  const { usernm , passwd } = req.query;
+router.post("/register", async (req, res) => {
+  const { usernm , passwd } = req.body;
   try {
     let sql = `SELECT usernm FROM user_infm where usernm = '${usernm.toLowerCase()}';`
     pool.query(sql.toString(),(error,results)=>{
