@@ -72,16 +72,4 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Middleware to verify the JWT token (optional)
-const authenticateToken = (req, res, next) => {
-  const token = req.headers['authorization'];
-  if (token == null) return res.status(401).json({ status: false, message: "Token required." });
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ status: false, message: "Invalid token." });
-    req.user = user;
-    next();
-  });
-};
-
 export default router;
