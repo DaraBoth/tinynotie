@@ -84,7 +84,12 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
 // Add Group by User ID
 router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   const { user_id, grp_name, status = 1, description, currency = 'W', member } = req.body;
-  const create_date = format(new Date());
+  let create_date;
+  if(!req.body.create_date){
+    create_date = format(new Date())
+  }else {
+    create_date = req.body.create_date;
+  }
   const newMember = JSON.parse(member);
 
   const client = await pool.connect(); // Get a connection client

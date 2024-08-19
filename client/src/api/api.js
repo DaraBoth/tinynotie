@@ -1,13 +1,13 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Function to get the JWT token from localStorage
-const getToken = () => localStorage.getItem('token');
+// Function to get the JWT token from sessionStorage
+const getToken = () => sessionStorage.getItem('token');
 
 export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: import.meta.env.VITE_BASE_URL,
     prepareHeaders: (headers) => {
-      // Get the token from localStorage
+      // Get the token from sessionStorage
       const token = getToken();
 
       // If we have a token, set the Authorization header
@@ -115,7 +115,7 @@ export const api = createApi({
         try {
           const { data } = await queryFulfilled;
           // Assuming the token is in data.token
-          localStorage.setItem('token', data.token);
+          sessionStorage.setItem('token', data.token);
         } catch (error) {
           // Handle error
         }
