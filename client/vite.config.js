@@ -14,7 +14,9 @@ export default defineConfig({
     alias: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
   },
   build: {
+    manifest: true,
     rollupOptions: {
+      input: '/src/main.jsx',
       onwarn(warning, warn) {
         // Suppress "Module level directives cause errors when bundled" warnings
         if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
