@@ -20,7 +20,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { tokens } from "../theme";
-import moment from "moment"
+import CustomAlert from "../component/CustomAlert"; // Import the CustomAlert component
 
 const filter = createFilterOptions();
 
@@ -37,6 +37,9 @@ export default function AddTrip({
   const [triggerEditTrip, resultEditTrip] = usePostEditTripMutation();
   const [money, setMoney] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [alertOpen, setAlertOpen] = React.useState(false);
+  const [alertMessage, setAlertMessage] = React.useState('');
+  const [alertType, setAlertType] = React.useState('success'); // success, error, warning, info
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -64,9 +67,18 @@ export default function AddTrip({
         trp_name: value.trp_name,
         spend: adjustedMoney,
         group_id,
-        update_dttm: moment().format("YYYY-MM-DD HH:mm:ss") ,
         type,  // "ADD" or "REDUCE"
       })
+        .then((response) => {
+          if (response?.data?.status) {
+            setAlertMessage('Transaction successful!');
+            setAlertType('success');
+          } else {
+            setAlertMessage(`Transaction failed: ${response?.data?.message}`);
+            setAlertType('error');
+          }
+          setAlertOpen(true);
+        })
         .finally(() => {
           setLoading(false);
           setValue(null);
@@ -85,15 +97,17 @@ export default function AddTrip({
       mem_id: JSON.stringify(convertMemKeyToArray(member, "id")),
       description: "",
       group_id,
-      update_dttm: moment().format("YYYY-MM-DD HH:mm:ss") ,
-      create_date: moment().format("YYYY-MM-DD") ,
+      type: "ADD", // Default to ADD when creating a new trip
     })
       .then((response) => {
         if (response?.data?.status) {
-          alert("Trip added successfully!");
+          setAlertMessage('Trip added successfully!');
+          setAlertType('success');
         } else {
-          alert("Failed to add trip: " + response?.data?.message);
+          setAlertMessage(`Failed to add trip: ${response?.data?.message}`);
+          setAlertType('error');
         }
+        setAlertOpen(true);
       })
       .finally(() => {
         setDialogValue({
@@ -108,12 +122,8 @@ export default function AddTrip({
 
   React.useEffect(() => {
     if (resultEditTrip.data?.status) {
-      alert("Transaction successful!");
       triggerTrip({ group_id });
       handleClose();
-    }
-    if (resultEditTrip.data?.status === false) {
-      alert("Transaction failed: " + resultEditTrip.data?.message);
     }
   }, [resultEditTrip]);
 
@@ -190,7 +200,7 @@ export default function AddTrip({
         <TextField
           variant="standard"
           type="text"
-          label="Spend"
+          label="$ Spend"
           color="info"
           value={money}
           onChange={(e) => {
@@ -292,6 +302,14 @@ export default function AddTrip({
           </DialogActions>
         </form>
       </Dialog>
+
+      {/* Custom Alert for feedback */}
+      <CustomAlert
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        message={alertMessage}
+        type={alertType}
+      />
     </React.Fragment>
   );
 }
