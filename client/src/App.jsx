@@ -15,20 +15,30 @@ function App() {
   const [theme, colorMode, setMode] = useMode();
   const themes = useTheme();
   const colors = tokens(themes.palette.mode);
-  const [user, setUser] = useState(null);
-  const [secret, setSecret] = useState(null);
+  const [user, setUser] = useState(() => sessionStorage.getItem('user') ? JSON.parse(sessionStorage.getItem('user')) : null);
+  const [secret, setSecret] = useState(() => sessionStorage.getItem('secret') ? sessionStorage.getItem('secret') : null);
   const [groupInfo, setGroupInfo] = useState(null);
   const isAuth = Boolean(user) && Boolean(secret);
   const isGroup = isAuth && Boolean(groupInfo);
-  let themeDafault = sessionStorage.getItem("theme");
+  let themeDefault = sessionStorage.getItem("theme");
 
   useEffect(() => {
-    themeDafault && setMode(themeDafault);
-  }, [])
+    themeDefault && setMode(themeDefault);
+  }, []);
 
   useEffect(() => {
     sessionStorage.setItem("theme", theme.palette.mode);
-  }, [theme.palette.mode])
+  }, [theme.palette.mode]);
+
+  useEffect(() => {
+    if (isAuth) {
+      sessionStorage.setItem('user', JSON.stringify(user));
+      sessionStorage.setItem('secret', secret);
+    } else {
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('secret');
+    }
+  }, [user, secret, isAuth]);
 
   return (
     <ColorModeContext.Provider value={colorMode}>
@@ -83,7 +93,7 @@ function App() {
 
 export default App
 
-const ColorMode = ({theme,colorMode,colors}) => {
+const ColorMode = ({theme, colorMode, colors}) => {
   return (
     <Box
       position={'fixed'}
