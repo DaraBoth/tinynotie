@@ -73,10 +73,10 @@ export default function AddTrip({
       })
         .then((response) => {
           if (response?.data?.status) {
-            setAlertMessage('Transaction successful!');
+            setAlertMessage(response?.data?.message);
             setAlertType('success');
           } else {
-            setAlertMessage(`Transaction failed: ${response?.data?.message}`);
+            setAlertMessage(response?.data?.message);
             setAlertType('error');
           }
           setAlertOpen(true);
@@ -99,7 +99,7 @@ export default function AddTrip({
       mem_id: JSON.stringify(convertMemKeyToArray(member, "id")),
       description: "",
       group_id,
-      create_date: moment().format("YYYY-MM-DD"),
+      create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
       update_dttm: moment().format("YYYY-MM-DD HH:mm:ss"),
       type: "ADD", // Default to ADD when creating a new trip
     })
