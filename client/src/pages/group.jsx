@@ -91,8 +91,8 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
         );
       },
     },
+    { field: "update_dttm", headerName: "Updated Date", width: 150 },
     { field: "create_date", headerName: "Created Date", width: 150 },
-    { field: "update_dttm", headerName: "Updated Date", width: 150 }
   ], [member, currencyType]);
 
   const actions = [
