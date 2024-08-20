@@ -3,7 +3,6 @@ import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
@@ -11,15 +10,22 @@ import {
   usePostAddMemberMutation,
   usePostEditMemberMutation,
 } from "../api/api";
-import { Box, CircularProgress, useTheme } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Chip,
+  IconButton,
+  useTheme,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import SaveIcon from "@mui/icons-material/Save";
 import { tokens } from "../theme";
 import CustomAlert from "../component/CustomAlert"; // Import CustomAlert component
 
 const filter = createFilterOptions();
 
-export default function EditMember({ triggerMember, member, group_id ,currencyType}) {
+export default function EditMember({ triggerMember, member, group_id, currencyType }) {
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddMember, resultAddMember] = usePostAddMemberMutation();
@@ -29,6 +35,7 @@ export default function EditMember({ triggerMember, member, group_id ,currencyTy
   const [alertOpen, setAlertOpen] = React.useState(false);
   const [alertMessage, setAlertMessage] = React.useState("");
   const [alertType, setAlertType] = React.useState("success"); // success, error, warning, info
+  const [selectedChip, setSelectedChip] = React.useState(null); // State to track the selected chip
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -72,6 +79,7 @@ export default function EditMember({ triggerMember, member, group_id ,currencyTy
           setLoading(false);
           setValue(null);
           setMoney("");
+          setSelectedChip(null); // Reset selected chip
           triggerMember({ group_id });
         });
     }
@@ -107,6 +115,28 @@ export default function EditMember({ triggerMember, member, group_id ,currencyTy
       });
   };
 
+  const currencySuggestions = {
+    $: [5, 10, 20, 50, 100],
+    W: [1000, 5000, 10000, 50000, 100000],
+    R: [2000, 5000, 10000, 20000, 50000],
+  };
+
+  const handleChipClick = (amount) => {
+    setSelectedChip(amount); // Select the chip but don't add to input
+  };
+
+  const handleAddClick = () => {
+    if (selectedChip !== null) {
+      setMoney((prev) => (parseFloat(prev || 0) + selectedChip).toString());
+    }
+  };
+
+  const handleSubtractClick = () => {
+    if (selectedChip !== null) {
+      setMoney((prev) => Math.max(0, parseFloat(prev || 0) - selectedChip).toString());
+    }
+  };
+
   return (
     <React.Fragment>
       <Box
@@ -137,7 +167,8 @@ export default function EditMember({ triggerMember, member, group_id ,currencyTy
               });
             } else {
               setValue(newValue);
-              setMoney(newValue.paid)
+              setMoney(newValue.paid);
+              setSelectedChip(currencySuggestions[currencyType][0]);
             }
           }}
           filterOptions={(options, params) => {
@@ -179,42 +210,60 @@ export default function EditMember({ triggerMember, member, group_id ,currencyTy
           )}
         />
 
-        <TextField
-          variant="standard"
-          type="text"
-          label="Paid"
-          color="primary"
-          value={money}
-          onChange={(e) => {
-            e.target.value = e.target.value.trim();
-            if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
-            setMoney(e.target.value);
-          }}
-          disabled={loading}
-        />
+        <Box display="flex" alignItems="center">
+          <TextField
+            variant="standard"
+            type="text"
+            label="Paid"
+            color="primary"
+            value={money}
+            onChange={(e) => {
+              e.target.value = e.target.value.trim();
+              if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
+              setMoney(e.target.value);
+            }}
+            disabled={loading}
+            sx={{ flex: 1 }}
+          />
+          <IconButton
+            onClick={handleSubtractClick}
+            color="secondary"
+            disabled={loading || selectedChip === null}
+          >
+            <RemoveIcon />
+          </IconButton>
+          <IconButton
+            onClick={handleAddClick}
+            color="primary"
+            disabled={loading || selectedChip === null}
+          >
+            <AddIcon />
+          </IconButton>
+        </Box>
+
+        <Box display="flex" flexWrap="wrap" sx={{ mt: 1 }}>
+          {currencySuggestions[currencyType]?.map((amount, index) => (
+            <Chip
+              key={index}
+              label={`${currencyType}${amount}`}
+              onClick={() => handleChipClick(amount)}
+              color={selectedChip === amount ? "primary" : "default"} // Highlight selected chip
+              sx={{ m: 0.5 }} 
+            />
+          ))}
+        </Box>
 
         <Box display="flex" justifyContent="space-between" sx={{ mt: 2 }}>
           <Button
-            onClick={() => handleTransaction("REDUCE")}
-            color="secondary"
-            variant="contained"
-            startIcon={loading && <CircularProgress size={20} />}
-            disabled={loading}
-            sx={{ flex: 1, mr: 1 }}
-          >
-            <RemoveIcon />
-            Reduce
-          </Button>
-          <Button
-            onClick={() => handleTransaction("ADD")}
+            onClick={() => handleTransaction("UPDATE")}
             color="primary"
             variant="contained"
             startIcon={loading && <CircularProgress size={20} />}
-            disabled={loading}
+            disabled={loading || !value}
             sx={{ flex: 1, ml: 1 }}
           >
-            <AddIcon />
-            Add
+            <SaveIcon />
+            Save
           </Button>
         </Box>
       </Box>
@@ -247,8 +296,7 @@ export default function EditMember({ triggerMember, member, group_id ,currencyTy
               value={dialogValue.paid}
               onChange={(e) => {
                 e.target.value = e.target.value.trim();
-                if (isNaN(Number(e.target.value)) && e.target.value !== ".")
-                  return;
+                if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
                 setDialogValue({
                   ...dialogValue,
                   paid: e.target.value,

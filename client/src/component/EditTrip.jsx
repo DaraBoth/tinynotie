@@ -185,6 +185,7 @@ export default function EditTrip({
             } else {
               setValue(newValue);
               setMoney(newValue.spend)
+              setSelectedChip(currencySuggestions[currencyType][0]);
             }
           }}
           filterOptions={(options, params) => {
@@ -275,7 +276,7 @@ export default function EditTrip({
             color="primary"
             variant="contained"
             startIcon={loading && <CircularProgress size={20} />}
-            disabled={loading}
+            disabled={loading || !value}
             sx={{ flex: 1, ml: 1 }}
           >
             <SaveIcon />
