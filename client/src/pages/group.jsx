@@ -176,7 +176,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                     color={colors.primary.main}
                     gutterBottom
                   >
-                    Group Member Contributions
+                    Note Member Contributions
                   </Typography>
                 </Box>
                 <Divider sx={{ marginBottom: 2 }} />
@@ -239,7 +239,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                       columns={tripColumns || []}
                       height={
                         isNonMobile
-                          ? "calc(85vh / 2 + 92px)"
+                          ? "calc(75vh / 2 + 68px)"
                           : "calc(10 * 35px)"
                       }
                       isLoading={!resultMember.isSuccess} // Loading state for members
@@ -404,7 +404,7 @@ const TotalSpendTable = ({ info, isLoading }) => {
     <TableComponent
       rows={rows}
       columns={columns}
-      height="calc(70vh / 2 - 209px)"
+      height="calc(80vh / 2 - 175px)"
       hideFooter={true}
       isLoading={isLoading}
       addToolBar={false}

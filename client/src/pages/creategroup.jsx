@@ -73,9 +73,8 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           <form onSubmit={handleSubmit}>
             <Box
               sx={{
-                width: isNonMobile ? '500px' : '100%',
+                width: '100%',
                 borderRadius: '12px',
-                padding: '32px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '24px',
@@ -107,6 +106,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                 >
                   <MenuItem value="$">US Dollar</MenuItem>
                   <MenuItem value="W">Korean Won</MenuItem>
+                  <MenuItem value="R">Khmer Reil</MenuItem>
                 </Select>
               </FormControl>
               <Autocomplete
