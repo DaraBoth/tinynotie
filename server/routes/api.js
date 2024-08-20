@@ -295,7 +295,7 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
 
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ status: false, message: "Member not found!" });
+      return res.json({ status: false, message: "Member not found!" });
     }
 
     const currentPaid = result.rows[0].paid;
@@ -310,11 +310,11 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
       // Ensure the new paid value is not below zero
       if (newPaid < 0) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ status: false, message: "Cannot reduce paid amount below 0" });
+        return res.json({ status: false, message: "Cannot reduce paid amount below 0" });
       }
     } else {
       await client.query('ROLLBACK');
-      return res.status(400).json({ status: false, message: "Invalid type specified. Use 'ADD' or 'REDUCE'." });
+      return res.json({ status: false, message: "Invalid type specified. Use 'ADD' or 'REDUCE'." });
     }
 
     // Update the paid value in the database
@@ -327,7 +327,7 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK'); // Rollback the transaction on error
     console.error("error", error);
-    res.status(500).json({ status: false, message: "An error occurred while updating the member", error: error.message });
+    res.json({ status: false, message: "An error occurred while updating the member", error: error.message });
   } finally {
     client.release(); // Release the client back to the pool
   }
