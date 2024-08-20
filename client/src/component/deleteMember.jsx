@@ -88,7 +88,7 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
             onChange={handleChange}
             label="Pick a member"
             color="primary"
-            sx={{ minWidth: "300px" }}
+            sx={{ minWidth: "263px" }}  
           >
             {member?.map((item) => (
               <MenuItem key={item.id} value={item.id}>
