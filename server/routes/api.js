@@ -190,6 +190,8 @@ router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
       if (newSpend < 0) {
         return res.json({ status: false, message: "Cannot reduce spend below 0" });
       }
+    } else if(type === "UPDATE") {
+      newSpend = spend
     } else {
       return res.json({ status: false, message: "Invalid type specified. Use 'ADD' or 'REDUCE'." });
     }
@@ -312,6 +314,8 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
         await client.query('ROLLBACK');
         return res.json({ status: false, message: "Cannot reduce paid amount below 0" });
       }
+    } else if(type === "UPDATE") {
+      newPaid = paid
     } else {
       await client.query('ROLLBACK');
       return res.json({ status: false, message: "Invalid type specified. Use 'ADD' or 'REDUCE'." });

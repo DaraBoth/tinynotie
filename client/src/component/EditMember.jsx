@@ -11,11 +11,7 @@ import {
   usePostAddMemberMutation,
   usePostEditMemberMutation,
 } from "../api/api";
-import {
-  Box,
-  CircularProgress,
-  useTheme,
-} from "@mui/material";
+import { Box, CircularProgress, useTheme } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { tokens } from "../theme";
@@ -23,7 +19,7 @@ import CustomAlert from "../component/CustomAlert"; // Import CustomAlert compon
 
 const filter = createFilterOptions();
 
-export default function EditMember({ triggerMember, member, group_id }) {
+export default function EditMember({ triggerMember, member, group_id ,currencyType}) {
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddMember, resultAddMember] = usePostAddMemberMutation();
@@ -31,8 +27,8 @@ export default function EditMember({ triggerMember, member, group_id }) {
   const [money, setMoney] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(false);
-  const [alertMessage, setAlertMessage] = React.useState('');
-  const [alertType, setAlertType] = React.useState('success'); // success, error, warning, info
+  const [alertMessage, setAlertMessage] = React.useState("");
+  const [alertType, setAlertType] = React.useState("success"); // success, error, warning, info
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -64,11 +60,11 @@ export default function EditMember({ triggerMember, member, group_id }) {
       })
         .then((response) => {
           if (response?.data?.status) {
-            setAlertMessage('Transaction successful!');
-            setAlertType('success');
+            setAlertMessage("Transaction successful!");
+            setAlertType("success");
           } else {
             setAlertMessage(`Transaction failed: ${response?.data?.message}`);
-            setAlertType('error');
+            setAlertType("error");
           }
           setAlertOpen(true);
         })
@@ -91,11 +87,11 @@ export default function EditMember({ triggerMember, member, group_id }) {
     })
       .then((response) => {
         if (response?.data?.status) {
-          setAlertMessage('Member added successfully!');
-          setAlertType('success');
+          setAlertMessage("Member added successfully!");
+          setAlertType("success");
         } else {
           setAlertMessage(`Failed to add member: ${response?.data?.message}`);
-          setAlertType('error');
+          setAlertType("error");
         }
         setAlertOpen(true);
       })
@@ -141,6 +137,7 @@ export default function EditMember({ triggerMember, member, group_id }) {
               });
             } else {
               setValue(newValue);
+              setMoney(newValue.paid)
             }
           }}
           filterOptions={(options, params) => {
@@ -223,20 +220,14 @@ export default function EditMember({ triggerMember, member, group_id }) {
       </Box>
 
       <Dialog open={open} onClose={loading ? null : handleClose}>
-        <form
-          onSubmit={handleSubmit}
-          style={{ backgroundColor: colors.primary[400] }}
-        >
-          <DialogTitle>Add a Member</DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>New member</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              Please fill out the new member's details.
-            </DialogContentText>
             <TextField
               autoFocus
               margin="dense"
               id="mem_name"
-              color="info"
+              color="secondary"
               value={dialogValue.mem_name}
               onChange={(event) =>
                 setDialogValue({
@@ -252,23 +243,26 @@ export default function EditMember({ triggerMember, member, group_id }) {
             <TextField
               margin="dense"
               id="paid"
-              color="info"
+              color="secondary"
               value={dialogValue.paid}
-              onChange={(event) =>
+              onChange={(e) => {
+                e.target.value = e.target.value.trim();
+                if (isNaN(Number(e.target.value)) && e.target.value !== ".")
+                  return;
                 setDialogValue({
                   ...dialogValue,
-                  paid: event.target.value,
-                })
-              }
+                  paid: e.target.value,
+                });
+              }}
               label="Paid"
-              type="number"
+              type="text"
               variant="standard"
               fullWidth
             />
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ display: "flex", flexDirection: "row" }}>
             <Button
-              color="info"
+              color="error"
               variant="outlined"
               onClick={loading ? null : handleClose}
               disabled={loading}
@@ -276,7 +270,7 @@ export default function EditMember({ triggerMember, member, group_id }) {
               Cancel
             </Button>
             <Button
-              color="info"
+              color="primary"
               variant="contained"
               type="submit"
               startIcon={loading && <CircularProgress size={20} />}

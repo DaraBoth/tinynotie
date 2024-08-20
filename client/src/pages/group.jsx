@@ -26,11 +26,11 @@ import CustomDialog from "../component/CustomDialog";
 import { tokens } from "../theme";
 import { useGetMemberMutation, useGetTripMutation } from "../api/api";
 import ToolTip from "../component/EditMember";
-import AddTrip from "../component/EditTrip";
 import EditTripMem from "../component/EditTripMember";
 import DeleteMember from "../component/deleteMember";
 import { formatTimeDifference } from "../help/time";
 import currency from "currency.js";
+import EditTrip from "../component/EditTrip";
 
 export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const theme = useTheme();
@@ -95,7 +95,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
         align: "center",
         width: 100,
         valueGetter: ({ value }) => {
-          return currency(value).format();
+          return currency(value ,{ symbol: currencyType }).format();
         },
       },
       {
@@ -295,6 +295,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
             triggerMember={triggerMember}
             member={member}
             group_id={groupInfo.group_id}
+            currencyType={currencyType}
           />
         </CustomDialog>
 
@@ -303,12 +304,13 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
           onClose={() => setOpenAddTripDialog(false)}
           title="Add Trip"
         >
-          <AddTrip
+          <EditTrip
             triggerTrip={triggerTrip}
             member={member}
             secret={secret}
             trip={trip}
             group_id={groupInfo.group_id}
+            currencyType={currencyType}
           />
         </CustomDialog>
 

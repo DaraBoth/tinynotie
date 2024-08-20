@@ -3,34 +3,33 @@ import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
-import {
-  usePostAddTripMutation,
-  usePostEditTripMutation,
-} from "../api/api";
+import { usePostAddTripMutation, usePostEditTripMutation } from "../api/api";
 import {
   Box,
   CircularProgress,
-  Typography,
+  Chip,
+  IconButton,
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import SaveIcon from "@mui/icons-material/Save";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { tokens } from "../theme";
 import CustomAlert from "./CustomAlert"; // Import the CustomAlert component
-import moment from "moment"
+import moment from "moment";
 
 const filter = createFilterOptions();
 
-export default function AddTrip({
+export default function EditTrip({
   triggerTrip,
   member,
   secret,
   trip,
   group_id,
+  currencyType, // New prop for currency type
 }) {
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
@@ -39,8 +38,9 @@ export default function AddTrip({
   const [money, setMoney] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(false);
-  const [alertMessage, setAlertMessage] = React.useState('');
-  const [alertType, setAlertType] = React.useState('success'); // success, error, warning, info
+  const [alertMessage, setAlertMessage] = React.useState("");
+  const [alertType, setAlertType] = React.useState("success"); // success, error, warning, info
+  const [selectedChip, setSelectedChip] = React.useState(null); // State to track the selected chip
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -69,15 +69,15 @@ export default function AddTrip({
         spend: adjustedMoney,
         group_id,
         update_dttm: moment().format("YYYY-MM-DD HH:mm:ss"),
-        type,  // "ADD" or "REDUCE"
+        type, // "ADD" or "REDUCE"
       })
         .then((response) => {
           if (response?.data?.status) {
             setAlertMessage(response?.data?.message);
-            setAlertType('success');
+            setAlertType("success");
           } else {
             setAlertMessage(response?.data?.message);
-            setAlertType('error');
+            setAlertType("error");
           }
           setAlertOpen(true);
         })
@@ -85,6 +85,7 @@ export default function AddTrip({
           setLoading(false);
           setValue(null);
           setMoney("");
+          setSelectedChip(null); // Reset selected chip
         });
     }
   };
@@ -105,11 +106,11 @@ export default function AddTrip({
     })
       .then((response) => {
         if (response?.data?.status) {
-          setAlertMessage('Trip added successfully!');
-          setAlertType('success');
+          setAlertMessage("Trip added successfully!");
+          setAlertType("success");
         } else {
           setAlertMessage(`Failed to add trip: ${response?.data?.message}`);
-          setAlertType('error');
+          setAlertType("error");
         }
         setAlertOpen(true);
       })
@@ -130,6 +131,29 @@ export default function AddTrip({
       handleClose();
     }
   }, [resultEditTrip]);
+
+  // Predefined amounts based on currency type
+  const currencySuggestions = {
+    $: [5, 10, 20, 50, 100],
+    W: [1000, 5000, 10000, 50000, 100000],
+    R: [2000, 5000, 10000, 20000, 50000],
+  };
+
+  const handleChipClick = (amount) => {
+    setSelectedChip(amount); // Select the chip but don't add to input
+  };
+
+  const handleAddClick = () => {
+    if (selectedChip !== null) {
+      setMoney((prev) => (parseFloat(prev || 0) + selectedChip).toString());
+    }
+  };
+
+  const handleSubtractClick = () => {
+    if (selectedChip !== null) {
+      setMoney((prev) => Math.max(0, parseFloat(prev || 0) - selectedChip).toString());
+    }
+  };
 
   return (
     <React.Fragment>
@@ -160,6 +184,7 @@ export default function AddTrip({
               });
             } else {
               setValue(newValue);
+              setMoney(newValue.spend)
             }
           }}
           filterOptions={(options, params) => {
@@ -201,61 +226,73 @@ export default function AddTrip({
           )}
         />
 
-        <TextField
-          variant="standard"
-          type="text"
-          label="Spend"
-          color="primary"
-          value={money}
-          onChange={(e) => {
-            e.target.value = e.target.value.trim();
-            if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
-            setMoney(e.target.value);
-          }}
-          disabled={loading}
-        />
-
-        <Box display="flex" justifyContent="space-between" sx={{ mt: 2 }}>
-          <Button
-            onClick={() => handleTransaction("REDUCE")}
-            color="secondary"
-            variant="contained"
-            startIcon={loading && <CircularProgress size={20} />}
+        <Box display="flex" alignItems="center">
+          <TextField
+            variant="standard"
+            type="text"
+            label="Spend"
+            color="primary"
+            value={money}
+            onChange={(e) => {
+              e.target.value = e.target.value.trim();
+              if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
+              setMoney(e.target.value);
+            }}
             disabled={loading}
-            sx={{ flex: 1, mr: 1 }}
+            sx={{ flex: 1 }}
+          />
+          <IconButton
+            onClick={handleSubtractClick}
+            color="secondary"
+            disabled={loading || selectedChip === null}
           >
             <RemoveIcon />
-            Reduce
-          </Button>
-          <Button
-            onClick={() => handleTransaction("ADD")}
+          </IconButton>
+          <IconButton
+            onClick={handleAddClick}
+            color="primary"
+            disabled={loading || selectedChip === null}
+          >
+            <AddIcon />
+          </IconButton>
+        </Box>
+
+        <Box display="flex" flexWrap="wrap" sx={{ mt: 1 }}>
+          {currencySuggestions[currencyType]?.map((amount, index) => (
+            <Chip
+              key={index}
+              label={`${currencyType}${amount}`}
+              onClick={() => handleChipClick(amount)}
+              color={selectedChip === amount ? "primary" : "default"} // Highlight selected chip
+              sx={{ m: 0.5 }}
+            />
+          ))}
+        </Box>
+
+        <Box display="flex" justifyContent="space-between" sx={{ mt: 2 }}>
+        <Button
+            onClick={() => handleTransaction("UPDATE")}
             color="primary"
             variant="contained"
             startIcon={loading && <CircularProgress size={20} />}
             disabled={loading}
             sx={{ flex: 1, ml: 1 }}
           >
-            <AddIcon />
-            Add
+            <SaveIcon />
+            Save
           </Button>
         </Box>
       </Box>
 
       <Dialog open={open} onClose={loading ? null : handleClose}>
-        <form
-          onSubmit={handleSubmit}
-          style={{ backgroundColor: colors.primary[400] }}
-        >
-          <DialogTitle>Add a New Event</DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>New trip</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              Please fill out the new event's details.
-            </DialogContentText>
             <TextField
               autoFocus
               margin="dense"
               id="trp_name"
-              color="info"
+              color="secondary"
               value={dialogValue.trp_name}
               onChange={(event) =>
                 setDialogValue({
@@ -271,23 +308,25 @@ export default function AddTrip({
             <TextField
               margin="dense"
               id="spended"
-              color="info"
+              color="secondary"
               value={dialogValue.spended}
-              onChange={(event) =>
+              onChange={(e) => {
+                e.target.value = e.target.value.trim();
+                if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
                 setDialogValue({
                   ...dialogValue,
-                  spended: event.target.value,
-                })
-              }
+                  spended: e.target.value,
+                });
+              }}
               label="Spend"
-              type="number"
+              type="text"
               variant="standard"
               fullWidth
             />
           </DialogContent>
           <DialogActions>
             <Button
-              color="info"
+              color="inherit"
               variant="outlined"
               onClick={loading ? null : handleClose}
               disabled={loading}
@@ -295,7 +334,7 @@ export default function AddTrip({
               Cancel
             </Button>
             <Button
-              color="info"
+              color="primary"
               variant="contained"
               type="submit"
               startIcon={loading && <CircularProgress size={20} />}

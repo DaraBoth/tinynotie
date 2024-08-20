@@ -31,7 +31,7 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
             opacity: 0.9,
           },
           "& .MuiCircularProgress-root": {
-            color: colors.blueAccent[500], // Make loading indicator more visible
+            color: colors.blueAccent[400], // Make loading indicator more visible
           },
         }}
       >
@@ -45,7 +45,7 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
           pageSize={pageSize}
           onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
           rowsPerPageOptions={[5, 10, 20, 50]}
-          initialState={{ pinnedColumns: { left: ['name'] } }}
+          initialState={{ pinnedColumns: { left: ['Name'] } }}
           columnBuffer={5}
           columnResizeMode="onResize"
           resizable
