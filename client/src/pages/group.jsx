@@ -43,17 +43,20 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const [openDeleteMemberDialog, setOpenDeleteMemberDialog] = useState(false);
   const currencyType = groupInfo.currency;
 
+  // Fetch trips and members on component mount or when groupInfo changes
   useEffect(() => {
     triggerTrip({ group_id: groupInfo.group_id });
     triggerMember({ group_id: groupInfo.group_id });
   }, [triggerTrip, triggerMember, groupInfo.group_id]);
 
+  // Update trip state when data is fetched
   useEffect(() => {
     if (resultTrip?.data?.status) {
       setTrip(resultTrip.data.data);
     }
   }, [resultTrip]);
 
+  // Update member state when data is fetched
   useEffect(() => {
     if (resultMember?.data?.status) {
       setMember(resultMember.data.data);
@@ -108,7 +111,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
         headerName: "Updated Date",
         width: 150,
         valueGetter: ({ value }) => {
-          return formatTimeDifference(value)
+          return formatTimeDifference(value);
         },
       },
       { field: "create_date", headerName: "Created Date", width: 150 },
@@ -150,6 +153,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                 rows={newData || []}
                 columns={columns || []}
                 height={isNonMobile ? "80vh" : "calc(10 * 50px)"}
+                isLoading={!resultTrip.isSuccess} // Loading state for trips
               />
             </Paper>
           </Grid>
@@ -162,12 +166,13 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                     rows={Array.isArray(trip) ? trip : []}
                     columns={tripColumns || []}
                     height="calc(85vh / 2)"
+                    isLoading={!resultMember.isSuccess} // Loading state for members
                   />
                 </Paper>
               </Grid>
               <Grid item xs={6}>
                 <Paper sx={{ height: "100%" }}>
-                  <TotalSpendTable info={info} />
+                  <TotalSpendTable info={info} isLoading={ !resultMember.isSuccess || !resultTrip.isSuccess }/>
                 </Paper>
               </Grid>
             </Grid>
@@ -245,7 +250,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   );
 }
 
-const TotalSpendTable = ({ info }) => {
+const TotalSpendTable = ({ info, isLoading }) => {
   const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
   const rows = [
     { id: 1, label: "Total Paid", value: totalPaid },
@@ -264,6 +269,7 @@ const TotalSpendTable = ({ info }) => {
       columns={columns}
       height="calc(70vh / 2)"
       hideFooter={true}
+      isLoading={isLoading}
     />
   );
 };

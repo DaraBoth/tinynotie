@@ -3,7 +3,7 @@ import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../theme";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 
-function TableComponent({ rows, columns, height , hideFooter=false}) {
+function TableComponent({ rows, columns, height, hideFooter = false, isLoading = false }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
@@ -26,19 +26,27 @@ function TableComponent({ rows, columns, height , hideFooter=false}) {
           "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
             color: `${colors.blueAccent[500]} !important`,
           },
+          "& .MuiDataGrid-overlay": {
+            backgroundColor: colors.primary[400], // Ensure background matches your theme
+            opacity: 0.9,
+          },
+          "& .MuiCircularProgress-root": {
+            color: colors.blueAccent[500], // Make loading indicator more visible
+          },
         }}
       >
         <DataGrid
           density={isNonMobile ? "standard" : "compact"}
           rows={rows}
           columns={columns}
+          loading={isLoading} // Use the loading prop
           components={{ Toolbar: GridToolbar }}
           disableSelectionOnClick
           pageSize={pageSize}
           onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
           rowsPerPageOptions={[5, 10, 20, 50]}
           initialState={{ pinnedColumns: { left: ['name'] } }}
-          columnBuffer={5}  // Improve performance on resizing
+          columnBuffer={5}
           columnResizeMode="onResize"
           resizable
           hideFooter={hideFooter}

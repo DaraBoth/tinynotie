@@ -14,6 +14,7 @@ import {
   Button,
   Snackbar,
   Alert,
+  Skeleton,
 } from "@mui/material";
 import { useDeleteGroupMutation, useGetGroupMutation } from "../api/api";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   const [triggerUser, resultUser] = useGetGroupMutation();
   const [triggerDeleteGroup, resultGroup] = useDeleteGroupMutation();
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true); // Add loading state
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
@@ -52,6 +54,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   useEffect(() => {
     if (resultUser.data?.status) {
       setData(resultUser.data.data);
+      setLoading(false); // Stop loading when data is fetched
     }
   }, [resultUser.data]);
 
@@ -75,13 +78,14 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
 
   const handleDeleteNote = async (noteId) => {
     const response = await triggerDeleteGroup({ group_id: noteId });
-    if(response.data.status){
+    if (response.data.status) {
       setData((prevData) => prevData.filter((note) => note.id !== noteId));
       setOpenDeleteDialog(false);
       setNoteToDelete(null);
     }
     setSnackbarMessage(response.data.message);
     setSnackbarSuccess(response.data.status);
+    setOpenSnackbar(true);
   };
 
   const confirmDeleteNote = (noteId) => {
@@ -143,23 +147,59 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: gridColItem,
+          gridTemplateColumns: loading?  gridColItem : (data.length === 0 ? "repeat(1,1fr)" : gridColItem) ,
           gridAutoFlow: "dense",
           gap: "20px",
         }}
       >
-        {data.length === 0 ? (
-          <Typography
-            variant="h6"
-            width="100%"
-            height="50vh"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            color="text.secondary"
+        {loading ? (
+          // Skeleton loading effect
+          Array.from(new Array(10)).map((_, index) => (
+            <Skeleton
+              key={index}
+              variant="rounded"
+              width={"cal(100%/4)"}
+              height={90}
+              sx={{ borderRadius: "12px" }}
+            />
+          ))
+        ) : data.length === 0 ? (
+          <Paper
+            elevation={3}
+            sx={{
+              width: "100%",
+              height: "50vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
+              padding: "20px",
+              textAlign: "center",
+              borderRadius: "12px",
+              border: `1px solid ${colors.blueAccent[600]}`,
+            }}
           >
-            No content
-          </Typography>
+            <Typography variant="h6" color="text.secondary">
+              No notes found!
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Click the button below to create your first note.
+            </Typography>
+            <Fab
+              color="primary"
+              aria-label="add"
+              onClick={handleCreateGroup}
+              sx={{
+                marginTop: "20px",
+                backgroundColor: colors.blueAccent[500],
+                "&:hover": {
+                  backgroundColor: colors.blueAccent[700],
+                },
+              }}
+            >
+              <AddIcon />
+            </Fab>
+          </Paper>
         ) : (
           data
             .slice()
@@ -272,13 +312,16 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbarSuccess ? "success" : "error"} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSuccess ? "success" : "error"}
+          sx={{ width: "100%" }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>
-
     </Box>
   );
 }
