@@ -7,7 +7,7 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
-  const [pageSize, setPageSize] = useState(isNonMobile ? 5 : 10);
+  const [pageSize, setPageSize] = useState(10);
 
   return (
     <Box>

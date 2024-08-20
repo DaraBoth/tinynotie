@@ -233,7 +233,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                       height={
                         isNonMobile
                           ? "calc(85vh / 2 + 92px)"
-                          : "calc(10 * 20px)"
+                          : "calc(10 * 35px)"
                       }
                       isLoading={!resultMember.isSuccess} // Loading state for members
                       sx={{
