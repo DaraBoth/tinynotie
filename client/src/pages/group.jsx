@@ -3,20 +3,23 @@ import {
   Box,
   Paper,
   Grid,
-  Button,
+  Typography,
   useTheme,
   useMediaQuery,
-  IconButton,
   Tooltip,
-  Fab,
   SpeedDial,
   SpeedDialIcon,
   SpeedDialAction,
+  Card,
+  CardContent,
+  Divider,
+  IconButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PeopleIcon from "@mui/icons-material/People";
+import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import Topbar from "../global/Topbar";
 import TableComponent from "../component/table";
 import CustomDialog from "../component/CustomDialog";
@@ -26,14 +29,14 @@ import ToolTip from "../component/EditMember";
 import AddTrip from "../component/EditTrip";
 import EditTripMem from "../component/editTripMem";
 import DeleteMember from "../component/deleteMember";
-import currency from "currency.js";
 import { formatTimeDifference } from "../help/time";
+import currency from "currency.js";
 
 export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [triggerTrip, resultTrip] = useGetTripMutation();
   const isNonMobile = useMediaQuery("(min-width:600px)");
+  const [triggerTrip, resultTrip] = useGetTripMutation();
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
   const [trip, setTrip] = useState([]);
@@ -74,28 +77,38 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
       {
         field: "id",
         headerName: "ID",
-        width: 70,
-        align: "left",
-        headerAlign: "left",
+        width: 50,
+        headerAlign: "center",
+        align: "center",
       },
-      { field: "trp_name", headerName: "Trip Name", width: 150 },
+      {
+        field: "trp_name",
+        headerName: "Trip Name",
+        width: 100,
+        headerAlign: "center",
+        align: "center",
+      },
       {
         field: "spend",
-        headerName: "Spend",
+        headerName: "Total Spend",
+        headerAlign: "center",
+        align: "center",
         width: 100,
         valueGetter: ({ value }) => {
-          return formatMoney(value, 2, currencyType);
+          return currency(value).format();
         },
       },
       {
         field: "mem_id",
-        headerName: "Joined",
-        width: 150,
+        headerName: "Members",
+        headerAlign: "center",
+        align: "center",
+        width: 120,
         renderCell: (params) => {
           const joinedMemId = JSON.parse(params.value);
           const memberNames = member
             .filter((m) => joinedMemId.includes(m.id))
-            .map((m) => m.name)
+            .map((m) => m.mem_name)
             .join(", ");
           return (
             <Tooltip title={memberNames || "No members"}>
@@ -108,13 +121,13 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
       },
       {
         field: "update_dttm",
-        headerName: "Updated Date",
-        width: 150,
+        headerName: "Last Updated",
+        width: 100,
         valueGetter: ({ value }) => {
           return formatTimeDifference(value);
         },
       },
-      { field: "create_date", headerName: "Created Date", width: 150 },
+      { field: "create_date", headerName: "Creation Date", width: 100 },
     ],
     [member, currencyType]
   );
@@ -122,7 +135,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const actions = [
     {
       icon: <AddIcon />,
-      name: "Edit Trip",
+      name: "Add Trip",
       onClick: () => setOpenAddTripDialog(true),
     },
     {
@@ -147,38 +160,132 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
       <Topbar user={user} groupInfo={groupInfo} setGroupInfo={setGroupInfo} />
       <Box sx={{ padding: "20px" }}>
         <Grid container spacing={2} sx={{ height: "100%" }}>
+          {/* Members Section */}
           <Grid item xs={12} md={8}>
-            <Paper sx={{ height: "100%" }}>
-              <TableComponent
-                rows={newData || []}
-                columns={columns || []}
-                height={isNonMobile ? "80vh" : "calc(10 * 50px)"}
-                isLoading={!resultTrip.isSuccess} // Loading state for trips
-              />
-            </Paper>
+            <Card
+              sx={{
+                height: isNonMobile ? "calc(100vh - 130px)" : "calc(10 * 50px)",
+                backgroundColor: colors.grey[50],
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: "flex", flexDirection: "row" }}>
+                  <StickyNote2Icon sx={{ marginRight: 1 }} />
+                  <Typography
+                    variant="h6"
+                    color={colors.primary.main}
+                    gutterBottom
+                  >
+                    Group Member Contributions
+                  </Typography>
+                </Box>
+                <Divider sx={{ marginBottom: 2 }} />
+                <TableComponent
+                  rows={newData || []}
+                  columns={columns || []}
+                  height={
+                    isNonMobile ? "calc(90vh - 126px)" : "calc(10 * 41px)"
+                  }
+                  isLoading={!resultTrip.isSuccess} // Loading state for trips
+                  sx={{
+                    "& .MuiDataGrid-root": {
+                      border: "none",
+                    },
+                    "& .MuiDataGrid-cell": {
+                      padding: "8px",
+                      fontSize: "14px",
+                    },
+                    "& .MuiDataGrid-columnHeaders": {
+                      backgroundColor: colors.primary.light,
+                      color: colors.primary.contrastText,
+                      fontSize: "16px",
+                    },
+                    "& .MuiDataGrid-footerContainer": {
+                      justifyContent: "center",
+                      borderTop: "none",
+                    },
+                  }}
+                />
+              </CardContent>
+            </Card>
           </Grid>
 
+          {/* Trip Section */}
           <Grid item xs={12} md={4}>
             <Grid container direction="column" spacing={2}>
               <Grid item xs={6}>
-                <Paper sx={{ height: "100%" }}>
-                  <TableComponent
-                    rows={Array.isArray(trip) ? trip : []}
-                    columns={tripColumns || []}
-                    height="calc(85vh / 2)"
-                    isLoading={!resultMember.isSuccess} // Loading state for members
-                  />
-                </Paper>
+                <Card sx={{ height: "100%", backgroundColor: colors.grey[50] }}>
+                  <CardContent>
+                    <Box sx={{ display: "flex", flexDirection: "row" }}>
+                      <StickyNote2Icon sx={{ marginRight: 1 }} />
+                      <Typography
+                        variant="h6"
+                        color={colors.primary.main}
+                        gutterBottom
+                      >
+                        Recent Trips
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ marginBottom: 2 }} />
+                    <TableComponent
+                      rows={Array.isArray(trip) ? trip : []}
+                      columns={tripColumns || []}
+                      height={
+                        isNonMobile
+                          ? "calc(85vh / 2 + 92px)"
+                          : "calc(10 * 20px)"
+                      }
+                      isLoading={!resultMember.isSuccess} // Loading state for members
+                      sx={{
+                        "& .MuiDataGrid-root": {
+                          border: "none",
+                        },
+                        "& .MuiDataGrid-cell": {
+                          padding: "8px",
+                          fontSize: "14px",
+                        },
+                        "& .MuiDataGrid-columnHeaders": {
+                          backgroundColor: colors.primary.light,
+                          color: colors.primary.contrastText,
+                          fontSize: "16px",
+                        },
+                        "& .MuiDataGrid-footerContainer": {
+                          justifyContent: "center",
+                          borderTop: "none",
+                        },
+                      }}
+                    />
+                  </CardContent>
+                </Card>
               </Grid>
               <Grid item xs={6}>
-                <Paper sx={{ height: "100%" }}>
-                  <TotalSpendTable info={info} isLoading={ !resultMember.isSuccess || !resultTrip.isSuccess }/>
-                </Paper>
+                <Card sx={{ height: "100%", backgroundColor: colors.grey[50] }}>
+                  <CardContent>
+                    <Box sx={{ display: "flex", flexDirection: "row" }}>
+                      <StickyNote2Icon sx={{ marginRight: 1 }} />
+                      <Typography
+                        variant="h6"
+                        color={colors.primary.main}
+                        gutterBottom
+                      >
+                        Total Spend Summary
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ marginBottom: 2 }} />
+                    <TotalSpendTable
+                      info={info}
+                      isLoading={
+                        !resultMember.isSuccess || !resultTrip.isSuccess
+                      }
+                    />
+                  </CardContent>
+                </Card>
               </Grid>
             </Grid>
           </Grid>
         </Grid>
 
+        {/* Dialogs */}
         <CustomDialog
           open={openToolTipDialog}
           onClose={() => setOpenToolTipDialog(false)}
@@ -252,24 +359,46 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
 
 const TotalSpendTable = ({ info, isLoading }) => {
   const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
-  const rows = [
-    { id: 1, label: "Total Paid", value: totalPaid },
-    { id: 2, label: "Total UnPaid", value: totalUnPaid },
-    { id: 3, label: "Total Spend", value: totalSpend },
-    { id: 4, label: "Total Remain", value: totalRemain },
-  ];
+  const rows = [{ id: 1, totalPaid, totalRemain, totalSpend, totalUnPaid }];
   const columns = [
-    { field: "label", headerName: "Description", width: 150 },
-    { field: "value", headerName: "Amount", width: 150 },
+    {
+      field: "totalPaid",
+      headerName: "Paid",
+      width: 100 + totalPaid.length,
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "totalRemain",
+      headerName: "UnPaid",
+      width: 100 + totalRemain.length,
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "totalSpend",
+      headerName: "Spend",
+      width: 100 + totalSpend.length,
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "totalUnPaid",
+      headerName: "Remain",
+      width: 100 + totalUnPaid.length,
+      headerAlign: "center",
+      align: "center",
+    },
   ];
 
   return (
     <TableComponent
       rows={rows}
       columns={columns}
-      height="calc(70vh / 2)"
+      height="calc(70vh / 2 - 209px)"
       hideFooter={true}
       isLoading={isLoading}
+      addToolBar={false}
     />
   );
 };
@@ -381,6 +510,7 @@ function functionRenderColumns(rows) {
       headerName: title,
       headerAlign: "center",
       align: "center",
+      minWidth: 110 + key[i].length,
     };
     if (title === "Name") {
       newColumns[i] = {

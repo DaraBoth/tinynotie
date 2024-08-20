@@ -66,7 +66,7 @@ export default function Login({ setUser, setSecret }) {
         setOpenSnackbar(true);
     }
   }, 500);
- 
+
   return (
     <Box
       sx={{
@@ -76,6 +76,10 @@ export default function Login({ setUser, setSecret }) {
         justifyContent: 'center',
         alignItems: 'center',
         padding: 3,
+        // background: 'linear-gradient(to right, #e66465, #9198e5)', // Gradient background
+        // backgroundImage: 'url(/path/to/your/background-image.jpg)', // Optional background image
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       <Formik
@@ -95,13 +99,14 @@ export default function Login({ setUser, setSecret }) {
           <form onSubmit={handleSubmit}>
             <Box
               sx={{
-                maxWidth: isNonMobile ? '400px' : '100%',
+                maxWidth: '500px', // Wider input fields
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,
-                padding: 3,
-                borderRadius: '8px',
+                padding: 4,
+                borderRadius: '12px', // More rounded corners
                 backgroundColor: colors.grey[50],
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)', // Soft shadow
               }}
             >
               <Typography variant="h4" color={colors.primary.main} textAlign="center" fontWeight="bold">
@@ -124,6 +129,7 @@ export default function Login({ setUser, setSecret }) {
                     </InputAdornment>
                   ),
                 }}
+                sx={{ fontSize: '18px' }} // Increased font size
               />
               <TextField
                 fullWidth
@@ -149,6 +155,7 @@ export default function Login({ setUser, setSecret }) {
                     </InputAdornment>
                   ),
                 }}
+                sx={{ fontSize: '18px' }} // Increased font size
               />
               <Button
                 variant="contained"
@@ -157,10 +164,10 @@ export default function Login({ setUser, setSecret }) {
                 fullWidth
                 sx={{
                   mt: 2,
-                  height: '40px',
+                  height: '50px', // Increased button height
                   fontWeight: 'bold',
-                  fontSize: '16px',
-                  borderRadius: '8px',
+                  fontSize: '18px',
+                  borderRadius: '10px', // Softer button corners
                 }}
                 disabled={loading}
                 startIcon={loading && <CircularProgress size="1rem" />}

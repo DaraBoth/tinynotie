@@ -3,7 +3,7 @@ import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../theme";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 
-function TableComponent({ rows, columns, height, hideFooter = false, isLoading = false }) {
+function TableComponent({ rows, columns, height, hideFooter = false, isLoading = false, addToolBar = true }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
@@ -40,7 +40,7 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
           rows={rows}
           columns={columns}
           loading={isLoading} // Use the loading prop
-          components={{ Toolbar: GridToolbar }}
+          components={addToolBar && { Toolbar: GridToolbar }}
           disableSelectionOnClick
           pageSize={pageSize}
           onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
