@@ -371,6 +371,12 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
     await client.query('BEGIN');
 
     // Delete the group itself
+    const deleteTripQuery = `
+      DELETE FROM trp_infm CASCADE WHERE group_id = $1;
+    `;
+    await client.query(deleteTripQuery, [group_id]);
+
+    // Delete the group itself
     const deleteGroupQuery = `
       DELETE FROM grp_infm CASCADE WHERE id = $1;
     `;
