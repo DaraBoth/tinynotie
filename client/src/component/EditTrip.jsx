@@ -196,7 +196,7 @@ export default function AddTrip({
               color="primary"
               {...params}
               variant="standard"
-              label="Select or Add Event"
+              label="Select or Add Trip"
             />
           )}
         />

@@ -1,102 +1,123 @@
+import React, { useState, useEffect } from "react";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
-  Button,
   FormControl,
   InputLabel,
-  MenuItem,
   Select,
-  Typography,
+  MenuItem,
+  Button,
+  CircularProgress,
   useTheme,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { tokens } from "../theme";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { rspWidth } from "../responsive";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { tokens } from "../theme";
 import { useDeleteMemberMutation } from "../api/api";
+import CustomAlert from "../component/CustomAlert";
 
 export default function DeleteMember({ triggerMember, member, group_id }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [deleteName, setDeleteName] = useState();
-  const [triggerDeleteMember, ResultDeleteMember] = useDeleteMemberMutation();
-  const [expanded, setExpanded] = React.useState(false);
 
-  const handleChangeExpand = (panel) => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false);
-  };
+  // State management
+  const [deleteName, setDeleteName] = useState("");
+  const [triggerDeleteMember, { isLoading, isSuccess, isError, error }] = useDeleteMemberMutation();
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState("success");
 
-  const handleFont = () => {
-    return rspWidth("1.2rem", "1rem", "1rem");
-  };
-
+  // Handle change in member selection
   const handleChange = (event) => {
     setDeleteName(event.target.value);
   };
 
+  // Handle delete member action
   const handleDelete = () => {
     if (deleteName) {
-      triggerDeleteMember(deleteName);
-      setDeleteName("")
+      triggerDeleteMember(deleteName)
+        .then((response) => {
+          if (response?.data?.status) {
+            setAlertMessage("Successfully deleted the member.");
+            setAlertType("success");
+            triggerMember({ group_id });
+          } else {
+            setAlertMessage(response?.data?.message || "Failed to delete the member.");
+            setAlertType("error");
+          }
+          setAlertOpen(true);
+        })
+        .catch(() => {
+          setAlertMessage("An error occurred. Please try again.");
+          setAlertType("error");
+          setAlertOpen(true);
+        })
+        .finally(() => {
+          setDeleteName(""); // Reset member selection
+        });
     }
   };
 
   useEffect(() => {
-    if (ResultDeleteMember.data?.status) {
+    if (isError) {
+      setAlertMessage(error?.data?.message || "Failed to delete the member.");
+      setAlertType("error");
+      setAlertOpen(true);
+    }
+    if (isSuccess) {
+      setAlertMessage("Successfully deleted the member.");
+      setAlertType("success");
+      setAlertOpen(true);
       triggerMember({ group_id });
     }
-  }, [ResultDeleteMember.data]);
+  }, [isError, isSuccess, error, triggerMember, group_id]);
 
   return (
-    <>
+    <React.Fragment>
       <Box
         display="grid"
-        gap="10px"
+        gap="20px"
         gridTemplateColumns="repeat(4, 1fr)"
         sx={{
+          marginTop: "5px",
           "& > div": { gridColumn: "span 4" },
         }}
       >
-        <FormControl>
-          <InputLabel variant="standard" color="info">
-            Pick a member
-          </InputLabel>
+        <FormControl variant="standard">
+          <InputLabel color="primary">Pick a member</InputLabel>
           <Select
             value={deleteName}
             onChange={handleChange}
-            label="trpNametoEdit"
-            variant="standard"
-            color="info"
+            label="Pick a member"
+            color="primary"
+            sx={{ minWidth: "300px" }}
           >
-            <MenuItem disabled={deleteName ? false : true} value={false}>
-              Pick a member
-            </MenuItem>
             {member?.map((item) => (
-              <MenuItem
-                key={item.id}
-                value={item.id}
-                id={item.id}
-                title={item.mem_name}
-              >
+              <MenuItem key={item.id} value={item.id}>
                 {item.mem_name}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
+
         <Button
           sx={{ gridColumn: "span 4" }}
           onClick={handleDelete}
           type="button"
-          variant="contained"
           color="error"
+          variant="contained"
+          startIcon={isLoading ? <CircularProgress size="1rem" /> : <DeleteIcon />}
+          disabled={isLoading || !deleteName}
         >
-          Delete member&nbsp;
-          <DeleteIcon />
+          {isLoading ? "Deleting..." : "Delete Member"}
         </Button>
       </Box>
-    </>
+
+      {/* Custom Alert for feedback */}
+      <CustomAlert
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        message={alertMessage}
+        type={alertType}
+      />
+    </React.Fragment>
   );
 }

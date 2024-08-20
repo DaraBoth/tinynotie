@@ -10,6 +10,7 @@ import Home from './pages/home';
 import CreateGroup from './pages/creategroup';
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import ThemeSwitcher from './component/ThemeSwitcher';
 
 function App() {
   const [theme, colorMode, setMode] = useMode();
@@ -98,7 +99,7 @@ const ColorMode = ({theme, colorMode, colors}) => {
     <Box
       position={'fixed'}
       bottom={'15px'}
-      right={'15px'}
+      left={'15px'}
       zIndex={5}
       sx={{
         borderRadius: '50%',
