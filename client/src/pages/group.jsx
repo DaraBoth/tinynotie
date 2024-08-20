@@ -26,7 +26,7 @@ import {
   useGetTripMutation,
 } from "../api/api";
 import ToolTip from "../component/EditMember";
-import AddTrip from "../component/AddTrip";
+import AddTrip from "../component/EditTrip";
 import EditTripMem from "../component/editTripMem";
 import DeleteMember from "../component/deleteMember";
 import currency from "currency.js";
