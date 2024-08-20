@@ -25,8 +25,8 @@ import {
   useGetMemberMutation,
   useGetTripMutation,
 } from "../api/api";
-import ToolTip from "../component/toolTip";
-import AddTrip from "../component/addtrip";
+import ToolTip from "../component/EditMember";
+import AddTrip from "../component/AddTrip";
 import EditTripMem from "../component/editTripMem";
 import DeleteMember from "../component/deleteMember";
 import currency from "currency.js";
@@ -132,7 +132,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
         <CustomDialog
           open={openToolTipDialog}
           onClose={() => setOpenToolTipDialog(false)}
-          title="Tool Tip"
+          title="Edit Member"
         >
           <ToolTip
             triggerMember={triggerMember}

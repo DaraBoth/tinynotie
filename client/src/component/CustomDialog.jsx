@@ -7,7 +7,7 @@ const CustomDialog = ({ open, onClose, title, children }) => {
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>{children}</DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button color='secondary' onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
   );

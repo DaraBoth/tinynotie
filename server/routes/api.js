@@ -283,14 +283,53 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
 
 // Edit Member by Member ID
 router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
-  const { user_id, paid } = req.body;
+  const { user_id, paid, type } = req.body;
+  const client = await pool.connect(); // Get a connection client
 
   try {
-    const sql = `UPDATE member_infm SET paid = $1 WHERE id = $2;`;
-    await pool.query(sql, [paid, user_id]);
+    await client.query('BEGIN'); // Start a transaction
+
+    // Lock the row for the member to prevent concurrent updates
+    const selectForUpdateSql = `SELECT paid FROM member_infm WHERE id = $1 FOR UPDATE;`;
+    const result = await client.query(selectForUpdateSql, [user_id]);
+
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ status: false, message: "Member not found!" });
+    }
+
+    const currentPaid = result.rows[0].paid;
+    let newPaid;
+
+    // Determine the new paid value based on the type
+    if (type === "ADD") {
+      newPaid = currentPaid + paid;
+    } else if (type === "REDUCE") {
+      newPaid = currentPaid - paid;
+
+      // Ensure the new paid value is not below zero
+      if (newPaid < 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ status: false, message: "Cannot reduce paid amount below 0" });
+      }
+    } else {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ status: false, message: "Invalid type specified. Use 'ADD' or 'REDUCE'." });
+    }
+
+    // Update the paid value in the database
+    const updateSql = `UPDATE member_infm SET paid = $1 WHERE id = $2;`;
+    await client.query(updateSql, [newPaid, user_id]);
+
+    await client.query('COMMIT'); // Commit the transaction
     res.send({ status: true, message: "Update successful!" });
+
   } catch (error) {
-    handleError(error, res);
+    await client.query('ROLLBACK'); // Rollback the transaction on error
+    console.error("error", error);
+    res.status(500).json({ status: false, message: "An error occurred while updating the member", error: error.message });
+  } finally {
+    client.release(); // Release the client back to the pool
   }
 });
 

@@ -8,34 +8,26 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import {
-  usePostAddTripMutation,
-  usePostEditTripMutation,
+  usePostAddMemberMutation,
+  usePostEditMemberMutation,
 } from "../api/api";
 import {
   Box,
   CircularProgress,
-  Typography,
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { tokens } from "../theme";
-import CustomAlert from "./CustomAlert"; // Import the CustomAlert component
-import moment from "moment"
+import CustomAlert from "../component/CustomAlert"; // Import CustomAlert component
 
 const filter = createFilterOptions();
 
-export default function AddTrip({
-  triggerTrip,
-  member,
-  secret,
-  trip,
-  group_id,
-}) {
+export default function EditMember({ triggerMember, member, group_id }) {
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
-  const [triggerAddTrip, resultAddTrip] = usePostAddTripMutation();
-  const [triggerEditTrip, resultEditTrip] = usePostEditTripMutation();
+  const [triggerAddMember, resultAddMember] = usePostAddMemberMutation();
+  const [triggerEditMember, resultEditMember] = usePostEditMemberMutation();
   const [money, setMoney] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(false);
@@ -46,8 +38,8 @@ export default function AddTrip({
 
   const handleClose = () => {
     setDialogValue({
-      trp_name: "",
-      spended: "",
+      mem_name: "",
+      paid: "",
     });
     setValue("");
     setMoney("");
@@ -55,28 +47,27 @@ export default function AddTrip({
   };
 
   const [dialogValue, setDialogValue] = React.useState({
-    trp_name: "",
-    spended: "",
+    mem_name: "",
+    paid: "",
   });
 
   const handleTransaction = (type) => {
-    if (!!value?.trp_name && !isNaN(parseFloat(money))) {
+    if (!!value?.id && !isNaN(parseFloat(money))) {
       setLoading(true);
       const adjustedMoney = parseFloat(money);
 
-      triggerEditTrip({
-        trp_name: value.trp_name,
-        spend: adjustedMoney,
+      triggerEditMember({
+        user_id: value.id,
+        paid: adjustedMoney,
         group_id,
-        update_dttm: moment().format("YYYY-MM-DD HH:mm:ss"),
-        type,  // "ADD" or "REDUCE"
+        type, // "ADD" or "REDUCE"
       })
         .then((response) => {
           if (response?.data?.status) {
-            setAlertMessage(response?.data?.message);
+            setAlertMessage('Transaction successful!');
             setAlertType('success');
           } else {
-            setAlertMessage(response?.data?.message);
+            setAlertMessage(`Transaction failed: ${response?.data?.message}`);
             setAlertType('error');
           }
           setAlertOpen(true);
@@ -85,6 +76,7 @@ export default function AddTrip({
           setLoading(false);
           setValue(null);
           setMoney("");
+          triggerMember({ group_id });
         });
     }
   };
@@ -92,23 +84,17 @@ export default function AddTrip({
   const handleSubmit = (event) => {
     event.preventDefault();
     setLoading(true);
-    triggerAddTrip({
-      trp_name: dialogValue.trp_name,
-      spend: parseFloat(dialogValue.spended),
-      admn_id: secret,
-      mem_id: JSON.stringify(convertMemKeyToArray(member, "id")),
-      description: "",
+    triggerAddMember({
+      mem_name: dialogValue.mem_name,
+      paid: parseFloat(dialogValue.paid),
       group_id,
-      create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
-      update_dttm: moment().format("YYYY-MM-DD HH:mm:ss"),
-      type: "ADD", // Default to ADD when creating a new trip
     })
       .then((response) => {
         if (response?.data?.status) {
-          setAlertMessage('Trip added successfully!');
+          setAlertMessage('Member added successfully!');
           setAlertType('success');
         } else {
-          setAlertMessage(`Failed to add trip: ${response?.data?.message}`);
+          setAlertMessage(`Failed to add member: ${response?.data?.message}`);
           setAlertType('error');
         }
         setAlertOpen(true);
@@ -116,20 +102,14 @@ export default function AddTrip({
       .finally(() => {
         setDialogValue({
           ...dialogValue,
-          trp_name: "",
-          spended: "",
+          mem_name: "",
+          paid: "",
         });
         handleClose();
         setLoading(false);
+        triggerMember({ group_id });
       });
   };
-
-  React.useEffect(() => {
-    if (resultEditTrip.data?.status) {
-      triggerTrip({ group_id });
-      handleClose();
-    }
-  }, [resultEditTrip]);
 
   return (
     <React.Fragment>
@@ -139,6 +119,7 @@ export default function AddTrip({
         gridTemplateColumns="repeat(4, 1fr)"
         sx={{
           "& > div": { gridColumn: "span 4" },
+          marginBottom: "10px",
         }}
       >
         <Autocomplete
@@ -148,15 +129,15 @@ export default function AddTrip({
               setTimeout(() => {
                 toggleOpen(true);
                 setDialogValue({
-                  trp_name: newValue,
-                  spended: "",
+                  mem_name: newValue,
+                  paid: "",
                 });
               });
             } else if (newValue && newValue.inputValue) {
               toggleOpen(true);
               setDialogValue({
-                trp_name: newValue.inputValue,
-                spended: "",
+                mem_name: newValue.inputValue,
+                paid: "",
               });
             } else {
               setValue(newValue);
@@ -168,13 +149,13 @@ export default function AddTrip({
             if (params.inputValue !== "") {
               filtered.push({
                 inputValue: params.inputValue,
-                trp_name: `Add "${params.inputValue}"`,
+                mem_name: `Add "${params.inputValue}"`,
               });
             }
 
             return filtered;
           }}
-          options={trip}
+          options={member}
           getOptionLabel={(option) => {
             if (typeof option === "string") {
               return option;
@@ -182,13 +163,13 @@ export default function AddTrip({
             if (option.inputValue) {
               return option.inputValue;
             }
-            return option.trp_name;
+            return option.mem_name;
           }}
           selectOnFocus
           clearOnBlur
           handleHomeEndKeys
           renderOption={(props, option) => (
-            <li {...props}>{option.trp_name}</li>
+            <li {...props}>{option.mem_name}</li>
           )}
           freeSolo
           renderInput={(params) => (
@@ -196,7 +177,7 @@ export default function AddTrip({
               color="primary"
               {...params}
               variant="standard"
-              label="Select or Add Event"
+              label="Edit Member"
             />
           )}
         />
@@ -204,7 +185,7 @@ export default function AddTrip({
         <TextField
           variant="standard"
           type="text"
-          label="Spend"
+          label="Paid"
           color="primary"
           value={money}
           onChange={(e) => {
@@ -246,40 +227,40 @@ export default function AddTrip({
           onSubmit={handleSubmit}
           style={{ backgroundColor: colors.primary[400] }}
         >
-          <DialogTitle>Add a New Event</DialogTitle>
+          <DialogTitle>Add a Member</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Please fill out the new event's details.
+              Please fill out the new member's details.
             </DialogContentText>
             <TextField
               autoFocus
               margin="dense"
-              id="trp_name"
+              id="mem_name"
               color="info"
-              value={dialogValue.trp_name}
+              value={dialogValue.mem_name}
               onChange={(event) =>
                 setDialogValue({
                   ...dialogValue,
-                  trp_name: event.target.value,
+                  mem_name: event.target.value,
                 })
               }
-              label="Trip's Name"
+              label="Member's Name"
               type="text"
               variant="standard"
               fullWidth
             />
             <TextField
               margin="dense"
-              id="spended"
+              id="paid"
               color="info"
-              value={dialogValue.spended}
+              value={dialogValue.paid}
               onChange={(event) =>
                 setDialogValue({
                   ...dialogValue,
-                  spended: event.target.value,
+                  paid: event.target.value,
                 })
               }
-              label="Spend"
+              label="Paid"
               type="number"
               variant="standard"
               fullWidth
@@ -316,12 +297,4 @@ export default function AddTrip({
       />
     </React.Fragment>
   );
-}
-
-function convertMemKeyToArray(member, key) {
-  let newArray = [];
-  for (let i in member) {
-    newArray[i] = member[i][key];
-  }
-  return newArray;
 }
