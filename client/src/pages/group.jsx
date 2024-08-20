@@ -95,7 +95,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
         align: "center",
         width: 100,
         valueGetter: ({ value }) => {
-          return currency(value ,{ symbol: currencyType }).format();
+          return currency(value, { symbol: currencyType }).format();
         },
       },
       {
@@ -228,7 +228,14 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                     </Box>
                     <Divider sx={{ marginBottom: 2 }} />
                     <TableComponent
-                      rows={Array.isArray(trip) ? trip : []}
+                      rows={
+                        Array.isArray(trip)
+                          ? trip.map((trp,index) => ({
+                              ...trp,
+                              id: index+1,
+                            }))
+                          : []
+                      }
                       columns={tripColumns || []}
                       height={
                         isNonMobile
