@@ -126,11 +126,11 @@ export default function EditTrip({
   };
 
   React.useEffect(() => {
-    if (resultEditTrip.data?.status) {
+    if (resultEditTrip.data?.status || resultAddTrip.data?.status) {
       triggerTrip({ group_id });
       handleClose();
     }
-  }, [resultEditTrip]);
+  }, [resultEditTrip,resultAddTrip]);
 
   // Predefined amounts based on currency type
   const currencySuggestions = {

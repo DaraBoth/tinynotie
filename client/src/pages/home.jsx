@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   IconButton,
@@ -18,11 +18,60 @@ import {
 } from "@mui/material";
 import { useDeleteGroupMutation, useGetGroupMutation } from "../api/api";
 import { useNavigate } from "react-router-dom";
-import { tokens } from "../theme";
 import AddIcon from "@mui/icons-material/Add";
 import LogoutIcon from "@mui/icons-material/Logout";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { rspWidth } from "../responsive";
+import { tokens } from "../theme";
+
+function GroupCard({ item, onDelete, onClick }) {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        cursor: "pointer",
+        padding: "15px",
+        borderRadius: "12px",
+        border: `1px solid ${colors.blueAccent[600]}`,
+        transition: "transform 0.2s, box-shadow 0.2s",
+        "&:hover": {
+          transform: "scale(1.05)",
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
+        },
+        position: "relative",
+      }}
+      onClick={() => onClick(item)}
+    >
+      <Typography variant="h6" fontWeight="bold">
+        Title: {item.grp_name}
+      </Typography>
+      <Typography variant="body2" color="text.primary">
+        Currency: <span style={{ color: colors.grey[300] }}>{item.currency}</span>
+      </Typography>
+      <Typography variant="body2" color="text.primary">
+        Create Date: <span style={{ color: colors.grey[300] }}>{item.create_date}</span>
+      </Typography>
+      <IconButton
+        aria-label="delete"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(item.id);
+        }}
+        sx={{
+          position: "absolute",
+          top: 5,
+          right: 5,
+          color: colors.redAccent[500],
+        }}
+      >
+        <DeleteIcon />
+      </IconButton>
+    </Paper>
+  );
+}
 
 export default function Home({ user, setUser, secret, setGroupInfo }) {
   const theme = useTheme();
@@ -30,7 +79,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   const [triggerUser, resultUser] = useGetGroupMutation();
   const [triggerDeleteGroup, resultGroup] = useDeleteGroupMutation();
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
@@ -54,7 +103,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   useEffect(() => {
     if (resultUser.data?.status) {
       setData(resultUser.data.data);
-      setLoading(false); // Stop loading when data is fetched
+      setLoading(false);
     }
   }, [resultUser.data]);
 
@@ -94,13 +143,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   };
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        height: "100%",
-        padding: "10px",
-      }}
-    >
+    <Box sx={{ width: "100%", height: "100%", padding: "10px" }}>
       <Paper
         elevation={3}
         sx={{
@@ -109,12 +152,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
           borderRadius: "12px",
         }}
       >
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          marginBottom="20px"
-        >
+        <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom="20px">
           <Typography
             component="span"
             variant="h4"
@@ -126,15 +164,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
             {user && (
               <>
                 Hello{" "}
-                <span
-                  style={{
-                    color: colors.blueAccent[300],
-                    fontWeight: "700",
-                  }}
-                >
-                  {user}
-                </span>
-                !
+                <span style={{ color: colors.blueAccent[300], fontWeight: "700" }}>{user}</span>!
               </>
             )}
           </Typography>
@@ -147,127 +177,73 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: loading?  gridColItem : (data.length === 0 ? "repeat(1,1fr)" : gridColItem) ,
+          gridTemplateColumns: loading ? gridColItem : data.length === 0 ? "repeat(1,1fr)" : gridColItem,
           gridAutoFlow: "dense",
           gap: "20px",
         }}
       >
-        {loading ? (
-          // Skeleton loading effect
-          Array.from(new Array(10)).map((_, index) => (
-            <Skeleton
-              key={index}
-              variant="rounded"
-              width={"cal(100%/4)"}
-              height={90}
-              sx={{ borderRadius: "12px" }}
-            />
-          ))
-        ) : data.length === 0 ? (
-          <Paper
-            elevation={3}
-            sx={{
-              width: "100%",
-              height: "50vh",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              flexDirection: "column",
-              padding: "20px",
-              textAlign: "center",
-              borderRadius: "12px",
-              border: `1px solid ${colors.blueAccent[600]}`,
-            }}
-          >
-            <Typography variant="h6" color="text.secondary">
-              No notes found!
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Click the button below to create your first note.
-            </Typography>
-            <Fab
-              color="primary"
-              aria-label="add"
-              onClick={handleCreateGroup}
+        {loading
+          ? Array.from(new Array(10)).map((_, index) => (
+              <Skeleton
+                key={index}
+                variant="rounded"
+                width={"cal(100%/4)"}
+                height={90}
+                sx={{ borderRadius: "12px" }}
+              />
+            ))
+          : data.length === 0
+          ? (
+            <Paper
+              elevation={3}
               sx={{
-                marginTop: "20px",
-                backgroundColor: colors.blueAccent[500],
-                "&:hover": {
-                  backgroundColor: colors.blueAccent[700],
-                },
+                width: "100%",
+                height: "50vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "column",
+                padding: "20px",
+                textAlign: "center",
+                borderRadius: "12px",
+                border: `1px solid ${colors.blueAccent[600]}`,
               }}
             >
-              <AddIcon />
-            </Fab>
-          </Paper>
-        ) : (
-          data
-            .slice()
-            .reverse()
-            .map((item) => (
-              <Paper
-                key={item.id}
-                elevation={3}
+              <Typography variant="h6" color="text.secondary">
+                No notes found!
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Click the button below to create your first note.
+              </Typography>
+              <Fab
+                color="primary"
+                aria-label="add"
+                onClick={handleCreateGroup}
                 sx={{
-                  cursor: "pointer",
-                  padding: "15px",
-                  borderRadius: "12px",
-                  border: `1px solid ${colors.blueAccent[600]}`,
-                  transition: "transform 0.2s, box-shadow 0.2s",
+                  marginTop: "20px",
+                  backgroundColor: colors.blueAccent[500],
                   "&:hover": {
-                    transform: "scale(1.05)",
-                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
+                    backgroundColor: colors.blueAccent[700],
                   },
-                  position: "relative",
                 }}
-                onClick={() => handleGroupClick(item)}
               >
-                <Typography variant="h6" fontWeight="bold">
-                  Title: {item.grp_name}
-                </Typography>
-                <Typography
-                  component="span"
-                  variant="body2"
-                  color="text.primary"
-                  display="block"
-                >
-                  Currency:{" "}
-                  <span style={{ color: colors.grey[300] }}>
-                    {item.currency}
-                  </span>
-                </Typography>
-                <Typography
-                  component="span"
-                  variant="body2"
-                  color="text.primary"
-                  display="block"
-                >
-                  Create Date:{" "}
-                  <span style={{ color: colors.grey[300] }}>
-                    {item.create_date}
-                  </span>
-                </Typography>
-                <IconButton
-                  aria-label="delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    confirmDeleteNote(item.id);
-                  }}
-                  sx={{
-                    position: "absolute",
-                    top: 5,
-                    right: 5,
-                    color: colors.redAccent[500],
-                  }}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Paper>
-            ))
-        )}
+                <AddIcon />
+              </Fab>
+            </Paper>
+          )
+          : data
+              .slice()
+              .reverse()
+              .map((item) => (
+                <GroupCard
+                  key={item.id}
+                  item={item}
+                  onDelete={confirmDeleteNote}
+                  onClick={handleGroupClick}
+                />
+              ))}
       </Box>
 
-      {/* Floating Action Button for New Note */}
       <Fab
         color="primary"
         aria-label="add"
@@ -285,24 +261,14 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
         <AddIcon />
       </Fab>
 
-      {/* Confirm Delete Dialog */}
-      <Dialog
-        open={openDeleteDialog}
-        onClose={() => setOpenDeleteDialog(false)}
-      >
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete this note? This action cannot be
-            undone.
-          </Typography>
+          <Typography>Are you sure you want to delete this note? This action cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
-          <Button
-            onClick={() => handleDeleteNote(noteToDelete)}
-            color="secondary"
-          >
+          <Button onClick={() => handleDeleteNote(noteToDelete)} color="secondary">
             Delete
           </Button>
         </DialogActions>
@@ -314,11 +280,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbarSuccess ? "success" : "error"}
-          sx={{ width: "100%" }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSuccess ? "success" : "error"} sx={{ width: "100%" }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>

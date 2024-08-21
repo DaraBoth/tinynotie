@@ -7,6 +7,7 @@ import { Formik } from 'formik';
 import * as yup from "yup";
 import { useNavigate } from 'react-router-dom';
 import { useGetAllMemberMutation, usePostAddGroupMutation } from '../api/api';
+import moment from "moment"
 
 export default function CreateGroup({ secret, setGroupInfo }) {
   const isNonMobile = useMediaQuery("(min-width:600px)");
@@ -38,6 +39,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           grp_name,
           currency,
           status: 1,
+          create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
           member: JSON.stringify(newMember),
         }).unwrap();
         setShowSuccess(true);
