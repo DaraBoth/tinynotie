@@ -21,7 +21,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import SaveIcon from "@mui/icons-material/Save";
 import { tokens } from "../theme";
-import CustomAlert from "../component/CustomAlert"; // Import CustomAlert component
+import CustomAlert from "../component/CustomAlert";
 
 const filter = createFilterOptions();
 
@@ -34,8 +34,9 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
   const [loading, setLoading] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(false);
   const [alertMessage, setAlertMessage] = React.useState("");
-  const [alertType, setAlertType] = React.useState("success"); // success, error, warning, info
-  const [selectedChip, setSelectedChip] = React.useState(null); // State to track the selected chip
+  const [alertType, setAlertType] = React.useState("success"); 
+  const [selectedChip, setSelectedChip] = React.useState(null);
+  const [customAmount, setCustomAmount] = React.useState(""); // New state for custom amount
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -63,7 +64,7 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
         user_id: value.id,
         paid: adjustedMoney,
         group_id,
-        type, // "ADD" or "REDUCE"
+        type,
       })
         .then((response) => {
           if (response?.data?.status) {
@@ -79,7 +80,7 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
           setLoading(false);
           setValue(null);
           setMoney("");
-          setSelectedChip(null); // Reset selected chip
+          setSelectedChip(null);
           triggerMember({ group_id });
         });
     }
@@ -122,18 +123,20 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
   };
 
   const handleChipClick = (amount) => {
-    setSelectedChip(amount); // Select the chip but don't add to input
+    setSelectedChip(amount);
   };
 
   const handleAddClick = () => {
-    if (selectedChip !== null) {
-      setMoney((prev) => (parseFloat(prev || 0) + selectedChip).toString());
+    const amount = selectedChip !== null ? selectedChip : parseFloat(customAmount || 0);
+    if (!isNaN(amount)) {
+      setMoney((prev) => (parseFloat(prev || 0) + amount).toString());
     }
   };
 
   const handleSubtractClick = () => {
-    if (selectedChip !== null) {
-      setMoney((prev) => Math.max(0, parseFloat(prev || 0) - selectedChip).toString());
+    const amount = selectedChip !== null ? selectedChip : parseFloat(customAmount || 0);
+    if (!isNaN(amount)) {
+      setMoney((prev) => Math.max(0, parseFloat(prev || 0) - amount).toString());
     }
   };
 
@@ -228,29 +231,44 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
           <IconButton
             onClick={handleSubtractClick}
             color="secondary"
-            disabled={loading || selectedChip === null}
+            disabled={loading || (selectedChip === null && !customAmount)}
           >
             <RemoveIcon />
           </IconButton>
           <IconButton
             onClick={handleAddClick}
             color="primary"
-            disabled={loading || selectedChip === null}
+            disabled={loading || (selectedChip === null && !customAmount)}
           >
             <AddIcon />
           </IconButton>
         </Box>
 
-        <Box display="flex" flexWrap="wrap" sx={{ mt: 1 }}>
+        <Box display="flex" flexWrap="wrap" alignItems="center" sx={{ mt: 1 }}>
           {currencySuggestions[currencyType]?.map((amount, index) => (
             <Chip
               key={index}
               label={`${currencyType}${amount}`}
               onClick={() => handleChipClick(amount)}
-              color={selectedChip === amount ? "primary" : "default"} // Highlight selected chip
+              color={selectedChip === amount ? "primary" : "default"}
               sx={{ m: 0.5 }} 
             />
           ))}
+          <TextField
+            variant="standard"
+            type="text"
+            label="Custom"
+            color="primary"
+            value={customAmount}
+            onChange={(e) => {
+              e.target.value = e.target.value.trim();
+              if (!isNaN(Number(e.target.value)) || e.target.value === "") {
+                setCustomAmount(e.target.value);
+                setSelectedChip(null); // Deselect chips when using custom input
+              }
+            }}
+            sx={{ ml: 1, width: '80px' }} // Adjust width as needed
+          />
         </Box>
 
         <Box display="flex" justifyContent="space-between" sx={{ mt: 2 }}>
