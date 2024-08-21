@@ -75,7 +75,7 @@ async function createArticle(ctx, title, content) {
   console.log("Title:", title);
   console.log("Content:", content);
 
-  ctx.reply("Article created successfully!");
+  ctx.reply("Article created successfully! "+title+content);
 }
 
 Bizweb_bot.launch();
