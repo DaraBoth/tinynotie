@@ -9,7 +9,7 @@ import emailjs from "@emailjs/nodejs";
 import moment from "moment";
 import pg from "pg";
 const Pool = pg.Pool;
-import Telegraf from "telegraf";
+import { Telegraf } from "telegraf";
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
