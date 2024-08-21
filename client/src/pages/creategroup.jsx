@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Autocomplete, Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField, useMediaQuery, CircularProgress, Typography, Snackbar, Alert
+  Autocomplete, Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField, useMediaQuery, CircularProgress, Typography, Snackbar, Alert,
+  colors
 } from '@mui/material';
 import { Formik } from 'formik';
 import * as yup from "yup";
@@ -73,14 +74,14 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           <form onSubmit={handleSubmit}>
             <Box
               sx={{
-                width: '100%',
+                width: isNonMobile ? '650px' : "300px",
                 borderRadius: '12px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '24px',
               }}
             >
-              <Typography variant="h4" color="primary" textAlign="center">
+              <Typography variant="h4" textAlign="center">
                 Create New Note
               </Typography>
               <TextField
@@ -165,7 +166,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                     boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
                     transition: 'background-color 0.3s ease',
                     '&:hover': {
-                      backgroundColor: '#006bb3',
+                      backgroundColor: colors.blue[900],
                     },
                   }}
                 >

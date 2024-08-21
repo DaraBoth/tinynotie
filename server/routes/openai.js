@@ -46,41 +46,6 @@ const baseURL2 = `https://api.telegram.org/bot${DARABOTH_AI_TOKEN}`;
 const Bizweb_bot = new Telegraf(Bizweb_report_bot);
 // const DARABOTH_AI = new Telegraf(DARABOTH_AI_TOKEN);
 
-Bizweb_bot.start((ctx) => {
-  ctx.reply(
-    "Welcome to your Telegram bot! Use /help to see available commands."
-  );
-});
-
-Bizweb_bot.help((ctx) => {
-  ctx.reply("Available commands:\n/newarticle - Create a new article");
-});
-
-Bizweb_bot.command("newarticle", (ctx) => {
-  ctx.reply("Please enter the title of your article:");
-  Bizweb_bot.on("text", async (ctx) => {
-    const title = ctx.message.text;
-    ctx.reply("Please enter the content of your article:");
-    Bizweb_bot.on("text", async (ctx) => {
-      const content = ctx.message.text;
-
-      // Call a function to create the article using the title and content
-      createArticle(ctx, title, content);
-    });
-  });
-});
-
-async function createArticle(ctx, title, content) {
-  // Here you would make a request to the Telegraph API to create the article
-  // For now, let's just log the title and content
-  console.log("Title:", title);
-  console.log("Content:", content);
-
-  ctx.reply("Article created successfully! "+title+content);
-}
-
-Bizweb_bot.launch();
-
 const AxiosTelegramBotInstance = {
   get(method, params) {
     return axios.get(`/${method}`, {
