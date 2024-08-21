@@ -9,10 +9,11 @@ import emailjs from "@emailjs/nodejs";
 import moment from "moment";
 import pg from "pg";
 const Pool = pg.Pool;
+import Telegraf from "telegraf";
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
-})
+});
 
 // const pool = new Pool({
 //   user: "kjjelxjh",
@@ -38,8 +39,46 @@ const router = express.Router();
 
 const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const DARABOTH_AI_TOKEN = process.env.TELEGRAM_BOT_TOKEN3;
+const Bizweb_report_bot = process.env.BIZWEB_REPORT_BOT;
 const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
 const baseURL2 = `https://api.telegram.org/bot${DARABOTH_AI_TOKEN}`;
+// const baseURL3 = `https://api.telegram.org/bot${Bizweb_report_bot}`;
+const Bizweb_bot = new Telegraf(Bizweb_report_bot);
+
+Bizweb_bot.start((ctx) => {
+  ctx.reply(
+    "Welcome to your Telegram bot! Use /help to see available commands."
+  );
+});
+
+Bizweb_bot.help((ctx) => {
+  ctx.reply("Available commands:\n/newarticle - Create a new article");
+});
+
+Bizweb_bot.command("newarticle", (ctx) => {
+  ctx.reply("Please enter the title of your article:");
+  Bizweb_bot.on("text", async (ctx) => {
+    const title = ctx.message.text;
+    ctx.reply("Please enter the content of your article:");
+    Bizweb_bot.on("text", async (ctx) => {
+      const content = ctx.message.text;
+
+      // Call a function to create the article using the title and content
+      createArticle(ctx, title, content);
+    });
+  });
+});
+
+async function createArticle(ctx, title, content) {
+  // Here you would make a request to the Telegraph API to create the article
+  // For now, let's just log the title and content
+  console.log("Title:", title);
+  console.log("Content:", content);
+
+  ctx.reply("Article created successfully!");
+}
+
+Bizweb_bot.launch();
 
 const AxiosTelegramBotInstance = {
   get(method, params) {
@@ -320,11 +359,10 @@ async function AI_Database(userAsk, chatHistory = []) {
   };
 
   if (jsonData["executable"] == true || jsonData["executable"] == "true") {
-
     // validate first
-    if (sqlQuery.includes('\"')) sqlQuery = sqlQuery.replace('\"', '"');
-    if (sqlQuery.includes('\ n')) sqlQuery = sqlQuery.replace('\ n', ' ');
-    if (sqlQuery.includes('\n')) sqlQuery = sqlQuery.replace('\n', ' ');
+    if (sqlQuery.includes('"')) sqlQuery = sqlQuery.replace('"', '"');
+    if (sqlQuery.includes(" n")) sqlQuery = sqlQuery.replace(" n", " ");
+    if (sqlQuery.includes("\n")) sqlQuery = sqlQuery.replace("\n", " ");
     if (Array.isArray(jsonData.sqlType)) jsonData.sqlType = jsonData.sqlType[0];
 
     try {
