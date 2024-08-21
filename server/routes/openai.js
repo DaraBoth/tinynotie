@@ -44,19 +44,19 @@ const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
 const baseURL2 = `https://api.telegram.org/bot${DARABOTH_AI_TOKEN}`;
 // const baseURL3 = `https://api.telegram.org/bot${Bizweb_report_bot}`;
 const Bizweb_bot = new Telegraf(Bizweb_report_bot);
-const DARABOTH_AI = new Telegraf(DARABOTH_AI_TOKEN);
+// const DARABOTH_AI = new Telegraf(DARABOTH_AI_TOKEN);
 
-DARABOTH_AI.start((ctx) => {
+Bizweb_bot.start((ctx) => {
   ctx.reply(
     "Welcome to your Telegram bot! Use /help to see available commands."
   );
 });
 
-DARABOTH_AI.help((ctx) => {
+Bizweb_bot.help((ctx) => {
   ctx.reply("Available commands:\n/newarticle - Create a new article");
 });
 
-DARABOTH_AI.command("newarticle", (ctx) => {
+Bizweb_bot.command("newarticle", (ctx) => {
   ctx.reply("Please enter the title of your article:");
   Bizweb_bot.on("text", async (ctx) => {
     const title = ctx.message.text;
@@ -79,7 +79,7 @@ async function createArticle(ctx, title, content) {
   ctx.reply("Article created successfully! "+title+content);
 }
 
-DARABOTH_AI.launch();
+Bizweb_bot.launch();
 
 const AxiosTelegramBotInstance = {
   get(method, params) {
@@ -114,6 +114,7 @@ const AxiosTelegramBotInstance2 = {
     });
   },
 };
+
 
 router.get("/text", async (req, res) => {
   try {
