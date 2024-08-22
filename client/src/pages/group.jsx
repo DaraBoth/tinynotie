@@ -14,6 +14,7 @@ import {
   CardContent,
   Divider,
   IconButton,
+  Button,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -31,6 +32,8 @@ import DeleteMember from "../component/deleteMember";
 import { formatTimeDifference } from "../help/time";
 import currency from "currency.js";
 import EditTrip from "../component/EditTrip";
+import ShareModal from "../component/ShareModal";
+import ShareIcon from "@mui/icons-material/Share";
 
 export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const theme = useTheme();
@@ -44,6 +47,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const [openAddTripDialog, setOpenAddTripDialog] = useState(false);
   const [openEditTripDialog, setOpenEditTripDialog] = useState(false);
   const [openDeleteMemberDialog, setOpenDeleteMemberDialog] = useState(false);
+  const [openShareModal, setOpenShareModal] = useState(false);
   const currencyType = groupInfo.currency;
 
   // Fetch trips and members on component mount or when groupInfo changes
@@ -230,9 +234,9 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                     <TableComponent
                       rows={
                         Array.isArray(trip)
-                          ? trip.map((trp,index) => ({
+                          ? trip.map((trp, index) => ({
                               ...trp,
-                              id: index+1,
+                              id: index + 1,
                             }))
                           : []
                       }
@@ -349,7 +353,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
 
         <SpeedDial
           ariaLabel="SpeedDial example"
-          sx={{ position: "fixed", bottom: 16, right: 16 }}
+          sx={{ position: "fixed", bottom: 80, right: 16 }}
           icon={<SpeedDialIcon />}
         >
           {actions.map((action) => (
@@ -361,7 +365,23 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
             />
           ))}
         </SpeedDial>
+        <SpeedDial
+          ariaLabel="SpeedDial 2"
+          sx={{ position: "fixed", bottom: 16, right: 16 }}
+          icon={<ShareIcon />}
+          onClick={() => setOpenShareModal(true)}
+          aria-description="Share Invoice"
+        >
+        </SpeedDial>
       </Box>
+      {/* Share Modal */}
+      <ShareModal
+        open={openShareModal}
+        onClose={() => setOpenShareModal(false)}
+        selectedTrips={trip}
+        currencyType={currencyType}
+        member={member}
+      />
     </main>
   );
 }
