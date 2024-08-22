@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   IconButton,
@@ -35,24 +35,25 @@ function GroupCard({ item, onDelete, onClick }) {
         cursor: "pointer",
         padding: "15px",
         borderRadius: "12px",
-        border: `1px solid ${colors.blueAccent[600]}`,
+        border: `1px solid ${colors.primary[700]}`, // Updated to use primary dark pink color
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": {
           transform: "scale(1.05)",
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
         },
         position: "relative",
+        backgroundColor: colors.grey[800], // Darker background for group cards
       }}
       onClick={() => onClick(item)}
     >
-      <Typography variant="h6" fontWeight="bold">
+      <Typography variant="h6" fontWeight="bold" color={colors.primary[100]}>
         Title: {item.grp_name}
       </Typography>
-      <Typography variant="body2" color="text.primary">
-        Currency: <span style={{ color: colors.grey[300] }}>{item.currency}</span>
+      <Typography variant="body2" color={colors.grey[300]}>
+        Currency: <span style={{ color: colors.primary[300] }}>{item.currency}</span>
       </Typography>
-      <Typography variant="body2" color="text.primary">
-        Create Date: <span style={{ color: colors.grey[300] }}>{item.create_date}</span>
+      <Typography variant="body2" color={colors.grey[300]}>
+        Create Date: <span style={{ color: colors.primary[300] }}>{item.create_date}</span>
       </Typography>
       <IconButton
         aria-label="delete"
@@ -143,20 +144,21 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   };
 
   return (
-    <Box sx={{ width: "100%", height: "100%", padding: "10px" }}>
+    <Box sx={{ width: "100%", height: "100%", padding: "10px"}}>
       <Paper
         elevation={3}
         sx={{
           padding: "20px",
           marginBottom: "20px",
           borderRadius: "12px",
+          backgroundColor: colors.grey[800], // Paper background aligned with theme
         }}
       >
         <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom="20px">
           <Typography
             component="span"
             variant="h4"
-            color="text.primary"
+            color={colors.primary[100]} // Primary text color
             fontSize={fontSize}
             fontWeight="bold"
           >
@@ -164,7 +166,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
             {user && (
               <>
                 Hello{" "}
-                <span style={{ color: colors.blueAccent[300], fontWeight: "700" }}>{user}</span>!
+                <span style={{ color: colors.primary[300], fontWeight: "700" }}>{user}</span>!
               </>
             )}
           </Typography>
@@ -189,7 +191,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                 variant="rounded"
                 width={"cal(100%/4)"}
                 height={90}
-                sx={{ borderRadius: "12px" }}
+                sx={{ borderRadius: "12px", backgroundColor: colors.grey[700] }} // Skeleton color
               />
             ))
           : data.length === 0
@@ -206,13 +208,14 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                 padding: "20px",
                 textAlign: "center",
                 borderRadius: "12px",
-                border: `1px solid ${colors.blueAccent[600]}`,
+                border: `1px solid ${colors.primary[700]}`, // Border using primary color
+                backgroundColor: colors.grey[800], // Background for empty state
               }}
             >
-              <Typography variant="h6" color="text.secondary">
+              <Typography variant="h6" color={colors.primary[100]}>
                 No notes found!
               </Typography>
-              <Typography variant="body1" color="text.secondary">
+              <Typography variant="body1" color={colors.primary[200]}>
                 Click the button below to create your first note.
               </Typography>
               <Fab
@@ -221,9 +224,9 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                 onClick={handleCreateGroup}
                 sx={{
                   marginTop: "20px",
-                  backgroundColor: colors.blueAccent[500],
+                  backgroundColor: colors.primary[500], // Primary color for Fab button
                   "&:hover": {
-                    backgroundColor: colors.blueAccent[700],
+                    backgroundColor: colors.primary[700], // Hover color
                   },
                 }}
               >
@@ -252,9 +255,9 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
           position: "fixed",
           bottom: "16px",
           right: "16px",
-          backgroundColor: colors.blueAccent[500],
+          backgroundColor: colors.primary[500], // Floating button with primary color
           "&:hover": {
-            backgroundColor: colors.blueAccent[700],
+            backgroundColor: colors.primary[700],
           },
         }}
       >
@@ -264,10 +267,12 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this note? This action cannot be undone.</Typography>
+          <Typography color={colors.grey[300]}>Are you sure you want to delete this note? This action cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDeleteDialog(false)} sx={{ color: colors.primary[500] }}>
+            Cancel
+          </Button>
           <Button onClick={() => handleDeleteNote(noteToDelete)} color="secondary">
             Delete
           </Button>

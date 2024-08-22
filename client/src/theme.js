@@ -6,119 +6,119 @@ export const tokens = (mode) => ({
   ...(mode === "dark"
     ? {
         grey: {
-          100: "#e0e0e0",
-          200: "#c2c2c2",
-          300: "#a3a3a3",
-          400: "#858585",
-          500: "#666666",
-          600: "#525252",
-          700: "#3d3d3d",
-          800: "#292929",
-          900: "#141414",
+          100: "#d1d1d1",
+          200: "#a3a3a3",
+          300: "#767676",
+          400: "#595959",
+          500: "#3c3c3c",
+          600: "#2f2f2f",
+          700: "#232323",
+          800: "#181818",
+          900: "#0e0e0e",
         },
         primary: {
-          100: "#d0d1d5",
-          200: "#a1a4ab",
-          300: "#727681",
-          400: "#1F2A40",
-          500: "#141b2d",
-          600: "#101624",
-          700: "#0c101b",
-          800: "#080b12",
-          900: "#040509",
+          100: "#cfd1e4",
+          200: "#9ea3c9",
+          300: "#6d74af",
+          400: "#4d5693",
+          500: "#353a77", // adjusted to a more vibrant shade
+          600: "#2b2e61",
+          700: "#22234b",
+          800: "#181835",
+          900: "#0f0f1f",
         },
         greenAccent: {
-          100: "#dbf5ee",
-          200: "#b7ebde",
-          300: "#94e2cd",
-          400: "#70d8bd",
-          500: "#4cceac",
-          600: "#3da58a",
-          700: "#2e7c67",
-          800: "#1e5245",
-          900: "#0f2922",
+          100: "#d0f5eb",
+          200: "#a1ecd7",
+          300: "#73e3c3",
+          400: "#45daad",
+          500: "#18d198", // more vibrant green accent
+          600: "#14a67a",
+          700: "#107b5b",
+          800: "#0c523d",
+          900: "#07291e",
         },
         redAccent: {
-          100: "#f8dcdb",
-          200: "#f1b9b7",
-          300: "#e99592",
-          400: "#e2726e",
-          500: "#db4f4a",
-          600: "#af3f3b",
-          700: "#832f2c",
-          800: "#58201e",
-          900: "#2c100f",
+          100: "#ffe3e2",
+          200: "#ffc7c4",
+          300: "#ffaba7",
+          400: "#ff8f89",
+          500: "#ff726c", // softer red to reduce strain on dark background
+          600: "#cc5b56",
+          700: "#994340",
+          800: "#662c2b",
+          900: "#331615",
         },
         blueAccent: {
-          100: "#e1e2fe",
-          200: "#c3c6fd",
-          300: "#a4a9fc",
-          400: "#868dfb",
-          500: "#6870fa",
-          600: "#535ac8",
-          700: "#3e4396",
-          800: "#2a2d64",
-          900: "#151632",
+          100: "#dce4ff",
+          200: "#b9c9ff",
+          300: "#97adff",
+          400: "#7481ff",
+          500: "#5276ff", // slightly more vibrant blue accent
+          600: "#415fcc",
+          700: "#314799",
+          800: "#213066",
+          900: "#111833",
         },
-        backrgound:"#141b2d",
+        background: "#121212", // dark background with a softer black
       }
     : {
         grey: {
-          100: "#141414",
-          200: "#292929",
-          300: "#3d3d3d",
-          400: "#525252",
-          500: "#666666",
+          100: "#f7f7f7",
+          200: "#e4e4e4",
+          300: "#d0d0d0",
+          400: "#bcbcbc",
+          500: "#a8a8a8",
           600: "#858585",
-          700: "#a3a3a3",
-          800: "#c2c2c2",
-          900: "#e0e0e0",
+          700: "#616161",
+          800: "#3e3e3e",
+          900: "#1a1a1a",
         },
         primary: {
-          100: "#e6f2ff",
-          200: "#cce6ff",
-          300: "#b3d9ff",
-          400: "#99ccff", // light background for primary color
-          500: "#80bfff", // main primary color (soft blue)
-          600: "#6688cc",
-          700: "#4d6699",
-          800: "#334466",
-          900: "#1a2233",
+          100: "#e0f7ff",
+          200: "#b3eaff",
+          300: "#86ddff",
+          400: "#5acfff", // lighter and more lively blue for primary
+          500: "#2dc2ff", // main primary color (soft and bright blue)
+          600: "#24a0cc",
+          700: "#1b7d99",
+          800: "#125b66",
+          900: "#093733",
         },
         greenAccent: {
-          100: "#0f2922",
-          200: "#1e5245",
-          300: "#2e7c67",
-          400: "#3da58a",
-          500: "#4cceac",
-          600: "#70d8bd",
-          700: "#94e2cd",
-          800: "#b7ebde",
-          900: "#dbf5ee",
+          100: "#e6f7f1",
+          200: "#ccf0e4",
+          300: "#b3e9d7",
+          400: "#99e2ca",
+          500: "#80dabe", // bright and soft green
+          600: "#66b493",
+          700: "#4d8d69",
+          800: "#336640",
+          900: "#1a3220",
         },
         redAccent: {
-          100: "#2c100f",
-          200: "#58201e",
-          300: "#832f2c",
-          400: "#af3f3b",
-          500: "#db4f4a",
-          600: "#e2726e",
-          700: "#e99592",
-          800: "#f1b9b7",
-          900: "#f8dcdb",
+          100: "#ffeae9",
+          200: "#ffc7c4",
+          300: "#ff9f9e",
+          400: "#ff7977", // lighter red with less aggression
+          500: "#ff5251", // soft red that complements light mode
+          600: "#cc4241",
+          700: "#993131",
+          800: "#661f20",
+          900: "#330f10",
         },
         blueAccent: {
-          100: "#151632",
-          200: "#2a2d64",
-          300: "#3e4396",
-          400: "#535ac8",
-          500: "#6870fa",
-          600: "#868dfb",
-          700: "#a4a9fc",
-          800: "#c3c6fd",
-          900: "#e1e2fe",
+          100: "#f0f5ff",
+          200: "#d6e3ff",
+          300: "#bcd2ff",
+          400: "#a2c0ff",
+          500: "#89afff", // softer blue accent
+          600: "#6e8ccc",
+          700: "#536999",
+          800: "#384666",
+          900: "#1d2333",
         },
-        backrgound:"#fff",
+        background: "#ffffff", // bright and clean white background
       }),
 });
 
@@ -132,7 +132,7 @@ export const themeSettings = (mode) => {
         ? {
             // palette values for dark mode
             primary: {
-              main: colors.greenAccent[500],
+              main: colors.primary[500],
             },
             secondary: {
               main: colors.blueAccent[400],
@@ -143,13 +143,13 @@ export const themeSettings = (mode) => {
               light: colors.grey[100],
             },
             background: {
-              default: colors.backrgound,
+              default: colors.background,
             },
           }
         : {
             // palette values for light mode
             primary: {
-              main: colors.primary[100],
+              main: colors.primary[500],
             },
             secondary: {
               main: colors.greenAccent[500],
@@ -160,7 +160,7 @@ export const themeSettings = (mode) => {
               light: colors.grey[100],
             },
             background: {
-              default: colors.backrgound,
+              default: colors.background,
             },
           }),
     },
@@ -212,5 +212,5 @@ export const useMode = () => {
   );
 
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
-  return [theme, colorMode ,setMode];
+  return [theme, colorMode, setMode];
 };

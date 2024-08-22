@@ -76,8 +76,7 @@ export default function Login({ setUser, setSecret }) {
         justifyContent: 'center',
         alignItems: 'center',
         padding: 3,
-        // background: 'linear-gradient(to right, #e66465, #9198e5)', // Gradient background
-        // backgroundImage: 'url(/path/to/your/background-image.jpg)', // Optional background image
+        background: colors.primary[900], // Using the darkest shade of primary color for background
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
@@ -99,18 +98,18 @@ export default function Login({ setUser, setSecret }) {
           <form onSubmit={handleSubmit}>
             <Box
               sx={{
-                maxWidth: '500px', // Wider input fields
+                maxWidth: '500px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,
                 padding: 4,
-                borderRadius: '12px', // More rounded corners
-                backgroundColor: colors.grey[50],
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)', // Soft shadow
+                borderRadius: '12px',
+                backgroundColor: colors.grey[900], // Dark grey background for the form
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)', // Slightly stronger shadow for contrast
               }}
             >
-              <Typography variant="h4" color={colors.primary.main} textAlign="center" fontWeight="bold">
-                {isRegister ? "Register" : "Login"} to <span style={{ color: colors.blueAccent[500] }}>TinyNotie</span>
+              <Typography variant="h4" color={colors.primary[500]} textAlign="center" fontWeight="bold">
+                {isRegister ? "Register" : "Login"} to <span style={{ color: colors.primary[300] }}>TinyNotie</span>
               </Typography>
               <TextField
                 fullWidth
@@ -125,11 +124,27 @@ export default function Login({ setUser, setSecret }) {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Person4RoundedIcon />
+                      <Person4RoundedIcon style={{ color: colors.primary[300] }} />
                     </InputAdornment>
                   ),
                 }}
-                sx={{ fontSize: '18px' }} // Increased font size
+                sx={{
+                  fontSize: '18px',
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: colors.primary[500], // Border color matching primary
+                    },
+                    '&:hover fieldset': {
+                      borderColor: colors.primary[300], // Hover border color
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: colors.primary[100], // Focused border color
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: colors.primary[500], // Label color
+                  },
+                }}
               />
               <TextField
                 fullWidth
@@ -144,18 +159,34 @@ export default function Login({ setUser, setSecret }) {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockOutlinedIcon />
+                      <LockOutlinedIcon style={{ color: colors.primary[300] }} />
                     </InputAdornment>
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <Visibility /> : <VisibilityOff />}
+                        {showPassword ? <Visibility style={{ color: colors.primary[300] }} /> : <VisibilityOff style={{ color: colors.primary[300] }} />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
-                sx={{ fontSize: '18px' }} // Increased font size
+                sx={{
+                  fontSize: '18px',
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: colors.primary[500],
+                    },
+                    '&:hover fieldset': {
+                      borderColor: colors.primary[300],
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: colors.primary[100],
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: colors.primary[500],
+                  },
+                }}
               />
               <Button
                 variant="contained"
@@ -164,10 +195,17 @@ export default function Login({ setUser, setSecret }) {
                 fullWidth
                 sx={{
                   mt: 2,
-                  height: '50px', // Increased button height
+                  height: '50px',
                   fontWeight: 'bold',
                   fontSize: '18px',
-                  borderRadius: '10px', // Softer button corners
+                  borderRadius: '10px',
+                  backgroundColor: colors.primary[500], // Primary button color
+                  '&:hover': {
+                    backgroundColor: colors.primary[700], // Hover color
+                  },
+                  '&:disabled': {
+                    backgroundColor: colors.grey[500], // Disabled color
+                  },
                 }}
                 disabled={loading}
                 startIcon={loading && <CircularProgress size="1rem" />}
@@ -185,7 +223,7 @@ export default function Login({ setUser, setSecret }) {
                     ml: 1,
                     textTransform: 'none',
                     textDecoration: 'underline',
-                    color: colors.blueAccent[500],
+                    color: colors.primary[300], // Link color
                     '&:hover': {
                       backgroundColor: 'transparent',
                     },
