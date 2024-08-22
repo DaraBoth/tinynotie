@@ -1,13 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  Autocomplete, Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField, useMediaQuery, CircularProgress, Typography, Snackbar, Alert,
-  colors
-} from '@mui/material';
-import { Formik } from 'formik';
+  Autocomplete,
+  Box,
+  Button,
+  Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  useMediaQuery,
+  CircularProgress,
+  Typography,
+  Snackbar,
+  Alert,
+  colors,
+} from "@mui/material";
+import { Formik } from "formik";
 import * as yup from "yup";
-import { useNavigate } from 'react-router-dom';
-import { useGetAllMemberMutation, usePostAddGroupMutation } from '../api/api';
-import moment from "moment"
+import { useNavigate } from "react-router-dom";
+import { useGetAllMemberMutation, usePostAddGroupMutation } from "../api/api";
+import moment from "moment";
 
 export default function CreateGroup({ secret, setGroupInfo }) {
   const isNonMobile = useMediaQuery("(min-width:600px)");
@@ -43,7 +56,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           member: JSON.stringify(newMember),
         }).unwrap();
         setShowSuccess(true);
-        setTimeout(() => navigate('/'), 2000);
+        setTimeout(() => navigate("/"), 2000);
       } catch {
         setShowError(true);
       }
@@ -53,11 +66,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
   return (
     <Box
       sx={{
-        width: '100%',
-        minHeight: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: "100%",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       <Formik
@@ -76,11 +89,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           <form onSubmit={handleSubmit}>
             <Box
               sx={{
-                width: isNonMobile ? '650px' : "300px",
-                borderRadius: '12px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '24px',
+                width: isNonMobile ? "650px" : "300px",
+                borderRadius: "12px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "24px",
               }}
             >
               <Typography variant="h4" textAlign="center">
@@ -97,7 +110,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                 helperText={touched.grp_name && errors.grp_name}
                 fullWidth
                 InputProps={{
-                  startAdornment: <Box sx={{ mr: 1, color: 'gray' }}>🏷️</Box>,
+                  startAdornment: <Box sx={{ mr: 1, color: "gray" }}>🏷️</Box>,
                 }}
               />
               <FormControl variant="outlined" fullWidth>
@@ -140,7 +153,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                       ...params.InputProps,
                       startAdornment: (
                         <>
-                          <Box sx={{ mr: 1, color: 'gray' }}>👥</Box>
+                          <Box sx={{ mr: 1, color: "gray" }}>👥</Box>
                           {params.InputProps.startAdornment}
                         </>
                       ),
@@ -150,44 +163,46 @@ export default function CreateGroup({ secret, setGroupInfo }) {
               />
               <Box
                 sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '16px',
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "16px",
                 }}
               >
+                <Button
+                  color="error"
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => navigate("/")}
+                  sx={{
+                    height: "45px",
+                    transition: "color 0.3s ease",
+                    "&:hover": {
+                      color: "#ff4444",
+                    },
+                  }}
+                >
+                  Cancel
+                </Button>
                 <Button
                   color="primary"
                   variant="contained"
                   type="submit"
                   fullWidth
                   disabled={isSubmitting}
-                  startIcon={isSubmitting ? <CircularProgress size="1rem" /> : null}
+                  startIcon={
+                    isSubmitting ? <CircularProgress size="1rem" /> : null
+                  }
                   sx={{
-                    height: '45px',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
-                    transition: 'background-color 0.3s ease',
-                    '&:hover': {
+                    height: "45px",
+                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+                    transition: "background-color 0.3s ease",
+                    "&:hover": {
                       backgroundColor: colors.blue[900],
                     },
                   }}
                 >
-                  {isSubmitting ? 'Creating...' : 'Create Note'}
-                </Button>
-                <Button
-                  color="error"
-                  variant="outlined"
-                  fullWidth
-                  onClick={() => navigate('/')}
-                  sx={{
-                    height: '45px',
-                    transition: 'color 0.3s ease',
-                    '&:hover': {
-                      color: '#ff4444',
-                    },
-                  }}
-                >
-                  Cancel
+                  {isSubmitting ? "Creating..." : "Create Note"}
                 </Button>
               </Box>
             </Box>
@@ -199,7 +214,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
         autoHideDuration={4000}
         onClose={() => setShowSuccess(false)}
       >
-        <Alert onClose={() => setShowSuccess(false)} severity="success" sx={{ width: '100%' }}>
+        <Alert
+          onClose={() => setShowSuccess(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
           Note created successfully!
         </Alert>
       </Snackbar>
@@ -208,7 +227,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
         autoHideDuration={4000}
         onClose={() => setShowError(false)}
       >
-        <Alert onClose={() => setShowError(false)} severity="error" sx={{ width: '100%' }}>
+        <Alert
+          onClose={() => setShowError(false)}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
           Something went wrong. Please try again.
         </Alert>
       </Snackbar>
