@@ -14,15 +14,23 @@ import {
   Typography,
   Snackbar,
   Alert,
-  colors,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
 import { useGetAllMemberMutation, usePostAddGroupMutation } from "../api/api";
 import moment from "moment";
+import { useTheme } from "@mui/material/styles";
+import { tokens } from "../theme";
 
 export default function CreateGroup({ secret, setGroupInfo }) {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [triggerMember, resultMember] = useGetAllMemberMutation();
   const [triggerCreateGroup, resultGroup] = usePostAddGroupMutation();
@@ -31,6 +39,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
   const [currency, setCurrency] = useState("$");
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,6 +72,20 @@ export default function CreateGroup({ secret, setGroupInfo }) {
     }
   }, 500);
 
+  const handleCancelClick = (values) => {
+    // Check if any input is filled or any members are added
+    if (values.grp_name || newMember.length > 0) {
+      setShowConfirmCancel(true);
+    } else {
+      navigate("/");
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    setShowConfirmCancel(false);
+    navigate("/");
+  };
+
   return (
     <Box
       sx={{
@@ -71,6 +94,8 @@ export default function CreateGroup({ secret, setGroupInfo }) {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: colors.primary[900], // Background color
+        padding: isNonMobile ? "40px" : "20px", // Adjusted padding
       }}
     >
       <Formik
@@ -89,14 +114,21 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           <form onSubmit={handleSubmit}>
             <Box
               sx={{
-                width: isNonMobile ? "650px" : "300px",
+                width: isNonMobile ? "650px" : "100%", // Full width on mobile
                 borderRadius: "12px",
                 display: "flex",
                 flexDirection: "column",
                 gap: "24px",
+                padding: "32px", // Added padding
+                backgroundColor: colors.grey[800], // Form background color
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)", // Added shadow for better visual
               }}
             >
-              <Typography variant="h4" textAlign="center">
+              <Typography
+                variant="h4"
+                textAlign="center"
+                color={colors.primary[100]} // Text color based on theme
+              >
                 Create New Note
               </Typography>
               <TextField
@@ -110,15 +142,63 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                 helperText={touched.grp_name && errors.grp_name}
                 fullWidth
                 InputProps={{
-                  startAdornment: <Box sx={{ mr: 1, color: "gray" }}>🏷️</Box>,
+                  startAdornment: (
+                    <Box sx={{ mr: 1, color: colors.primary[300] }}>🏷️</Box>
+                  ),
+                  style: {
+                    color: colors.primary[100], // Text color for input
+                  },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: colors.primary[500],
+                    },
+                    "&:hover fieldset": {
+                      borderColor: colors.primary[300],
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: colors.primary[100],
+                    },
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: colors.primary[500], // Label color
+                  },
+                  '& input:-webkit-autofill': {
+                    WebkitBoxShadow: `0 0 0 1000px ${colors.grey[800]} inset !important`,
+                    WebkitTextFillColor: `${colors.primary[100]} !important`,
+                  },
                 }}
               />
               <FormControl variant="outlined" fullWidth>
-                <InputLabel>Currency</InputLabel>
+                <InputLabel sx={{ color: colors.primary[500] }}>
+                  Currency
+                </InputLabel>
                 <Select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
                   label="Currency"
+                  sx={{
+                    backgroundColor: colors.grey[800], // Ensure select has the correct background
+                    color: colors.primary[100],
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": {
+                        borderColor: colors.primary[500],
+                      },
+                      "&:hover fieldset": {
+                        borderColor: colors.primary[300],
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: colors.primary[100],
+                      },
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: colors.primary[500],
+                    },
+                    "& .MuiSelect-icon": {
+                      color: colors.primary[100], // Ensure dropdown arrow matches theme
+                    },
+                  }}
                 >
                   <MenuItem value="$">US Dollar</MenuItem>
                   <MenuItem value="W">Korean Won</MenuItem>
@@ -136,7 +216,10 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                       variant="filled"
                       label={option}
                       {...getTagProps({ index })}
-                      color="primary"
+                      sx={{
+                        backgroundColor: colors.primary[500],
+                        color: colors.primary[100],
+                      }}
                     />
                   ))
                 }
@@ -153,14 +236,43 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                       ...params.InputProps,
                       startAdornment: (
                         <>
-                          <Box sx={{ mr: 1, color: "gray" }}>👥</Box>
+                          <Box sx={{ mr: 1, color: colors.primary[300] }}>👥</Box>
                           {params.InputProps.startAdornment}
                         </>
                       ),
+                      style: {
+                        color: colors.primary[100], // Text color for input
+                      },
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          borderColor: colors.primary[500],
+                        },
+                        "&:hover fieldset": {
+                          borderColor: colors.primary[300],
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: colors.primary[100],
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: colors.primary[500],
+                      },
                     }}
                   />
                 )}
               />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: colors.primary[300],
+                  textAlign: "center",
+                  mt: -2,
+                }}
+              >
+                Tip: Type a name and press Enter to add it to the list.
+              </Typography>
               <Box
                 sx={{
                   display: "flex",
@@ -170,15 +282,18 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                 }}
               >
                 <Button
-                  color="error"
                   variant="outlined"
                   fullWidth
-                  onClick={() => navigate("/")}
+                  onClick={() => handleCancelClick(values)}
                   sx={{
                     height: "45px",
-                    transition: "color 0.3s ease",
+                    borderColor: colors.grey[500], // Adjust border color to match theme
+                    color: colors.grey[500], // Adjust text color to match theme
+                    borderRadius: "8px", // Slightly more rounded corners
+                    transition: "background-color 0.3s ease, color 0.3s ease",
                     "&:hover": {
-                      color: "#ff4444",
+                      backgroundColor: colors.redAccent[500], // Background color on hover
+                      color: colors.primary[100], // Text color on hover
                     },
                   }}
                 >
@@ -198,7 +313,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                     boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
                     transition: "background-color 0.3s ease",
                     "&:hover": {
-                      backgroundColor: colors.blue[900],
+                      backgroundColor: colors.primary[700], // Adjust hover color for submit button
                     },
                   }}
                 >
@@ -209,6 +324,35 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           </form>
         )}
       </Formik>
+      <Dialog
+        open={showConfirmCancel}
+        onClose={() => setShowConfirmCancel(false)}
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.grey[800], // Dialog background color to match theme
+            color: colors.primary[100], // Dialog text color to match theme
+          },
+        }}
+      >
+        <DialogTitle>Confirm Cancel</DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            sx={{
+              color: colors.primary[300], // Dialog content text color to match theme
+            }}
+          >
+            You have unsaved changes. Are you sure you want to cancel?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowConfirmCancel(false)} sx={{ color: colors.primary[300] }}>
+            No, go back
+          </Button>
+          <Button onClick={handleConfirmCancel} sx={{ color: colors.redAccent[500] }} autoFocus>
+            Yes, cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Snackbar
         open={showSuccess}
         autoHideDuration={4000}

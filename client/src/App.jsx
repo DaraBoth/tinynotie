@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { Box, CssBaseline, IconButton, ThemeProvider, useTheme } from '@mui/material';
+import { CssBaseline, Fab, ThemeProvider, useTheme } from '@mui/material';
 import { ColorModeContext, useMode } from './theme';
 import './index.scss'
 import { tokens } from './theme'
-import Login from './pages/login';
+import Login from './pages/LoginPage';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import Group from './pages/group';
-import Home from './pages/home';
-import CreateGroup from './pages/creategroup';
+import Group from './pages/GroupPage';
+import Home from './pages/HomePage';
+import CreateGroup from './pages/CreateGroupPage';
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
-import ThemeSwitcher from './component/ThemeSwitcher';
 
 function App() {
   const [theme, colorMode, setMode] = useMode();
@@ -94,30 +93,29 @@ function App() {
 
 export default App
 
-const ColorMode = ({theme, colorMode, colors}) => {
+const ColorMode = ({ theme, colorMode, colors }) => {
   return (
-    <Box
-      position={'fixed'}
-      bottom={'15px'}
-      left={'15px'}
-      zIndex={5}
+    <Fab
+      color="primary"
+      onClick={colorMode.toggleColorMode}
       sx={{
-        borderRadius: '50%',
-        boxShadow: `inset 0px 0px 1px 2px ${theme.palette.mode === "light" ? colors.blueAccent[500] : undefined}`,
-        backgroundColor: theme.palette.mode === "dark" ? colors.blueAccent[500] : '#fff'
+        position: 'fixed',
+        bottom: '16px',
+        left: '16px',
+        backgroundColor: theme.palette.mode === "dark" ? colors.primary[500] : colors.grey[100], // Adjust background based on theme
+        color: theme.palette.mode === "dark" ? colors.grey[900] : colors.primary[500], // Adjust icon color based on theme
+        '&:hover': {
+          backgroundColor: theme.palette.mode === "dark" ? colors.primary[700] : colors.grey[300], // Darken background on hover
+        },
+        boxShadow: `0px 3px 10px rgba(0, 0, 0, 0.2)`, // Similar shadow to other Fabs
+        transition: 'background-color 0.3s ease', // Smooth transition
       }}
     >
-      <IconButton onClick={colorMode.toggleColorMode}>
-        {theme.palette.mode === "dark" ? (
-          <DarkModeOutlinedIcon />
-        ) : (
-          <LightModeOutlinedIcon
-            sx={{
-              fill: colors.blueAccent[500]
-            }}
-          />
-        )}
-      </IconButton>
-    </Box>
-  )
-}
+      {theme.palette.mode === "dark" ? (
+        <DarkModeOutlinedIcon />
+      ) : (
+        <LightModeOutlinedIcon />
+      )}
+    </Fab>
+  );
+};

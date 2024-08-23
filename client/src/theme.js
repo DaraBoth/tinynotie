@@ -160,7 +160,7 @@ export const themeSettings = (mode) => {
               light: colors.grey[100],
             },
             background: {
-              default: colors.background,
+              default: "#f4f4f4", // softer background for light mode
             },
           }),
     },
@@ -192,8 +192,46 @@ export const themeSettings = (mode) => {
         fontSize: 14,
       },
     },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          '@global': {
+            'input:-webkit-autofill': {
+              WebkitBoxShadow: `0 0 0 1000px ${colors.background} inset !important`,
+              WebkitTextFillColor: `${colors.primary[700]} !important`,
+              transition: "background-color 5000s ease-in-out 0s !important",
+            },
+            'input:-webkit-autofill:hover, input:-webkit-autofill:focus': {
+              WebkitBoxShadow: `0 0 0 1000px ${colors.background} inset !important`,
+              WebkitTextFillColor: `${colors.primary[700]} !important`,
+            },
+            'input:-webkit-autofill::first-line': {
+              fontFamily: "Source Sans Pro, sans-serif",
+              fontSize: "inherit",
+              color: `${colors.primary[700]} !important`,
+            },
+          },
+        },
+      },
+      MuiDataGrid: {
+        styleOverrides: {
+          root: {
+            backgroundColor: mode === "dark" ? colors.grey[800] : colors.grey[200], // Adjust background
+            borderColor: mode === "dark" ? colors.grey[700] : colors.grey[400], // Adjust border color
+          },
+          columnHeaders: {
+            backgroundColor: mode === "dark" ? colors.primary[400] : colors.primary[300], // Adjust header background
+            color: colors.grey[100],
+          },
+          cell: {
+            color: mode === "dark" ? colors.grey[200] : colors.grey[900], // Ensure text is visible
+          },
+        },
+      },
+    },
   };
 };
+
 
 // context for color mode
 export const ColorModeContext = createContext({

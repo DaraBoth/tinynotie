@@ -6,15 +6,12 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
-  Tooltip,
   SpeedDial,
   SpeedDialIcon,
   SpeedDialAction,
   Card,
   CardContent,
   Divider,
-  IconButton,
-  Button,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -33,7 +30,6 @@ import { formatTimeDifference } from "../help/time";
 import currency from "currency.js";
 import EditTrip from "../component/EditTrip";
 import ShareModal from "../component/ShareModal";
-import ShareIcon from "@mui/icons-material/Share";
 
 export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const theme = useTheme();
@@ -161,7 +157,12 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
 
   return (
     <main className="content">
-      <Topbar user={user} groupInfo={groupInfo} setGroupInfo={setGroupInfo} />
+      <Topbar 
+        user={user} 
+        groupInfo={groupInfo} 
+        setGroupInfo={setGroupInfo} 
+        onShareClick={() => setOpenShareModal(true)}
+      />
       <Box sx={{ padding: "20px" }}>
         <Grid container spacing={2} sx={{ height: "100%" }}>
           {/* Members Section */}
@@ -169,15 +170,17 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
             <Card
               sx={{
                 height: isNonMobile ? "calc(100vh - 130px)" : "calc(10 * 50px)",
-                backgroundColor: colors.grey[50],
+                backgroundColor: colors.background,
+                borderRadius: "8px",
+                boxShadow: `0px 4px 10px ${theme.palette.mode === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.5)'}`,
               }}
             >
               <CardContent>
                 <Box sx={{ display: "flex", flexDirection: "row" }}>
-                  <StickyNote2Icon sx={{ marginRight: 1 }} />
+                  <StickyNote2Icon sx={{ marginRight: 1, color: colors.primary[500] }} />
                   <Typography
                     variant="h6"
-                    color={colors.primary.main}
+                    color={colors.primary[500]}
                     gutterBottom
                   >
                     Note Member Contributions
@@ -190,7 +193,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                   height={
                     isNonMobile ? "calc(90vh - 126px)" : "calc(10 * 41px)"
                   }
-                  isLoading={!resultTrip.isSuccess} // Loading state for trips
+                  isLoading={!resultTrip.isSuccess}
                   sx={{
                     "& .MuiDataGrid-root": {
                       border: "none",
@@ -200,8 +203,8 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                       fontSize: "14px",
                     },
                     "& .MuiDataGrid-columnHeaders": {
-                      backgroundColor: colors.primary.light,
-                      color: colors.primary.contrastText,
+                      backgroundColor: colors.primary[500],
+                      color: colors.grey[100],
                       fontSize: "16px",
                     },
                     "& .MuiDataGrid-footerContainer": {
@@ -218,13 +221,13 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
           <Grid item xs={12} md={4}>
             <Grid container direction="column" spacing={2}>
               <Grid item xs={6}>
-                <Card sx={{ height: "100%", backgroundColor: colors.grey[50] }}>
+                <Card sx={{ height: "100%", backgroundColor: colors.background }}>
                   <CardContent>
                     <Box sx={{ display: "flex", flexDirection: "row" }}>
-                      <StickyNote2Icon sx={{ marginRight: 1 }} />
+                      <StickyNote2Icon sx={{ marginRight: 1, color: colors.primary[500] }} />
                       <Typography
                         variant="h6"
-                        color={colors.primary.main}
+                        color={colors.primary[500]}
                         gutterBottom
                       >
                         Recent Trips
@@ -246,7 +249,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                           ? "calc(75vh / 2 + 68px)"
                           : "calc(10 * 35px)"
                       }
-                      isLoading={!resultMember.isSuccess} // Loading state for members
+                      isLoading={!resultMember.isSuccess}
                       sx={{
                         "& .MuiDataGrid-root": {
                           border: "none",
@@ -256,8 +259,8 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                           fontSize: "14px",
                         },
                         "& .MuiDataGrid-columnHeaders": {
-                          backgroundColor: colors.primary.light,
-                          color: colors.primary.contrastText,
+                          backgroundColor: colors.primary[500],
+                          color: colors.grey[100],
                           fontSize: "16px",
                         },
                         "& .MuiDataGrid-footerContainer": {
@@ -270,13 +273,13 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                 </Card>
               </Grid>
               <Grid item xs={6}>
-                <Card sx={{ height: "100%", backgroundColor: colors.grey[50] }}>
+                <Card sx={{ height: "100%", backgroundColor: colors.background }}>
                   <CardContent>
                     <Box sx={{ display: "flex", flexDirection: "row" }}>
-                      <StickyNote2Icon sx={{ marginRight: 1 }} />
+                      <StickyNote2Icon sx={{ marginRight: 1, color: colors.primary[500] }} />
                       <Typography
                         variant="h6"
-                        color={colors.primary.main}
+                        color={colors.primary[500]}
                         gutterBottom
                       >
                         Total Spend Summary
@@ -353,7 +356,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
 
         <SpeedDial
           ariaLabel="SpeedDial example"
-          sx={{ position: "fixed", bottom: 80, right: 16 }}
+          sx={{ position: "fixed", bottom: 16, right: 16 }}
           icon={<SpeedDialIcon />}
         >
           {actions.map((action) => (
@@ -364,14 +367,6 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
               onClick={action.onClick}
             />
           ))}
-        </SpeedDial>
-        <SpeedDial
-          ariaLabel="SpeedDial 2"
-          sx={{ position: "fixed", bottom: 16, right: 16 }}
-          icon={<ShareIcon />}
-          onClick={() => setOpenShareModal(true)}
-          aria-description="Share Invoice"
-        >
         </SpeedDial>
       </Box>
       {/* Share Modal */}
@@ -431,6 +426,7 @@ const TotalSpendTable = ({ info, isLoading }) => {
     />
   );
 };
+
 
 function calculateMoney(allMembers, trips, currencyType) {
   let newData = [];

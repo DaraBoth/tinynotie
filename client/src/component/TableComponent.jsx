@@ -15,23 +15,30 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
         height={height}
         sx={{
           "& .MuiDataGrid-root": {
-            border: `2px solid ${colors.blueAccent[600]}`,
+            border: `1px solid ${theme.palette.mode === 'dark' ? colors.grey[700] : colors.grey[300]}`,
+            boxShadow: 'none',
+            backgroundColor: theme.palette.mode === 'dark' ? colors.grey[800] : colors.grey[100], // Lighter background for light theme
           },
           "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.grey[800],
+            backgroundColor: colors.primary[400], // Slightly darker header
+            color: colors.grey[100],
+          },
+          "& .MuiDataGrid-cell": {
+            color: theme.palette.mode === 'dark' ? colors.grey[200] : colors.grey[900], // Adjust text color for better visibility
           },
           "& .MuiDataGrid-footerContainer": {
             borderTop: "none",
+            backgroundColor: theme.palette.mode === 'dark' ? colors.grey[900] : colors.grey[200], // Slight contrast
           },
           "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
             color: `${colors.blueAccent[500]} !important`,
           },
           "& .MuiDataGrid-overlay": {
-            backgroundColor: colors.primary[400], // Ensure background matches your theme
+            backgroundColor: colors.primary[400],
             opacity: 0.9,
           },
           "& .MuiCircularProgress-root": {
-            color: colors.blueAccent[400], // Make loading indicator more visible
+            color: colors.blueAccent[400],
           },
         }}
       >
@@ -39,7 +46,7 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
           density={isNonMobile ? "standard" : "compact"}
           rows={rows}
           columns={columns}
-          loading={isLoading} // Use the loading prop
+          loading={isLoading}
           components={addToolBar && { Toolbar: GridToolbar }}
           disableSelectionOnClick
           pageSize={pageSize}
