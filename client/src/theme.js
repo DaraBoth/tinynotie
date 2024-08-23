@@ -128,110 +128,58 @@ export const themeSettings = (mode) => {
   return {
     palette: {
       mode: mode,
-      ...(mode === "dark"
-        ? {
-            // palette values for dark mode
-            primary: {
-              main: colors.primary[500],
-            },
-            secondary: {
-              main: colors.blueAccent[400],
-            },
-            neutral: {
-              dark: colors.grey[700],
-              main: colors.grey[500],
-              light: colors.grey[100],
-            },
-            background: {
-              default: colors.background,
-            },
-          }
-        : {
-            // palette values for light mode
-            primary: {
-              main: colors.primary[500],
-            },
-            secondary: {
-              main: colors.greenAccent[500],
-            },
-            neutral: {
-              dark: colors.grey[700],
-              main: colors.grey[500],
-              light: colors.grey[100],
-            },
-            background: {
-              default: "#f4f4f4", // softer background for light mode
-            },
-          }),
+      background: {
+        default: colors.background.default, // Unified background
+        paper: colors.grey[800], // Paper background
+      },
+      primary: {
+        main: colors.primary[500],
+      },
+      secondary: {
+        main: colors.blueAccent[400],
+      },
     },
     typography: {
-      fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
-      fontSize: 12,
-      h1: {
-        fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
-        fontSize: 40,
-      },
-      h2: {
-        fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
-        fontSize: 32,
-      },
-      h3: {
-        fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
-        fontSize: 24,
+      fontFamily: "Source Sans Pro, sans-serif",
+      body1: {
+        color: colors.primary[100],
       },
       h4: {
-        fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
-        fontSize: 20,
+        color: colors.primary[100],
+        fontWeight: 600,
       },
-      h5: {
-        fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
-        fontSize: 16,
-      },
-      h6: {
-        fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
-        fontSize: 14,
+      button: {
+        textTransform: "none",
+        fontWeight: 600,
       },
     },
     components: {
-      MuiCssBaseline: {
+      MuiButton: {
         styleOverrides: {
-          '@global': {
-            'input:-webkit-autofill': {
-              WebkitBoxShadow: `0 0 0 1000px ${colors.background} inset !important`,
-              WebkitTextFillColor: `${colors.primary[700]} !important`,
-              transition: "background-color 5000s ease-in-out 0s !important",
-            },
-            'input:-webkit-autofill:hover, input:-webkit-autofill:focus': {
-              WebkitBoxShadow: `0 0 0 1000px ${colors.background} inset !important`,
-              WebkitTextFillColor: `${colors.primary[700]} !important`,
-            },
-            'input:-webkit-autofill::first-line': {
-              fontFamily: "Source Sans Pro, sans-serif",
-              fontSize: "inherit",
-              color: `${colors.primary[700]} !important`,
-            },
+          root: {
+            borderRadius: "8px", // Unified button radius
+            padding: "10px 20px",
           },
         },
       },
-      MuiDataGrid: {
+      MuiPaper: {
         styleOverrides: {
           root: {
-            backgroundColor: mode === "dark" ? colors.grey[800] : colors.grey[200], // Adjust background
-            borderColor: mode === "dark" ? colors.grey[700] : colors.grey[400], // Adjust border color
+            backgroundColor: colors.grey[800],
+            borderRadius: "12px",
           },
-          columnHeaders: {
-            backgroundColor: mode === "dark" ? colors.primary[400] : colors.primary[300], // Adjust header background
-            color: colors.grey[100],
-          },
-          cell: {
-            color: mode === "dark" ? colors.grey[200] : colors.grey[900], // Ensure text is visible
+        },
+      },
+      MuiFab: {
+        styleOverrides: {
+          root: {
+            borderRadius: "50%",
           },
         },
       },
     },
   };
 };
-
 
 // context for color mode
 export const ColorModeContext = createContext({

@@ -35,14 +35,14 @@ function GroupCard({ item, onDelete, onClick }) {
         cursor: "pointer",
         padding: "15px",
         borderRadius: "12px",
-        border: `1px solid ${colors.primary[700]}`, // Updated to use primary dark pink color
+        border: `1px solid ${colors.primary[700]}`, // Border uses the primary color from the theme
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": {
           transform: "scale(1.05)",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
+          boxShadow: `0 4px 20px ${colors.primary[900]}33`, // Adjusted shadow to match theme
         },
         position: "relative",
-        backgroundColor: colors.grey[800], // Darker background for group cards
+        backgroundColor: colors.grey[800], // Use theme's background color
       }}
       onClick={() => onClick(item)}
     >
@@ -144,21 +144,21 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   };
 
   return (
-    <Box sx={{ width: "100%", height: "100%", padding: "10px"}}>
+    <Box sx={{ width: "100%", height: "100%", padding: "20px", backgroundColor: colors.background.default }}>
       <Paper
         elevation={3}
         sx={{
           padding: "20px",
           marginBottom: "20px",
           borderRadius: "12px",
-          backgroundColor: colors.grey[800], // Paper background aligned with theme
+          backgroundColor: colors.grey[800],
         }}
       >
         <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom="20px">
           <Typography
             component="span"
             variant="h4"
-            color={colors.primary[100]} // Primary text color
+            color={colors.primary[100]}
             fontSize={fontSize}
             fontWeight="bold"
           >
@@ -209,7 +209,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                 textAlign: "center",
                 borderRadius: "12px",
                 border: `1px solid ${colors.primary[700]}`, // Border using primary color
-                backgroundColor: colors.grey[800], // Background for empty state
+                backgroundColor: colors.grey[800],
               }}
             >
               <Typography variant="h6" color={colors.primary[100]}>
