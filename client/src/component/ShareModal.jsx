@@ -15,11 +15,13 @@ import {
   Select,
   OutlinedInput,
   MenuItem,
+  useTheme,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import CustomAlert from "./CustomAlert"; // Import CustomAlert component
+import CustomAlert from "./CustomAlert";
+import { tokens } from "../theme";
 import currency from "currency.js";
 
 export default function ShareModal({
@@ -29,11 +31,14 @@ export default function ShareModal({
   currencyType,
   member,
 }) {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+
   const [selectedTripIds, setSelectedTripIds] = useState([]);
   const [invoiceText, setInvoiceText] = useState("");
   const [editableText, setEditableText] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("EN"); // Default to English
+  const [selectedLanguage, setSelectedLanguage] = useState("EN");
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("success");
@@ -106,7 +111,6 @@ export default function ShareModal({
           symbol: currencyType,
         }).format();
 
-        // Accumulate total spend per member
         members.forEach((mem) => {
           if (!totalPerMember[mem]) {
             totalPerMember[mem] = 0;
@@ -124,7 +128,6 @@ export default function ShareModal({
 
     const totalSpend = trips.reduce((acc, trip) => acc + trip.spend, 0);
 
-    // Formatting the total amount each member needs to pay
     const perPersonDetail = Object.entries(totalPerMember)
       .map(([name, amount]) => {
         return `${name}: ${currency(amount, {
@@ -169,13 +172,32 @@ export default function ShareModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontWeight: "bold", fontSize: "18px" }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: colors.background,
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontWeight: "bold",
+          fontSize: "18px",
+          color: colors.primary[500],
+        }}
+      >
         Share Invoice
       </DialogTitle>
       <DialogContent>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="body1" sx={{ fontWeight: "bold", mb: 1 }}>
+          <Typography
+            variant="body1"
+            sx={{ fontWeight: "bold", mb: 1, color: colors.primary[500] }}
+          >
             Select Trips to Share:
           </Typography>
         </Box>
@@ -183,7 +205,7 @@ export default function ShareModal({
           multiple
           value={selectedTripIds}
           onChange={handleTripChange}
-          input={<OutlinedInput label="Trips" />}
+          color="primary"
           renderValue={(selected) => (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
               {selected.map((tripId) => {
@@ -193,15 +215,55 @@ export default function ShareModal({
                     key={tripId}
                     label={trip?.trp_name || tripId}
                     variant="outlined"
+                    sx={{
+                      backgroundColor: colors.primary[500],
+                      color: "#fff",
+                      "& .MuiChip-label": {
+                        color: "#fff",
+                      },
+                    }}
                   />
                 );
               })}
             </Box>
           )}
+          sx={{
+            "& .MuiSelect-select": {
+              color: colors.primary[600],
+            },
+            "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+              borderColor: colors.primary[400],
+            },
+            "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: colors.primary[500],
+            },
+            "& .MuiSelect-icon": {
+              color: colors.primary[500],
+            },
+          }}
           fullWidth
         >
           {selectedTrips.map((trip) => (
-            <MenuItem key={trip.id} value={trip.id}>
+            <MenuItem
+              key={trip.id}
+              value={trip.id}
+              sx={{
+                backgroundColor: selectedTripIds.includes(trip.id)
+                  ? colors.primary[500]
+                  : "inherit",
+                color: selectedTripIds.includes(trip.id)
+                  ? "#fff"
+                  : colors.primary[600],
+                "&.Mui-selected": {
+                  backgroundColor: colors.primary[400],
+                  color: "#fff",
+                  "&:hover": {
+                    backgroundColor: colors.primary[500],
+                    color: "#fff",
+                  },
+                },
+              }}
+            >
               {trip.trp_name}
             </MenuItem>
           ))}
@@ -227,9 +289,15 @@ export default function ShareModal({
               sx={{ marginRight: 2 }}
               size="small"
             >
-              <ToggleButton value="EN">EN</ToggleButton>
-              <ToggleButton value="KR">KR</ToggleButton>
-              <ToggleButton value="KH">KH</ToggleButton>
+              <ToggleButton value="EN" sx={{ color: colors.primary[500] }}>
+                EN
+              </ToggleButton>
+              <ToggleButton value="KR" sx={{ color: colors.primary[500] }}>
+                KR
+              </ToggleButton>
+              <ToggleButton value="KH" sx={{ color: colors.primary[500] }}>
+                KH
+              </ToggleButton>
             </ToggleButtonGroup>
             <IconButton
               onClick={handleEditToggle}
@@ -247,10 +315,24 @@ export default function ShareModal({
             multiline
             rows={15}
             fullWidth
-            sx={{ mt: 2 }}
+            sx={{
+              mt: 2,
+              "& .MuiInputBase-input": {
+                color: colors.primary[600],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[500],
+              },
+            }}
           />
         ) : (
-          <Typography variant="body2" sx={{ whiteSpace: "pre-line", mb: 2 }}>
+          <Typography
+            variant="body2"
+            sx={{ whiteSpace: "pre-line", mb: 2, color: colors.primary[600] }}
+          >
             {invoiceText}
           </Typography>
         )}
@@ -270,7 +352,6 @@ export default function ShareModal({
         </Button>
       </DialogActions>
 
-      {/* Custom Alert for feedback */}
       <CustomAlert
         open={alertOpen}
         onClose={() => setAlertOpen(false)}
