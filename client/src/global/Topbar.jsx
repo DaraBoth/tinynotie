@@ -17,7 +17,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
       justifyContent="space-between"
       alignItems="center"
       padding="16px 24px"
-      bgcolor="transparent" // Making the background transparent
+      bgcolor={colors.primary[900]}  // Match the background with the group page
       sx={{
         boxShadow: 'none',
       }}
@@ -29,9 +29,9 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
           navigate('/');
         }}
         sx={{
-          color: colors.grey[700], // Adjusted for better visibility in light theme
+          color: colors.grey[100], // Better visibility in both themes
           '&:hover': {
-            backgroundColor: colors.blueAccent[100], // Lighter hover effect
+            backgroundColor: colors.blueAccent[700], // Consistent hover effect
           },
         }}
       >
@@ -46,7 +46,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
         fontWeight={700}
         flexGrow={1}
         sx={{ 
-          color: colors.primary[500], // Ensure title is visible in both themes
+          color: colors.grey[100], // Ensure title is visible in both themes
         }}
       >
         {groupInfo?.grp_name ?? groupInfo?.group_name}
@@ -56,9 +56,9 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
       <IconButton
         onClick={onShareClick}
         sx={{
-          color: colors.grey[700], // Adjusted for better visibility in light theme
+          color: colors.grey[100], // Better visibility in both themes
           '&:hover': {
-            backgroundColor: colors.blueAccent[100], // Lighter hover effect
+            backgroundColor: colors.blueAccent[700], // Consistent hover effect
           },
         }}
       >

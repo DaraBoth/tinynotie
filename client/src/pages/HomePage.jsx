@@ -15,6 +15,7 @@ import {
   Snackbar,
   Alert,
   Skeleton,
+  CircularProgress,
 } from "@mui/material";
 import { useDeleteGroupMutation, useGetGroupMutation } from "../api/api";
 import { useNavigate } from "react-router-dom";
@@ -35,14 +36,14 @@ function GroupCard({ item, onDelete, onClick }) {
         cursor: "pointer",
         padding: "15px",
         borderRadius: "12px",
-        border: `1px solid ${colors.primary[700]}`, // Border uses the primary color from the theme
+        border: `1px solid ${colors.primary[700]}`, 
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": {
           transform: "scale(1.05)",
-          boxShadow: `0 4px 20px ${colors.primary[900]}33`, // Adjusted shadow to match theme
+          boxShadow: `0 4px 20px ${colors.primary[900]}33`, 
         },
         position: "relative",
-        backgroundColor: colors.grey[800], // Use theme's background color
+        backgroundColor: colors.grey[800], 
       }}
       onClick={() => onClick(item)}
     >
@@ -81,6 +82,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   const [triggerDeleteGroup, resultGroup] = useDeleteGroupMutation();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false); // Added state for deletion loading
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
@@ -127,14 +129,20 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   };
 
   const handleDeleteNote = async (noteId) => {
+    setDeleting(true);
     const response = await triggerDeleteGroup({ group_id: noteId });
+    setDeleting(false);
+
     if (response.data.status) {
       setData((prevData) => prevData.filter((note) => note.id !== noteId));
       setOpenDeleteDialog(false);
       setNoteToDelete(null);
+      setSnackbarSuccess(true);
+    } else {
+      setSnackbarSuccess(false);
     }
+
     setSnackbarMessage(response.data.message);
-    setSnackbarSuccess(response.data.status);
     setOpenSnackbar(true);
   };
 
@@ -144,7 +152,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   };
 
   return (
-    <Box sx={{ width: "100%", height: "100%", padding: "20px", backgroundColor: colors.background.default }}>
+    <Box sx={{ width: "100%", minHeight: "100vh", height:"100%", padding: "20px", backgroundColor: colors.primary[900] }}>
       <Paper
         elevation={3}
         sx={{
@@ -191,7 +199,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                 variant="rounded"
                 width={"cal(100%/4)"}
                 height={90}
-                sx={{ borderRadius: "12px", backgroundColor: colors.grey[700] }} // Skeleton color
+                sx={{ borderRadius: "12px", backgroundColor: colors.grey[700] }} 
               />
             ))
           : data.length === 0
@@ -208,7 +216,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                 padding: "20px",
                 textAlign: "center",
                 borderRadius: "12px",
-                border: `1px solid ${colors.primary[700]}`, // Border using primary color
+                border: `1px solid ${colors.primary[700]}`, 
                 backgroundColor: colors.grey[800],
               }}
             >
@@ -224,9 +232,9 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
                 onClick={handleCreateGroup}
                 sx={{
                   marginTop: "20px",
-                  backgroundColor: colors.primary[500], // Primary color for Fab button
+                  backgroundColor: colors.primary[500], 
                   "&:hover": {
-                    backgroundColor: colors.primary[700], // Hover color
+                    backgroundColor: colors.primary[700], 
                   },
                 }}
               >
@@ -255,7 +263,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
           position: "fixed",
           bottom: "16px",
           right: "16px",
-          backgroundColor: colors.primary[500], // Floating button with primary color
+          backgroundColor: colors.primary[500], 
           "&:hover": {
             backgroundColor: colors.primary[700],
           },
@@ -273,7 +281,12 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
           <Button onClick={() => setOpenDeleteDialog(false)} sx={{ color: colors.primary[500] }}>
             Cancel
           </Button>
-          <Button onClick={() => handleDeleteNote(noteToDelete)} color="secondary">
+          <Button
+            onClick={() => handleDeleteNote(noteToDelete)}
+            color="secondary"
+            disabled={deleting} // Disable the button while loading
+            startIcon={deleting && <CircularProgress size="1rem" />} // Add loading spinner
+          >
             Delete
           </Button>
         </DialogActions>

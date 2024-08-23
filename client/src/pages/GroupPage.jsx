@@ -31,6 +31,12 @@ import { formatTimeDifference } from "../help/time";
 import currency from "currency.js";
 import EditTrip from "../component/EditTrip";
 import ShareModal from "../component/ShareModal";
+import {
+  calculateMoney,
+  formatMoney,
+  functionRenderColumns,
+  getMemberID,
+} from "../help/helper";
 
 export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const theme = useTheme();
@@ -46,6 +52,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   const [openDeleteMemberDialog, setOpenDeleteMemberDialog] = useState(false);
   const [openShareModal, setOpenShareModal] = useState(false);
   const currencyType = groupInfo.currency;
+  const isDark = theme.palette.mode === "dark";
 
   // Fetch trips and members on component mount or when groupInfo changes
   useEffect(() => {
@@ -157,7 +164,15 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   ];
 
   return (
-    <main className="content">
+    <Box
+      sx={{
+        backgroundColor: colors.primary[900], // Set page background color
+        minHeight: "100vh", // Ensure the background covers the full height
+        height: "auto", // Allow the height to adjust automatically
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Topbar
         user={user}
         groupInfo={groupInfo}
@@ -167,7 +182,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
       <Box
         sx={{
           padding: "20px",
-          height: "calc(100vh - 130px)",
+          flexGrow: 1, // Allow this box to grow and take up remaining space
           display: "flex",
           flexDirection: "column",
         }}
@@ -177,8 +192,8 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
           <Grid item xs={12} md={8}>
             <Card
               sx={{
-                height: "100%",
-                backgroundColor: colors.background,
+                height: "100%", // Ensure card takes full height
+                backgroundColor: colors.background, // Set Card background color to white/light
                 borderRadius: "8px",
                 boxShadow: `0px 4px 10px ${
                   theme.palette.mode === "light"
@@ -206,7 +221,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                   />
                   <Typography
                     variant="h6"
-                    color={colors.primary[500]}
+                    color={colors.primary[600]}
                     gutterBottom
                   >
                     Note Member Contributions
@@ -229,88 +244,104 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
             item
             xs={12}
             md={4}
-            sx={{ height: { xs: "50%" , md: "100%" }, display: "flex", flexDirection: "column" }}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              minHeight: "calc(100vh - 150px)", // Full height minus some padding
+            }}
           >
-            <Grid item sx={{ height: "65%" }}>
-              {" "}
-              {/* 65% height for Recent Trips */}
-              <Card sx={{ height: "100%", backgroundColor: colors.background }}>
-                <CardContent
+            {/* Recent Trips Card */}
+            <Card
+              sx={{
+                flexGrow: 1,
+                minHeight: { xs: "50vh", md: "68%" }, // Adjust height for mobile
+                backgroundColor: colors.background,
+              }}
+            >
+              <CardContent
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                }}
+              >
+                <Box
                   sx={{
-                    height: "100%",
                     display: "flex",
-                    flexDirection: "column",
+                    flexDirection: "row",
+                    marginBottom: 2,
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      marginBottom: 2,
-                    }}
-                  >
-                    <StickyNote2Icon
-                      sx={{ marginRight: 1, color: colors.primary[500] }}
-                    />
-                    <Typography
-                      variant="h6"
-                      color={colors.primary[500]}
-                      gutterBottom
-                    >
-                      Recent Trips
-                    </Typography>
-                  </Box>
-                  <Divider sx={{ marginBottom: 2 }} />
-                  <TableComponent
-                    rows={trip || []}
-                    columns={tripColumns || []}
-                    height="100%" // Occupies the full height of the CardContent
-                    isLoading={!resultMember.isSuccess}
-                    sx={{ flexGrow: 1 }} // Allows the table to grow within the available space
+                  <StickyNote2Icon
+                    sx={{ marginRight: 1, color: colors.primary[500] }}
                   />
-                </CardContent>
-              </Card>
-            </Grid>
+                  <Typography
+                    variant="h6"
+                    color={colors.primary[500]}
+                    gutterBottom
+                  >
+                    Recent Trips
+                  </Typography>
+                </Box>
+                <Divider sx={{ marginBottom: 2 }} />
+                {/* Table content */}
+                <TableComponent
+                  rows={trip || []}
+                  columns={tripColumns || []}
+                  height="100%"
+                  isLoading={!resultMember.isSuccess}
+                  sx={{
+                    flexGrow: 1,
+                  }}
+                />
+              </CardContent>
+            </Card>
 
-            <Grid item sx={{ height: { sx: "30%", md:"35%"}, marginTop: "10px" }}>
-              {" "}
-              {/* 35% height for Total Spend Summary */}
-              <Card sx={{ height: "100%", backgroundColor: colors.background }}>
-                <CardContent
+            {/* Total Spend Summary Card */}
+            <Card
+              sx={{
+                flexGrow: 1,
+                minHeight: "250px", // Set a more appropriate minimum height
+                marginTop: "10px",
+                backgroundColor: colors.background,
+              }}
+            >
+              <CardContent
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%", // Ensure content fills the card height
+                }}
+              >
+                <Box
                   sx={{
-                    height: "100%",
                     display: "flex",
-                    flexDirection: "column",
+                    flexDirection: "row",
+                    marginBottom: 2,
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      marginBottom: 2,
-                    }}
-                  >
-                    <StickyNote2Icon
-                      sx={{ marginRight: 1, color: colors.primary[500] }}
-                    />
-                    <Typography
-                      variant="h6"
-                      color={colors.primary[500]}
-                      gutterBottom
-                    >
-                      Total Spend Summary
-                    </Typography>
-                  </Box>
-                  <Divider sx={{ marginBottom: 2 }} />
-                  <TotalSpendTable
-                    info={info}
-                    isLoading={!resultMember.isSuccess || !resultTrip.isSuccess}
-                    height="100%" // Occupies the full height of the CardContent
-                    sx={{ flexGrow: 1 }} // Allows the table to grow within the available space
+                  <StickyNote2Icon
+                    sx={{ marginRight: 1, color: colors.primary[500] }}
                   />
-                </CardContent>
-              </Card>
-            </Grid>
+                  <Typography
+                    variant="h6"
+                    color={colors.primary[500]}
+                    gutterBottom
+                  >
+                    Total Spend Summary
+                  </Typography>
+                </Box>
+                <Divider sx={{ marginBottom: 2 }} />
+                <TotalSpendTable
+                  info={info}
+                  isLoading={!resultMember.isSuccess || !resultTrip.isSuccess}
+                  sx={{
+                    flexGrow: 1,
+                  }}
+                />
+              </CardContent>
+            </Card>
           </Grid>
         </Grid>
       </Box>
@@ -392,10 +423,9 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
         currencyType={currencyType}
         member={member}
       />
-    </main>
+    </Box>
   );
 }
-
 const TotalSpendTable = ({ info, isLoading }) => {
   const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
   const rows = [{ id: 1, totalPaid, totalRemain, totalSpend, totalUnPaid }];
@@ -403,28 +433,28 @@ const TotalSpendTable = ({ info, isLoading }) => {
     {
       field: "totalPaid",
       headerName: "Paid",
-      width: 100 + totalPaid.length,
+      width: 100,
       headerAlign: "center",
       align: "center",
     },
     {
       field: "totalRemain",
       headerName: "UnPaid",
-      width: 100 + totalRemain.length,
+      width: 100,
       headerAlign: "center",
       align: "center",
     },
     {
       field: "totalSpend",
       headerName: "Spend",
-      width: 100 + totalSpend.length,
+      width: 100,
       headerAlign: "center",
       align: "center",
     },
     {
       field: "totalUnPaid",
       headerName: "Remain",
-      width: 100 + totalUnPaid.length,
+      width: 100,
       headerAlign: "center",
       align: "center",
     },
@@ -434,148 +464,14 @@ const TotalSpendTable = ({ info, isLoading }) => {
     <TableComponent
       rows={rows}
       columns={columns}
-      height="calc(80vh / 2 - 175px)"
+      height="250px" // Fixed height for better visibility
       hideFooter={true}
       isLoading={isLoading}
       addToolBar={false}
+      sx={{
+        minHeight: "250px", // Ensures the table is visible and occupies space
+        backgroundColor: "rgba(0, 123, 255, 0.1)", // Light background for visibility during debugging
+      }}
     />
   );
 };
-
-function calculateMoney(allMembers, trips, currencyType) {
-  let newData = [];
-  let kitLuy = {};
-
-  let totalMember = 0,
-    totalPaid = 0,
-    totalRemain = 0,
-    totalUnPaid = 0,
-    totalSpend = 0;
-  newData = allMembers.map((member, id) => {
-    let luyForTrip = 0;
-    let paid = member.paid;
-    let luySol = paid;
-    trips.forEach((trip) => {
-      let { mem_id, spend } = trip;
-      mem_id = JSON.parse(mem_id);
-      let osMnek = 0;
-      const joinedMemCount = getMemberID(allMembers, mem_id);
-      mem_id.forEach((joined) => {
-        if (member.id === Number(joined)) {
-          osMnek = currency(spend).divide(joinedMemCount);
-          luyForTrip += spend / joinedMemCount;
-          luySol = member.paid - luyForTrip;
-        }
-      });
-      kitLuy[trip.trp_name] = formatMoney(osMnek, 1, currencyType);
-    });
-    let unPaid = 0;
-    totalPaid += paid;
-    totalRemain += luySol > 0 ? luySol : unPaid;
-    totalUnPaid += luySol > 0 ? unPaid : luySol;
-    return {
-      id: id + 1,
-      name: member.mem_name,
-      paid: currency(paid, { symbol: currencyType }).format(),
-      ...kitLuy,
-      remain: formatMoney(luySol > 0 ? luySol : unPaid, 2, currencyType),
-      unpaid: formatMoney(luySol > 0 ? unPaid : luySol, 2, currencyType),
-    };
-  });
-  totalMember = newData.length;
-  totalSpend =
-    "-" +
-    currency(totalPaid, { symbol: currencyType })
-      .subtract(totalRemain)
-      .format();
-  totalPaid = formatMoney(totalPaid, 2, currencyType);
-  totalRemain = formatMoney(totalRemain, 2, currencyType);
-  totalUnPaid = formatMoney(totalUnPaid, 2, currencyType);
-
-  return {
-    info: { totalMember, totalPaid, totalRemain, totalSpend, totalUnPaid },
-    newData,
-  };
-}
-
-function formatMoney(money, option = 2, currencyType) {
-  const USD = (value) => currency(value, { symbol: currencyType }).format();
-  if (!money) return "-/-  ";
-  if (option === 1) {
-    return "-" + USD(money);
-  }
-  if (option === 2) {
-    return USD(money);
-  }
-  if (option === 3) {
-    return USD(money);
-  } else {
-    return USD(money);
-  }
-}
-
-function getMemberID(allMember, selectedMember) {
-  let newArrayId = [];
-  for (let i in allMember) {
-    for (let j in selectedMember) {
-      if (allMember[i].id === selectedMember[j]) {
-        newArrayId[j] = allMember[i].id;
-      }
-    }
-  }
-  return newArrayId.length;
-}
-
-function functionRenderColumns(rows) {
-  let headerValues = ["ID", "Name", "Paid", "Remain", "Unpaid"];
-  let newColumns = [],
-    key;
-  try {
-    key = Object.keys(rows[0]);
-  } catch {
-    key = headerValues;
-  }
-  for (let i in key) {
-    let title = key[i];
-    for (let j in headerValues) {
-      if (
-        key[i].toLocaleLowerCase().includes(headerValues[j].toLocaleLowerCase())
-      ) {
-        title = headerValues[j];
-      }
-    }
-    newColumns[i] = {
-      field: key[i],
-      headerName: title,
-      headerAlign: "center",
-      align: "center",
-      minWidth: 110 + key[i].length,
-    };
-    if (title === "Name") {
-      newColumns[i] = {
-        ...newColumns[i],
-        minWidth: 110,
-        headerAlign: "left",
-        align: "left",
-        hideable: false,
-      };
-    }
-    if (title === "Remain" || title === "Unpaid") {
-      newColumns[i] = {
-        ...newColumns[i],
-        minWidth: 110,
-        headerAlign: "right",
-        align: "right",
-      };
-    }
-    if (title === "ID") {
-      newColumns[i] = {
-        ...newColumns[i],
-        hidden: false,
-        minWidth: 60,
-        width: 60,
-      };
-    }
-  }
-  return newColumns;
-}

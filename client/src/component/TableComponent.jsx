@@ -9,6 +9,8 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [pageSize, setPageSize] = useState(10);
 
+  const isDark = theme.palette.mode === 'dark'
+
   return (
     <Box
       height={height}
@@ -16,32 +18,33 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
         overflowX: "auto", // Allow horizontal scrolling if needed
         width: "100%", // Make sure the table takes the full width of its container
         "& .MuiDataGrid-root": {
-          border: `1px solid ${colors.blueAccent[600]}`,
+          border: `2px solid ${colors.primary[600]}`,
           backgroundColor: colors.background,
         },
         "& .MuiDataGrid-columnHeaders": {
-          backgroundColor: colors.primary[500],
+          backgroundColor: colors.primary[600],
           color: colors.grey[100],
         },
         "& .MuiDataGrid-footerContainer": {
-          borderTop: `1px solid ${colors.blueAccent[600]}`,
+          borderTop: `2px solid ${colors.primary[600]}`,
+          backgroundColor: colors.background,
         },
         "& .MuiDataGrid-row": {
-          backgroundColor: theme.palette.mode === 'dark' ? colors.grey[800] : colors.grey[200],
-          color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[900],
+          backgroundColor: isDark ? colors.grey[800] : colors.grey[200],
+          color: isDark ? colors.grey[100] : colors.grey[900],
           "&:hover": {
-            backgroundColor: theme.palette.mode === 'dark' ? colors.grey[700] : colors.grey[300],
+            backgroundColor: isDark ? colors.grey[700] : colors.grey[300],
           }
         },
         "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-          color: `${colors.blueAccent[500]} !important`,
+          color: `${colors.primary[600]} !important`,
         },
         "& .MuiDataGrid-overlay": {
-          backgroundColor: colors.primary[400],
+          backgroundColor: colors.primary[300],
           opacity: 0.9,
         },
         "& .MuiCircularProgress-root": {
-          color: colors.blueAccent[400],
+          color: colors.blueAccent[900],
         },
       }}
     >
