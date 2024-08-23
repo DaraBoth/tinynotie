@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { tokens } from "../theme";
 import { rspWidth } from "../responsive";
 
-const Topbar = ({ groupInfo, setGroupInfo }) => {
+const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
@@ -54,9 +54,7 @@ const Topbar = ({ groupInfo, setGroupInfo }) => {
 
       {/* Share Button */}
       <IconButton
-        onClick={() => {
-          // Implement the share functionality here
-        }}
+        onClick={onShareClick}
         sx={{
           color: colors.grey[700], // Adjusted for better visibility in light theme
           '&:hover': {

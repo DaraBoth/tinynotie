@@ -81,17 +81,59 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
           "& > div": { gridColumn: "span 4" },
         }}
       >
-        <FormControl variant="standard">
-          <InputLabel color="primary">Pick a member</InputLabel>
+        <FormControl variant="standard" sx={{ minWidth: "263px" }}>
+          <InputLabel
+            color="primary"
+            sx={{
+              color: colors.primary[500],
+              "&.Mui-focused": {
+                color: colors.primary[500],
+              },
+            }}
+          >
+            Pick a member
+          </InputLabel>
           <Select
             value={deleteName}
             onChange={handleChange}
             label="Pick a member"
             color="primary"
-            sx={{ minWidth: "263px" }}  
+            sx={{
+              "& .MuiSelect-select": {
+                color: colors.primary[600],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+              "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[500],
+              },
+              "& .MuiSelect-icon": {
+                color: colors.primary[500],
+              },
+            }}
           >
             {member?.map((item) => (
-              <MenuItem key={item.id} value={item.id}>
+              <MenuItem
+                key={item.id}
+                value={item.id}
+                sx={{
+                  backgroundColor: deleteName === item.id ? colors.primary[500] : "inherit",
+                  color: deleteName === item.id ? "#fff" : colors.primary[600],
+                  "&:hover": {
+                    backgroundColor: colors.primary[400],
+                    color: "#fff",
+                  },
+                  "&.Mui-selected": {
+                    backgroundColor: colors.primary[400],
+                    color: "#fff",
+                    "&:hover": {
+                      backgroundColor: colors.primary[500],
+                      color: "#fff",
+                    },
+                  },
+                }}
+              >
                 {item.mem_name}
               </MenuItem>
             ))}
@@ -99,7 +141,11 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
         </FormControl>
 
         <Button
-          sx={{ gridColumn: "span 4" }}
+          sx={{
+            gridColumn: "span 4",
+            backgroundColor: colors.primary[500],
+            color: "#fff",
+          }}
           onClick={handleDelete}
           type="button"
           color="error"
@@ -111,7 +157,6 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
         </Button>
       </Box>
 
-      {/* Custom Alert for feedback */}
       <CustomAlert
         open={alertOpen}
         onClose={() => setAlertOpen(false)}

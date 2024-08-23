@@ -18,7 +18,7 @@ import AddIcon from "@mui/icons-material/Add";
 import SaveIcon from "@mui/icons-material/Save";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { tokens } from "../theme";
-import CustomAlert from "./CustomAlert"; // Import the CustomAlert component
+import CustomAlert from "./CustomAlert";
 import moment from "moment";
 
 const filter = createFilterOptions();
@@ -29,7 +29,7 @@ export default function EditTrip({
   secret,
   trip,
   group_id,
-  currencyType, // New prop for currency type
+  currencyType,
 }) {
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
@@ -40,8 +40,8 @@ export default function EditTrip({
   const [alertOpen, setAlertOpen] = React.useState(false);
   const [alertMessage, setAlertMessage] = React.useState("");
   const [alertType, setAlertType] = React.useState("success");
-  const [selectedChip, setSelectedChip] = React.useState(null); 
-  const [customAmount, setCustomAmount] = React.useState(""); // New state for custom amount
+  const [selectedChip, setSelectedChip] = React.useState(null);
+  const [customAmount, setCustomAmount] = React.useState("");
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -70,7 +70,7 @@ export default function EditTrip({
         spend: adjustedMoney,
         group_id,
         update_dttm: moment().format("YYYY-MM-DD HH:mm:ss"),
-        type, // "ADD" or "REDUCE"
+        type,
       })
         .then((response) => {
           if (response?.data?.status) {
@@ -86,7 +86,7 @@ export default function EditTrip({
           setLoading(false);
           setValue(null);
           setMoney("");
-          setSelectedChip(null); // Reset selected chip
+          setSelectedChip(null);
         });
     }
   };
@@ -103,7 +103,7 @@ export default function EditTrip({
       group_id,
       create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
       update_dttm: moment().format("YYYY-MM-DD HH:mm:ss"),
-      type: "ADD", // Default to ADD when creating a new trip
+      type: "ADD",
     })
       .then((response) => {
         if (response?.data?.status) {
@@ -133,7 +133,6 @@ export default function EditTrip({
     }
   }, [resultEditTrip, resultAddTrip]);
 
-  // Predefined amounts based on currency type
   const currencySuggestions = {
     $: [5, 10, 20, 50, 100],
     W: [1000, 5000, 10000, 50000, 100000],
@@ -141,7 +140,7 @@ export default function EditTrip({
   };
 
   const handleChipClick = (amount) => {
-    setSelectedChip(amount); // Select the chip but don't add to input
+    setSelectedChip(amount);
   };
 
   const handleAddClick = () => {
@@ -187,7 +186,7 @@ export default function EditTrip({
               });
             } else {
               setValue(newValue);
-              setMoney(newValue.spend)
+              setMoney(newValue.spend);
               setSelectedChip(currencySuggestions[currencyType][0]);
             }
           }}
@@ -217,7 +216,15 @@ export default function EditTrip({
           clearOnBlur
           handleHomeEndKeys
           renderOption={(props, option) => (
-            <li {...props}>{option.trp_name}</li>
+            <li
+              {...props}
+              style={{
+                backgroundColor: value === option ? colors.primary[500] : "inherit",
+                color: value === option ? colors.grey[100] : colors.primary[600],
+              }}
+            >
+              {option.trp_name}
+            </li>
           )}
           freeSolo
           renderInput={(params) => (
@@ -226,6 +233,17 @@ export default function EditTrip({
               {...params}
               variant="standard"
               label="Select or Add Trip"
+              sx={{
+                "& .MuiInputBase-input": {
+                  color: colors.primary[600],
+                },
+                "& .MuiInputLabel-root": {
+                  color: colors.primary[500],
+                },
+                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[400],
+                },
+              }}
             />
           )}
         />
@@ -243,7 +261,18 @@ export default function EditTrip({
               setMoney(e.target.value);
             }}
             disabled={loading}
-            sx={{ flex: 1 }}
+            sx={{
+              flex: 1,
+              "& .MuiInputBase-input": {
+                color: colors.primary[600],
+              },
+              "& .MuiInputLabel-root": {
+                color: colors.primary[500],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+            }}
           />
           <IconButton
             onClick={handleSubtractClick}
@@ -267,8 +296,12 @@ export default function EditTrip({
               key={index}
               label={`${currencyType}${amount}`}
               onClick={() => handleChipClick(amount)}
-              color={selectedChip === amount ? "primary" : "default"} // Highlight selected chip
-              sx={{ m: 0.5 }}
+              color={selectedChip === amount ? "primary" : "default"}
+              sx={{
+                m: 0.5,
+                backgroundColor: selectedChip === amount ? colors.primary[500] : "inherit",
+                color: selectedChip === amount ? "#fff" : colors.primary[600],
+              }}
             />
           ))}
           <TextField
@@ -281,10 +314,22 @@ export default function EditTrip({
               e.target.value = e.target.value.trim();
               if (!isNaN(Number(e.target.value)) || e.target.value === "") {
                 setCustomAmount(e.target.value);
-                setSelectedChip(null); // Deselect chips when using custom input
+                setSelectedChip(null);
               }
             }}
-            sx={{ ml: 1, width: '80px' }} // Adjust width as needed
+            sx={{
+              ml: 1,
+              width: '80px',
+              "& .MuiInputBase-input": {
+                color: colors.primary[600],
+              },
+              "& .MuiInputLabel-root": {
+                color: colors.primary[500],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+            }}
           />
         </Box>
 
@@ -295,7 +340,12 @@ export default function EditTrip({
             variant="contained"
             startIcon={loading && <CircularProgress size={20} />}
             disabled={loading || !value}
-            sx={{ flex: 1, ml: 1 }}
+            sx={{
+              flex: 1,
+              ml: 1,
+              backgroundColor: colors.primary[500],
+              color: "#fff",
+            }}
           >
             <SaveIcon />
             Save
@@ -303,9 +353,23 @@ export default function EditTrip({
         </Box>
       </Box>
 
-      <Dialog open={open} onClose={loading ? null : handleClose}>
+      <Dialog
+        open={open}
+        onClose={loading ? null : handleClose}
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.background,
+          },
+        }}
+      >
         <form onSubmit={handleSubmit}>
-          <DialogTitle>New trip</DialogTitle>
+          <DialogTitle
+            sx={{
+              color: colors.primary[500],
+            }}
+          >
+            New trip
+          </DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -323,6 +387,17 @@ export default function EditTrip({
               type="text"
               variant="standard"
               fullWidth
+              sx={{
+                "& .MuiInputBase-input": {
+                  color: colors.primary[600],
+                },
+                "& .MuiInputLabel-root": {
+                  color: colors.primary[500],
+                },
+                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[400],
+                },
+              }}
             />
             <TextField
               margin="dense"
@@ -341,11 +416,22 @@ export default function EditTrip({
               type="text"
               variant="standard"
               fullWidth
+              sx={{
+                "& .MuiInputBase-input": {
+                  color: colors.primary[600],
+                },
+                "& .MuiInputLabel-root": {
+                  color: colors.primary[500],
+                },
+                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[400],
+                },
+              }}
             />
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ display: "flex", flexDirection: "row" }}>
             <Button
-              color="inherit"
+              color="error"
               variant="outlined"
               onClick={loading ? null : handleClose}
               disabled={loading}
@@ -358,6 +444,10 @@ export default function EditTrip({
               type="submit"
               startIcon={loading && <CircularProgress size={20} />}
               disabled={loading}
+              sx={{
+                backgroundColor: colors.primary[500],
+                color: "#fff",
+              }}
             >
               Add
             </Button>
@@ -365,7 +455,6 @@ export default function EditTrip({
         </form>
       </Dialog>
 
-      {/* Custom Alert for feedback */}
       <CustomAlert
         open={alertOpen}
         onClose={() => setAlertOpen(false)}

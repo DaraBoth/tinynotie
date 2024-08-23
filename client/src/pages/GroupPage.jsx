@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
   Divider,
+  Tooltip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -157,27 +158,52 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
 
   return (
     <main className="content">
-      <Topbar 
-        user={user} 
-        groupInfo={groupInfo} 
-        setGroupInfo={setGroupInfo} 
+      <Topbar
+        user={user}
+        groupInfo={groupInfo}
+        setGroupInfo={setGroupInfo}
         onShareClick={() => setOpenShareModal(true)}
       />
-      <Box sx={{ padding: "20px" }}>
-        <Grid container spacing={2} sx={{ height: "100%" }}>
+      <Box
+        sx={{
+          padding: "20px",
+          height: "calc(100vh - 130px)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Grid container spacing={2} sx={{ flexGrow: 1 }}>
           {/* Members Section */}
           <Grid item xs={12} md={8}>
             <Card
               sx={{
-                height: isNonMobile ? "calc(100vh - 130px)" : "calc(10 * 50px)",
+                height: "100%",
                 backgroundColor: colors.background,
                 borderRadius: "8px",
-                boxShadow: `0px 4px 10px ${theme.palette.mode === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.5)'}`,
+                boxShadow: `0px 4px 10px ${
+                  theme.palette.mode === "light"
+                    ? "rgba(0, 0, 0, 0.1)"
+                    : "rgba(0, 0, 0, 0.5)"
+                }`,
               }}
             >
-              <CardContent>
-                <Box sx={{ display: "flex", flexDirection: "row" }}>
-                  <StickyNote2Icon sx={{ marginRight: 1, color: colors.primary[500] }} />
+              <CardContent
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    marginBottom: 2,
+                  }}
+                >
+                  <StickyNote2Icon
+                    sx={{ marginRight: 1, color: colors.primary[500] }}
+                  />
                   <Typography
                     variant="h6"
                     color={colors.primary[500]}
@@ -190,186 +216,175 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
                 <TableComponent
                   rows={newData || []}
                   columns={columns || []}
-                  height={
-                    isNonMobile ? "calc(90vh - 126px)" : "calc(10 * 41px)"
-                  }
+                  height={{ xs: "650px", md: "100%" }} // 650px height on mobile, full height on desktop
                   isLoading={!resultTrip.isSuccess}
-                  sx={{
-                    "& .MuiDataGrid-root": {
-                      border: "none",
-                    },
-                    "& .MuiDataGrid-cell": {
-                      padding: "8px",
-                      fontSize: "14px",
-                    },
-                    "& .MuiDataGrid-columnHeaders": {
-                      backgroundColor: colors.primary[500],
-                      color: colors.grey[100],
-                      fontSize: "16px",
-                    },
-                    "& .MuiDataGrid-footerContainer": {
-                      justifyContent: "center",
-                      borderTop: "none",
-                    },
-                  }}
+                  sx={{ flexGrow: 1 }} // Allows the table to grow within the available space
                 />
               </CardContent>
             </Card>
           </Grid>
 
-          {/* Trip Section */}
-          <Grid item xs={12} md={4}>
-            <Grid container direction="column" spacing={2}>
-              <Grid item xs={6}>
-                <Card sx={{ height: "100%", backgroundColor: colors.background }}>
-                  <CardContent>
-                    <Box sx={{ display: "flex", flexDirection: "row" }}>
-                      <StickyNote2Icon sx={{ marginRight: 1, color: colors.primary[500] }} />
-                      <Typography
-                        variant="h6"
-                        color={colors.primary[500]}
-                        gutterBottom
-                      >
-                        Recent Trips
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ marginBottom: 2 }} />
-                    <TableComponent
-                      rows={
-                        Array.isArray(trip)
-                          ? trip.map((trp, index) => ({
-                              ...trp,
-                              id: index + 1,
-                            }))
-                          : []
-                      }
-                      columns={tripColumns || []}
-                      height={
-                        isNonMobile
-                          ? "calc(75vh / 2 + 68px)"
-                          : "calc(10 * 35px)"
-                      }
-                      isLoading={!resultMember.isSuccess}
-                      sx={{
-                        "& .MuiDataGrid-root": {
-                          border: "none",
-                        },
-                        "& .MuiDataGrid-cell": {
-                          padding: "8px",
-                          fontSize: "14px",
-                        },
-                        "& .MuiDataGrid-columnHeaders": {
-                          backgroundColor: colors.primary[500],
-                          color: colors.grey[100],
-                          fontSize: "16px",
-                        },
-                        "& .MuiDataGrid-footerContainer": {
-                          justifyContent: "center",
-                          borderTop: "none",
-                        },
-                      }}
+          {/* Trip and Summary Section */}
+          <Grid
+            item
+            xs={12}
+            md={4}
+            sx={{ height: { xs: "50%" , md: "100%" }, display: "flex", flexDirection: "column" }}
+          >
+            <Grid item sx={{ height: "65%" }}>
+              {" "}
+              {/* 65% height for Recent Trips */}
+              <Card sx={{ height: "100%", backgroundColor: colors.background }}>
+                <CardContent
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      marginBottom: 2,
+                    }}
+                  >
+                    <StickyNote2Icon
+                      sx={{ marginRight: 1, color: colors.primary[500] }}
                     />
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6}>
-                <Card sx={{ height: "100%", backgroundColor: colors.background }}>
-                  <CardContent>
-                    <Box sx={{ display: "flex", flexDirection: "row" }}>
-                      <StickyNote2Icon sx={{ marginRight: 1, color: colors.primary[500] }} />
-                      <Typography
-                        variant="h6"
-                        color={colors.primary[500]}
-                        gutterBottom
-                      >
-                        Total Spend Summary
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ marginBottom: 2 }} />
-                    <TotalSpendTable
-                      info={info}
-                      isLoading={
-                        !resultMember.isSuccess || !resultTrip.isSuccess
-                      }
+                    <Typography
+                      variant="h6"
+                      color={colors.primary[500]}
+                      gutterBottom
+                    >
+                      Recent Trips
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ marginBottom: 2 }} />
+                  <TableComponent
+                    rows={trip || []}
+                    columns={tripColumns || []}
+                    height="100%" // Occupies the full height of the CardContent
+                    isLoading={!resultMember.isSuccess}
+                    sx={{ flexGrow: 1 }} // Allows the table to grow within the available space
+                  />
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item sx={{ height: { sx: "30%", md:"35%"}, marginTop: "10px" }}>
+              {" "}
+              {/* 35% height for Total Spend Summary */}
+              <Card sx={{ height: "100%", backgroundColor: colors.background }}>
+                <CardContent
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      marginBottom: 2,
+                    }}
+                  >
+                    <StickyNote2Icon
+                      sx={{ marginRight: 1, color: colors.primary[500] }}
                     />
-                  </CardContent>
-                </Card>
-              </Grid>
+                    <Typography
+                      variant="h6"
+                      color={colors.primary[500]}
+                      gutterBottom
+                    >
+                      Total Spend Summary
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ marginBottom: 2 }} />
+                  <TotalSpendTable
+                    info={info}
+                    isLoading={!resultMember.isSuccess || !resultTrip.isSuccess}
+                    height="100%" // Occupies the full height of the CardContent
+                    sx={{ flexGrow: 1 }} // Allows the table to grow within the available space
+                  />
+                </CardContent>
+              </Card>
             </Grid>
           </Grid>
         </Grid>
-
-        {/* Dialogs */}
-        <CustomDialog
-          open={openToolTipDialog}
-          onClose={() => setOpenToolTipDialog(false)}
-          title="Edit Member"
-        >
-          <ToolTip
-            triggerMember={triggerMember}
-            member={member}
-            group_id={groupInfo.group_id}
-            currencyType={currencyType}
-          />
-        </CustomDialog>
-
-        <CustomDialog
-          open={openAddTripDialog}
-          onClose={() => setOpenAddTripDialog(false)}
-          title="Add Trip"
-        >
-          <EditTrip
-            triggerTrip={triggerTrip}
-            member={member}
-            secret={secret}
-            trip={trip}
-            group_id={groupInfo.group_id}
-            currencyType={currencyType}
-          />
-        </CustomDialog>
-
-        <CustomDialog
-          open={openEditTripDialog}
-          onClose={() => setOpenEditTripDialog(false)}
-          title="Edit Trip Member"
-        >
-          <EditTripMem
-            triggerTrip={triggerTrip}
-            member={member}
-            secret={secret}
-            trip={trip}
-            group_id={groupInfo.group_id}
-          />
-        </CustomDialog>
-
-        <CustomDialog
-          open={openDeleteMemberDialog}
-          onClose={() => setOpenDeleteMemberDialog(false)}
-          title="Delete Member"
-        >
-          <DeleteMember
-            triggerMember={triggerMember}
-            member={member}
-            group_id={groupInfo.group_id}
-          />
-        </CustomDialog>
-
-        <SpeedDial
-          ariaLabel="SpeedDial example"
-          sx={{ position: "fixed", bottom: 16, right: 16 }}
-          icon={<SpeedDialIcon />}
-        >
-          {actions.map((action) => (
-            <SpeedDialAction
-              key={action.name}
-              icon={action.icon}
-              tooltipTitle={action.name}
-              onClick={action.onClick}
-            />
-          ))}
-        </SpeedDial>
       </Box>
-      {/* Share Modal */}
+
+      {/* Dialogs */}
+      <CustomDialog
+        open={openToolTipDialog}
+        onClose={() => setOpenToolTipDialog(false)}
+        title="Edit Member"
+      >
+        <ToolTip
+          triggerMember={triggerMember}
+          member={member}
+          group_id={groupInfo.group_id}
+          currencyType={currencyType}
+        />
+      </CustomDialog>
+
+      <CustomDialog
+        open={openAddTripDialog}
+        onClose={() => setOpenAddTripDialog(false)}
+        title="Add Trip"
+      >
+        <EditTrip
+          triggerTrip={triggerTrip}
+          member={member}
+          secret={secret}
+          trip={trip}
+          group_id={groupInfo.group_id}
+          currencyType={currencyType}
+        />
+      </CustomDialog>
+
+      <CustomDialog
+        open={openEditTripDialog}
+        onClose={() => setOpenEditTripDialog(false)}
+        title="Edit Trip Member"
+      >
+        <EditTripMem
+          triggerTrip={triggerTrip}
+          member={member}
+          secret={secret}
+          trip={trip}
+          group_id={groupInfo.group_id}
+        />
+      </CustomDialog>
+
+      <CustomDialog
+        open={openDeleteMemberDialog}
+        onClose={() => setOpenDeleteMemberDialog(false)}
+        title="Delete Member"
+      >
+        <DeleteMember
+          triggerMember={triggerMember}
+          member={member}
+          group_id={groupInfo.group_id}
+        />
+      </CustomDialog>
+
+      <SpeedDial
+        ariaLabel="SpeedDial example"
+        sx={{ position: "fixed", bottom: 16, right: 16 }}
+        icon={<SpeedDialIcon />}
+      >
+        {actions.map((action) => (
+          <SpeedDialAction
+            key={action.name}
+            icon={action.icon}
+            tooltipTitle={action.name}
+            onClick={action.onClick}
+          />
+        ))}
+      </SpeedDial>
+
       <ShareModal
         open={openShareModal}
         onClose={() => setOpenShareModal(false)}
@@ -426,7 +441,6 @@ const TotalSpendTable = ({ info, isLoading }) => {
     />
   );
 };
-
 
 function calculateMoney(allMembers, trips, currencyType) {
   let newData = [];

@@ -6,33 +6,33 @@ export const tokens = (mode) => ({
   ...(mode === "dark"
     ? {
         grey: {
-          100: "#d1d1d1",
-          200: "#a3a3a3",
-          300: "#767676",
-          400: "#595959",
-          500: "#3c3c3c",
-          600: "#2f2f2f",
-          700: "#232323",
-          800: "#181818",
-          900: "#0e0e0e",
+          100: "#e0e0e0", // Lighten grey for better contrast
+          200: "#b3b3b3",
+          300: "#808080",
+          400: "#4d4d4d",
+          500: "#333333",
+          600: "#292929",
+          700: "#1f1f1f",
+          800: "#141414",
+          900: "#0a0a0a",
         },
         primary: {
-          100: "#cfd1e4",
-          200: "#9ea3c9",
-          300: "#6d74af",
-          400: "#4d5693",
-          500: "#353a77", // adjusted to a more vibrant shade
-          600: "#2b2e61",
-          700: "#22234b",
-          800: "#181835",
-          900: "#0f0f1f",
+          100: "#e3e4ff", // Lighten for better contrast
+          200: "#c7c9ff",
+          300: "#acafee",
+          400: "#9294dd",
+          500: "#787bd4", // Slightly more vibrant
+          600: "#5f61a8",
+          700: "#46497b",
+          800: "#2d3050",
+          900: "#141727",
         },
         greenAccent: {
           100: "#d0f5eb",
           200: "#a1ecd7",
           300: "#73e3c3",
           400: "#45daad",
-          500: "#18d198", // more vibrant green accent
+          500: "#18d198", // More vibrant green accent
           600: "#14a67a",
           700: "#107b5b",
           800: "#0c523d",
@@ -43,7 +43,7 @@ export const tokens = (mode) => ({
           200: "#ffc7c4",
           300: "#ffaba7",
           400: "#ff8f89",
-          500: "#ff726c", // softer red to reduce strain on dark background
+          500: "#ff726c", // Softer red for reduced strain on dark background
           600: "#cc5b56",
           700: "#994340",
           800: "#662c2b",
@@ -54,13 +54,13 @@ export const tokens = (mode) => ({
           200: "#b9c9ff",
           300: "#97adff",
           400: "#7481ff",
-          500: "#5276ff", // slightly more vibrant blue accent
+          500: "#5276ff", // Slightly more vibrant blue accent
           600: "#415fcc",
           700: "#314799",
           800: "#213066",
           900: "#111833",
         },
-        background: "#121212", // dark background with a softer black
+        background: "#121212", // Dark background with a softer black
       }
     : {
         grey: {
@@ -78,8 +78,8 @@ export const tokens = (mode) => ({
           100: "#e0f7ff",
           200: "#b3eaff",
           300: "#86ddff",
-          400: "#5acfff", // lighter and more lively blue for primary
-          500: "#2dc2ff", // main primary color (soft and bright blue)
+          400: "#5acfff", // Lighter and more lively blue for primary
+          500: "#2dc2ff", // Main primary color (soft and bright blue)
           600: "#24a0cc",
           700: "#1b7d99",
           800: "#125b66",
@@ -90,7 +90,7 @@ export const tokens = (mode) => ({
           200: "#ccf0e4",
           300: "#b3e9d7",
           400: "#99e2ca",
-          500: "#80dabe", // bright and soft green
+          500: "#80dabe", // Bright and soft green
           600: "#66b493",
           700: "#4d8d69",
           800: "#336640",
@@ -100,8 +100,8 @@ export const tokens = (mode) => ({
           100: "#ffeae9",
           200: "#ffc7c4",
           300: "#ff9f9e",
-          400: "#ff7977", // lighter red with less aggression
-          500: "#ff5251", // soft red that complements light mode
+          400: "#ff7977", // Lighter red with less aggression
+          500: "#ff5251", // Soft red that complements light mode
           600: "#cc4241",
           700: "#993131",
           800: "#661f20",
@@ -112,25 +112,25 @@ export const tokens = (mode) => ({
           200: "#d6e3ff",
           300: "#bcd2ff",
           400: "#a2c0ff",
-          500: "#89afff", // softer blue accent
+          500: "#89afff", // Softer blue accent
           600: "#6e8ccc",
           700: "#536999",
           800: "#384666",
           900: "#1d2333",
         },
-        background: "#ffffff", // bright and clean white background
+        background: "#ffffff", // Bright and clean white background
       }),
 });
 
-// mui theme settings
+// MUI theme settings
 export const themeSettings = (mode) => {
   const colors = tokens(mode);
   return {
     palette: {
       mode: mode,
       background: {
-        default: colors.background.default, // Unified background
-        paper: colors.grey[800], // Paper background
+        default: colors.background, // Correctly applies the background color based on the mode
+        paper: mode === "dark" ? colors.grey[800] : colors.grey[100], // Dark mode paper background should be darker
       },
       primary: {
         main: colors.primary[500],
@@ -138,14 +138,18 @@ export const themeSettings = (mode) => {
       secondary: {
         main: colors.blueAccent[400],
       },
+      text: {
+        primary: mode === "dark" ? colors.grey[100] : colors.grey[900], // Adjust text color based on the mode
+        secondary: mode === "dark" ? colors.grey[300] : colors.grey[700],
+      },
     },
     typography: {
       fontFamily: "Source Sans Pro, sans-serif",
       body1: {
-        color: colors.primary[100],
+        color: mode === "dark" ? colors.grey[100] : colors.grey[900], // Adjust body text color
       },
       h4: {
-        color: colors.primary[100],
+        color: mode === "dark" ? colors.primary[200] : colors.primary[700], // Adjust heading color
         fontWeight: 600,
       },
       button: {
@@ -157,15 +161,16 @@ export const themeSettings = (mode) => {
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: "8px", // Unified button radius
+            borderRadius: "8px",
             padding: "10px 20px",
+            color: mode === "dark" ? colors.grey[100] : colors.grey[900], // Adjust button text color
           },
         },
       },
       MuiPaper: {
         styleOverrides: {
           root: {
-            backgroundColor: colors.grey[800],
+            backgroundColor: mode === "dark" ? colors.grey[800] : colors.grey[100], // Conditional based on mode
             borderRadius: "12px",
           },
         },
@@ -177,11 +182,18 @@ export const themeSettings = (mode) => {
           },
         },
       },
+      MuiInputBase: {
+        styleOverrides: {
+          root: {
+            color: mode === "dark" ? colors.grey[100] : colors.grey[900], // Adjust input text color
+          },
+        },
+      },
     },
   };
 };
 
-// context for color mode
+// Context for color mode
 export const ColorModeContext = createContext({
   toggleColorMode: () => {},
 });

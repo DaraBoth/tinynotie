@@ -200,7 +200,15 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
           clearOnBlur
           handleHomeEndKeys
           renderOption={(props, option) => (
-            <li {...props}>{option.mem_name}</li>
+            <li
+              {...props}
+              style={{
+                backgroundColor: value === option ? colors.primary[500] : "inherit",
+                color: value === option ? colors.grey[100] : colors.primary[600],
+              }}
+            >
+              {option.mem_name}
+            </li>
           )}
           freeSolo
           renderInput={(params) => (
@@ -209,6 +217,20 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
               {...params}
               variant="standard"
               label="Edit Member"
+              InputProps={{
+                ...params.InputProps,
+                style: {
+                  color: theme.palette.text.primary,
+                },
+              }}
+              sx={{
+                "& .MuiInputLabel-root": {
+                  color: colors.primary[500],
+                },
+                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[400],
+                },
+              }}
             />
           )}
         />
@@ -226,7 +248,20 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
               setMoney(e.target.value);
             }}
             disabled={loading}
-            sx={{ flex: 1 }}
+            InputProps={{
+              style: {
+                color: theme.palette.text.primary,
+              },
+            }}
+            sx={{
+              flex: 1,
+              "& .MuiInputLabel-root": {
+                color: colors.primary[500],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+            }}
           />
           <IconButton
             onClick={handleSubtractClick}
@@ -251,7 +286,11 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
               label={`${currencyType}${amount}`}
               onClick={() => handleChipClick(amount)}
               color={selectedChip === amount ? "primary" : "default"}
-              sx={{ m: 0.5 }} 
+              sx={{
+                m: 0.5,
+                backgroundColor: selectedChip === amount ? colors.primary[500] : "inherit",
+                color: selectedChip === amount ? "#fff" : colors.primary[600],
+              }} 
             />
           ))}
           <TextField
@@ -267,7 +306,21 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
                 setSelectedChip(null); // Deselect chips when using custom input
               }
             }}
-            sx={{ ml: 1, width: '80px' }} // Adjust width as needed
+            InputProps={{
+              style: {
+                color: theme.palette.text.primary,
+              },
+            }}
+            sx={{
+              ml: 1,
+              width: '80px',
+              "& .MuiInputLabel-root": {
+                color: colors.primary[500],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+            }}
           />
         </Box>
 
@@ -278,7 +331,12 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
             variant="contained"
             startIcon={loading && <CircularProgress size={20} />}
             disabled={loading || !value}
-            sx={{ flex: 1, ml: 1 }}
+            sx={{
+              flex: 1,
+              ml: 1,
+              backgroundColor: colors.primary[500],
+              color: "#fff",
+            }}
           >
             <SaveIcon />
             Save
@@ -286,9 +344,23 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
         </Box>
       </Box>
 
-      <Dialog open={open} onClose={loading ? null : handleClose}>
+      <Dialog
+        open={open}
+        onClose={loading ? null : handleClose}
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.background,
+          },
+        }}
+      >
         <form onSubmit={handleSubmit}>
-          <DialogTitle>New member</DialogTitle>
+          <DialogTitle
+            sx={{
+              color: colors.primary[500],
+            }}
+          >
+            New member
+          </DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -306,6 +378,19 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
               type="text"
               variant="standard"
               fullWidth
+              InputProps={{
+                style: {
+                  color: theme.palette.text.primary,
+                },
+              }}
+              sx={{
+                "& .MuiInputLabel-root": {
+                  color: colors.primary[500],
+                },
+                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[400],
+                },
+              }}
             />
             <TextField
               margin="dense"
@@ -324,6 +409,19 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
               type="text"
               variant="standard"
               fullWidth
+              InputProps={{
+                style: {
+                  color: theme.palette.text.primary,
+                },
+              }}
+              sx={{
+                "& .MuiInputLabel-root": {
+                  color: colors.primary[500],
+                },
+                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[400],
+                },
+              }}
             />
           </DialogContent>
           <DialogActions sx={{ display: "flex", flexDirection: "row" }}>
@@ -341,6 +439,10 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
               type="submit"
               startIcon={loading && <CircularProgress size={20} />}
               disabled={loading}
+              sx={{
+                backgroundColor: colors.primary[500],
+                color: "#fff",
+              }}
             >
               Add
             </Button>
@@ -348,7 +450,6 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
         </form>
       </Dialog>
 
-      {/* Custom Alert for feedback */}
       <CustomAlert
         open={alertOpen}
         onClose={() => setAlertOpen(false)}
