@@ -249,7 +249,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Currency Handling: Although SQLite does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
 
     Provided Data:
-    usernm: '[${userAskID}]'  -- This username should be used to filter data related to the user in the relevant tables.
+    usernm: '${userAskID}'  -- This username should be used to filter data related to the user in the relevant tables.
 
     Database Schema:
     Table Name: user_infm
