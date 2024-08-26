@@ -16,12 +16,15 @@ import {
   Alert,
   Skeleton,
   CircularProgress,
+  Slide,
+  Stack,
 } from "@mui/material";
 import { useDeleteGroupMutation, useGetGroupMutation } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import LogoutIcon from "@mui/icons-material/Logout";
 import DeleteIcon from "@mui/icons-material/Delete";
+import WarningIcon from "@mui/icons-material/Warning";
 import { rspWidth } from "../responsive";
 import { tokens } from "../theme";
 
@@ -82,7 +85,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   const [triggerDeleteGroup, resultGroup] = useDeleteGroupMutation();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false); // Added state for deletion loading
+  const [deleting, setDeleting] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
@@ -272,20 +275,58 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
         <AddIcon />
       </Fab>
 
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog 
+        open={openDeleteDialog} 
+        onClose={() => setOpenDeleteDialog(false)}
+        TransitionComponent={Slide}
+        TransitionProps={{ direction: "up" }}
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.grey[900],
+            borderRadius: "12px",
+            padding: "20px",
+            color: colors.primary[100],
+          },
+        }}
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <WarningIcon sx={{ color: colors.redAccent[500] }} />
+            <Typography variant="h6" sx={{ color: colors.primary[500] }}>
+              Confirm Delete
+            </Typography>
+          </Stack>
+        </DialogTitle>
         <DialogContent>
-          <Typography color={colors.grey[300]}>Are you sure you want to delete this note? This action cannot be undone.</Typography>
+          <Typography variant="body1" color={colors.primary[300]}>
+            Are you sure you want to delete this note? This action cannot be undone.
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)} sx={{ color: colors.primary[500] }}>
+          <Button 
+            onClick={() => setOpenDeleteDialog(false)} 
+            sx={{ 
+              color: colors.primary[500], 
+              textTransform: "none", 
+              fontWeight: "bold" 
+            }}
+          >
             Cancel
           </Button>
           <Button
             onClick={() => handleDeleteNote(noteToDelete)}
             color="secondary"
-            disabled={deleting} // Disable the button while loading
-            startIcon={deleting && <CircularProgress size="1rem" />} // Add loading spinner
+            disabled={deleting}
+            startIcon={deleting && <CircularProgress size="1rem" />}
+            sx={{ 
+              backgroundColor: colors.redAccent[500], 
+              color: colors.grey[100],
+              '&:hover': {
+                backgroundColor: colors.redAccent[700],
+              },
+              textTransform: "none", 
+              fontWeight: "bold" 
+            }}
           >
             Delete
           </Button>
