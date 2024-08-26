@@ -13,7 +13,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Select,
-  OutlinedInput,
   MenuItem,
   useTheme,
 } from "@mui/material";
@@ -34,6 +33,14 @@ export default function ShareModal({
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
+  // State for bank details
+  const [bankName, setBankName] = useState(
+    localStorage.getItem("bankName") || ""
+  );
+  const [bankAccount, setBankAccount] = useState(
+    localStorage.getItem("bankAccount") || ""
+  );
+
   const [selectedTripIds, setSelectedTripIds] = useState([]);
   const [invoiceText, setInvoiceText] = useState("");
   const [editableText, setEditableText] = useState("");
@@ -48,7 +55,7 @@ export default function ShareModal({
       setSelectedTripIds(selectedTrips.map((trip) => trip.id));
       generateInvoiceText(selectedTrips, selectedLanguage);
     }
-  }, [selectedTrips, selectedLanguage]);
+  }, [selectedTrips, selectedLanguage, bankName, bankAccount]);
 
   const handleTripChange = (event) => {
     const selectedIds = event.target.value;
@@ -66,10 +73,24 @@ export default function ShareModal({
     }
   };
 
+  // Update bank name and save to local storage
+  const handleBankNameChange = (event) => {
+    const newBankName = event.target.value;
+    setBankName(newBankName);
+    localStorage.setItem("bankName", newBankName);
+  };
+
+  // Update bank account number and save to local storage
+  const handleBankAccountChange = (event) => {
+    const newBankAccount = event.target.value;
+    setBankAccount(newBankAccount);
+    localStorage.setItem("bankAccount", newBankAccount);
+  };
+
   const generateInvoiceText = (trips, language) => {
     const translations = {
       EN: {
-        bankDetails: "[Bank name]\n[XXXX-XXXX-XXXX]\n\n",
+        bankDetails: `${bankName}\n${bankAccount}\n\n`,
         greeting: "Hello!\nThis is the receipt.\n\n",
         totalAmount: "Total Amount",
         participants: "Participants",
@@ -78,7 +99,7 @@ export default function ShareModal({
         thankYou: "Thank you for your cooperation!",
       },
       KR: {
-        bankDetails: "[은행 이름]\n[XXXX-XXXX-XXXX]\n\n",
+        bankDetails: `${bankName}\n${bankAccount}\n\n`,
         greeting: "안녕하세요!\n이것은 영수증입니다.\n\n",
         totalAmount: "총 금액",
         participants: "참여 멤버",
@@ -87,7 +108,7 @@ export default function ShareModal({
         thankYou: "협조해 주셔서 감사합니다!",
       },
       KH: {
-        bankDetails: "[ឈ្មោះធនាគារ]\n[XXXX-XXXX-XXXX]\n\n",
+        bankDetails: `${bankName}\n${bankAccount}\n\n`,
         greeting: "សួស្ដី!\nនេះគឺជាវិក័យប័ត្រ។\n\n",
         totalAmount: "ចំនួន​សរុប",
         participants: "អ្នក​ចូលរួម",
@@ -128,17 +149,22 @@ export default function ShareModal({
 
     const totalSpend = trips.reduce((acc, trip) => acc + trip.spend, 0);
 
-    const perPersonDetail = Object.entries(totalPerMember)
-      .map(([name, amount]) => {
-        return `${name}: ${currency(amount, {
-          symbol: currencyType,
-        }).format()}`;
-      })
-      .join("\n");
+    let summary = "";
+    if (trips.length > 1) {
+      const perPersonDetail = Object.entries(totalPerMember)
+        .map(([name, amount]) => {
+          return `${name}: ${currency(amount, {
+            symbol: currencyType,
+          }).format()}`;
+        })
+        .join("\n");
 
-    const summary = `${t.totalAmount}: ${currency(totalSpend, {
-      symbol: currencyType,
-    }).format()}\n${t.eachPersonPays}:\n${perPersonDetail}\n\n${t.thankYou}`;
+      summary = `${t.totalAmount}: ${currency(totalSpend, {
+        symbol: currencyType,
+      }).format()}\n${t.eachPersonPays}:\n${perPersonDetail}\n\n${t.thankYou}`;
+    } else {
+      summary = `${t.thankYou}`;
+    }
 
     const fullText = t.bankDetails + t.greeting + tripDetails + summary;
     setInvoiceText(fullText);
@@ -268,6 +294,46 @@ export default function ShareModal({
             </MenuItem>
           ))}
         </Select>
+
+        <Box display="flex" alignItems="center" justifyContent="space-between" mt={2}>
+          <TextField
+            label="Bank Name"
+            value={bankName}
+            onChange={handleBankNameChange}
+            fullWidth
+            variant="outlined"
+            sx={{
+              mr: 1,
+              "& .MuiInputBase-input": {
+                color: colors.primary[600],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[500],
+              },
+            }}
+          />
+          <TextField
+            label="Bank Account"
+            value={bankAccount}
+            onChange={handleBankAccountChange}
+            fullWidth
+            variant="outlined"
+            sx={{
+              "& .MuiInputBase-input": {
+                color: colors.primary[600],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[500],
+              },
+            }}
+          />
+        </Box>
 
         <Box
           display="flex"
