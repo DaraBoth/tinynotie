@@ -25,7 +25,7 @@ import { useGetAllMemberMutation, usePostAddGroupMutation } from "../api/api";
 import moment from "moment";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
-import CustomSnackbar from "../components/CustomSnackbar"; // Import centralized Snackbar
+import CustomSnackbar from "../component/CustomSnackbar";
 
 export default function CreateGroup({ secret, setGroupInfo }) {
   const theme = useTheme();
