@@ -12,71 +12,52 @@ import {
   Card,
   CardContent,
   Divider,
+  Tooltip,
 } from "@mui/material";
-import { useParams, useNavigate } from "react-router-dom";  // Import necessary hooks
+import { useParams, useNavigate } from "react-router-dom";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PeopleIcon from "@mui/icons-material/People";
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import Topbar from "../global/Topbar";
 import TableComponent from "../component/TableComponent";
 import CustomDialog from "../component/CustomDialog";
+import LoadingPage from "../pages/LoadingPage";
+import UnauthorizedPage from "../pages/UnauthorizedPage";
 import { tokens } from "../theme";
-import {
-  useGetMemberMutation,
-  useGetTripMutation,
-  useGetGroupDetailQuery ,  // Add API to get group details by ID
-} from "../api/api";
+import { useGetGroupDetailsMutation, useGetMemberMutation, useGetTripMutation } from "../api/api";
 import ToolTip from "../component/EditMember";
 import EditTripMem from "../component/EditTripMember";
-import DeleteMember from "../component/deleteMember";
+import DeleteMember from "../component/DeleteMember";
+import { formatTimeDifference } from "../help/time";
+import currency from "currency.js";
 import EditTrip from "../component/EditTrip";
 import ShareModal from "../component/ShareModal";
-import {
-  calculateMoney,
-  functionRenderColumns,
-} from "../help/helper";
-import LoadingPage from "./LoadingPage";
-import UnauthorizedPage from "./UnauthorizedPage";
+import { calculateMoney, functionRenderColumns } from "../help/helper";
 
 export default function Group({ user, secret, setGroupInfo }) {
-  const { groupId } = useParams();  // Get the group ID from the URL
-  const navigate = useNavigate();  // Navigate hook for redirection
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { data, error, isLoading } = useGetGroupDetailQuery({
-    group_id: groupId,
-    user_id: user ? user.id : null,
-  });
+  const isNonMobile = useMediaQuery("(min-width:600px)");
+  const { groupId } = useParams(); // Get the group ID from the URL
+  const navigate = useNavigate();
+
+  const [triggerGroupDetails, resultGroupDetails] = useGetGroupDetailsMutation(); // Fetch group details
   const [triggerTrip, resultTrip] = useGetTripMutation();
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
   const [trip, setTrip] = useState([]);
-  const [groupInfo, setGroupInfoState] = useState(null);
   const [openToolTipDialog, setOpenToolTipDialog] = useState(false);
   const [openAddTripDialog, setOpenAddTripDialog] = useState(false);
   const [openEditTripDialog, setOpenEditTripDialog] = useState(false);
   const [openDeleteMemberDialog, setOpenDeleteMemberDialog] = useState(false);
   const [openShareModal, setOpenShareModal] = useState(false);
+  const [groupInfoState, setGroupInfoState] = useState(null);
 
   useEffect(() => {
-    if (data && data.status) {
-      setGroupInfo(data.data);
-    } else if (data && !data.status) {
-      if (data.message === "Authentication required to view this group.") {
-        navigate(`/login?redirect=/group/${groupId}`); // Redirect to login
-      } else {
-        // Show an unauthorized message or redirect to another page
-        alert(data.message);
-        navigate("/");
-      }
-    }
-  }, [data, navigate, groupId, setGroupInfo]);
-
-  if (isLoading) {
-    return <LoadingPage />;
-  }
-
-  if (error) {
-    return <UnauthorizedPage />;
-  }
+    triggerGroupDetails({ group_id: groupId, user_id: secret });
+  }, [groupId, secret, triggerGroupDetails]);
 
   useEffect(() => {
     if (resultGroupDetails.data?.status) {
@@ -96,12 +77,14 @@ export default function Group({ user, secret, setGroupInfo }) {
     }
   }, [resultGroupDetails, groupId, triggerTrip, triggerMember, navigate]);
 
+  // Update trip state when data is fetched
   useEffect(() => {
     if (resultTrip?.data?.status) {
       setTrip(resultTrip.data.data);
     }
   }, [resultTrip]);
 
+  // Update member state when data is fetched
   useEffect(() => {
     if (resultMember?.data?.status) {
       setMember(resultMember.data.data);
@@ -109,40 +92,123 @@ export default function Group({ user, secret, setGroupInfo }) {
   }, [resultMember]);
 
   const { info, newData } = useMemo(
-    () => calculateMoney(member, trip, groupInfo?.currency),
-    [member, trip, groupInfo?.currency]
+    () => calculateMoney(member, trip, groupInfoState?.currency),
+    [member, trip, groupInfoState?.currency]
   );
+
   const columns = useMemo(() => functionRenderColumns(newData), [newData]);
 
-  // Conditional Rendering for Unauthorized Users
-  if (!groupInfo) {
-    return <Typography>Loading...</Typography>;
+  const tripColumns = useMemo(
+    () => [
+      {
+        field: "id",
+        headerName: "ID",
+        width: 50,
+        headerAlign: "center",
+        align: "center",
+      },
+      {
+        field: "trp_name",
+        headerName: "Trip Name",
+        width: 100,
+        headerAlign: "center",
+        align: "center",
+      },
+      {
+        field: "spend",
+        headerName: "Total Spend",
+        headerAlign: "center",
+        align: "center",
+        width: 100,
+        valueGetter: ({ value }) => {
+          return currency(value, { symbol: groupInfoState?.currency }).format();
+        },
+      },
+      {
+        field: "mem_id",
+        headerName: "Members",
+        headerAlign: "center",
+        align: "center",
+        width: 120,
+        renderCell: (params) => {
+          const joinedMemId = JSON.parse(params.value);
+          const memberNames = member
+            .filter((m) => joinedMemId.includes(m.id))
+            .map((m) => m.mem_name)
+            .join(", ");
+          return (
+            <Tooltip title={memberNames || "No members"}>
+              <span>
+                {joinedMemId.length} Member{joinedMemId.length !== 1 ? "s" : ""}
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        field: "update_dttm",
+        headerName: "Last Updated",
+        width: 100,
+        valueGetter: ({ value }) => {
+          return formatTimeDifference(value);
+        },
+      },
+      { field: "create_date", headerName: "Creation Date", width: 100 },
+    ],
+    [member, groupInfoState?.currency]
+  );
+
+  const actions = [
+    {
+      icon: <AddIcon />,
+      name: "Add Trip",
+      onClick: () => setOpenAddTripDialog(true),
+    },
+    {
+      icon: <EditIcon />,
+      name: "Edit Trip's Member",
+      onClick: () => setOpenEditTripDialog(true),
+    },
+    {
+      icon: <PeopleIcon />,
+      name: "Edit Member",
+      onClick: () => setOpenToolTipDialog(true),
+    },
+    {
+      icon: <DeleteIcon />,
+      name: "Delete Member",
+      onClick: () => setOpenDeleteMemberDialog(true),
+    },
+  ];
+
+  if (resultGroupDetails.isLoading) {
+    return <LoadingPage />;
   }
 
-  if (groupInfo.visibility === "private" && !groupInfo.isAuthorized) {
-    return <Typography>You do not have access to this group.</Typography>;
+  if (resultGroupDetails.error || !groupInfoState) {
+    return <UnauthorizedPage />;
   }
 
   return (
     <Box
       sx={{
-        backgroundColor: colors.primary[900], // Set page background color
-        minHeight: "100vh", // Ensure the background covers the full height
-        height: "auto", // Allow the height to adjust automatically
+        backgroundColor: colors.primary[900],
+        minHeight: "100vh",
+        height: "auto",
         display: "flex",
         flexDirection: "column",
       }}
     >
       <Topbar
         user={user}
-        groupInfo={groupInfo}
-        setGroupInfo={setGroupInfoState}
+        groupInfo={groupInfoState}
+        setGroupInfo={setGroupInfo}
         onShareClick={() => setOpenShareModal(true)}
       />
       <Box
         sx={{
           padding: "20px",
-          flexGrow: 1, // Allow this box to grow and take up remaining space
+          flexGrow: 1,
           display: "flex",
           flexDirection: "column",
         }}
@@ -152,8 +218,8 @@ export default function Group({ user, secret, setGroupInfo }) {
           <Grid item xs={12} md={8}>
             <Card
               sx={{
-                height: "100%", // Ensure card takes full height
-                backgroundColor: colors.background, // Set Card background color to white/light
+                height: "100%",
+                backgroundColor: colors.background,
                 borderRadius: "8px",
                 boxShadow: `0px 4px 10px ${
                   theme.palette.mode === "light"
@@ -191,9 +257,9 @@ export default function Group({ user, secret, setGroupInfo }) {
                 <TableComponent
                   rows={newData || []}
                   columns={columns || []}
-                  height={{ xs: "650px", md: "100%" }} // 650px height on mobile, full height on desktop
-                  isLoading={!resultTrip.isSuccess}
-                  sx={{ flexGrow: 1 }} // Allows the table to grow within the available space
+                  height={{ xs: "650px", md: "100%" }}
+                  isLoading={!resultTrip.isSuccess || !resultMember.isSuccess}
+                  sx={{ flexGrow: 1 }}
                 />
               </CardContent>
             </Card>
@@ -208,14 +274,14 @@ export default function Group({ user, secret, setGroupInfo }) {
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
-              minHeight: "calc(100vh - 150px)", // Full height minus some padding
+              minHeight: "calc(100vh - 150px)",
             }}
           >
             {/* Recent Trips Card */}
             <Card
               sx={{
                 flexGrow: 1,
-                minHeight: { xs: "50vh", md: "68%" }, // Adjust height for mobile
+                minHeight: { xs: "50vh", md: "68%" },
                 backgroundColor: colors.background,
               }}
             >
@@ -245,12 +311,11 @@ export default function Group({ user, secret, setGroupInfo }) {
                   </Typography>
                 </Box>
                 <Divider sx={{ marginBottom: 2 }} />
-                {/* Table content */}
                 <TableComponent
                   rows={trip || []}
                   columns={tripColumns || []}
                   height="100%"
-                  isLoading={!resultMember.isSuccess}
+                  isLoading={!resultTrip.isSuccess || !resultMember.isSuccess}
                   sx={{
                     flexGrow: 1,
                   }}
@@ -262,7 +327,7 @@ export default function Group({ user, secret, setGroupInfo }) {
             <Card
               sx={{
                 flexGrow: 1,
-                minHeight: "250px", // Set a more appropriate minimum height
+                minHeight: "250px",
                 marginTop: "10px",
                 backgroundColor: colors.background,
               }}
@@ -271,7 +336,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                 sx={{
                   display: "flex",
                   flexDirection: "column",
-                  height: "100%", // Ensure content fills the card height
+                  height: "100%",
                 }}
               >
                 <Box
@@ -315,8 +380,8 @@ export default function Group({ user, secret, setGroupInfo }) {
         <ToolTip
           triggerMember={triggerMember}
           member={member}
-          group_id={groupInfo.group_id}
-          currencyType={groupInfo.currency}
+          group_id={groupId}
+          currencyType={groupInfoState?.currency}
         />
       </CustomDialog>
 
@@ -330,8 +395,8 @@ export default function Group({ user, secret, setGroupInfo }) {
           member={member}
           secret={secret}
           trip={trip}
-          group_id={groupInfo.group_id}
-          currencyType={groupInfo.currency}
+          group_id={groupId}
+          currencyType={groupInfoState?.currency}
         />
       </CustomDialog>
 
@@ -345,7 +410,7 @@ export default function Group({ user, secret, setGroupInfo }) {
           member={member}
           secret={secret}
           trip={trip}
-          group_id={groupInfo.group_id}
+          group_id={groupId}
         />
       </CustomDialog>
 
@@ -357,7 +422,7 @@ export default function Group({ user, secret, setGroupInfo }) {
         <DeleteMember
           triggerMember={triggerMember}
           member={member}
-          group_id={groupInfo.group_id}
+          group_id={groupId}
         />
       </CustomDialog>
 
@@ -380,7 +445,7 @@ export default function Group({ user, secret, setGroupInfo }) {
         open={openShareModal}
         onClose={() => setOpenShareModal(false)}
         selectedTrips={trip}
-        currencyType={groupInfo.currency}
+        currencyType={groupInfoState?.currency}
         member={member}
       />
     </Box>
@@ -425,13 +490,13 @@ const TotalSpendTable = ({ info, isLoading }) => {
     <TableComponent
       rows={rows}
       columns={columns}
-      height="250px" // Fixed height for better visibility
+      height="250px"
       hideFooter={true}
       isLoading={isLoading}
       addToolBar={false}
       sx={{
-        minHeight: "250px", // Ensures the table is visible and occupies space
-        backgroundColor: "rgba(0, 123, 255, 0.1)", // Light background for visibility during debugging
+        minHeight: "250px",
+        backgroundColor: "rgba(0, 123, 255, 0.1)",
       }}
     />
   );
