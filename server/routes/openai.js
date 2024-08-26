@@ -303,7 +303,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT T.trp_name, T.spend, G.grp_name FROM trp_infm T JOIN grp_infm G ON T.group_id = G.id JOIN user_infm U ON T.mem_id LIKE '%' || U.id || '%' WHERE U.usernm = '[USER_NAME]';",
+        "sql": "SELECT T.trp_name, T.spend, G.grp_name FROM trp_infm T JOIN grp_infm G ON T.group_id = G.id JOIN user_infm U ON T.mem_id LIKE '%' || U.id || '%' WHERE U.usernm = '${userAskID}';",
         "executable": true,
         "responseMessage": "This query provides the amount you spent on each trip along with the associated group."
     }
@@ -312,7 +312,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT G.grp_name, SUM(M.paid) AS total_paid FROM member_infm M JOIN grp_infm G ON M.group_id = G.id JOIN user_infm U ON M.id = U.id WHERE U.usernm = '[USER_NAME]' GROUP BY G.grp_name;",
+        "sql": "SELECT G.grp_name, SUM(M.paid) AS total_paid FROM member_infm M JOIN grp_infm G ON M.group_id = G.id JOIN user_infm U ON M.id = U.id WHERE U.usernm = '${userAskID}' GROUP BY G.grp_name;",
         "executable": true,
         "responseMessage": "This query shows the total amount you have paid, grouped by the group you belong to."
     }
@@ -328,9 +328,6 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Text to Analyze:
     [${userAsk}]
     `;
-
-
-
 
   const result = await model.generateContent(prompt);
   const response = await result.response;
