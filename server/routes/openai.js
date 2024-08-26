@@ -250,7 +250,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
     Provided Data:
     In user_infm table
-    column usernm: [${userAskID}]
+    column usernm: ${userAskID}
 
     Database Schema:
     Table Name: user_infm
