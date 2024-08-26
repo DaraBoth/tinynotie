@@ -29,7 +29,7 @@ import { tokens } from "../theme";
 import { useGetGroupDetailsMutation, useGetMemberMutation, useGetTripMutation } from "../api/api";
 import ToolTip from "../component/EditMember";
 import EditTripMem from "../component/EditTripMember";
-import DeleteMember from "../component/DeleteMember";
+import DeleteMember from "../component/deleteMember";
 import { formatTimeDifference } from "../help/time";
 import currency from "currency.js";
 import EditTrip from "../component/EditTrip";
