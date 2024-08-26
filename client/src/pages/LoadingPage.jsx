@@ -1,24 +1,31 @@
 import React from 'react';
-import { Box, Typography, CircularProgress } from '@mui/material';
+import { CircularProgress, Box, Typography, useTheme } from '@mui/material';
+import { tokens } from '../theme';
 
-const LoadingPage = () => {
+export default function LoadingPage() {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+
   return (
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f0f0f0',
+        alignItems: 'center',
+        height: '100vh',
+        backgroundColor: colors.primary[900], // Ensure a dark background for dark mode
       }}
     >
-      <CircularProgress size={60} />
-      <Typography variant="h6" sx={{ mt: 2 }}>
-        Loading, please wait...
+      <CircularProgress color="primary" />
+      <Typography
+        variant="h6"
+        sx={{
+          marginLeft: 2,
+          color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.primary[900],
+        }}
+      >
+        Loading...
       </Typography>
     </Box>
   );
-};
-
-export default LoadingPage;
+}
