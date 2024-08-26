@@ -172,9 +172,9 @@ router.post("/text", async (req, res) => {
 
 router.post("/askDatabase", async (req, res) => {
   try {
-    const { userAsk } = req.body;
+    const { userAsk, userAskID} = req.body;
 
-    const responseData = await AI_Database(userAsk, []);
+    const responseData = await AI_Database(userAsk, userAskID, []);
 
     res.status(200).json(responseData);
   } catch (error) {
@@ -184,67 +184,48 @@ router.post("/askDatabase", async (req, res) => {
 });
 
 const dataBaseSchema = `Database Schema
-    Please adhere strictly to the following schema when generating SQL queries:
+      Please adhere strictly to the following schema when generating SQL queries:
 
-    Table Name: Users
-    Columns:
-    user_id (INT, AUTO_INCREMENT, PRIMARY KEY)
-    name (VARCHAR(255))
-    email (VARCHAR(255), UNIQUE)
-    phone (VARCHAR(20))
-    created_at (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
+      Table Name: user_infm
+      id (SERIAL, PRIMARY KEY):
+      An auto-incrementing integer that uniquely identifies each user.
+      usernm (VARCHAR(50), NOT NULL): Stores the username of the user.
+      passwd (VARCHAR(150), NOT NULL): Stores the hashed password of the user.
+      phone_number (VARCHAR(30)): Stores the phone number of the user (optional).
+      email (VARCHAR(30)): Stores the email address of the user (optional).
+      profile_url (VARCHAR(260)): Stores the URL of the user's profile picture or page (optional).
+      create_date (VARCHAR(25)): Stores the date and time when the user was created.
+      
+      Table Name: grp_infm
+      id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each group.
+      grp_name (VARCHAR(50), NOT NULL): Stores the name of the group.
+      status (INT, DEFAULT NULL): Stores the status of the group, typically represented as an integer.
+      description (VARCHAR(260), DEFAULT NULL): Stores a description of the group (optional).
+      admin_id (INT, DEFAULT NULL): References the ID of the group's administrator, linking to the user_infm table.
+      create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the group was created.
+      currency (VARCHAR(10), NOT NULL, DEFAULT '$'): Stores the currency code or symbol used within the group.
+      
+      Table Name: trp_infm
+      id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each trip.
+      trp_name (VARCHAR(50), NOT NULL): Stores the name of the trip.
+      spend (FLOAT, DEFAULT NULL): Stores the amount of money spent on the trip.
+      mem_id (VARCHAR(260), DEFAULT NULL): Stores a serialized array of member IDs who participated in the trip.
+      status (INT): Stores the status of the trip.
+      description (VARCHAR(260)): Stores additional information about the trip (optional).
+      group_id (INT, DEFAULT NULL): References the ID of the group that organized the trip, linking to the grp_infm table.
+      create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the trip was created.
+      update_dttm (VARCHAR(25)): Stores the date and time when the trip was last updated (optional).
+      
+      Table Name: member_infm
+      id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each member.
+      mem_name (VARCHAR(50), NOT NULL): Stores the name of the member.
+      paid (FLOAT, DEFAULT NULL): Stores the amount of money the member has paid.
+      group_id (INT, DEFAULT NULL): References the ID of the group that the member belongs to, linking to the grp_infm table.
 
-    Table Name: Categories
-    Columns:
-    category_id (INT, AUTO_INCREMENT, PRIMARY KEY)
-    category_name (VARCHAR(50))
-    description (VARCHAR(255))
-
-    Table Name: Currencies
-    Columns:
-    currency_code (VARCHAR(3), PRIMARY KEY) -- ISO 4217 currency code like 'USD', 'KRW', 'KHR'
-    currency_name (VARCHAR(50), NOT NULL)
-
-    Table Name: Transactions
-    Columns:
-    transaction_id (INT, SERIAL, PRIMARY KEY)
-    user_id (INT, FOREIGN KEY REFERENCES Users(user_id))
-    category_id (INT, FOREIGN KEY REFERENCES Categories(category_id))
-    amount (DECIMAL(10, 2), NOT NULL)
-    currency_code (VARCHAR(3), FOREIGN KEY REFERENCES Currencies(currency_code))
-    description (VARCHAR(255))
-    transaction_date (DATE, NOT NULL)
-    created_at (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
-
-    Table Name: BorrowLend
-    Columns:
-    borrow_lend_id (INT, AUTO_INCREMENT, PRIMARY KEY)
-    transaction_id (INT, FOREIGN KEY REFERENCES Transactions(transaction_id))
-    borrower_id (INT, FOREIGN KEY REFERENCES Users(user_id))
-    lender_id (INT, FOREIGN KEY REFERENCES Users(user_id))
-    due_date (DATE)
-    status (ENUM('Pending', 'Paid'), DEFAULT 'Pending')
-
-    Table Name: Purchases
-    Columns:
-    purchase_id (INT, AUTO_INCREMENT, PRIMARY KEY)
-    transaction_id (INT, FOREIGN KEY REFERENCES Transactions(transaction_id))
-    item_name (VARCHAR(255))
-    quantity (INT, DEFAULT 1)
-    unit_price (DECIMAL(10, 2))
-    total_price (DECIMAL(10, 2))
-
-    Table Name: Payments
-    Columns:
-    payment_id (INT, AUTO_INCREMENT, PRIMARY KEY)
-    borrow_lend_id (INT, FOREIGN KEY REFERENCES BorrowLend(borrow_lend_id))
-    payment_amount (DECIMAL(10, 2))
-    payment_date (DATE)
-
-    Use this schema to generate accurate SQL queries based on the user's input. Ensure that the SQL queries are compatible with PostgreSQL version 12 or earlier.
+      Use this schema to generate accurate SQL queries based on the user's input. Ensure that the SQL queries are compatible with PostgreSQL version, userAskID12 or earlier.
 `;
 
-async function AI_Database(userAsk, chatHistory = []) {
+async function AI_Database(userAsk, userAskID, chatHistory = []) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
@@ -260,13 +241,56 @@ async function AI_Database(userAsk, chatHistory = []) {
     Ensure that the SQL solution is compatible with SQLite, formatted as a single block of text without line breaks.
     executable: Boolean indicating whether the SQL solution can be executed directly (true for executable, false for non-executable or irrelevant input).
     responseMessage: Additional context or feedback to the user, including explanations for complex logic.
+
     Additional Instructions:
 
     Complex Queries: Generate SQL that can handle multifaceted user requests, such as combining information from multiple tables, performing calculations, and using advanced SQL features like CTEs or window functions.
     Dynamic Handling: If a single SQL query is insufficient, break the task into multiple SQL statements or use functions to encapsulate complex logic.
     Currency Handling: Although SQLite does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
-    
-    ${dataBaseSchema}
+
+    Provided Data:
+    In user_infm table
+    column usernm: [${userAskID}]
+
+    Database Schema:
+    Table Name: user_infm
+    Columns:
+    - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each user.
+    - usernm (VARCHAR(50), NOT NULL): Stores the username of the user.
+    - passwd (VARCHAR(150), NOT NULL): Stores the hashed password of the user.
+    - phone_number (VARCHAR(30)): Stores the phone number of the user (optional).
+    - email (VARCHAR(30)): Stores the email address of the user (optional).
+    - profile_url (VARCHAR(260)): Stores the URL of the user's profile picture or page (optional).
+    - create_date (VARCHAR(25)): Stores the date and time when the user was created.
+
+    Table Name: grp_infm
+    Columns:
+    - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each group.
+    - grp_name (VARCHAR(50), NOT NULL): Stores the name of the group.
+    - status (INT, DEFAULT NULL): Stores the status of the group, typically represented as an integer.
+    - description (VARCHAR(260), DEFAULT NULL): Stores a description of the group (optional).
+    - admin_id (INT, DEFAULT NULL): References the ID of the group's administrator, linking to the user_infm table.
+    - create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the group was created.
+    - currency (VARCHAR(10), NOT NULL, DEFAULT '$'): Stores the currency code or symbol used within the group.
+
+    Table Name: trp_infm
+    Columns:
+    - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each trip.
+    - trp_name (VARCHAR(50), NOT NULL): Stores the name of the trip.
+    - spend (FLOAT, DEFAULT NULL): Stores the amount of money spent on the trip.
+    - mem_id (VARCHAR(260), DEFAULT NULL): Stores a serialized array of member IDs who participated in the trip.
+    - status (INT): Stores the status of the trip.
+    - description (VARCHAR(260)): Stores additional information about the trip (optional).
+    - group_id (INT, DEFAULT NULL): References the ID of the group that organized the trip, linking to the grp_infm table.
+    - create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the trip was created.
+    - update_dttm (VARCHAR(25)): Stores the date and time when the trip was last updated (optional).
+
+    Table Name: member_infm
+    Columns:
+    - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each member.
+    - mem_name (VARCHAR(50), NOT NULL): Stores the name of the member.
+    - paid (FLOAT, DEFAULT NULL): Stores the amount of money the member has paid.
+    - group_id (INT, DEFAULT NULL): References the ID of the group that the member belongs to, linking to the grp_infm table.
 
     Validation Process:
     Schema Adherence: Ensure the SQL solution references only the columns and tables defined in the provided schema.
@@ -276,22 +300,22 @@ async function AI_Database(userAsk, chatHistory = []) {
 
     Examples of Desired Output:
 
-    User Input: "I want to know how much I spent from last month until now, and what I spent the money on?"
+    User Input: "I want to know how much I spent on each trip and which group it belongs to."
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "WITH MonthlySpending AS (SELECT SUM(amount) AS total_spent, currency_code FROM Transactions WHERE transaction_date >= date('now', '-1 month') GROUP BY currency_code), SpendingDetails AS (SELECT T.amount, T.currency_code, T.description, C.category_name FROM Transactions T JOIN Categories C ON T.category_id = C.category_id WHERE T.transaction_date >= date('now', '-1 month')) SELECT MS.total_spent, SD.currency_code, SD.description, SD.category_name FROM MonthlySpending MS JOIN SpendingDetails SD ON MS.currency_code = SD.currency_code;",
+        "sql": "SELECT T.trp_name, T.spend, G.grp_name FROM trp_infm T JOIN grp_infm G ON T.group_id = G.id WHERE T.mem_id LIKE '%[USER_ID]%';",
         "executable": true,
-        "responseMessage": "This query provides your total spending from last month until now, including what the money was spent on."
+        "responseMessage": "This query provides the amount you spent on each trip along with the associated group."
     }
 
-    User Input: "How much did I spend in the last month, broken down by category?"
+    User Input: "Show me the total amount I have paid, grouped by group."
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT C.category_name, SUM(T.amount) AS total_spent, Cur.currency_code FROM Transactions T JOIN Categories C ON T.category_id = C.category_id JOIN Currencies Cur ON T.currency_code = Cur.currency_code WHERE strftime('%Y-%m', T.transaction_date) = strftime('%Y-%m', date('now', '-1 month')) GROUP BY C.category_name, Cur.currency_code;",
+        "sql": "SELECT G.grp_name, SUM(M.paid) AS total_paid FROM member_infm M JOIN grp_infm G ON M.group_id = G.id WHERE M.id = [USER_ID] GROUP BY G.grp_name;",
         "executable": true,
-        "responseMessage": "This query breaks down your spending over the last month by category."
+        "responseMessage": "This query shows the total amount you have paid, grouped by the group you belong to."
     }
 
     Guidelines:
@@ -302,9 +326,11 @@ async function AI_Database(userAsk, chatHistory = []) {
     Always format SQL queries as a single block of text.
     Ensure the SQL solution includes both the total amount spent and the currency. Handle currency codes as text and numeric values as appropriate.
 
-    Text to Analyze
+    Text to Analyze:
     [${userAsk}]
     `;
+
+
 
   const result = await model.generateContent(prompt);
   const response = await result.response;

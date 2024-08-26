@@ -12,8 +12,6 @@ import {
   useMediaQuery,
   CircularProgress,
   Typography,
-  Snackbar,
-  Alert,
   Dialog,
   DialogActions,
   DialogContent,
@@ -27,6 +25,7 @@ import { useGetAllMemberMutation, usePostAddGroupMutation } from "../api/api";
 import moment from "moment";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
+import CustomSnackbar from "../components/CustomSnackbar"; // Import centralized Snackbar
 
 export default function CreateGroup({ secret, setGroupInfo }) {
   const theme = useTheme();
@@ -37,8 +36,11 @@ export default function CreateGroup({ secret, setGroupInfo }) {
   const [suggestMember, setSuggestMember] = useState([]);
   const [newMember, setNewMember] = useState([]);
   const [currency, setCurrency] = useState("$");
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [showError, setShowError] = useState(false);
+  const [showSnackbar, setShowSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const navigate = useNavigate();
 
@@ -64,10 +66,18 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
           member: JSON.stringify(newMember),
         }).unwrap();
-        setShowSuccess(true);
+        setShowSnackbar({
+          open: true,
+          message: "Note created successfully!",
+          severity: "success",
+        });
         setTimeout(() => navigate("/"), 2000);
       } catch {
-        setShowError(true);
+        setShowSnackbar({
+          open: true,
+          message: "Something went wrong. Please try again.",
+          severity: "error",
+        });
       }
     }
   }, 500);
@@ -353,32 +363,14 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           </Button>
         </DialogActions>
       </Dialog>
-      <Snackbar
-        open={showSuccess}
-        autoHideDuration={4000}
-        onClose={() => setShowSuccess(false)}
-      >
-        <Alert
-          onClose={() => setShowSuccess(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          Note created successfully!
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={showError}
-        autoHideDuration={4000}
-        onClose={() => setShowError(false)}
-      >
-        <Alert
-          onClose={() => setShowError(false)}
-          severity="error"
-          sx={{ width: "100%" }}
-        >
-          Something went wrong. Please try again.
-        </Alert>
-      </Snackbar>
+
+      {/* Centralized Snackbar */}
+      <CustomSnackbar
+        open={showSnackbar.open}
+        message={showSnackbar.message}
+        severity={showSnackbar.severity}
+        onClose={() => setShowSnackbar({ ...showSnackbar, open: false })}
+      />
     </Box>
   );
 }
