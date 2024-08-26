@@ -182,11 +182,11 @@ export default function Group({ user, secret, setGroupInfo }) {
   ];
 
   if (resultGroupDetails.isLoading) {
-    return <LoadingPage />;
+     return <LoadingPage />;
   }
 
-  if (resultGroupDetails.error || !groupInfoState) {
-    return <UnauthorizedPage />;
+  if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
+     return <UnauthorizedPage />;
   }
 
   return (
