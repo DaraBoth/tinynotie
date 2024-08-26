@@ -1,36 +1,38 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Box, Button, Typography, useTheme } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { tokens } from '../theme';
 
-const UnauthorizedPage = () => {
+export default function UnauthorizedPage() {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLoginRedirect = () => {
+    navigate('/login', { state: { from: location.pathname } });
+  };
 
   return (
     <Box
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f8d7da',
+        alignItems: 'center',
+        height: '100vh',
+        backgroundColor: colors.primary[900],
       }}
     >
-      <Typography variant="h4" sx={{ mb: 2, color: '#721c24' }}>
-        Unauthorized
+      <Typography variant="h4" sx={{ color: colors.primary[100], marginBottom: 2 }}>
+        Unauthorized Access
       </Typography>
-      <Typography variant="h6" sx={{ mb: 4, color: '#721c24' }}>
-        You are not authorized to view this page.
+      <Typography variant="body1" sx={{ color: colors.primary[300], marginBottom: 4 }}>
+        You do not have permission to view this page. Please log in.
       </Typography>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => navigate('/login')}
-      >
-        Go to Login
+      <Button variant="contained" color="primary" onClick={handleLoginRedirect}>
+        Go to Login Page
       </Button>
     </Box>
   );
-};
-
-export default UnauthorizedPage;
+}
