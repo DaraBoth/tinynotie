@@ -289,6 +289,7 @@ export default function Login({ setUser, setSecret }) {
             </Box>
           </form>
         )}
+      </Formik>
         <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}
