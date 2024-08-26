@@ -42,8 +42,8 @@ export default function Login({ setUser, setSecret }) {
         setSecret(response._id);
 
         // Redirect to the original page or home
-        const redirectTo = location.state?.from || "/";
-        navigate(redirectTo);
+        const redirectUrl = new URLSearchParams(location.search).get("redirect");
+        navigate(redirectUrl || "/");
       } else {
         setSnackbarMessage(response.message || "Login failed. Please check your credentials.");
         setSnackbarSuccess(false);
