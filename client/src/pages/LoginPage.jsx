@@ -26,31 +26,51 @@ export default function Login({ setUser, setSecret }) {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  const { search } = useLocation();
+  const redirectUrl = new URLSearchParams(search).get('redirect') || '/';
 
   const handleFormSubmit = debounce(async (values, { resetForm }) => {
     setLoading(true);
     const { username, password } = values;
 
     try {
-      const response = await triggerLogin({ usernm: username, passwd: password }).unwrap();
-
-      if (response.status) {
-        setSnackbarMessage("Login successful!");
-        setSnackbarSuccess(true);
-        setUser(username);
-        setSecret(response._id);
-
-        // Redirect to the original page or home
-        const redirectUrl = new URLSearchParams(location.search).get("redirect");
-        navigate(redirectUrl || "/");
+      let response;
+      if (isRegister) {
+        response = await triggerRegister({
+          usernm: username,
+          passwd: password,
+        }).unwrap();
+        if (response.status) {
+          setSnackbarMessage("Registration successful! Please login.");
+          setSnackbarSuccess(true);
+          setIsRegister(false);
+        } else {
+          setSnackbarMessage(
+            response.message || "Registration failed. Please try again."
+          );
+          setSnackbarSuccess(false);
+        }
       } else {
-        setSnackbarMessage(response.message || "Login failed. Please check your credentials.");
-        setSnackbarSuccess(false);
+        response = await triggerLogin({
+          usernm: username,
+          passwd: password,
+        }).unwrap();
+        if (response.status) {
+          setUser(username);
+          setSecret(response._id);
+          navigate(redirectUrl);
+        } else {
+          setSnackbarMessage(
+            response.message || "Login failed. Please check your credentials."
+          );
+          setSnackbarSuccess(false);
+        }
       }
       resetForm();
     } catch (error) {
-      setSnackbarMessage(error.data?.message || "An error occurred. Please try again.");
+      setSnackbarMessage(
+        error.data?.message || "An error occurred. Please try again."
+      );
       setSnackbarSuccess(false);
     } finally {
       setLoading(false);
