@@ -299,6 +299,15 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
     Examples of Desired Output:
 
+    User Input: "In Busan group, how many members are inside it?"
+    AI JSON Response:
+    {
+        "sqlType": "SELECT",
+        "sql": "SELECT g.grp_name, COUNT(DISTINCT m.id) AS member_count FROM grp_infm g JOIN member_infm m ON g.id = m.group_id WHERE g.grp_name = 'Busan' GROUP BY g.grp_name;",
+        "executable": true,
+        "responseMessage": "This query returns the number of members in the 'Busan' group."
+    }
+        
     User Input: "I want to know how much I spent on each trip and which group it belongs to."
     AI JSON Response:
     {
