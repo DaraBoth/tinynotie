@@ -21,7 +21,7 @@ export default function LoadingPage() {
         variant="h6"
         sx={{
           marginLeft: 2,
-          color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.primary[900],
+          color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.primary[100],
         }}
       >
         Loading...
