@@ -231,14 +231,14 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
   const prompt = `
     Instruction:
-    You are tasked with analyzing user input and generating a complex SQL solution for an SQLite database. Your response must always be in JSON format with the following fields:
+    You are tasked with analyzing user input and generating a complex SQL solution for a PostgreSQL database. Your response must always be in JSON format with the following fields:
 
     sqlType: A string indicating the type of SQL operation. If only one type (e.g., SELECT), return it directly. If multiple operations are needed, return "MORE".
     sql: A complete SQL solution that addresses the user's request. This can include:
     Multiple SQL statements.
     Complex SQL structures such as subqueries or common table expressions (CTEs).
     SQL that combines different operations to achieve the desired output.
-    Ensure that the SQL solution is compatible with SQLite, formatted as a single block of text without line breaks.
+    Ensure that the SQL solution is compatible with PostgreSQL, formatted as a single block of text without line breaks.
     executable: Boolean indicating whether the SQL solution can be executed directly (true for executable, false for non-executable or irrelevant input).
     responseMessage: Additional context or feedback to the user, including explanations for complex logic.
 
@@ -246,7 +246,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
     Complex Queries: Generate SQL that can handle multifaceted user requests, such as combining information from multiple tables, performing calculations, and using advanced SQL features like CTEs or window functions.
     Dynamic Handling: If a single SQL query is insufficient, break the task into multiple SQL statements or use functions to encapsulate complex logic.
-    Currency Handling: Although SQLite does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
+    Currency Handling: Although PostgreSQL does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
 
     Provided Data:
     usernm: '${userAskID}'  -- This username should be used to filter data related to the user in the relevant tables.
@@ -293,7 +293,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
     Validation Process:
     Schema Adherence: Ensure the SQL solution references only the columns and tables defined in the provided schema.
-    SQL Compatibility: Verify that the SQL syntax is compatible with SQLite.
+    SQL Compatibility: Verify that the SQL syntax is compatible with PostgreSQL.
     Syntax Check: Ensure that each SQL statement in the solution has correct syntax and will not result in errors.
     Contextual Relevance: Ensure the SQL solution accurately reflects the user’s request; return a relevant message and set executable to false if not possible.
 
@@ -319,7 +319,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
     Guidelines:
     Generate complex SQL solutions that may involve multiple steps or operations.
-    Ensure all SQL statements are compatible with SQLite.
+    Ensure all SQL statements are compatible with PostgreSQL.
     Validate SQL syntax before including it in the JSON response.
     Use the provided schema to generate accurate and relevant SQL queries.
     Always format SQL queries as a single block of text.
