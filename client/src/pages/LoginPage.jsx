@@ -29,6 +29,10 @@ export default function Login({ setUser, setSecret }) {
   const { search } = useLocation();
   const redirectUrl = new URLSearchParams(search).get('redirect') || '/';
 
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
+
   const handleFormSubmit = debounce(async (values, { resetForm }) => {
     setLoading(true);
     const { username, password } = values;
