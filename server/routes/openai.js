@@ -249,8 +249,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Currency Handling: Although SQLite does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
 
     Provided Data:
-    In user_infm table
-    column usernm: '${userAskID}'
+    usernm: '[${userAskID}]'  -- This username should be used to filter data related to the user in the relevant tables.
 
     Database Schema:
     Table Name: user_infm
@@ -304,7 +303,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT T.trp_name, T.spend, G.grp_name FROM trp_infm T JOIN grp_infm G ON T.group_id = G.id WHERE T.mem_id LIKE '%[USER_ID]%';",
+        "sql": "SELECT T.trp_name, T.spend, G.grp_name FROM trp_infm T JOIN grp_infm G ON T.group_id = G.id JOIN user_infm U ON T.mem_id LIKE '%' || U.id || '%' WHERE U.usernm = '[USER_NAME]';",
         "executable": true,
         "responseMessage": "This query provides the amount you spent on each trip along with the associated group."
     }
@@ -313,7 +312,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT G.grp_name, SUM(M.paid) AS total_paid FROM member_infm M JOIN grp_infm G ON M.group_id = G.id WHERE M.id = [USER_ID] GROUP BY G.grp_name;",
+        "sql": "SELECT G.grp_name, SUM(M.paid) AS total_paid FROM member_infm M JOIN grp_infm G ON M.group_id = G.id JOIN user_infm U ON M.id = U.id WHERE U.usernm = '[USER_NAME]' GROUP BY G.grp_name;",
         "executable": true,
         "responseMessage": "This query shows the total amount you have paid, grouped by the group you belong to."
     }
@@ -329,6 +328,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Text to Analyze:
     [${userAsk}]
     `;
+
 
 
 
