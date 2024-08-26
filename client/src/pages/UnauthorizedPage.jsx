@@ -1,38 +1,19 @@
-import React from 'react';
-import { Box, Button, Typography, useTheme } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { tokens } from '../theme';
+import { useNavigate } from "react-router-dom";
 
-export default function UnauthorizedPage() {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+const UnauthorizedPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const handleLoginRedirect = () => {
-    navigate('/login', { state: { from: location.pathname } });
+  const handleGoToLogin = () => {
+    const currentPath = window.location.pathname; // Get current URL path
+    navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: colors.primary[900],
-      }}
-    >
-      <Typography variant="h4" sx={{ color: colors.primary[100], marginBottom: 2 }}>
-        Unauthorized Access
-      </Typography>
-      <Typography variant="body1" sx={{ color: colors.primary[300], marginBottom: 4 }}>
-        You do not have permission to view this page. Please log in.
-      </Typography>
-      <Button variant="contained" color="primary" onClick={handleLoginRedirect}>
-        Go to Login Page
-      </Button>
+    <Box>
+      <Typography>You are not authorized to view this page.</Typography>
+      <Button onClick={handleGoToLogin}>Go to Login Page</Button>
     </Box>
   );
-}
+};
+
+export default UnauthorizedPage;
