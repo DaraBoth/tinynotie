@@ -20,10 +20,15 @@ import Person4RoundedIcon from "@mui/icons-material/Person4Rounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { tokens } from "../theme";
 import { Alert } from "@mui/material";
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Login({ setUser, setSecret }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
+  const { search } = useLocation();
+  const redirectUrl = new URLSearchParams(search).get('redirect') || '/';
+
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [triggerLogin, resultLogin] = usePostLoginMutation();
   const [triggerRegister, resultRegister] = usePostRegisterMutation();
@@ -65,10 +70,9 @@ export default function Login({ setUser, setSecret }) {
           passwd: password,
         }).unwrap();
         if (response.status) {
-          setSnackbarMessage("Login successful!");
-          setSnackbarSuccess(true);
           setUser(username);
           setSecret(response._id);
+          navigate(redirectUrl);
         } else {
           setSnackbarMessage(
             response.message || "Login failed. Please check your credentials."

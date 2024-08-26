@@ -4,7 +4,7 @@ import { ColorModeContext, useMode } from './theme';
 import './index.scss'
 import { tokens } from './theme'
 import Login from './pages/LoginPage';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import Group from './pages/GroupPage';
 import Home from './pages/HomePage';
 import CreateGroup from './pages/CreateGroupPage';
@@ -19,7 +19,7 @@ function App() {
   const [secret, setSecret] = useState(() => sessionStorage.getItem('secret') ? sessionStorage.getItem('secret') : null);
   const [groupInfo, setGroupInfo] = useState(null);
   const isAuth = Boolean(user) && Boolean(secret);
-  const isGroup = isAuth && Boolean(groupInfo);
+
   let themeDefault = sessionStorage.getItem("theme");
 
   useEffect(() => {
@@ -65,13 +65,9 @@ function App() {
               )
             } />
             <Route
-              path="/group"
+              path="/group/:groupId"
               element={
-                isGroup ? (
-                  <Group user={user} secret={secret} groupInfo={groupInfo} setGroupInfo={setGroupInfo} />
-                ) : (
-                  <Navigate to="/" />
-                )
+                <Group user={user} secret={secret} setGroupInfo={setGroupInfo} />
               }
             />
             <Route
@@ -91,7 +87,7 @@ function App() {
   )
 }
 
-export default App
+export default App;
 
 const ColorMode = ({ theme, colorMode, colors }) => {
   return (

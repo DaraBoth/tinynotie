@@ -21,6 +21,13 @@ export const api = createApi({
   reducerPath: "main",
   tagTypes: [],
   endpoints: (build) => ({
+    getGroupDetail: build.query({
+      query: (payload) => ({
+        url: "api/getGroupDetail",
+        method: "GET",
+        params: payload,
+      }),
+    }),
     getGroup: build.mutation({
       query: (payload) => ({
         url: "api/getGroupByUserId",
@@ -154,4 +161,5 @@ export const {
   usePostAddMemberMutation,
   usePostEditMemberMutation,
   useDeleteGroupMutation,
+  useGetGroupDetailQuery ,
 } = api;

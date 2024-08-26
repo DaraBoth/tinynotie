@@ -128,7 +128,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       grp_name: item.grp_name,
       currency: item.currency,
     });
-    navigate("/group");
+    navigate("/group/"+item.id);
   };
 
   const handleDeleteNote = async (noteId) => {

@@ -12,62 +12,96 @@ import {
   Card,
   CardContent,
   Divider,
-  Tooltip,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import PeopleIcon from "@mui/icons-material/People";
+import { useParams, useNavigate } from "react-router-dom";  // Import necessary hooks
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import Topbar from "../global/Topbar";
 import TableComponent from "../component/TableComponent";
 import CustomDialog from "../component/CustomDialog";
 import { tokens } from "../theme";
-import { useGetMemberMutation, useGetTripMutation } from "../api/api";
+import {
+  useGetMemberMutation,
+  useGetTripMutation,
+  useGetGroupDetailQuery ,  // Add API to get group details by ID
+} from "../api/api";
 import ToolTip from "../component/EditMember";
 import EditTripMem from "../component/EditTripMember";
 import DeleteMember from "../component/deleteMember";
-import { formatTimeDifference } from "../help/time";
-import currency from "currency.js";
 import EditTrip from "../component/EditTrip";
 import ShareModal from "../component/ShareModal";
 import {
   calculateMoney,
-  formatMoney,
   functionRenderColumns,
-  getMemberID,
 } from "../help/helper";
+import LoadingPage from "./LoadingPage";
+import UnauthorizedPage from "./UnauthorizedPage";
 
-export default function Group({ user, secret, groupInfo, setGroupInfo }) {
+export default function Group({ user, secret, setGroupInfo }) {
+  const { groupId } = useParams();  // Get the group ID from the URL
+  const navigate = useNavigate();  // Navigate hook for redirection
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const isNonMobile = useMediaQuery("(min-width:600px)");
+  const { data, error, isLoading } = useGetGroupDetailQuery({
+    group_id: groupId,
+    user_id: user ? user.id : null,
+  });
   const [triggerTrip, resultTrip] = useGetTripMutation();
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
   const [trip, setTrip] = useState([]);
+  const [groupInfo, setGroupInfoState] = useState(null);
   const [openToolTipDialog, setOpenToolTipDialog] = useState(false);
   const [openAddTripDialog, setOpenAddTripDialog] = useState(false);
   const [openEditTripDialog, setOpenEditTripDialog] = useState(false);
   const [openDeleteMemberDialog, setOpenDeleteMemberDialog] = useState(false);
   const [openShareModal, setOpenShareModal] = useState(false);
-  const currencyType = groupInfo.currency;
-  const isDark = theme.palette.mode === "dark";
 
-  // Fetch trips and members on component mount or when groupInfo changes
   useEffect(() => {
-    triggerTrip({ group_id: groupInfo.group_id });
-    triggerMember({ group_id: groupInfo.group_id });
-  }, [triggerTrip, triggerMember, groupInfo.group_id]);
+    if (data && data.status) {
+      setGroupInfo(data.data);
+    } else if (data && !data.status) {
+      if (data.message === "Authentication required to view this group.") {
+        navigate(`/login?redirect=/group/${groupId}`); // Redirect to login
+      } else {
+        // Show an unauthorized message or redirect to another page
+        alert(data.message);
+        navigate("/");
+      }
+    }
+  }, [data, navigate, groupId, setGroupInfo]);
 
-  // Update trip state when data is fetched
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+
+  if (error) {
+    return <UnauthorizedPage />;
+  }
+
+  useEffect(() => {
+    if (resultGroupDetails.data?.status) {
+      const groupData = resultGroupDetails.data.data;
+      setGroupInfoState(groupData);
+
+      // If the group is public or the user is authorized, fetch members and trips
+      if (groupData.visibility === "public" || groupData.isAuthorized) {
+        triggerTrip({ group_id: groupId });
+        triggerMember({ group_id: groupId });
+      } else if (groupData.visibility === "private") {
+        // If the group is private and the user is not authorized, redirect to login
+        if (!groupData.isAuthorized) {
+          navigate("/login");
+        }
+      }
+    }
+  }, [resultGroupDetails, groupId, triggerTrip, triggerMember, navigate]);
+
   useEffect(() => {
     if (resultTrip?.data?.status) {
       setTrip(resultTrip.data.data);
     }
   }, [resultTrip]);
 
-  // Update member state when data is fetched
   useEffect(() => {
     if (resultMember?.data?.status) {
       setMember(resultMember.data.data);
@@ -75,93 +109,19 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
   }, [resultMember]);
 
   const { info, newData } = useMemo(
-    () => calculateMoney(member, trip, currencyType),
-    [member, trip, currencyType]
+    () => calculateMoney(member, trip, groupInfo?.currency),
+    [member, trip, groupInfo?.currency]
   );
   const columns = useMemo(() => functionRenderColumns(newData), [newData]);
 
-  const tripColumns = useMemo(
-    () => [
-      {
-        field: "id",
-        headerName: "ID",
-        width: 50,
-        headerAlign: "center",
-        align: "center",
-      },
-      {
-        field: "trp_name",
-        headerName: "Trip Name",
-        width: 100,
-        headerAlign: "center",
-        align: "center",
-      },
-      {
-        field: "spend",
-        headerName: "Total Spend",
-        headerAlign: "center",
-        align: "center",
-        width: 100,
-        valueGetter: ({ value }) => {
-          return currency(value, { symbol: currencyType }).format();
-        },
-      },
-      {
-        field: "mem_id",
-        headerName: "Members",
-        headerAlign: "center",
-        align: "center",
-        width: 120,
-        renderCell: (params) => {
-          const joinedMemId = JSON.parse(params.value);
-          const memberNames = member
-            .filter((m) => joinedMemId.includes(m.id))
-            .map((m) => m.mem_name)
-            .join(", ");
-          return (
-            <Tooltip title={memberNames || "No members"}>
-              <span>
-                {joinedMemId.length} Member{joinedMemId.length !== 1 ? "s" : ""}
-              </span>
-            </Tooltip>
-          );
-        },
-      },
-      {
-        field: "update_dttm",
-        headerName: "Last Updated",
-        width: 100,
-        valueGetter: ({ value }) => {
-          return formatTimeDifference(value);
-        },
-      },
-      { field: "create_date", headerName: "Creation Date", width: 100 },
-    ],
-    [member, currencyType]
-  );
+  // Conditional Rendering for Unauthorized Users
+  if (!groupInfo) {
+    return <Typography>Loading...</Typography>;
+  }
 
-  const actions = [
-    {
-      icon: <AddIcon />,
-      name: "Add Trip",
-      onClick: () => setOpenAddTripDialog(true),
-    },
-    {
-      icon: <EditIcon />,
-      name: "Edit Trip's Member",
-      onClick: () => setOpenEditTripDialog(true),
-    },
-    {
-      icon: <PeopleIcon />,
-      name: "Edit Member",
-      onClick: () => setOpenToolTipDialog(true),
-    },
-    {
-      icon: <DeleteIcon />,
-      name: "Delete Member",
-      onClick: () => setOpenDeleteMemberDialog(true),
-    },
-  ];
+  if (groupInfo.visibility === "private" && !groupInfo.isAuthorized) {
+    return <Typography>You do not have access to this group.</Typography>;
+  }
 
   return (
     <Box
@@ -176,7 +136,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
       <Topbar
         user={user}
         groupInfo={groupInfo}
-        setGroupInfo={setGroupInfo}
+        setGroupInfo={setGroupInfoState}
         onShareClick={() => setOpenShareModal(true)}
       />
       <Box
@@ -356,7 +316,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
           triggerMember={triggerMember}
           member={member}
           group_id={groupInfo.group_id}
-          currencyType={currencyType}
+          currencyType={groupInfo.currency}
         />
       </CustomDialog>
 
@@ -371,7 +331,7 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
           secret={secret}
           trip={trip}
           group_id={groupInfo.group_id}
-          currencyType={currencyType}
+          currencyType={groupInfo.currency}
         />
       </CustomDialog>
 
@@ -420,12 +380,13 @@ export default function Group({ user, secret, groupInfo, setGroupInfo }) {
         open={openShareModal}
         onClose={() => setOpenShareModal(false)}
         selectedTrips={trip}
-        currencyType={currencyType}
+        currencyType={groupInfo.currency}
         member={member}
       />
     </Box>
   );
 }
+
 const TotalSpendTable = ({ info, isLoading }) => {
   const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
   const rows = [{ id: 1, totalPaid, totalRemain, totalSpend, totalUnPaid }];
