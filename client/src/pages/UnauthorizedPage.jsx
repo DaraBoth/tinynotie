@@ -9,8 +9,6 @@ const UnauthorizedPage = ({user}) => {
     navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
   };
 
-  console.log(user);
-
   return (
     <Box
       sx={{
