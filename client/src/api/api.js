@@ -162,6 +162,13 @@ export const api = createApi({
         params: { group_id },
       }),
     }),
+    userSearch: build.mutation({
+      query: ({ filterBy, searchWords="ALL", excludeIds = [] }) => ({
+        url: "api/userSearch",
+        method: "GET",
+        params: { filterBy, searchWords, excludeIds },
+      }),
+    }),
   }),
 });
 
@@ -185,4 +192,5 @@ export const {
   useGetAllUsersMutation,
   useUpdateGroupVisibilityMutation,
   useGetGroupVisibilityMutation,
+  useUserSearchMutation,
 } = api;

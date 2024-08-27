@@ -83,7 +83,7 @@ router.get("/listUsers", authenticateToken, async (req, res) => {
 
 // Filter Members by Specific Field or Search Across All Fields
 router.get("/userSearch", authenticateToken, async (req, res) => {
-  const { filterBy, searchWords } = req.query;
+  const { filterBy, searchWords, excludeIds } = req.query;
 
   try {
     // Map filterBy to the actual database columns
@@ -102,13 +102,22 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
       return res.json({ status: false, message: "Invalid filterBy value. Allowed values are: ID, NAME, EMAIL, PHONE, PROFILE, ALL." });
     }
 
-    // Build the SQL query
+    // Start building the SQL query
     let sql = `
       SELECT id, usernm, email, phone_number, profile_url 
       FROM user_infm
       WHERE 1=1
     `;
 
+    // Apply exclusion condition if excludeIds is provided
+    let values = [searchWords];
+    if (excludeIds && excludeIds.length > 0) {
+      const excludedIdsArray = Array.isArray(excludeIds) ? excludeIds : [excludeIds];
+      sql += ` AND id NOT IN (${excludedIdsArray.map((_, idx) => `$${idx + 2}`).join(', ')})`;
+      values = [searchWords, ...excludedIdsArray];
+    }
+
+    // Apply filtering based on filterBy value
     if (filterColumn === 'ALL') {
       let searchConditions = [];
 
@@ -130,8 +139,8 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
 
     sql += ' ORDER BY usernm ASC'; // Optionally order by username
 
-    // Execute the query with the searchWords parameter
-    const results = await pool.query(sql, [searchWords]);
+    // Execute the query with the searchWords and excluded IDs
+    const results = await pool.query(sql, values);
 
     res.json({ status: true, data: results.rows });
   } catch (error) {
