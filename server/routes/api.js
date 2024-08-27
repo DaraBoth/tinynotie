@@ -171,7 +171,7 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
       return res.json({ status: false, message: "Group not found." });
     }
 
-    if (adminCheckResult.rows[0].admin_id !== user_id) {
+    if (adminCheckResult.rows[0].admin_id != user_id) {
       return res.json({ status: false, message: "You are not authorized to update this group." });
     }
 
