@@ -77,6 +77,8 @@ export default function Group({ user, secret, setGroupInfo }) {
     }
   }, [resultGroupDetails, groupId, triggerTrip, triggerMember, navigate]);
 
+  console.log(groupInfoState);
+
   // Update trip state when data is fetched
   useEffect(() => {
     if (resultTrip?.data?.status) {
@@ -184,8 +186,6 @@ export default function Group({ user, secret, setGroupInfo }) {
   if (resultGroupDetails.isLoading) {
      return <LoadingPage />;
   }
-
-  console.log(resultGroupDetails.data);
 
   if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
     if(user != null){

@@ -142,6 +142,19 @@ export const api = createApi({
         body: payload,
       }),
     }),
+    getAllUsers: build.mutation({
+      query: () => ({
+        url: "api/listUsers",
+        method: "GET",
+      }),
+    }),
+    updateGroupVisibility: build.mutation({
+      query: (payload) => ({
+        url: "api/updateGroupVisibility",
+        method: "POST",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -161,5 +174,7 @@ export const {
   usePostAddMemberMutation,
   usePostEditMemberMutation,
   useDeleteGroupMutation,
-  useGetGroupDetailsMutation ,
+  useGetGroupDetailsMutation,
+  useGetAllUsersMutation,
+  useUpdateGroupVisibilityMutation,
 } = api;

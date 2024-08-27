@@ -123,11 +123,15 @@ router.get("/getGroupDetail", async (req, res) => {
     if (user_id) {
       const authCheckSql = `
         SELECT g.id, g.grp_name, g.currency, g.visibility,
-               CASE 
-                 WHEN g.admin_id = $2::int THEN TRUE
-                 WHEN gu.user_id IS NOT NULL THEN TRUE
-                 ELSE FALSE
-               END AS "isAuthorized"
+              CASE 
+                WHEN g.admin_id = $2::int THEN TRUE
+                WHEN gu.user_id IS NOT NULL THEN TRUE
+                ELSE FALSE
+              END AS "isAuthorized",
+              CASE 
+                WHEN g.admin_id = $2::int THEN TRUE
+                ELSE FALSE
+              END AS "isAdmin"
         FROM grp_infm g
         LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $2::int
         WHERE g.id = $1::int;
