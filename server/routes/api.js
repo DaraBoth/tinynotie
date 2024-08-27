@@ -84,6 +84,7 @@ router.get("/listUsers", authenticateToken, async (req, res) => {
 // Filter Members by Specific Field or Search Across All Fields
 router.get("/userSearch", authenticateToken, async (req, res) => {
   const { filterBy, searchWords, excludeIds } = req.query;
+  const { _id:user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
 
   try {
     // Map filterBy to the actual database columns
@@ -106,15 +107,15 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
     let sql = `
       SELECT id, usernm, email, phone_number, profile_url 
       FROM user_infm
-      WHERE 1=1
+      WHERE id != $1  -- Exclude the searcher
     `;
 
-    // Apply exclusion condition if excludeIds is provided
-    let values = [searchWords];
-    if (excludeIds && excludeIds.length > 0) {
+    // Apply exclusion logic if excludeIds are provided
+    let values = [user_id]; // Start with the searcher's ID for exclusion
+    if (excludeIds) {
       const excludedIdsArray = Array.isArray(excludeIds) ? excludeIds : [excludeIds];
       sql += ` AND id NOT IN (${excludedIdsArray.map((_, idx) => `$${idx + 2}`).join(', ')})`;
-      values = [searchWords, ...excludedIdsArray];
+      values = values.concat(excludedIdsArray);
     }
 
     // Apply filtering based on filterBy value
@@ -125,21 +126,24 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
       for (let key in filterMap) {
         if (key !== 'ALL') {
           if (filterMap[key] === 'id') {
-            searchConditions.push(`CAST(${filterMap[key]} AS TEXT) ILIKE '%' || $1 || '%'`);
+            searchConditions.push(`CAST(${filterMap[key]} AS TEXT) ILIKE '%' || $${values.length + 1} || '%'`);
           } else {
-            searchConditions.push(`${filterMap[key]} ILIKE '%' || $1 || '%'`);
+            searchConditions.push(`${filterMap[key]} ILIKE '%' || $${values.length + 1} || '%'`);
           }
         }
       }
 
       sql += ` AND (${searchConditions.join(' OR ')})`;
     } else {
-      sql += ` AND ${filterColumn} ILIKE '%' || $1 || '%'`;
+      sql += ` AND ${filterColumn} ILIKE '%' || $${values.length + 1} || '%'`;
     }
 
     sql += ' ORDER BY usernm ASC'; // Optionally order by username
 
-    // Execute the query with the searchWords and excluded IDs
+    // Add the searchWords parameter to values
+    values.push(searchWords);
+
+    // Execute the query with the searchWords and excluded IDs (if any)
     const results = await pool.query(sql, values);
 
     res.json({ status: true, data: results.rows });

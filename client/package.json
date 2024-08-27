@@ -30,6 +30,7 @@
     "pg": "^8.10.0",
     "pnpm": "^9.7.1",
     "react": "^18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-data-grid": "^7.0.0-beta.28",
     "react-dom": "^18.2.0",
     "react-pro-sidebar": "^0.7.1",
