@@ -35,6 +35,7 @@ import currency from "currency.js";
 import EditTrip from "../component/EditTrip";
 import ShareModal from "../component/ShareModal";
 import { calculateMoney, functionRenderColumns } from "../help/helper";
+import GroupVisibilitySettings from "../component/GroupVisibilitySettings";
 
 export default function Group({ user, secret, setGroupInfo }) {
   const theme = useTheme();
@@ -76,8 +77,6 @@ export default function Group({ user, secret, setGroupInfo }) {
       }
     }
   }, [resultGroupDetails, groupId, triggerTrip, triggerMember, navigate]);
-
-  console.log(groupInfoState);
 
   // Update trip state when data is fetched
   useEffect(() => {

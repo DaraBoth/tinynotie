@@ -4,6 +4,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../theme";
 import { rspWidth } from "../responsive";
+import GroupVisibilitySettings from "../component/GroupVisibilitySettings";
 
 const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
   const theme = useTheme();
@@ -64,6 +65,14 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
       >
         <ShareIcon />
       </IconButton>
+
+      {/* Group Visibility Settings - Only show if user is the admin */}
+      {groupInfo?.isAdmin && (
+        <GroupVisibilitySettings
+          groupId={groupInfo?.id}
+          visibility={groupInfo?.visibility}
+        />
+      )}
     </Box>
   );
 };
