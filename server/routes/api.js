@@ -157,14 +157,19 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
 router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   const { user_id } = req.query;
   try {
-    const sql = `SELECT g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date 
-                  FROM grp_infm g
-                  LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $1::int
-                  WHERE g.visibility = 'public' 
-                    OR g.admin_id = $1::int
-                    OR gu.user_id IS NOT NULL
-                  ORDER BY g.id ASC;
-                  `;
+    const sql = `
+      SELECT g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date,
+             CASE 
+               WHEN g.admin_id = $1::int THEN TRUE
+               ELSE FALSE
+             END AS "isAdmin"
+      FROM grp_infm g
+      LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $1::int
+      WHERE g.visibility = 'public' 
+         OR g.admin_id = $1::int
+         OR gu.user_id IS NOT NULL
+      ORDER BY g.id ASC;
+    `;
     const results = await pool.query(sql, [user_id]);
     res.send({ status: true, data: results.rows });
   } catch (error) {
