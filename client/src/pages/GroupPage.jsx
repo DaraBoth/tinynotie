@@ -185,8 +185,13 @@ export default function Group({ user, secret, setGroupInfo }) {
      return <LoadingPage />;
   }
 
+  console.log(resultGroupDetails.data);
+
   if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
-     return <UnauthorizedPage />;
+    if(user != null){
+      return <UnauthorizedPage user={user} />; 
+    }
+    return <UnauthorizedPage />;
   }
 
   return (

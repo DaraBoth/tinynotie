@@ -2,32 +2,42 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
+  IconButton,
+  InputAdornment,
+  Snackbar,
   TextField,
   Typography,
   useMediaQuery,
   useTheme,
   CircularProgress,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";
-import { useNavigate, useLocation } from "react-router-dom";
-import { usePostLoginMutation } from "../api/api";
+import { usePostLoginMutation, usePostRegisterMutation } from "../api/api";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import Person4RoundedIcon from "@mui/icons-material/Person4Rounded";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { tokens } from "../theme";
+import { Alert } from "@mui/material";
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Login({ setUser, setSecret }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const isNonMobile = useMediaQuery("(min-width:600px)");
-  const [triggerLogin, resultLogin] = usePostLoginMutation();
-  const [loading, setLoading] = useState(false);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSuccess, setSnackbarSuccess] = useState(false);
   const navigate = useNavigate();
   const { search } = useLocation();
   const redirectUrl = new URLSearchParams(search).get('redirect') || '/';
+
+  const isNonMobile = useMediaQuery("(min-width:600px)");
+  const [triggerLogin, resultLogin] = usePostLoginMutation();
+  const [triggerRegister, resultRegister] = usePostRegisterMutation();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSuccess, setSnackbarSuccess] = useState(false);
+  const [isRegister, setIsRegister] = useState(false);
 
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
@@ -294,7 +304,7 @@ export default function Login({ setUser, setSecret }) {
           </form>
         )}
       </Formik>
-        <Snackbar
+      <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}
         onClose={handleCloseSnackbar}

@@ -65,6 +65,22 @@ router.get("/test_db_online", async (req, res) => {
   }
 });
 
+// List All Users
+router.get("/listUsers", authenticateToken, async (req, res) => {
+  try {
+    const sql = `
+      SELECT id, usernm, email, profile_url 
+      FROM user_infm
+      ORDER BY usernm ASC;
+    `;
+    const results = await pool.query(sql);
+    res.json({ status: true, data: results.rows });
+  } catch (error) {
+    console.error("error", error);
+    res.json({ status: false, error: error.message });
+  }
+});
+
 // Get Group by User ID
 router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   const { user_id } = req.query;
@@ -132,6 +148,61 @@ router.get("/getGroupDetail", async (req, res) => {
   } catch (error) {
     console.error("error", error);
     res.json({ error: error.message });
+  }
+});
+
+// Update Group Visibility and Access Control
+router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
+  const { group_id, visibility, allowed_users } = req.body; // allowed_users is an array of user IDs
+  const { user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
+
+  try {
+    // First, check if the user is the admin of the group
+    const adminCheckSql = `
+      SELECT admin_id FROM grp_infm WHERE id = $1::int;
+    `;
+    const adminCheckResult = await pool.query(adminCheckSql, [group_id]);
+
+    if (adminCheckResult.rows.length === 0) {
+      return res.json({ status: false, message: "Group not found." });
+    }
+
+    if (adminCheckResult.rows[0].admin_id !== user_id) {
+      return res.json({ status: false, message: "You are not authorized to update this group." });
+    }
+
+    // Update the group's visibility
+    const updateVisibilitySql = `
+      UPDATE grp_infm 
+      SET visibility = $2 
+      WHERE id = $1::int;
+    `;
+    await pool.query(updateVisibilitySql, [group_id, visibility]);
+
+    // If the group is set to private, update the allowed users
+    if (visibility === 'private' && Array.isArray(allowed_users)) {
+      // Remove all existing entries for the group in grp_users
+      const deleteExistingUsersSql = `
+        DELETE FROM grp_users WHERE group_id = $1::int;
+      `;
+      await pool.query(deleteExistingUsersSql, [group_id]);
+
+      // Add new allowed users
+      const insertUserSql = `
+        INSERT INTO grp_users (group_id, user_id) 
+        VALUES ($1::int, $2::int);
+      `;
+
+      // Use Promise.all to handle multiple inserts asynchronously
+      await Promise.all(
+        allowed_users.map(userId => pool.query(insertUserSql, [group_id, userId]))
+      );
+    }
+
+    res.json({ status: true, message: "Group visibility updated successfully." });
+  } catch (error) {
+    console.error("error", error);
+    res.json({ status: false, error: error.message });
   }
 });
 
