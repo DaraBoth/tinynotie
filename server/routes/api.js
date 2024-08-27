@@ -210,6 +210,63 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
   }
 });
 
+// Get Group Visibility
+router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
+  const { group_id } = req.query;
+
+  try {
+    // Fetch the group's visibility status
+    const groupSql = `
+      SELECT id, grp_name, visibility
+      FROM grp_infm
+      WHERE id = $1::int;
+    `;
+    const groupResult = await pool.query(groupSql, [group_id]);
+
+    if (groupResult.rows.length === 0) {
+      return res.json({ status: false, message: "Group not found." });
+    }
+
+    const group = groupResult.rows[0];
+
+    // If the group is private, fetch the list of allowed users
+    if (group.visibility === 'private') {
+      const usersSql = `
+        SELECT u.id, u.usernm, u.email, u.profile_url
+        FROM grp_users gu
+        JOIN user_infm u ON gu.user_id = u.id
+        WHERE gu.group_id = $1::int;
+      `;
+      const usersResult = await pool.query(usersSql, [group_id]);
+
+      return res.json({
+        status: true,
+        data: {
+          id: group.id,
+          grp_name: group.grp_name,
+          visibility: group.visibility,
+          allowed_users: usersResult.rows
+        }
+      });
+    } else {
+      // If the group is public, just return the visibility
+      return res.json({
+        status: true,
+        data: {
+          id: group.id,
+          grp_name: group.grp_name,
+          visibility: group.visibility,
+          allowed_users: []  // No specific users for public groups
+        }
+      });
+    }
+  } catch (error) {
+    console.error("error", error);
+    res.json({ status: false, error: error.message });
+  }
+});
+
+
 // Add Group by User ID
 router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   const { user_id, grp_name, status = 1, description, currency = 'W', member } = req.body;
