@@ -29,14 +29,17 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   const [loading, setLoading] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
+  const [fetchingData, setFetchingData] = useState(true); // New state to track fetching status
 
   useEffect(() => {
     if (open) {
+      setFetchingData(true);
       // Fetch current visibility settings
       triggerGetVisibility({ group_id: groupId }).then((response) => {
         if (response.data?.status) {
           setVisibility(response.data.data.visibility);
           setAllowedUsers(response.data.data.allowed_users);
+          setFetchingData(false); // Data fetched, stop loading
         }
       });
 
@@ -73,7 +76,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
 
   return (
     <Box>
-      <Dialog open={open} onClose={onClose}>
+      <Dialog open={open && !fetchingData} onClose={onClose}>
         <DialogTitle>Update Group Visibility</DialogTitle>
         <DialogContent>
           <FormControl fullWidth margin="normal">
