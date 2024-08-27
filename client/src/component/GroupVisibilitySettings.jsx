@@ -17,27 +17,37 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { useGetAllUsersMutation, useUpdateGroupVisibilityMutation } from "../api/api";
+import { useGetAllUsersMutation, useUpdateGroupVisibilityMutation, useGetGroupVisibilityMutation } from "../api/api";
 
-export default function GroupVisibilitySettings({ groupId, currentVisibility, open, onClose }) {
-  const [visibility, setVisibility] = useState(currentVisibility || "public");
+export default function GroupVisibilitySettings({ groupId, open, onClose }) {
+  const [visibility, setVisibility] = useState("public");
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [triggerGetUsers] = useGetAllUsersMutation();
   const [triggerUpdateVisibility] = useUpdateGroupVisibilityMutation();
+  const [triggerGetVisibility] = useGetGroupVisibilityMutation();
   const [loading, setLoading] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
 
   useEffect(() => {
     if (open) {
+      // Fetch current visibility settings
+      triggerGetVisibility({ group_id: groupId }).then((response) => {
+        if (response.data?.status) {
+          setVisibility(response.data.data.visibility);
+          setAllowedUsers(response.data.data.allowed_users);
+        }
+      });
+
+      // Fetch all users
       triggerGetUsers().then((response) => {
         if (response.data?.status) {
           setUsersList(response.data.data);
         }
       });
     }
-  }, [open, triggerGetUsers]);
+  }, [open, groupId, triggerGetUsers, triggerGetVisibility]);
 
   const handleVisibilityChange = (event) => {
     setVisibility(event.target.value);

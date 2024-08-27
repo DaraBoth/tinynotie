@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Function to get the JWT token from sessionStorage
-const getToken = () => sessionStorage.getItem('token');
+const getToken = () => sessionStorage.getItem("token");
 
 export const api = createApi({
   baseQuery: fetchBaseQuery({
@@ -12,11 +12,11 @@ export const api = createApi({
 
       // If we have a token, set the Authorization header
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${token}`);
       }
 
       return headers;
-    }
+    },
   }),
   reducerPath: "main",
   tagTypes: [],
@@ -129,7 +129,7 @@ export const api = createApi({
         try {
           const { data } = await queryFulfilled;
           // Assuming the token is in data.token
-          sessionStorage.setItem('token', data.token);
+          sessionStorage.setItem("token", data.token);
         } catch (error) {
           // Handle error
         }
@@ -138,7 +138,7 @@ export const api = createApi({
     postRegister: build.mutation({
       query: (payload) => ({
         url: "auth/register",
-        method: "POST",  // Corrected method to POST
+        method: "POST", // Corrected method to POST
         body: payload,
       }),
     }),
@@ -153,6 +153,13 @@ export const api = createApi({
         url: "api/updateGroupVisibility",
         method: "POST",
         body: payload,
+      }),
+    }),
+    getGroupVisibility: build.mutation({
+      query: ({ group_id }) => ({
+        url: "api/getGroupVisibility",
+        method: "GET",
+        params: { group_id },
       }),
     }),
   }),
@@ -177,4 +184,5 @@ export const {
   useGetGroupDetailsMutation,
   useGetAllUsersMutation,
   useUpdateGroupVisibilityMutation,
+  useGetGroupVisibilityMutation,
 } = api;
