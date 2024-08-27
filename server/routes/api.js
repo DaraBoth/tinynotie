@@ -81,6 +81,65 @@ router.get("/listUsers", authenticateToken, async (req, res) => {
   }
 });
 
+// Filter Members by Specific Field or Search Across All Fields
+router.get("/userSearch", authenticateToken, async (req, res) => {
+  const { filterBy, searchWords } = req.query;
+
+  try {
+    // Map filterBy to the actual database columns
+    const filterMap = {
+      ID: 'id',
+      NAME: 'usernm',
+      EMAIL: 'email',
+      PHONE: 'phone_number',
+      PROFILE: 'profile_url',
+      ALL: 'ALL'
+    };
+
+    // Validate the filterBy parameter
+    const filterColumn = filterMap[filterBy?.toUpperCase()];
+    if (!filterColumn) {
+      return res.json({ status: false, message: "Invalid filterBy value. Allowed values are: ID, NAME, EMAIL, PHONE, PROFILE, ALL." });
+    }
+
+    // Build the SQL query
+    let sql = `
+      SELECT id, usernm, email, phone_number, profile_url 
+      FROM user_infm
+      WHERE 1=1
+    `;
+
+    if (filterColumn === 'ALL') {
+      let searchConditions = [];
+
+      // Loop through filterMap to dynamically add search conditions
+      for (let key in filterMap) {
+        if (key !== 'ALL') {
+          if (filterMap[key] === 'id') {
+            searchConditions.push(`CAST(${filterMap[key]} AS TEXT) ILIKE '%' || $1 || '%'`);
+          } else {
+            searchConditions.push(`${filterMap[key]} ILIKE '%' || $1 || '%'`);
+          }
+        }
+      }
+
+      sql += ` AND (${searchConditions.join(' OR ')})`;
+    } else {
+      sql += ` AND ${filterColumn} ILIKE '%' || $1 || '%'`;
+    }
+
+    sql += ' ORDER BY usernm ASC'; // Optionally order by username
+
+    // Execute the query with the searchWords parameter
+    const results = await pool.query(sql, [searchWords]);
+
+    res.json({ status: true, data: results.rows });
+  } catch (error) {
+    console.error("error", error);
+    res.json({ status: false, error: error.message });
+  }
+});
+
 // Get Group by User ID
 router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   const { user_id } = req.query;
