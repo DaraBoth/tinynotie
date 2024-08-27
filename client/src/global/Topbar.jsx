@@ -3,6 +3,7 @@ import { Box, IconButton, Typography, Menu, MenuItem, useTheme } from "@mui/mate
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ShareIcon from "@mui/icons-material/Share";
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../theme";
 import { rspWidth } from "../responsive";
@@ -96,7 +97,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
           <ShareIcon sx={{ marginRight: 1 }} /> Share
         </MenuItem>
         <MenuItem onClick={handleSettingsOpen}>
-          <MoreVertIcon sx={{ marginRight: 1 }} /> Settings
+          <VisibilityIcon sx={{ marginRight: 1 }} /> Visibility
         </MenuItem>
       </Menu>
 

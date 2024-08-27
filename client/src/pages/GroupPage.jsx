@@ -430,7 +430,7 @@ export default function Group({ user, secret, setGroupInfo }) {
         />
       </CustomDialog>
 
-      <SpeedDial
+      {groupInfoState?.isAdmin && <SpeedDial
         ariaLabel="SpeedDial example"
         sx={{ position: "fixed", bottom: 16, right: 16 }}
         icon={<SpeedDialIcon />}
@@ -443,7 +443,7 @@ export default function Group({ user, secret, setGroupInfo }) {
             onClick={action.onClick}
           />
         ))}
-      </SpeedDial>
+      </SpeedDial>}
 
       <ShareModal
         open={openShareModal}

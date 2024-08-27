@@ -59,7 +59,7 @@ function GroupCard({ item, onDelete, onClick }) {
       <Typography variant="body2" color={colors.grey[300]}>
         Create Date: <span style={{ color: colors.primary[300] }}>{item.create_date}</span>
       </Typography>
-      <IconButton
+      {item.isAdmin && <IconButton
         aria-label="delete"
         onClick={(e) => {
           e.stopPropagation();
@@ -73,7 +73,7 @@ function GroupCard({ item, onDelete, onClick }) {
         }}
       >
         <DeleteIcon />
-      </IconButton>
+      </IconButton>}
     </Paper>
   );
 }
