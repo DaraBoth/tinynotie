@@ -19,13 +19,12 @@ import {
 } from "@mui/material";
 import { useGetAllUsersMutation, useUpdateGroupVisibilityMutation } from "../api/api";
 
-export default function GroupVisibilitySettings({ groupId, currentVisibility }) {
-  const [open, setOpen] = useState(false);
+export default function GroupVisibilitySettings({ groupId, currentVisibility, open, onClose }) {
   const [visibility, setVisibility] = useState(currentVisibility || "public");
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [usersList, setUsersList] = useState([]);
-  const [triggerGetUsers, resultGetUsers] = useGetAllUsersMutation();
-  const [triggerUpdateVisibility, resultUpdateVisibility] = useUpdateGroupVisibilityMutation();
+  const [triggerGetUsers] = useGetAllUsersMutation();
+  const [triggerUpdateVisibility] = useUpdateGroupVisibilityMutation();
   const [loading, setLoading] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
@@ -59,16 +58,12 @@ export default function GroupVisibilitySettings({ groupId, currentVisibility }) 
     setSnackbarMessage(response.message || "Error updating group visibility.");
     setSnackbarSuccess(response.status);
     setLoading(false);
-    setOpen(false);
+    onClose();
   };
 
   return (
     <Box>
-      <Button variant="contained" onClick={() => setOpen(true)}>
-        Visibility Settings
-      </Button>
-
-      <Dialog open={open} onClose={() => setOpen(false)}>
+      <Dialog open={open} onClose={onClose}>
         <DialogTitle>Update Group Visibility</DialogTitle>
         <DialogContent>
           <FormControl fullWidth margin="normal">
@@ -104,7 +99,7 @@ export default function GroupVisibilitySettings({ groupId, currentVisibility }) 
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)} color="primary">Cancel</Button>
+          <Button onClick={onClose} color="primary">Cancel</Button>
           <Button onClick={handleSave} color="primary" disabled={loading}>
             {loading ? <CircularProgress size="1rem" /> : "Save"}
           </Button>

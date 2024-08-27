@@ -158,7 +158,7 @@ router.get("/getGroupDetail", async (req, res) => {
 // Update Group Visibility and Access Control
 router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
   const { group_id, visibility, allowed_users } = req.body; // allowed_users is an array of user IDs
-  const { user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
+  const { id:user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
 
   try {
     // First, check if the user is the admin of the group
