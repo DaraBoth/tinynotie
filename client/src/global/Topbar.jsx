@@ -42,6 +42,8 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
     setSettingsOpen(false);
   };
 
+  console.log(groupInfo);
+
   return (
     <Box
       display="flex"
@@ -103,7 +105,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
         <MenuItem onClick={onShareClick}>
           <ShareIcon sx={{ marginRight: 1 }} /> Share
         </MenuItem>
-        {groupInfo.isAdmin && (
+        {groupInfo?.isAdmin && (
           <MenuItem onClick={handleSettingsOpen}>
             <VisibilityIcon sx={{ marginRight: 1 }} /> Visibility
           </MenuItem>

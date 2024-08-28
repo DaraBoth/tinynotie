@@ -240,7 +240,11 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               onClick={() => handleTabChange(null, 0)}
               color={tabIndex === 0 ? "primary" : "inherit"}
               startIcon={<DescriptionOutlinedIcon />}
-              sx={{ textTransform: "none", mx: 1 }}
+              sx={{
+                textTransform: "none",
+                mx: 1,
+                color: tabIndex === 0 ? colors.primary[500] : "none",
+              }}
             >
               My Notes
             </Button>
@@ -248,7 +252,11 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               onClick={() => handleTabChange(null, 1)}
               color={tabIndex === 1 ? "primary" : "inherit"}
               startIcon={<PeopleAltOutlinedIcon />}
-              sx={{ textTransform: "none", mx: 1 }}
+              sx={{
+                textTransform: "none",
+                mx: 1,
+                color: tabIndex === 1 ? colors.primary[500] : "none",
+              }}
             >
               From Others
             </Button>
@@ -272,6 +280,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               textTransform: "none",
               width: "50%", // Full width for mobile view
               borderRadius: "0", // No border radius
+              color: tabIndex === 0 ? colors.primary[500] : "none",
             }}
           >
             My Notes
@@ -284,6 +293,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               textTransform: "none",
               width: "50%", // Full width for mobile view
               borderRadius: "0", // No border radius
+              color: tabIndex === 1 ? colors.primary[500] : "none",
             }}
           >
             From Others
@@ -301,8 +311,8 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
             : gridColItem,
           gridAutoFlow: "dense",
           gap: "20px",
-          margin: "20px" ,
-          marginTop: isNonMobile ? "80px" : "0px", // Adjust margin for mobile view
+          margin: "20px",
+          marginTop: "0px", // Adjust margin for mobile view
         }}
       >
         {loading ? (
