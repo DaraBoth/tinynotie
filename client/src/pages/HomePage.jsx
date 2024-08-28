@@ -115,6 +115,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
 
   const handleLogout = () => {
     setUser(false);
+    sessionStorage.removeItem("token")
     navigate("/login");
   };
 

@@ -1,9 +1,16 @@
 import React, { useState } from "react";
-import { Box, IconButton, Typography, Menu, MenuItem, useTheme } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Typography,
+  Menu,
+  MenuItem,
+  useTheme,
+} from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ShareIcon from "@mui/icons-material/Share";
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../theme";
 import { rspWidth } from "../responsive";
@@ -28,7 +35,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
 
   const handleSettingsOpen = () => {
     setSettingsOpen(true);
-    handleMenuClose();  // Close the menu when opening the settings dialog
+    handleMenuClose(); // Close the menu when opening the settings dialog
   };
 
   const handleSettingsClose = () => {
@@ -43,18 +50,18 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
       padding="16px 24px"
       bgcolor={colors.primary[900]} // Match the background with the group page
       sx={{
-        boxShadow: 'none',
+        boxShadow: "none",
       }}
     >
       {/* Back Button */}
       <IconButton
         onClick={() => {
           setGroupInfo(false);
-          navigate('/');
+          navigate("/");
         }}
         sx={{
           color: colors.grey[100], // Better visibility in both themes
-          '&:hover': {
+          "&:hover": {
             backgroundColor: colors.blueAccent[700], // Consistent hover effect
           },
         }}
@@ -81,7 +88,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
         onClick={handleMenuClick}
         sx={{
           color: colors.grey[100], // Better visibility in both themes
-          '&:hover': {
+          "&:hover": {
             backgroundColor: colors.blueAccent[700], // Consistent hover effect
           },
         }}
@@ -96,9 +103,11 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
         <MenuItem onClick={onShareClick}>
           <ShareIcon sx={{ marginRight: 1 }} /> Share
         </MenuItem>
-        <MenuItem onClick={handleSettingsOpen}>
-          <VisibilityIcon sx={{ marginRight: 1 }} /> Visibility
-        </MenuItem>
+        {groupInfo.isAdmin && (
+          <MenuItem onClick={handleSettingsOpen}>
+            <VisibilityIcon sx={{ marginRight: 1 }} /> Visibility
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Group Visibility Settings Dialog */}

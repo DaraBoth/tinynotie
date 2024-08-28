@@ -20,8 +20,11 @@ import {
   InputAdornment,
   DialogContentText,
   useTheme,
+  Skeleton,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import PersonIcon from "@mui/icons-material/Person";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import {
   useUpdateGroupVisibilityMutation,
@@ -45,6 +48,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSearching, setIsSearching] = useState(false); // Add loading state for search
 
   useEffect(() => {
     if (open) {
@@ -69,6 +73,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   };
 
   const handleSearch = async () => {
+    setIsSearching(true); // Start loading
     const response = await triggerUserSearch({
       searchWords: searchQuery,
       filterBy: "ALL",
@@ -79,6 +84,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
       );
       setAvailableUsers(filteredResults);
     }
+    setIsSearching(false); // Stop loading
   };
 
   const handleDragEnd = (result) => {
@@ -140,6 +146,19 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
     onClose();
   };
 
+  const getItemStyle = (isDragging, draggableStyle) => ({
+    userSelect: "none",
+    background: isDragging && colors.primary[500],
+    cursor: isDragging ? "all-scroll" : "pointer",
+    ...draggableStyle,
+  });
+
+  const getListStyle = (isDraggingOver) => ({
+    background: isDraggingOver && colors.primary[200],
+    color: isDraggingOver && colors.primary[900],
+    cursor: "all-scroll",
+  });
+
   return (
     <Box sx={{ position: "relative", zIndex: 0 }}>
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -151,7 +170,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: theme.palette.mode === "dark" ? colors.primary[900] : colors.primary[100] ,
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? colors.primary[900]
+                  : colors.primary[100],
               zIndex: 1300, // Ensure it's above the dialog
               display: "flex",
               alignItems: "center",
@@ -226,7 +248,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                   sx={{ marginY: "8px" }}
                 />
                 <Droppable droppableId="availableUsers">
-                  {(provided) => (
+                  {(provided, snapshot) => (
                     <List
                       {...provided.droppableProps}
                       ref={provided.innerRef}
@@ -235,25 +257,92 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                         border: "1px solid #ccc",
                         borderRadius: "4px",
                         padding: 1,
+                        backgroundColor: "#f7f7f7",
                       }}
+                      style={getListStyle(snapshot.isDraggingOver)}
                     >
-                      {availableUsers.map((user, index) => (
-                        <Draggable
-                          key={user.id}
-                          draggableId={user.id.toString()}
-                          index={index}
+                      {isSearching ? (
+                        Array.from(new Array(3)).map((_, index) => (
+                          <ListItem key={index}>
+                            <Skeleton
+                              variant="rectangular"
+                              width="100px"
+                              height={40}
+                            />
+                          </ListItem>
+                        ))
+                      ) : availableUsers.length === 0 ? ( // Check if no users are found
+                        <Typography
+                          variant="body2"
+                          color="textSecondary"
+                          sx={{ padding: 2, textAlign: "center" }}
                         >
-                          {(provided) => (
-                            <ListItem
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                            >
-                              <ListItemText primary={user.usernm} />
-                            </ListItem>
-                          )}
-                        </Draggable>
-                      ))}
+                          No users found.
+                        </Typography>
+                      ) : (
+                        availableUsers.map((user, index) => (
+                          <Draggable
+                            key={user.id}
+                            draggableId={user.id.toString()}
+                            index={index}
+                          >
+                            {(provided, snapshot) => (
+                              <ListItem
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                style={getItemStyle(
+                                  snapshot.isDragging,
+                                  provided.draggableProps.style
+                                )}
+                                sx={{
+                                  border: "1px solid #ddd",
+                                  borderRadius: "8px",
+                                  marginBottom: "8px",
+                                  padding: "8px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  backgroundColor: "white",
+                                  boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+                                  cursor: "grab !important",
+                                  transition: "background-color 0.3s",
+                                  ":hover": {
+                                    backgroundColor: "#f5f5f5",
+                                  },
+                                  width: "auto",
+                                  maxWidth: "100%",
+                                  marginRight: "5px",
+                                  gap: "4px", // Closer spacing between items
+                                }}
+                              >
+                                <IconButton
+                                  {...provided.dragHandleProps}
+                                  sx={{
+                                    borderRadius: "50%",
+                                    marginRight: 0, // Remove extra spacing
+                                    padding: "0px", // Reduce padding for closer appearance
+                                    ":hover": {
+                                      backgroundColor: "transparent", // No hover effect
+                                    },
+                                  }}
+                                >
+                                  <DragIndicatorIcon />
+                                </IconButton>
+                                <ListItemText
+                                  primary={user.usernm}
+                                  sx={{
+                                    fontWeight: "bold",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    marginLeft: "0px", // Ensure text is close to the icon
+                                  }}
+                                />
+                              </ListItem>
+                            )}
+                          </Draggable>
+                        ))
+                      )}
                       {provided.placeholder}
                     </List>
                   )}
@@ -274,7 +363,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               >
                 <Typography variant="subtitle1">Selected Users</Typography>
                 <Droppable droppableId="allowedUsers">
-                  {(provided) => (
+                  {(provided, snapshot) => (
                     <List
                       {...provided.droppableProps}
                       ref={provided.innerRef}
@@ -283,7 +372,9 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                         border: "1px solid #ccc",
                         borderRadius: "4px",
                         padding: 1,
+                        backgroundColor: "#f7f7f7", // Consistent background color
                       }}
+                      style={getListStyle(snapshot.isDraggingOver)}
                     >
                       {allowedUsers.map((user, index) => (
                         <Draggable
@@ -291,13 +382,57 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                           draggableId={user.id.toString()}
                           index={index}
                         >
-                          {(provided) => (
+                          {(provided, snapshot) => (
                             <ListItem
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
+                              sx={{
+                                border: "1px solid #ddd",
+                                borderRadius: "8px",
+                                marginBottom: "8px",
+                                padding: "8px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                backgroundColor: "white",
+                                boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+                                cursor: "grab !important",
+                                transition: "background-color 0.3s",
+                                ":hover": {
+                                  backgroundColor: "#f5f5f5",
+                                },
+                                width: "auto",
+                                maxWidth: "100%",
+                                gap: "4px", // Closer spacing between items
+                              }}
+                              style={getItemStyle(
+                                snapshot.isDragging,
+                                provided.draggableProps.style
+                              )}
                             >
-                              <ListItemText primary={user.usernm} />
+                              <IconButton
+                                {...provided.dragHandleProps}
+                                sx={{
+                                  borderRadius: "50%",
+                                  marginRight: 0, // Remove extra spacing
+                                  padding: "0px", // Reduce padding for closer appearance
+                                  ":hover": {
+                                    backgroundColor: "transparent", // No hover effect
+                                  },
+                                }}
+                              >
+                                <DragIndicatorIcon />
+                              </IconButton>
+                              <ListItemText
+                                primary={user.usernm}
+                                sx={{
+                                  fontWeight: "bold",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  marginLeft: "0px", // Ensure text is close to the icon
+                                }}
+                              />
                             </ListItem>
                           )}
                         </Draggable>
