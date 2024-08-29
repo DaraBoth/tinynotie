@@ -780,8 +780,10 @@ router.post("/b2bAlert", async (req, res) => {
       },
     };
     console.log(messageObj, message);
-    await darabothSendMessage(messageObj, message || "test");
-    res.status(200).send("Data received successfully");
+    if(message){
+      await darabothSendMessage(messageObj, message || "test");
+      res.status(200).send("Data received successfully");
+    }
   } catch (error) {
     console.error("Error parsing JSON:", error);
     res.status(500).send("Error processing data");
