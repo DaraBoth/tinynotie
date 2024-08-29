@@ -1060,7 +1060,6 @@ const handleMessage = async function (messageObj) {
           messageText,
           responseText: responseText.text(),
         });
-        return darabothSendMessage(messageObj, "sadsad");
         return darabothSendMessage(messageObj, responseText.text());
       } else if (command.startsWith("whoclean")) {
         const cleaningData = await getCleaningData();
@@ -1071,7 +1070,6 @@ const handleMessage = async function (messageObj) {
         return darabothSendMessage(messageObj, resText);
       } else if (command.startsWith("translate")) {
         const resText = await getTranslate(command.replace("translate", ""));
-        return darabothSendMessage(messageObj, "asdsads");
         return darabothSendMessage(messageObj, resText);
       }
       break;
@@ -1082,15 +1080,13 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, "Hi! bro");
         } else if (command.includes("whoclean")) {
           const cleaningData = await getCleaningData();
-          // const resText = await getCleaningProm(
-          //   cleaningData,
-          //   command.replace("whoclean", "who clean")
-          // );
-          return darabothSendMessage(messageObj, "asd");
+          const resText = await getCleaningProm(
+            cleaningData,
+            command.replace("whoclean", "who clean")
+          );
           return darabothSendMessage(messageObj, resText);
         } else if (command.includes("translate")) {
-          // const resText = await getTranslate(command.replace("translate", ""));
-          return darabothSendMessage(messageObj, "asdasd");
+          const resText = await getTranslate(command.replace("translate", ""));
           return darabothSendMessage(messageObj, resText);
         } else {
           return darabothSendMessage(
@@ -1099,14 +1095,13 @@ const handleMessage = async function (messageObj) {
           );
         }
       } else {
-        // const responseText = await callAI(messageText, chatHistory);
-        // templateSaveChat({
-        //   Chat_ID,
-        //   chatHistory,
-        //   messageText,
-        //   responseText: responseText.text(),
-        // });
-        return darabothSendMessage(messageObj, "asdas");
+        const responseText = await callAI(messageText, chatHistory);
+        templateSaveChat({
+          Chat_ID,
+          chatHistory,
+          messageText,
+          responseText: responseText.text(),
+        });
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
