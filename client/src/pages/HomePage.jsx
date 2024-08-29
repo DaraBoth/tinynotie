@@ -145,11 +145,14 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       grp_name: item.grp_name,
       currency: item.currency,
     });
-    navigate("/group/" + encodeObjectToBase64({
-      groupId: item.id,
-      groupName: item.grp_name,
-      currency: item.currency,
-    }));
+    navigate(
+      "/group/" +
+        encodeObjectToBase64({
+          groupId: item.id,
+          groupName: item.grp_name,
+          currency: item.currency,
+        })
+    );
   };
 
   const handleDeleteNote = async (noteId) => {
@@ -320,33 +323,32 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: loading
-            ? gridColItem
-            : data.length === 0
-            ? "repeat(1,1fr)"
+          gridTemplateColumns: !loading && data.filter((item) => (tabIndex === 0 ? item.isAdmin : !item.isAdmin)).length === 0 
+            ? "1fr" // Make it take full width when no data
             : gridColItem,
           gridAutoFlow: "dense",
           gap: "20px",
           margin: "20px",
-          marginTop: "0px", // Adjust margin for mobile view
+          marginTop: "0px",
         }}
       >
         {loading ? (
-          Array.from(new Array(10)).map((_, index) => (
+          Array.from(new Array(6)).map((_, index) => (
             <Skeleton
               key={index}
-              variant="rounded"
-              width={"cal(100%/4)"}
-              height={90}
+              variant="rectangular"
+              width={"100%"}
+              height={"100px"}
               sx={{ borderRadius: "12px", backgroundColor: colors.grey[700] }}
             />
           ))
-        ) : data.length === 0 ? (
+        ) : tabIndex === 0 && data.every((item) => !item.isAdmin) ? (
+          // No notes created by the user
           <Paper
             elevation={3}
             sx={{
-              width: "100%",
-              height: "50vh",
+              width: "100%", // Ensure it takes the full width
+              height: "60vh", // Adjust height for better view
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
@@ -379,6 +381,31 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               <AddIcon />
             </Fab>
           </Paper>
+        ) : tabIndex === 1 && data.every((item) => item.isAdmin) ? (
+          // No shared notes from other users
+          <Paper
+            elevation={3}
+            sx={{
+              width: "100%",
+              height: "50vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
+              padding: "20px",
+              textAlign: "center",
+              borderRadius: "12px",
+              border: `1px solid ${colors.primary[700]}`,
+              backgroundColor: colors.grey[800],
+            }}
+          >
+            <Typography variant="h6" color={colors.primary[100]}>
+              No shared notes found!
+            </Typography>
+            <Typography variant="body1" color={colors.primary[200]}>
+              Ask your friends to share their notes with you.
+            </Typography>
+          </Paper>
         ) : (
           data
             .filter((item) => (tabIndex === 0 ? item.isAdmin : !item.isAdmin)) // Filter notes based on the tab
@@ -394,6 +421,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
             ))
         )}
       </Box>
+
       <Fab
         color="primary"
         aria-label="add"
