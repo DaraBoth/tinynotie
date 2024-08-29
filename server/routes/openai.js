@@ -1060,6 +1060,7 @@ const handleMessage = async function (messageObj) {
           messageText,
           responseText: responseText.text(),
         });
+        return darabothSendMessage(messageObj, "sadsad");
         return darabothSendMessage(messageObj, responseText.text());
       } else if (command.startsWith("whoclean")) {
         const cleaningData = await getCleaningData();
@@ -1070,6 +1071,7 @@ const handleMessage = async function (messageObj) {
         return darabothSendMessage(messageObj, resText);
       } else if (command.startsWith("translate")) {
         const resText = await getTranslate(command.replace("translate", ""));
+        return darabothSendMessage(messageObj, "asdsads");
         return darabothSendMessage(messageObj, resText);
       }
       break;
@@ -1088,6 +1090,7 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, resText);
         } else if (command.includes("translate")) {
           const resText = await getTranslate(command.replace("translate", ""));
+          return darabothSendMessage(messageObj, "asdasd");
           return darabothSendMessage(messageObj, resText);
         } else {
           return darabothSendMessage(
