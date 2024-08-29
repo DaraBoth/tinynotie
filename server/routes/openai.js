@@ -1068,6 +1068,7 @@ const handleMessage = async function (messageObj) {
             cleaningData,
             command.replace("whoclean", "who clean")
           );
+          return darabothSendMessage(messageObj, "asd");
           return darabothSendMessage(messageObj, resText);
         } else if (command.includes("translate")) {
           const resText = await getTranslate(command.replace("translate", ""));
@@ -1086,6 +1087,7 @@ const handleMessage = async function (messageObj) {
           messageText,
           responseText: responseText.text(),
         });
+        return darabothSendMessage(messageObj, "asdas");
         return darabothSendMessage(messageObj, responseText.text());
       }
   }
