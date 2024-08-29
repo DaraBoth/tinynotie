@@ -771,12 +771,11 @@ router.post("/darabothlistening", async (req, res) => {
 
 router.post("/b2bAlert", async (req, res) => {
   try {
-    console.log(req.body);
     const message = req.body?.message || "error"; 
+    const isTest  = req.body?.isTest  || true; 
     const messageObj = {
       chat: {
-        id: 485397124, // me 
-        // id: -861143107, // b2b
+        id: isTest ? 485397124 : -861143107,, // me 
       },
     };
     if(message){
