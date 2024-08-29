@@ -183,34 +183,54 @@ router.get("/getGroupDetail", async (req, res) => {
   const { group_id, user_id } = req.query;
 
   try {
-    // Check if the group is public or determine authorization status
-    const groupCheckSql = `
-      SELECT 
-        g.id, 
-        g.grp_name, 
-        g.currency, 
-        g.visibility,
-        CASE 
-          WHEN $2 IS NOT NULL AND g.admin_id = $2::int THEN TRUE  -- Check if user_id is provided and user is admin
-          ELSE FALSE
-        END AS "isAdmin",
-        CASE 
-          WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
-          WHEN $2 IS NOT NULL AND (g.admin_id = $2::int OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
-          ELSE FALSE
-        END AS "isAuthorized"
-      FROM grp_infm g
-      LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $2::int
-      WHERE g.id = $1::int;
-    `;
+    let groupCheckSql;
+    let params = [group_id]; // Start with group_id as the first parameter
 
-    const groupResult = await pool.query(groupCheckSql, [group_id, user_id]);
+    if (user_id) {
+      // If user_id is provided, include it in the query and parameters
+      groupCheckSql = `
+        SELECT 
+          g.id, 
+          g.grp_name, 
+          g.currency, 
+          g.visibility,
+          CASE 
+            WHEN g.admin_id = $2::int THEN TRUE  -- Check if user is admin
+            ELSE FALSE
+          END AS "isAdmin",
+          CASE 
+            WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
+            WHEN (g.admin_id = $2::int OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
+            ELSE FALSE
+          END AS "isAuthorized"
+        FROM grp_infm g
+        LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $2::int
+        WHERE g.id = $1::int;
+      `;
+      params.push(user_id); // Add user_id as the second parameter
+    } else {
+      // If user_id is not provided, exclude user-specific checks
+      groupCheckSql = `
+        SELECT 
+          g.id, 
+          g.grp_name, 
+          g.currency, 
+          g.visibility,
+          FALSE AS "isAdmin",  -- No user_id provided, so not admin
+          CASE 
+            WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
+            ELSE FALSE
+          END AS "isAuthorized"
+        FROM grp_infm g
+        WHERE g.id = $1::int;
+      `;
+    }
+
+    const groupResult = await pool.query(groupCheckSql, params);
 
     // If the group exists, respond with the group data
     if (groupResult.rows.length > 0) {
       const groupData = groupResult.rows[0];
-
-      // Respond with group data including isAuthorized and isAdmin status
       return res.json({
         status: true,
         data: {
@@ -219,8 +239,8 @@ router.get("/getGroupDetail", async (req, res) => {
           currency: groupData.currency,
           visibility: groupData.visibility,
           isAuthorized: groupData.isAuthorized,
-          isAdmin: groupData.isAdmin
-        }
+          isAdmin: groupData.isAdmin,
+        },
       });
     } else {
       // If the group is not found or the user is not authorized, return a custom JSON response
@@ -231,7 +251,6 @@ router.get("/getGroupDetail", async (req, res) => {
     res.json({ error: error.message });
   }
 });
-
 
 // Update Group Visibility and Access Control
 router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
