@@ -34,10 +34,18 @@ import WarningIcon from "@mui/icons-material/Warning";
 import { rspWidth } from "../responsive";
 import { tokens } from "../theme";
 import { encodeObjectToBase64 } from "../help/helper";
+import { formatTimeDifference } from "../help/time";
+import moment from "moment";
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  const currencyObject = {
+    W:"Korean Won",
+    $:"US Dollar",
+    R:"Khmer Reil",
+  }
 
   return (
     <Paper
@@ -62,11 +70,15 @@ function GroupCard({ item, onDelete, onClick }) {
       </Typography>
       <Typography variant="body2" color={colors.grey[300]}>
         Currency:{" "}
-        <span style={{ color: colors.primary[300] }}>{item.currency}</span>
+        <span style={{ color: colors.primary[300] }}>{currencyObject[item.currency]}</span>
       </Typography>
-      <Typography variant="body2" color={colors.grey[300]}>
-        Create Date:{" "}
-        <span style={{ color: colors.primary[300] }}>{item.create_date}</span>
+      <Typography variant="body2" color={colors.grey[400]}>
+        <span style={{ color: colors.primary[600] }}>
+          {moment(item.create_date).format("YYYY-MM-DD hh:mm:ss (dd)")}
+        </span>
+        <span style={{ color: colors.primary[300] }}>
+          {" ~ "+formatTimeDifference(item.create_date)}
+        </span>
       </Typography>
       {item.isAdmin && (
         <IconButton
@@ -323,9 +335,13 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: !loading && data.filter((item) => (tabIndex === 0 ? item.isAdmin : !item.isAdmin)).length === 0 
-            ? "1fr" // Make it take full width when no data
-            : gridColItem,
+          gridTemplateColumns:
+            !loading &&
+            data.filter((item) =>
+              tabIndex === 0 ? item.isAdmin : !item.isAdmin
+            ).length === 0
+              ? "1fr" // Make it take full width when no data
+              : gridColItem,
           gridAutoFlow: "dense",
           gap: "20px",
           margin: "20px",
@@ -396,7 +412,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               textAlign: "center",
               borderRadius: "12px",
               backgroundColor: "transparent",
-              boxShadow:"none"
+              boxShadow: "none",
             }}
           >
             <Typography variant="h6" color={colors.primary[100]}>
