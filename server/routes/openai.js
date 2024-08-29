@@ -1073,6 +1073,7 @@ const handleMessage = async function (messageObj) {
         );
         return darabothSendMessage(messageObj, resText);
       } else if (command.startsWith("translate")) {
+        if(command.replace("translate", "").trim().length == 0) return;
         const resText = await getTranslate(command.replace("translate", ""));
         return darabothSendMessage(messageObj, resText);
       }
