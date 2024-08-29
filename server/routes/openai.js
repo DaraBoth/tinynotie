@@ -778,7 +778,8 @@ router.post("/b2bAlert", async (req, res) => {
         // id: -861143107, // b2b
       },
     };
-    darabothSendMessage(messageObj, message);
+    console.log(messageObj, message);
+    await darabothSendMessage(messageObj, message);
     res.status(200).send("Data received successfully");
   } catch (error) {
     console.error("Error parsing JSON:", error);
