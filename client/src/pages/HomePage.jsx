@@ -183,8 +183,9 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
         elevation={3}
         sx={{
           padding: "20px",
-          marginBottom: "20px",
-          borderRadius: "0px 0px 0px 50px",
+          marginBottom: isNonMobile ? "20px" : "0px",
+          // borderRadius: "0px 0px 0px 50px",
+          borderRadius: "0px",
           backgroundColor: colors.grey[800],
         }}
       >
@@ -201,7 +202,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
             fontSize={fontSize}
             fontWeight="bold"
           >
-            Welcome to TinyNotie,{" "}
+            Welcome to TinyNotie, <br />
             {user && (
               <>
                 Hello{" "}
@@ -239,23 +240,30 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
             <Button
               onClick={() => handleTabChange(null, 0)}
               color={tabIndex === 0 ? "primary" : "inherit"}
+              disableRipple
               startIcon={<DescriptionOutlinedIcon />}
               sx={{
                 textTransform: "none",
                 mx: 1,
-                color: tabIndex === 0 ? colors.primary[500] : "none",
+                color:
+                  tabIndex === 0 ? colors.primary[500] : colors.primary[100],
+                ".MuiButtonBase-root:hover": {
+                  backgroundColor: "none",
+                },
               }}
             >
               My Notes
             </Button>
             <Button
+              disableRipple
               onClick={() => handleTabChange(null, 1)}
               color={tabIndex === 1 ? "primary" : "inherit"}
               startIcon={<PeopleAltOutlinedIcon />}
               sx={{
                 textTransform: "none",
                 mx: 1,
-                color: tabIndex === 1 ? colors.primary[500] : "none",
+                color:
+                  tabIndex === 1 ? colors.primary[500] : colors.primary[100],
               }}
             >
               From Others
@@ -270,6 +278,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
             alignItems: "center",
             width: "100%",
             marginBottom: "16px",
+            backgroundColor: colors.grey[800],
           }}
         >
           <Button
@@ -280,12 +289,14 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               textTransform: "none",
               width: "50%", // Full width for mobile view
               borderRadius: "0", // No border radius
-              color: tabIndex === 0 ? colors.primary[500] : "none",
+              color: tabIndex === 0 ? colors.primary[500] : colors.primary[100],
             }}
+            disableRipple
           >
             My Notes
           </Button>
           <Button
+            disableRipple
             onClick={() => handleTabChange(null, 1)}
             color={tabIndex === 1 ? "primary" : "inherit"}
             startIcon={<PeopleAltOutlinedIcon />}
@@ -293,7 +304,7 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               textTransform: "none",
               width: "50%", // Full width for mobile view
               borderRadius: "0", // No border radius
-              color: tabIndex === 1 ? colors.primary[500] : "none",
+              color: tabIndex === 1 ? colors.primary[500] : colors.primary[100],
             }}
           >
             From Others
