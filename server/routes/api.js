@@ -523,24 +523,21 @@ router.get("/getTripByGroupId", async (req, res) => {
   }
 });
 
-// Get All Members
+// Get All Members Created by User's Groups
 router.get("/getAllMember", authenticateToken, async (req, res) => {
-  try {
-    const sql = `SELECT DISTINCT mem_name FROM member_infm WHERE mem_name NOT LIKE '%test%' AND mem_name NOT LIKE '%asd%' ORDER BY mem_name;`;
-    const results = await pool.query(sql);
-    res.send({ status: true, data: results.rows });
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-// Get Members by Group ID
-router.get("/getMemberByGroupId", authenticateToken, async (req, res) => {
-  const { group_id } = req.query;
+  const { _id } = req.user; // Assuming the user ID is attached to req.user by authenticateToken
 
   try {
-    const sql = `SELECT id, mem_name, paid, group_id FROM member_infm WHERE group_id = $1 ORDER BY id;`;
-    const results = await pool.query(sql, [group_id]);
+    // Query to select distinct member names from groups created by the authenticated user
+    const sql = `
+      SELECT DISTINCT m.mem_name
+      FROM member_infm m
+      JOIN grp_infm g ON m.group_id = g.id
+      WHERE g.admin_id = $1
+      ORDER BY m.mem_name;
+    `;
+
+    const results = await pool.query(sql, [_id]);
     res.send({ status: true, data: results.rows });
   } catch (error) {
     handleError(error, res);
