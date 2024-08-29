@@ -1082,10 +1082,10 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, "Hi! bro");
         } else if (command.includes("whoclean")) {
           const cleaningData = await getCleaningData();
-          const resText = await getCleaningProm(
-            cleaningData,
-            command.replace("whoclean", "who clean")
-          );
+          // const resText = await getCleaningProm(
+          //   cleaningData,
+          //   command.replace("whoclean", "who clean")
+          // );
           return darabothSendMessage(messageObj, "asd");
           return darabothSendMessage(messageObj, resText);
         } else if (command.includes("translate")) {
