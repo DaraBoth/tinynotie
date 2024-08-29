@@ -775,8 +775,8 @@ router.post("/b2bAlert", async (req, res) => {
     const message = req.body?.message || "error"; 
     const messageObj = {
       chat: {
-        id: 485397124, // me 
-        // id: -861143107, // b2b
+        // id: 485397124, // me 
+        id: -861143107, // b2b
       },
     };
     if(message){
