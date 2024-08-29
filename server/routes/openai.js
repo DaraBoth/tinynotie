@@ -80,7 +80,6 @@ const AxiosTelegramBotInstance2 = {
   },
 };
 
-
 router.get("/text", async (req, res) => {
   try {
     let { text, random } = req.query;
@@ -172,7 +171,7 @@ router.post("/text", async (req, res) => {
 
 router.post("/askDatabase", async (req, res) => {
   try {
-    const { userAsk, userAskID} = req.body;
+    const { userAsk, userAskID } = req.body;
 
     const responseData = await AI_Database(userAsk, userAskID, []);
 
@@ -1035,7 +1034,9 @@ const handleMessage = async function (messageObj) {
   switch (Chat_ID) {
     case -406610085: // Family
     case -1001754103737: // BTB Class
-      if (messageText.startsWith("/ask")) {
+    case -861143107: // 2024_B2B R&D
+      const command = messageText.slice(1);
+      if (command.startsWith("ask")) {
         const responseText = await callAI(messageText, chatHistory);
         templateSaveChat({
           Chat_ID,
@@ -1044,6 +1045,16 @@ const handleMessage = async function (messageObj) {
           responseText: responseText.text(),
         });
         return darabothSendMessage(messageObj, responseText.text());
+      } else if (command.startsWith("whoclean")) {
+        const cleaningData = await getCleaningData();
+        const resText = await getCleaningProm(
+          cleaningData,
+          command.replace("whoclean", "who clean")
+        );
+        return darabothSendMessage(messageObj, resText);
+      } else if (command.startsWith("translate")) {
+        const resText = await getTranslate(command.replace("translate", ""));
+        return darabothSendMessage(messageObj, resText);
       }
       break;
     default:
