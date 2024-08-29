@@ -1089,7 +1089,7 @@ const handleMessage = async function (messageObj) {
           return darabothSendMessage(messageObj, "asd");
           return darabothSendMessage(messageObj, resText);
         } else if (command.includes("translate")) {
-          const resText = await getTranslate(command.replace("translate", ""));
+          // const resText = await getTranslate(command.replace("translate", ""));
           return darabothSendMessage(messageObj, "asdasd");
           return darabothSendMessage(messageObj, resText);
         } else {
@@ -1099,13 +1099,13 @@ const handleMessage = async function (messageObj) {
           );
         }
       } else {
-        const responseText = await callAI(messageText, chatHistory);
-        templateSaveChat({
-          Chat_ID,
-          chatHistory,
-          messageText,
-          responseText: responseText.text(),
-        });
+        // const responseText = await callAI(messageText, chatHistory);
+        // templateSaveChat({
+        //   Chat_ID,
+        //   chatHistory,
+        //   messageText,
+        //   responseText: responseText.text(),
+        // });
         return darabothSendMessage(messageObj, "asdas");
         return darabothSendMessage(messageObj, responseText.text());
       }
