@@ -772,16 +772,15 @@ router.post("/darabothlistening", async (req, res) => {
 router.post("/b2bAlert", async (req, res) => {
   try {
     console.log(req.body);
-    const { message } = req.body; // Get the data object from the request body
+    const message = req.body?.message || "error"; 
     const messageObj = {
       chat: {
         id: 485397124, // me 
         // id: -861143107, // b2b
       },
     };
-    console.log(messageObj, message);
     if(message){
-      await darabothSendMessage(messageObj,"test");
+      await darabothSendMessage(messageObj,message);
       res.status(200).send("Data received successfully");
     }
   } catch (error) {
