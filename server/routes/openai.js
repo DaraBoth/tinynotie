@@ -774,8 +774,8 @@ router.post("/b2bAlert", async (req, res) => {
     const { message } = req.body; // Get the data object from the request body
     const messageObj = {
       chat: {
-        id: 485397124,
-        id: -861143107,
+        id: 485397124, // me 
+        // id: -861143107, // b2b
       },
     };
     darabothSendMessage(messageObj, message);
