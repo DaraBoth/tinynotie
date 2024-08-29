@@ -781,7 +781,7 @@ router.post("/b2bAlert", async (req, res) => {
     };
     console.log(messageObj, message);
     if(message){
-      await darabothSendMessage(messageObj, message || "test");
+      await darabothSendMessage(messageObj,"test");
       res.status(200).send("Data received successfully");
     }
   } catch (error) {
