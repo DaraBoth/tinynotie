@@ -185,9 +185,12 @@ router.get("/getGroupDetail", async (req, res) => {
   try {
     let groupCheckSql;
     let params = [group_id]; // Start with group_id as the first parameter
-    console.log({user_id})
-    if (user_id != null) {
-      // If user_id is provided, include it in the query and parameters
+
+    // Convert user_id to an integer or undefined if it's not provided
+    const userIdInt = user_id ? parseInt(user_id, 10) : undefined;
+
+    if (userIdInt) {
+      // If user_id is provided and is a valid integer, include it in the query and parameters
       groupCheckSql = `
         SELECT 
           g.id, 
@@ -195,19 +198,19 @@ router.get("/getGroupDetail", async (req, res) => {
           g.currency, 
           g.visibility,
           CASE 
-            WHEN g.admin_id = $2::int THEN TRUE  -- Check if user is admin
+            WHEN g.admin_id = $2 THEN TRUE  -- Check if user is admin
             ELSE FALSE
           END AS "isAdmin",
           CASE 
             WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
-            WHEN (g.admin_id = $2::int OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
+            WHEN (g.admin_id = $2 OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
             ELSE FALSE
           END AS "isAuthorized"
         FROM grp_infm g
-        LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $2::int
-        WHERE g.id = $1::int;
+        LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $2
+        WHERE g.id = $1;
       `;
-      params.push(user_id); // Add user_id as the second parameter
+      params.push(userIdInt); // Add user_id as the second parameter
     } else {
       // If user_id is not provided, exclude user-specific checks
       groupCheckSql = `
@@ -222,7 +225,7 @@ router.get("/getGroupDetail", async (req, res) => {
             ELSE FALSE
           END AS "isAuthorized"
         FROM grp_infm g
-        WHERE g.id = $1::int;
+        WHERE g.id = $1;
       `;
     }
 
