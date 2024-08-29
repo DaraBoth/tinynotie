@@ -483,14 +483,41 @@ router.get("/getAllTrip", authenticateToken, async (req, res) => {
 });
 
 // Get Trip by Group ID
-router.get("/getTripByGroupId", authenticateToken, async (req, res) => {
+router.get("/getTripByGroupId", async (req, res) => {
   const { group_id } = req.query;
 
   try {
-    const sql = `SELECT * FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
-    const results = await pool.query(sql, [group_id]);
+    // Check if the group is public
+    const groupCheckSql = `SELECT visibility FROM grp_infm WHERE id = $1;`;
+    const groupCheckResult = await pool.query(groupCheckSql, [group_id]);
 
-    res.send({ status: true, data: results.rows.length > 0 ? results.rows : [] });
+    if (groupCheckResult.rows.length === 0) {
+      // Group not found
+      return res.status(404).send({ status: false, message: "Group not found" });
+    }
+
+    const { visibility } = groupCheckResult.rows[0];
+
+    if (visibility === 'private') {
+      // If the group is private, authenticate the user
+      authenticateToken(req, res, async () => {
+        try {
+          // Fetch trips for the authenticated user
+          const sql = `SELECT * FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
+          const results = await pool.query(sql, [group_id]);
+
+          res.send({ status: true, data: results.rows.length > 0 ? results.rows : [] });
+        } catch (error) {
+          handleError(error, res);
+        }
+      });
+    } else {
+      // If the group is public, fetch trips without authentication
+      const sql = `SELECT * FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
+      const results = await pool.query(sql, [group_id]);
+
+      res.send({ status: true, data: results.rows.length > 0 ? results.rows : [] });
+    }
   } catch (error) {
     handleError(error, res);
   }
@@ -533,14 +560,42 @@ router.delete("/members/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Add Member by Group ID
-router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
-  const { group_id, paid, mem_name } = req.body;
+// Get Members by Group ID
+router.get("/getMemberByGroupId", async (req, res) => {
+  const { group_id } = req.query;
 
   try {
-    const sql = `INSERT INTO member_infm (mem_name, paid, group_id) VALUES ($1, $2, $3) RETURNING id;`;
-    const results = await pool.query(sql, [mem_name, paid, group_id]);
-    res.send({ status: true, data: results.rows });
+    // Check if the group is public
+    const groupCheckSql = `SELECT visibility FROM grp_infm WHERE id = $1;`;
+    const groupCheckResult = await pool.query(groupCheckSql, [group_id]);
+
+    if (groupCheckResult.rows.length === 0) {
+      // Group not found
+      return res.status(404).send({ status: false, message: "Group not found" });
+    }
+
+    const { visibility } = groupCheckResult.rows[0];
+
+    if (visibility === 'private') {
+      // If the group is private, authenticate the user
+      authenticateToken(req, res, async () => {
+        try {
+          // Fetch members for the authenticated user
+          const sql = `SELECT id, mem_name, paid, group_id FROM member_infm WHERE group_id = $1 ORDER BY id;`;
+          const results = await pool.query(sql, [group_id]);
+
+          res.send({ status: true, data: results.rows });
+        } catch (error) {
+          handleError(error, res);
+        }
+      });
+    } else {
+      // If the group is public, fetch members without authentication
+      const sql = `SELECT id, mem_name, paid, group_id FROM member_infm WHERE group_id = $1 ORDER BY id;`;
+      const results = await pool.query(sql, [group_id]);
+
+      res.send({ status: true, data: results.rows });
+    }
   } catch (error) {
     handleError(error, res);
   }
