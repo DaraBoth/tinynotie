@@ -65,7 +65,7 @@ function App() {
               )
             } />
             <Route
-              path="/group/:groupId"
+              path="/group/:groupParam"
               element={
                 <Group user={user} secret={secret} setGroupInfo={setGroupInfo} />
               }

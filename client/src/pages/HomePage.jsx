@@ -33,6 +33,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import WarningIcon from "@mui/icons-material/Warning";
 import { rspWidth } from "../responsive";
 import { tokens } from "../theme";
+import { encodeObjectToBase64 } from "../help/helper";
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
@@ -144,7 +145,11 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       grp_name: item.grp_name,
       currency: item.currency,
     });
-    navigate("/group/" + item.id);
+    navigate("/group/" + encodeObjectToBase64({
+      groupId: item.id,
+      groupName: item.grp_name,
+      currency: item.currency,
+    }));
   };
 
   const handleDeleteNote = async (noteId) => {

@@ -42,8 +42,6 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
     setSettingsOpen(false);
   };
 
-  console.log(groupInfo);
-
   return (
     <Box
       display="flex"

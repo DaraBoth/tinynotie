@@ -769,6 +769,22 @@ router.post("/darabothlistening", async (req, res) => {
   }
 });
 
+router.post("/b2bAlert", async (req, res) => {
+  try {
+    const { message } = req.body.data; // Get the data object from the request body
+    const messageObj = {
+      chat: {
+        id: -861143107,
+      },
+    };
+    darabothSendMessage(messageObj, message);
+    res.status(200).send("Data received successfully");
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    res.status(500).send("Error processing data");
+  }
+});
+
 router.post("/sendMessage", async (req, res) => {
   try {
     const data = req.body.data; // Get the data object from the request body

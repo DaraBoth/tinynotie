@@ -26,7 +26,11 @@ import CustomDialog from "../component/CustomDialog";
 import LoadingPage from "../pages/LoadingPage";
 import UnauthorizedPage from "../pages/UnauthorizedPage";
 import { tokens } from "../theme";
-import { useGetGroupDetailsMutation, useGetMemberMutation, useGetTripMutation } from "../api/api";
+import {
+  useGetGroupDetailsMutation,
+  useGetMemberMutation,
+  useGetTripMutation,
+} from "../api/api";
 import ToolTip from "../component/EditMember";
 import EditTripMem from "../component/EditTripMember";
 import DeleteMember from "../component/deleteMember";
@@ -34,17 +38,27 @@ import { formatTimeDifference } from "../help/time";
 import currency from "currency.js";
 import EditTrip from "../component/EditTrip";
 import ShareModal from "../component/ShareModal";
-import { calculateMoney, functionRenderColumns } from "../help/helper";
-import GroupVisibilitySettings from "../component/GroupVisibilitySettings";
+import {
+  calculateMoney,
+  decodeBase64ToObject,
+  functionRenderColumns,
+} from "../help/helper";
 
 export default function Group({ user, secret, setGroupInfo }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
-  const { groupId } = useParams(); // Get the group ID from the URL
+  const { groupParam } = useParams(); // Get the group ID from the URL
+  const {
+    groupId,
+    groupName,
+    currency: groupCurrency,
+  } = decodeBase64ToObject(groupParam);
+
   const navigate = useNavigate();
 
-  const [triggerGroupDetails, resultGroupDetails] = useGetGroupDetailsMutation(); // Fetch group details
+  const [triggerGroupDetails, resultGroupDetails] =
+    useGetGroupDetailsMutation(); // Fetch group details
   const [triggerTrip, resultTrip] = useGetTripMutation();
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
@@ -183,12 +197,12 @@ export default function Group({ user, secret, setGroupInfo }) {
   ];
 
   if (resultGroupDetails.isLoading) {
-     return <LoadingPage />;
+    return <LoadingPage />;
   }
 
   if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
-    if(user != null){
-      return <UnauthorizedPage user={user} />; 
+    if (user != null) {
+      return <UnauthorizedPage user={user} />;
     }
     return <UnauthorizedPage />;
   }
@@ -430,20 +444,22 @@ export default function Group({ user, secret, setGroupInfo }) {
         />
       </CustomDialog>
 
-      {groupInfoState?.isAdmin && <SpeedDial
-        ariaLabel="SpeedDial example"
-        sx={{ position: "fixed", bottom: 16, right: 16 }}
-        icon={<SpeedDialIcon />}
-      >
-        {actions.map((action) => (
-          <SpeedDialAction
-            key={action.name}
-            icon={action.icon}
-            tooltipTitle={action.name}
-            onClick={action.onClick}
-          />
-        ))}
-      </SpeedDial>}
+      {groupInfoState?.isAdmin && (
+        <SpeedDial
+          ariaLabel="SpeedDial example"
+          sx={{ position: "fixed", bottom: 16, right: 16 }}
+          icon={<SpeedDialIcon />}
+        >
+          {actions.map((action) => (
+            <SpeedDialAction
+              key={action.name}
+              icon={action.icon}
+              tooltipTitle={action.name}
+              onClick={action.onClick}
+            />
+          ))}
+        </SpeedDial>
+      )}
 
       <ShareModal
         open={openShareModal}
