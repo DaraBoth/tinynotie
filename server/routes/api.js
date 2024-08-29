@@ -191,12 +191,12 @@ router.get("/getGroupDetail", async (req, res) => {
         g.currency, 
         g.visibility,
         CASE 
-          WHEN $2::int IS NOT NULL AND g.admin_id = $2::int THEN TRUE  -- Check if user_id is provided and user is admin
+          WHEN $2 IS NOT NULL AND g.admin_id = $2::int THEN TRUE  -- Check if user_id is provided and user is admin
           ELSE FALSE
         END AS "isAdmin",
         CASE 
           WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
-          WHEN $2::int IS NOT NULL AND (g.admin_id = $2::int OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
+          WHEN $2 IS NOT NULL AND (g.admin_id = $2::int OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
           ELSE FALSE
         END AS "isAuthorized"
       FROM grp_infm g
