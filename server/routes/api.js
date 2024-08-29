@@ -185,8 +185,8 @@ router.get("/getGroupDetail", async (req, res) => {
   try {
     let groupCheckSql;
     let params = [group_id]; // Start with group_id as the first parameter
-
-    if (user_id) {
+    console.log({user_id})
+    if (user_id != null) {
       // If user_id is provided, include it in the query and parameters
       groupCheckSql = `
         SELECT 
