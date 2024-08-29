@@ -183,54 +183,55 @@ router.get("/getGroupDetail", async (req, res) => {
   const { group_id, user_id } = req.query;
 
   try {
-    // First, check if the group is public
-    const publicCheckSql = `
-      SELECT id, grp_name, currency, visibility
-      FROM grp_infm
-      WHERE id = $1::int AND visibility = 'public';
+    // Check if the group is public or determine authorization status
+    const groupCheckSql = `
+      SELECT 
+        g.id, 
+        g.grp_name, 
+        g.currency, 
+        g.visibility,
+        CASE 
+          WHEN $2::int IS NOT NULL AND g.admin_id = $2::int THEN TRUE  -- Check if user_id is provided and user is admin
+          ELSE FALSE
+        END AS "isAdmin",
+        CASE 
+          WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
+          WHEN $2::int IS NOT NULL AND (g.admin_id = $2::int OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
+          ELSE FALSE
+        END AS "isAuthorized"
+      FROM grp_infm g
+      LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $2::int
+      WHERE g.id = $1::int;
     `;
-    const publicResult = await pool.query(publicCheckSql, [group_id]);
 
-    // If the group is public, respond with the group data
-    if (publicResult.rows.length > 0) {
-      return res.json({ status: true, data: { ...publicResult.rows[0], isAuthorized: true } });
-    }
+    const groupResult = await pool.query(groupCheckSql, [group_id, user_id]);
 
-    // If the group is not public, check if the user is authenticated and authorized
-    if (user_id) {
-      const authCheckSql = `
-        SELECT g.id, g.grp_name, g.currency, g.visibility,
-              CASE 
-                WHEN g.admin_id = $2::int THEN TRUE
-                WHEN gu.user_id IS NOT NULL THEN TRUE
-                ELSE FALSE
-              END AS "isAuthorized",
-              CASE 
-                WHEN g.admin_id = $2::int THEN TRUE
-                ELSE FALSE
-              END AS "isAdmin"
-        FROM grp_infm g
-        LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $2::int
-        WHERE g.id = $1::int;
-      `;
-      const authResult = await pool.query(authCheckSql, [group_id, user_id]);
+    // If the group exists, respond with the group data
+    if (groupResult.rows.length > 0) {
+      const groupData = groupResult.rows[0];
 
-      // If the user is authorized, respond with the group data
-      if (authResult.rows.length > 0 && authResult.rows[0].isAuthorized) {
-        return res.json({ status: true, data: authResult.rows[0] });
-      } else {
-        // If the user is not authorized, return a custom JSON response
-        return res.json({ status: false, message: "You are not authorized to view this group." });
-      }
+      // Respond with group data including isAuthorized and isAdmin status
+      return res.json({
+        status: true,
+        data: {
+          id: groupData.id,
+          grp_name: groupData.grp_name,
+          currency: groupData.currency,
+          visibility: groupData.visibility,
+          isAuthorized: groupData.isAuthorized,
+          isAdmin: groupData.isAdmin
+        }
+      });
     } else {
-      // If no user_id is provided and the group is not public, return a custom JSON response
-      return res.json({ status: false, message: "Authentication required to view this group." });
+      // If the group is not found or the user is not authorized, return a custom JSON response
+      return res.json({ status: false, message: "You are not authorized to view this group or the group does not exist." });
     }
   } catch (error) {
     console.error("error", error);
     res.json({ error: error.message });
   }
 });
+
 
 // Update Group Visibility and Access Control
 router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
