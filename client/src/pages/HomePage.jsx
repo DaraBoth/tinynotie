@@ -395,8 +395,8 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
               padding: "20px",
               textAlign: "center",
               borderRadius: "12px",
-              border: `1px solid ${colors.primary[700]}`,
-              backgroundColor: colors.grey[800],
+              backgroundColor: "transparent",
+              boxShadow:"none"
             }}
           >
             <Typography variant="h6" color={colors.primary[100]}>
