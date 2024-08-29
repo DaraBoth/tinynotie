@@ -771,17 +771,18 @@ router.post("/darabothlistening", async (req, res) => {
 
 router.post("/b2bAlert", async (req, res) => {
   try {
-    const message = req.body?.message || "error"; 
+    let message = req.body?.message || "error"; 
     const isTest  = req.body?.isTest  || true; 
     const messageObj = {
       chat: {
         id: isTest ? 485397124 : -861143107, // me 
       },
     };
-    if(message){
-      await darabothSendMessage(messageObj,message);
-      res.status(200).send("Data received successfully");
+    if(!message){
+      message = "Dear all please update your weekly report on google slide. And let's me know if done."
     }
+    await darabothSendMessage(messageObj,message);
+    res.status(200).send("Data received successfully");
   } catch (error) {
     console.error("Error parsing JSON:", error);
     res.status(500).send("Error processing data");
