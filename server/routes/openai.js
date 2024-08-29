@@ -771,6 +771,7 @@ router.post("/darabothlistening", async (req, res) => {
 
 router.post("/b2bAlert", async (req, res) => {
   try {
+    console.log(req.body);
     const { message } = req.body; // Get the data object from the request body
     const messageObj = {
       chat: {
@@ -779,7 +780,7 @@ router.post("/b2bAlert", async (req, res) => {
       },
     };
     console.log(messageObj, message);
-    await darabothSendMessage(messageObj, message);
+    await darabothSendMessage(messageObj, message || "test");
     res.status(200).send("Data received successfully");
   } catch (error) {
     console.error("Error parsing JSON:", error);
