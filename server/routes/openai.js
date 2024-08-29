@@ -771,9 +771,10 @@ router.post("/darabothlistening", async (req, res) => {
 
 router.post("/b2bAlert", async (req, res) => {
   try {
-    const { message } = req.body.data; // Get the data object from the request body
+    const { message } = req.body; // Get the data object from the request body
     const messageObj = {
       chat: {
+        id: 485397124,
         id: -861143107,
       },
     };
