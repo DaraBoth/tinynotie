@@ -174,7 +174,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                   "& .MuiInputLabel-root": {
                     color: colors.primary[500], // Label color
                   },
-                  '& input:-webkit-autofill': {
+                  "& input:-webkit-autofill": {
                     WebkitBoxShadow: `0 0 0 1000px ${colors.grey[800]} inset !important`,
                     WebkitTextFillColor: `${colors.primary[100]} !important`,
                   },
@@ -233,7 +233,13 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                     />
                   ))
                 }
-                onChange={(event, newValue) => setNewMember(newValue)}
+                value={values.members} // Set value from Formik
+                onChange={(event, newValue) => {
+                  setNewMember(newValue);
+                  handleChange({
+                    target: { name: "members", value: newValue },
+                  }); // Handle change for Formik
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -242,11 +248,15 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                     color="primary"
                     placeholder="Enter member names"
                     fullWidth
+                    error={Boolean(touched.members && errors.members)}
+                    helperText={touched.members && errors.members} // Show validation error
                     InputProps={{
                       ...params.InputProps,
                       startAdornment: (
                         <>
-                          <Box sx={{ mr: 1, color: colors.primary[300] }}>👥</Box>
+                          <Box sx={{ mr: 1, color: colors.primary[300] }}>
+                            👥
+                          </Box>
                           {params.InputProps.startAdornment}
                         </>
                       ),
@@ -273,6 +283,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                   />
                 )}
               />
+
               <Typography
                 variant="body2"
                 sx={{
@@ -355,10 +366,17 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowConfirmCancel(false)} sx={{ color: colors.primary[300] }}>
+          <Button
+            onClick={() => setShowConfirmCancel(false)}
+            sx={{ color: colors.primary[300] }}
+          >
             No, go back
           </Button>
-          <Button onClick={handleConfirmCancel} sx={{ color: colors.redAccent[500] }} autoFocus>
+          <Button
+            onClick={handleConfirmCancel}
+            sx={{ color: colors.redAccent[500] }}
+            autoFocus
+          >
             Yes, cancel
           </Button>
         </DialogActions>
@@ -377,10 +395,15 @@ export default function CreateGroup({ secret, setGroupInfo }) {
 
 const checkoutSchema = yup.object().shape({
   grp_name: yup.string().required("Note name is required"),
+  members: yup
+    .array()
+    .min(1, "At least one member must be selected")
+    .required(),
 });
 
 const initialValues = {
   grp_name: "",
+  members: [],
 };
 
 function debounce(func, timeout = 300) {
