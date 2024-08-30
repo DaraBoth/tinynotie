@@ -11,5 +11,11 @@
             "src": "/(.*)",
             "dest": "/"
         }
+    ],
+    "crons": [
+        {
+            "path": "/openai/b2bAlert",
+            "schedule": "1 9 * * 5"
+        }
     ]
 }
