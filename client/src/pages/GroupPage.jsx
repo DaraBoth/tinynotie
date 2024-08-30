@@ -57,7 +57,8 @@ export default function Group({ user, secret, setGroupInfo }) {
 
   const navigate = useNavigate();
 
-  const [triggerGroupDetails, resultGroupDetails] = useGetGroupDetailsMutation();
+  const [triggerGroupDetails, resultGroupDetails] =
+    useGetGroupDetailsMutation();
   const [triggerTrip, resultTrip] = useGetTripMutation();
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
@@ -197,10 +198,10 @@ export default function Group({ user, secret, setGroupInfo }) {
 
   if (resultGroupDetails.isLoading) {
     return <LoadingPage />;
-  }else if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
+  } else if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
     if (user != null) {
       return <UnauthorizedPage user={user} />;
-    }else {
+    } else {
       return <UnauthorizedPage />;
     }
   }
@@ -437,7 +438,9 @@ export default function Group({ user, secret, setGroupInfo }) {
       >
         <DeleteMember
           triggerMember={triggerMember}
+          triggerTrips={triggerTrip} // New prop for triggering trip refresh
           member={member}
+          trips={trip} // New prop for trip data
           group_id={groupId}
         />
       </CustomDialog>

@@ -169,6 +169,13 @@ export const api = createApi({
         params: { filterBy, searchWords, excludeIds },
       }),
     }),
+    deleteTrip: build.mutation({
+      query: ({ trip_id, group_id }) => ({
+        url: "api/deleteTripById",
+        method: "DELETE",
+        body: { trip_id, group_id }, // Sending the required parameters in the request body
+      }),
+    }),
   }),
 });
 
@@ -193,4 +200,5 @@ export const {
   useUpdateGroupVisibilityMutation,
   useGetGroupVisibilityMutation,
   useUserSearchMutation,
+  useDeleteTripMutation,
 } = api;

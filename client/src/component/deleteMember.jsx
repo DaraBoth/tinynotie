@@ -14,13 +14,22 @@ import { tokens } from "../theme";
 import { useDeleteMemberMutation } from "../api/api";
 import CustomAlert from "../component/CustomAlert";
 
-export default function DeleteMember({ triggerMember, member, group_id }) {
+export default function DeleteMember({
+  triggerMember,
+  member,
+  trips,
+  triggerTrips,
+  group_id,
+}) {
   const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+  console.log({ trips });
 
+  const colors = tokens(theme.palette.mode);
+  const [deleteTrip, setDeleteTrip] = useState(""); // New state for trip selection
   // State management
   const [deleteName, setDeleteName] = useState("");
-  const [triggerDeleteMember, { isLoading, isSuccess, isError, error }] = useDeleteMemberMutation();
+  const [triggerDeleteMember, { isLoading, isSuccess, isError, error }] =
+    useDeleteMemberMutation();
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("success");
@@ -30,19 +39,44 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
     setDeleteName(event.target.value);
   };
 
-  // Handle delete member action
   const handleDelete = () => {
-    if (deleteName) {
-      triggerDeleteMember(deleteName)
-        .then((response) => {
-          if (response?.data?.status) {
+    if (deleteName || deleteTrip) {
+      const deletePromises = [];
+
+      if (deleteName) {
+        deletePromises.push(triggerDeleteMember(deleteName));
+      }
+
+      if (deleteTrip) {
+        deletePromises.push(triggerDeleteTrip(deleteTrip));
+      }
+
+      Promise.all(deletePromises)
+        .then((responses) => {
+          const memberResponse = responses[0];
+          const tripResponse = responses[1];
+
+          if (memberResponse?.data?.status) {
             setAlertMessage("Successfully deleted the member.");
             setAlertType("success");
-            triggerMember({ group_id });
           } else {
-            setAlertMessage(response?.data?.message || "Failed to delete the member.");
+            setAlertMessage(
+              memberResponse?.data?.message || "Failed to delete the member."
+            );
             setAlertType("error");
           }
+
+          if (tripResponse?.data?.status) {
+            setAlertMessage(
+              (prev) => `${prev}\nSuccessfully deleted the trip.`
+            );
+            setAlertType("success");
+          } else if (deleteTrip) {
+            setAlertMessage((prev) => `${prev}\nFailed to delete the trip.`);
+            setAlertType("error");
+          }
+
+          triggerMember({ group_id }); // Refresh member list
           setAlertOpen(true);
         })
         .catch(() => {
@@ -51,7 +85,8 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
           setAlertOpen(true);
         })
         .finally(() => {
-          setDeleteName(""); // Reset member selection
+          setDeleteName(""); // Reset selections
+          setDeleteTrip("");
         });
     }
   };
@@ -113,12 +148,18 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
               },
             }}
           >
+            <MenuItem value="" sx={{ color: colors.primary[600] }}>
+              {" "}
+              {/* Add 'None' option */}
+              None
+            </MenuItem>
             {member?.map((item) => (
               <MenuItem
                 key={item.id}
                 value={item.id}
                 sx={{
-                  backgroundColor: deleteName === item.id ? colors.primary[500] : "inherit",
+                  backgroundColor:
+                    deleteName === item.id ? colors.primary[500] : "inherit",
                   color: deleteName === item.id ? "#fff" : colors.primary[600],
                   "&:hover": {
                     backgroundColor: colors.primary[400],
@@ -139,6 +180,70 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
             ))}
           </Select>
         </FormControl>
+        <FormControl variant="standard" sx={{ minWidth: "263px", mt: 2 }}>
+          <InputLabel
+            color="primary"
+            sx={{
+              color: colors.primary[500],
+              "&.Mui-focused": {
+                color: colors.primary[500],
+              },
+            }}
+          >
+            Pick a Trip
+          </InputLabel>
+          <Select
+            value={deleteTrip}
+            onChange={(event) => setDeleteTrip(event.target.value)}
+            label="Pick a Trip"
+            color="primary"
+            sx={{
+              "& .MuiSelect-select": {
+                color: colors.primary[600],
+              },
+              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[400],
+              },
+              "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: colors.primary[500],
+              },
+              "& .MuiSelect-icon": {
+                color: colors.primary[500],
+              },
+            }}
+          >
+            <MenuItem value="" sx={{ color: colors.primary[600] }}>
+              {" "}
+              {/* Add 'None' option */}
+              None
+            </MenuItem>
+            {trips?.map((trip) => (
+              <MenuItem
+                key={trip.id}
+                value={trip.id}
+                sx={{
+                  backgroundColor:
+                    deleteTrip === trip.id ? colors.primary[500] : "inherit",
+                  color: deleteTrip === trip.id ? "#fff" : colors.primary[600],
+                  "&:hover": {
+                    backgroundColor: colors.primary[400],
+                    color: "#fff",
+                  },
+                  "&.Mui-selected": {
+                    backgroundColor: colors.primary[400],
+                    color: "#fff",
+                    "&:hover": {
+                      backgroundColor: colors.primary[500],
+                      color: "#fff",
+                    },
+                  },
+                }}
+              >
+                {trip.trp_name} {/* Updated to correct key */}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <Button
           sx={{
@@ -150,13 +255,36 @@ export default function DeleteMember({ triggerMember, member, group_id }) {
           type="button"
           color="error"
           variant="contained"
-          startIcon={isLoading ? <CircularProgress size="1rem" /> : <DeleteIcon />}
-          disabled={isLoading || !deleteName}
+          startIcon={
+            isLoading ? <CircularProgress size="1rem" /> : <DeleteIcon />
+          }
+          disabled={isLoading || (!deleteName && !deleteTrip)} // Updated condition
         >
-          {isLoading ? "Deleting..." : "Delete Member"}
+          {isLoading ? "Deleting..." : "Delete"}
         </Button>
       </Box>
-
+      <Box mt={2} sx={{ color: colors.primary[600] }}>
+        {deleteName &&
+          !deleteTrip &&
+          `Selected Member: ${
+            member.find((m) => m.id === deleteName)?.mem_name
+          } will be deleted.`}
+        {deleteTrip &&
+          !deleteName &&
+          `Selected Trip: ${
+            trips.find((t) => t.id === deleteTrip)?.trp_name
+          } will be deleted.`}{" "}
+        {/* Updated here */}
+        {deleteName &&
+          deleteTrip &&
+          `Selected Member: ${
+            member.find((m) => m.id === deleteName)?.mem_name
+          } and Trip: ${
+            trips.find((t) => t.id === deleteTrip)?.trp_name
+          } will be deleted.`}{" "}
+        {/* Updated here */}
+        {!deleteName && !deleteTrip && "No member or trip is selected."}
+      </Box>
       <CustomAlert
         open={alertOpen}
         onClose={() => setAlertOpen(false)}
