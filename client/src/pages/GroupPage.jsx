@@ -57,8 +57,7 @@ export default function Group({ user, secret, setGroupInfo }) {
 
   const navigate = useNavigate();
 
-  const [triggerGroupDetails, resultGroupDetails] =
-    useGetGroupDetailsMutation(); // Fetch group details
+  const [triggerGroupDetails, resultGroupDetails] = useGetGroupDetailsMutation();
   const [triggerTrip, resultTrip] = useGetTripMutation();
   const [triggerMember, resultMember] = useGetMemberMutation();
   const [member, setMember] = useState([]);
@@ -198,13 +197,12 @@ export default function Group({ user, secret, setGroupInfo }) {
 
   if (resultGroupDetails.isLoading) {
     return <LoadingPage />;
-  }
-
-  if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
+  }else if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
     if (user != null) {
       return <UnauthorizedPage user={user} />;
+    }else {
+      return <UnauthorizedPage />;
     }
-    return <UnauthorizedPage />;
   }
 
   return (

@@ -772,7 +772,7 @@ router.post("/darabothlistening", async (req, res) => {
 router.post("/b2bAlert", async (req, res) => {
   try {
     let message = req.body?.message || "error"; 
-    const isTest  = req.body?.isTest  || true; 
+    const isTest  = req.body?.isTest; 
     const messageObj = {
       chat: {
         id: isTest ? 485397124 : -861143107, // me 
