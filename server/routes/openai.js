@@ -771,17 +771,36 @@ router.post("/darabothlistening", async (req, res) => {
 
 router.post("/b2bAlert", async (req, res) => {
   try {
-    let message = req.body?.message || "error"; 
-    const isTest  = req.body?.isTest; 
+    // Get the current UTC date and time
+    const now = new Date();
+    
+    // Adjust the time to Seoul time (UTC+9)
+    const seoulTime = new Date(now.getTime() + 9 * 60 * 60 * 1000); // Adding 9 hours in milliseconds
+
+    // Check if it's Friday in Seoul time
+    if (seoulTime.getDay() !== 5) { // 5 represents Friday
+      return res.status(403).send("Request not allowed. This endpoint can only be accessed on Fridays in Seoul time.");
+    }
+
+    let message = req.body?.message;
+    let isTest = req.body?.isTest;
+
+    if (!isTest) {
+      isTest = false;
+    }
+
     const messageObj = {
       chat: {
-        id: isTest ? 485397124 : -861143107, // me 
+        id: 485397124, // me 
+        // id: isTest ? 485397124 : -861143107, // me 
       },
     };
-    if(!message){
-      message = "Dear all please update your weekly report on google slide. And let's me know if done."
+
+    if (!message) {
+      message = "Dear all please update your weekly report on Google Slides. And let me know if done.";
     }
-    await darabothSendMessage(messageObj,message);
+
+    await darabothSendMessage(messageObj, message);
     res.status(200).send("Data received successfully");
   } catch (error) {
     console.error("Error parsing JSON:", error);
