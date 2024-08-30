@@ -246,63 +246,83 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Complex Queries: Generate SQL that can handle multifaceted user requests, such as combining information from multiple tables, performing calculations, and using advanced SQL features like CTEs or window functions.
     Dynamic Handling: If a single SQL query is insufficient, break the task into multiple SQL statements or use functions to encapsulate complex logic.
     Currency Handling: Although PostgreSQL does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
+    
+    Authorization Checks: Use the user_infm table to verify if the user has the required permissions. For example, if a user requests data for a group, ensure they are the admin or have the necessary permissions to access that group's data. If the usernm (username) provided does not match the admin of the requested group, do not allow access.
 
     Provided Data:
     usernm: '${userAskID}'  -- This username should be used to filter data related to the user in the relevant tables.
 
-    Database Schema:
+    Database Schema and Usage Guide:
+    
     Table Name: user_infm
+    Purpose: This table stores user-related information and is primarily used for authentication, user management, and authorization checks.
     Columns:
     - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each user.
-    - usernm (VARCHAR(50), NOT NULL): Stores the username of the user.
-    - passwd (VARCHAR(150), NOT NULL): Stores the hashed password of the user.
-    - phone_number (VARCHAR(30)): Stores the phone number of the user (optional).
-    - email (VARCHAR(30)): Stores the email address of the user (optional).
+    - usernm (VARCHAR(50), NOT NULL): Stores the username of the user. This is used for user authentication, login, and identifying the group admin.
+    - passwd (VARCHAR(150), NOT NULL): Stores the hashed password of the user. This is used for secure login and authentication.
+    - phone_number (VARCHAR(30)): Stores the phone number of the user (optional). Used for contact and recovery purposes.
+    - email (VARCHAR(30)): Stores the email address of the user (optional). Used for notifications and account recovery.
     - profile_url (VARCHAR(260)): Stores the URL of the user's profile picture or page (optional).
-    - create_date (VARCHAR(25)): Stores the date and time when the user was created.
+    - create_date (VARCHAR(25)): Stores the date and time when the user account was created.
+
+    Important Note: This table is **not** used for tracking payments or memberships in groups. It is only for user authentication, profile information, and group admin management. If a user is not the admin of a group, do not provide them access to that group's sensitive data unless explicitly permitted.
 
     Table Name: grp_infm
+    Purpose: This table stores information about different groups created by users. It is used to manage group-related activities and metadata.
     Columns:
     - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each group.
     - grp_name (VARCHAR(50), NOT NULL): Stores the name of the group.
-    - status (INT, DEFAULT NULL): Stores the status of the group, typically represented as an integer.
+    - status (INT, DEFAULT NULL): Stores the status of the group (e.g., active, inactive).
     - description (VARCHAR(260), DEFAULT NULL): Stores a description of the group (optional).
     - admin_id (INT, DEFAULT NULL): References the ID of the group's administrator, linking to the user_infm table.
     - create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the group was created.
     - currency (VARCHAR(10), NOT NULL, DEFAULT '$'): Stores the currency code or symbol used within the group.
     - visibility (VARCHAR(10), NOT NULL, DEFAULT 'private'): Stores the visibility status of the group ('public' or 'private').
 
+    Important Note: This table is used to define group attributes and the admin who manages the group. It does not track individual user payments or membership details.
+
     Table Name: trp_infm
+    Purpose: This table stores information about trips associated with groups. It is used to manage trip-related data, including expenses and member participation.
     Columns:
     - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each trip.
     - trp_name (VARCHAR(50), NOT NULL): Stores the name of the trip.
     - spend (FLOAT, DEFAULT NULL): Stores the amount of money spent on the trip.
     - mem_id (VARCHAR(260), DEFAULT NULL): Stores a serialized array of member IDs who participated in the trip.
-    - status (INT): Stores the status of the trip.
+    - status (INT): Stores the status of the trip (e.g., planned, completed).
     - description (VARCHAR(260)): Stores additional information about the trip (optional).
     - group_id (INT, DEFAULT NULL): References the ID of the group that organized the trip, linking to the grp_infm table.
     - create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the trip was created.
     - update_dttm (VARCHAR(25)): Stores the date and time when the trip was last updated (optional).
 
+    Important Note: This table manages trip-related data within groups, including total spending and participating members.
+
     Table Name: member_infm
+    Purpose: This table stores information about members in groups and tracks their financial contributions (payments) within groups.
     Columns:
     - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each member.
-    - mem_name (VARCHAR(50), NOT NULL): Stores the name of the member.
-    - paid (FLOAT, DEFAULT NULL): Stores the amount of money the member has paid.
+    - mem_name (VARCHAR(50), NOT NULL): Stores the name of the member. This could be a username or a real name.
+    - paid (FLOAT, DEFAULT NULL): Stores the amount of money the member has paid or contributed.
     - group_id (INT, DEFAULT NULL): References the ID of the group that the member belongs to, linking to the grp_infm table.
 
+    Important Note: This table is specifically for tracking payments and membership in groups. If you need to find out how much a member paid within a group, this is the table to use.
+
     Table Name: grp_users
+    Purpose: This table stores the relationship between users and groups, specifying which users can view specific groups.
     Columns:
     - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each record.
     - group_id (INT, NOT NULL): References the ID of the group, linking to the grp_infm table.
     - user_id (INT, NOT NULL): References the ID of the user, linking to the user_infm table.
     - can_view (BOOLEAN, DEFAULT FALSE): Indicates whether the user can view the group.
 
+    Important Note: This table manages user access to groups. It does not handle any group payments or trip details.
+
     Validation Process:
     Schema Adherence: Ensure the SQL solution references only the columns and tables defined in the provided schema.
     SQL Compatibility: Verify that the SQL syntax is compatible with PostgreSQL.
     Syntax Check: Ensure that each SQL statement in the solution has correct syntax and will not result in errors.
     Contextual Relevance: Ensure the SQL solution accurately reflects the user’s request; return a relevant message and set executable to false if not possible.
+    
+    User Guidance: If the user asks for data but does not provide enough context (e.g., "In Busan Group, how much did Daraboth pay?"), ask them to provide more specifics. For instance, guide them to clarify whether they mean payments related to a trip, a group, or a specific period.
 
     Examples of Desired Output:
 
@@ -777,25 +797,38 @@ router.post("/darabothlistening", async (req, res) => {
   }
 });
 
+// Endpoint to handle b2bAlert requests
 router.post("/b2bAlert", async (req, res) => {
   try {
     // Get the current UTC date and time
     const now = new Date();
 
-    // Adjust the time to Seoul time (UTC+9)
-    const seoulTime = new Date(now.getTime() + 9 * 60 * 60 * 1000); // Adding 9 hours in milliseconds
+    // Adjust the time to Cambodia time (UTC+7)
+    const cambodiaTime = new Date(now.getTime() + 7 * 60 * 60 * 1000); // Adding 7 hours in milliseconds
 
-    // Check if it's Friday in Seoul time
-    if (seoulTime.getDay() !== 5) {
+    // Check if it's Friday in Cambodia time
+    if (cambodiaTime.getDay() !== 5) {
       // 5 represents Friday
       return res
         .status(403)
         .send(
-          "Request not allowed. This endpoint can only be accessed on Fridays in Seoul time."
+          "Request not allowed. This endpoint can only be accessed on Fridays in Cambodia time."
         );
     }
 
-    let message = req.body?.message;
+    // Fetch the message from the Google Apps Script API
+    const scriptApiUrl =
+      "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // Replace with your actual Google Apps Script URL
+    const scriptResponse = await axios.get(scriptApiUrl); // Make a GET request to the Google Apps Script API
+
+    if (scriptResponse.status !== 200) {
+      return res
+        .status(500)
+        .send("Failed to fetch message from Google Apps Script API.");
+    }
+
+    // Extract message from the response
+    let message = scriptResponse.data; // Assuming the API returns the message in the response body directly
     let isTest = req.body?.isTest;
 
     if (!isTest) {
@@ -804,20 +837,18 @@ router.post("/b2bAlert", async (req, res) => {
 
     const messageObj = {
       chat: {
-        id: 485397124, // me
-        // id: isTest ? 485397124 : -861143107, // me
+        id: 485397124, // Replace with the actual user chat ID
+        // id: isTest ? 485397124 : -861143107, // Uncomment if you want to use different IDs for testing
       },
     };
 
-    if (!message) {
-      message =
-        "Dear all please update your weekly report on Google Slides. And let me know if done.";
-    }
-
+    // Send the message using darabothSendMessage function
     await darabothSendMessage(messageObj, message);
+
+    // Respond with a success message including the message details
     res.status(200).send({ ...messageObj, message });
   } catch (error) {
-    console.error("Error parsing JSON:", error);
+    console.error("Error processing request:", error);
     res.status(500).send("Error processing data");
   }
 });
