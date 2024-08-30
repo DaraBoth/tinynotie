@@ -701,26 +701,26 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
       return res.json({ status: false, message: "You do not have permission to delete this group" });
     }
 
-    // Check if the group is older than 24 hours
+    // Check if the group is older than 30 minutes or less than a day
     const groupCreationTime = new Date(create_date);
     const currentTime = new Date();
     const timeDifference = currentTime - groupCreationTime;
 
-    if (timeDifference < 24 * 60 * 60 * 1000) {
-      return res.json({ status: false, message: "Group cannot be deleted within 24 hours of creation" });
+    if (timeDifference > 30 * 60 * 1000 && timeDifference < 24 * 60 * 60 * 1000) {
+      return res.json({ status: false, message: "Group cannot be deleted between 30 minutes and 24 hours of creation" });
     }
 
     await client.query('BEGIN');
 
-    // Delete the group itself
+    // Delete related trips in the group
     const deleteTripQuery = `
-      DELETE FROM trp_infm CASCADE WHERE group_id = $1;
+      DELETE FROM trp_infm WHERE group_id = $1;
     `;
     await client.query(deleteTripQuery, [group_id]);
 
     // Delete the group itself
     const deleteGroupQuery = `
-      DELETE FROM grp_infm CASCADE WHERE id = $1;
+      DELETE FROM grp_infm WHERE id = $1;
     `;
     await client.query(deleteGroupQuery, [group_id]);
 
