@@ -270,6 +270,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     - admin_id (INT, DEFAULT NULL): References the ID of the group's administrator, linking to the user_infm table.
     - create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the group was created.
     - currency (VARCHAR(10), NOT NULL, DEFAULT '$'): Stores the currency code or symbol used within the group.
+    - visibility (VARCHAR(10), NOT NULL, DEFAULT 'private'): Stores the visibility status of the group ('public' or 'private').
 
     Table Name: trp_infm
     Columns:
@@ -289,6 +290,13 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     - mem_name (VARCHAR(50), NOT NULL): Stores the name of the member.
     - paid (FLOAT, DEFAULT NULL): Stores the amount of money the member has paid.
     - group_id (INT, DEFAULT NULL): References the ID of the group that the member belongs to, linking to the grp_infm table.
+
+    Table Name: grp_users
+    Columns:
+    - id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each record.
+    - group_id (INT, NOT NULL): References the ID of the group, linking to the grp_infm table.
+    - user_id (INT, NOT NULL): References the ID of the user, linking to the user_infm table.
+    - can_view (BOOLEAN, DEFAULT FALSE): Indicates whether the user can view the group.
 
     Validation Process:
     Schema Adherence: Ensure the SQL solution references only the columns and tables defined in the provided schema.

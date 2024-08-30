@@ -580,6 +580,57 @@ router.delete("/members/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Delete Trip by Trip ID and Group ID
+router.delete("/deleteTripById", authenticateToken, async (req, res) => {
+  const { trip_id, group_id } = req.body;
+  const user_id = req.user._id; // Assuming authenticateToken middleware attaches user_id to req.user
+
+  const client = await pool.connect();
+
+  try {
+    // Check if the user is the admin of the group
+    const checkAdminQuery = `
+      SELECT admin_id
+      FROM grp_infm
+      WHERE id = $1;
+    `;
+    const checkAdminResult = await client.query(checkAdminQuery, [group_id]);
+
+    if (checkAdminResult.rows.length === 0) {
+      return res.json({ status: false, message: "Group not found" });
+    }
+
+    const { admin_id } = checkAdminResult.rows[0];
+
+    if (admin_id !== user_id) {
+      return res.json({ status: false, message: "You do not have permission to delete trips from this group" });
+    }
+
+    await client.query('BEGIN');
+
+    // Delete the trip itself
+    const deleteTripQuery = `
+      DELETE FROM trp_infm WHERE id = $1 AND group_id = $2;
+    `;
+    const deleteTripResult = await client.query(deleteTripQuery, [trip_id, group_id]);
+
+    if (deleteTripResult.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.json({ status: false, message: "Trip not found in the specified group" });
+    }
+
+    await client.query('COMMIT');
+
+    res.json({ status: true, message: "Trip deleted successfully" });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("error", error);
+    res.json({ status: false, message: "Failed to delete trip", error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Get Members by Group ID
 router.get("/getMemberByGroupId", async (req, res) => {
   const { group_id } = req.query;

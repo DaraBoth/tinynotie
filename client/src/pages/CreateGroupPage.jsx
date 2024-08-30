@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Snackbar,
 } from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";
@@ -28,6 +29,9 @@ import { tokens } from "../theme";
 import CustomSnackbar from "../component/CustomSnackbar";
 
 export default function CreateGroup({ secret, setGroupInfo }) {
+  const [showUndoSnackbar, setShowUndoSnackbar] = useState(false);
+  const [undoCountdown, setUndoCountdown] = useState(5); // Countdown in seconds
+  const [abortController, setAbortController] = useState(null);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
@@ -57,27 +61,51 @@ export default function CreateGroup({ secret, setGroupInfo }) {
   const handleFormSubmit = debounce(async (values) => {
     const { grp_name } = values;
     if (grp_name && currency && newMember.length > 0) {
+      const controller = new AbortController(); // Create AbortController
+      setAbortController(controller);
+      setShowUndoSnackbar(true); // Show undo Snackbar
+      setUndoCountdown(5); // Start countdown from 5 seconds
+
+      const countdownInterval = setInterval(() => {
+        setUndoCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            setShowUndoSnackbar(false); // Hide Snackbar when countdown ends
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
       try {
-        await triggerCreateGroup({
-          user_id: secret,
-          grp_name,
-          currency,
-          status: 1,
-          create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
-          member: JSON.stringify(newMember),
-        }).unwrap();
+        await triggerCreateGroup(
+          {
+            user_id: secret,
+            grp_name,
+            currency,
+            status: 1,
+            create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+            member: JSON.stringify(newMember),
+          },
+          { signal: controller.signal }
+        ).unwrap();
+
         setShowSnackbar({
           open: true,
           message: "Note created successfully!",
           severity: "success",
         });
         setTimeout(() => navigate("/"), 2000);
-      } catch {
-        setShowSnackbar({
-          open: true,
-          message: "Something went wrong. Please try again.",
-          severity: "error",
-        });
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Request aborted");
+        } else {
+          setShowSnackbar({
+            open: true,
+            message: "Something went wrong. Please try again.",
+            severity: "error",
+          });
+        }
       }
     }
   }, 500);
@@ -94,6 +122,14 @@ export default function CreateGroup({ secret, setGroupInfo }) {
   const handleConfirmCancel = () => {
     setShowConfirmCancel(false);
     navigate("/");
+  };
+
+  const handleUndo = () => {
+    if (abortController) {
+      abortController.abort(); // Abort the request
+      setAbortController(null); // Reset controller
+    }
+    setShowUndoSnackbar(false); // Hide the Snackbar
   };
 
   return (
@@ -383,11 +419,15 @@ export default function CreateGroup({ secret, setGroupInfo }) {
       </Dialog>
 
       {/* Centralized Snackbar */}
-      <CustomSnackbar
-        open={showSnackbar.open}
-        message={showSnackbar.message}
-        severity={showSnackbar.severity}
-        onClose={() => setShowSnackbar({ ...showSnackbar, open: false })}
+      <Snackbar
+        open={showUndoSnackbar}
+        autoHideDuration={5000}
+        message={`Creating... Click "Undo" within ${undoCountdown} seconds to cancel.`}
+        action={
+          <Button color="secondary" size="small" onClick={handleUndo}>
+            Undo
+          </Button>
+        }
       />
     </Box>
   );
