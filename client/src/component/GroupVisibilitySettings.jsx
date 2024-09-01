@@ -148,14 +148,14 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
 
   const getItemStyle = (isDragging, draggableStyle) => ({
     userSelect: "none",
-    background: isDragging && colors.primary[500],
+    background: isDragging ? colors.primary[500] : colors.primary[500],
     cursor: isDragging ? "all-scroll" : "pointer",
     ...draggableStyle,
   });
 
   const getListStyle = (isDraggingOver) => ({
-    background: isDraggingOver && colors.primary[200],
-    color: isDraggingOver && colors.primary[900],
+    background: isDraggingOver ? colors.primary[200] : colors.background,
+    color: isDraggingOver ? colors.primary[900] : colors.primary[900],
     cursor: "all-scroll",
   });
 

@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { tokens } from "../theme";
-import { useDeleteMemberMutation } from "../api/api";
+import { useDeleteMemberMutation, useDeleteTripMutation } from "../api/api";
 import CustomAlert from "../component/CustomAlert";
 
 export default function DeleteMember({
@@ -22,7 +22,6 @@ export default function DeleteMember({
   group_id,
 }) {
   const theme = useTheme();
-  console.log({ trips });
 
   const colors = tokens(theme.palette.mode);
   const [deleteTrip, setDeleteTrip] = useState(""); // New state for trip selection
@@ -30,6 +29,8 @@ export default function DeleteMember({
   const [deleteName, setDeleteName] = useState("");
   const [triggerDeleteMember, { isLoading, isSuccess, isError, error }] =
     useDeleteMemberMutation();
+  const [triggerDeleteTrip, { isLoading: isDeletingTrip }] = useDeleteTripMutation();
+
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("success");
@@ -39,71 +40,47 @@ export default function DeleteMember({
     setDeleteName(event.target.value);
   };
 
-  const handleDelete = () => {
-    if (deleteName || deleteTrip) {
-      const deletePromises = [];
+  const handleDelete = async () => {
+    setAlertMessage(""); // Clear any previous messages
+    setAlertOpen(false); // Close any previous alerts
+    setAlertType("success"); // Reset alert type
+    try {
+      const results = await Promise.all([
+        deleteName ? triggerDeleteMember(deleteName) : null,
+        deleteTrip ? triggerDeleteTrip({ trip_id: deleteTrip, group_id }) : null,
+      ]);
 
-      if (deleteName) {
-        deletePromises.push(triggerDeleteMember(deleteName));
+      const [memberResponse, tripResponse] = results;
+
+      if (memberResponse?.data?.status) {
+        setAlertMessage("Successfully deleted the member.");
+        setAlertType("success");
+        triggerMember({ group_id });
+
+      } else if (deleteName) {
+        setAlertMessage(memberResponse?.data?.message || "Failed to delete the member.");
+        setAlertType("error");
       }
 
-      if (deleteTrip) {
-        deletePromises.push(triggerDeleteTrip(deleteTrip));
+      if (tripResponse?.data?.status) {
+        setAlertMessage(prev => `${prev}\nSuccessfully deleted the trip.`);
+        setAlertType("success");
+        triggerTrips({ group_id });
+      } else if (deleteTrip) {
+        setAlertMessage(prev => `${prev}\nFailed to delete the trip.`);
+        setAlertType("error");
       }
 
-      Promise.all(deletePromises)
-        .then((responses) => {
-          const memberResponse = responses[0];
-          const tripResponse = responses[1];
-
-          if (memberResponse?.data?.status) {
-            setAlertMessage("Successfully deleted the member.");
-            setAlertType("success");
-          } else {
-            setAlertMessage(
-              memberResponse?.data?.message || "Failed to delete the member."
-            );
-            setAlertType("error");
-          }
-
-          if (tripResponse?.data?.status) {
-            setAlertMessage(
-              (prev) => `${prev}\nSuccessfully deleted the trip.`
-            );
-            setAlertType("success");
-          } else if (deleteTrip) {
-            setAlertMessage((prev) => `${prev}\nFailed to delete the trip.`);
-            setAlertType("error");
-          }
-
-          triggerMember({ group_id }); // Refresh member list
-          setAlertOpen(true);
-        })
-        .catch(() => {
-          setAlertMessage("An error occurred. Please try again.");
-          setAlertType("error");
-          setAlertOpen(true);
-        })
-        .finally(() => {
-          setDeleteName(""); // Reset selections
-          setDeleteTrip("");
-        });
-    }
-  };
-
-  useEffect(() => {
-    if (isError) {
-      setAlertMessage(error?.data?.message || "Failed to delete the member.");
+      setAlertOpen(true);
+    } catch (error) {
+      setAlertMessage("An error occurred. Please try again.");
       setAlertType("error");
       setAlertOpen(true);
+    } finally {
+      setDeleteName(""); // Reset selections
+      setDeleteTrip("");
     }
-    if (isSuccess) {
-      setAlertMessage("Successfully deleted the member.");
-      setAlertType("success");
-      setAlertOpen(true);
-      triggerMember({ group_id });
-    }
-  }, [isError, isSuccess, error, triggerMember, group_id]);
+  };
 
   return (
     <React.Fragment>
@@ -256,7 +233,7 @@ export default function DeleteMember({
           color="error"
           variant="contained"
           startIcon={
-            isLoading ? <CircularProgress size="1rem" /> : <DeleteIcon />
+            (isLoading || isDeletingTrip) ? <CircularProgress size="1rem" /> : <DeleteIcon />
           }
           disabled={isLoading || (!deleteName && !deleteTrip)} // Updated condition
         >
@@ -266,21 +243,17 @@ export default function DeleteMember({
       <Box mt={2} sx={{ color: colors.primary[600] }}>
         {deleteName &&
           !deleteTrip &&
-          `Selected Member: ${
-            member.find((m) => m.id === deleteName)?.mem_name
+          `Selected Member: ${member.find((m) => m.id === deleteName)?.mem_name
           } will be deleted.`}
         {deleteTrip &&
           !deleteName &&
-          `Selected Trip: ${
-            trips.find((t) => t.id === deleteTrip)?.trp_name
+          `Selected Trip: ${trips.find((t) => t.id === deleteTrip)?.trp_name
           } will be deleted.`}{" "}
         {/* Updated here */}
         {deleteName &&
           deleteTrip &&
-          `Selected Member: ${
-            member.find((m) => m.id === deleteName)?.mem_name
-          } and Trip: ${
-            trips.find((t) => t.id === deleteTrip)?.trp_name
+          `Selected Member: ${member.find((m) => m.id === deleteName)?.mem_name
+          } and Trip: ${trips.find((t) => t.id === deleteTrip)?.trp_name
           } will be deleted.`}{" "}
         {/* Updated here */}
         {!deleteName && !deleteTrip && "No member or trip is selected."}

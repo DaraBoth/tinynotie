@@ -28,7 +28,10 @@ function App() {
 
   useEffect(() => {
     sessionStorage.setItem("theme", theme.palette.mode);
+    document.body.style.backgroundColor = colors.primary[900];
   }, [theme.palette.mode]);
+
+  
 
   useEffect(() => {
     if (isAuth) {

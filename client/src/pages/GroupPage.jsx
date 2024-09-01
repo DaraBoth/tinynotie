@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+  import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Paper,
@@ -23,8 +23,8 @@ import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import Topbar from "../global/Topbar";
 import TableComponent from "../component/TableComponent";
 import CustomDialog from "../component/CustomDialog";
-import LoadingPage from "../pages/LoadingPage";
-import UnauthorizedPage from "../pages/UnauthorizedPage";
+import LoadingPage from "../component/Loading";
+import UnauthorizedPage from "../component/Unauthorized";
 import { tokens } from "../theme";
 import {
   useGetGroupDetailsMutation,
@@ -344,7 +344,7 @@ export default function Group({ user, secret, setGroupInfo }) {
             <Card
               sx={{
                 flexGrow: 1,
-                minHeight: "250px",
+                minHeight: { xs: "250px", md: "30%" },
                 marginTop: "10px",
                 backgroundColor: colors.background,
               }}
@@ -356,25 +356,6 @@ export default function Group({ user, secret, setGroupInfo }) {
                   height: "100%",
                 }}
               >
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    marginBottom: 2,
-                  }}
-                >
-                  <StickyNote2Icon
-                    sx={{ marginRight: 1, color: colors.primary[500] }}
-                  />
-                  <Typography
-                    variant="h6"
-                    color={colors.primary[500]}
-                    gutterBottom
-                  >
-                    Total Spend Summary
-                  </Typography>
-                </Box>
-                <Divider sx={{ marginBottom: 2 }} />
                 <TotalSpendTable
                   info={info}
                   isLoading={!resultMember.isSuccess || !resultTrip.isSuccess}
