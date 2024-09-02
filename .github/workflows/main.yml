@@ -3,6 +3,7 @@ name: Trigger Vercel Endpoint
 on:
   schedule:
     - cron: '0 2 * * 5'  # Every Friday at 2 AM UTC (which is 9 AM Cambodia time, or 11 AM Seoul time)
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   trigger-api:
@@ -11,4 +12,4 @@ jobs:
       - name: Trigger Vercel API Endpoint
         run: |
           curl -X POST "https://tinynotie-api.vercel.app/openai/b2bAlert" \
-          -H "Content-Type: application/json"
+          -H "Content-Type: application/json" \
