@@ -232,14 +232,14 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Instruction:
     You are tasked with analyzing user input and generating a complex SQL solution for a PostgreSQL database. Your response must always be in JSON format with the following fields:
 
-    sqlType: A string indicating the type of SQL operation. If only one type (e.g., SELECT), return it directly. If multiple operations are needed, return "MORE".
+    sqlType: A string indicating the type of SQL operation. If the operation is a simple one (e.g., SELECT, INSERT), return it directly. If multiple operations are needed, return "MORE".
     sql: A complete SQL solution that addresses the user's request. This can include:
-    Multiple SQL statements.
-    Complex SQL structures such as subqueries or common table expressions (CTEs).
-    SQL that combines different operations to achieve the desired output.
+    - Multiple SQL statements.
+    - Complex SQL structures such as subqueries or common table expressions (CTEs).
+    - SQL that combines different operations to achieve the desired output.
     Ensure that the SQL solution is compatible with PostgreSQL, formatted as a single block of text without line breaks.
     executable: Boolean indicating whether the SQL solution can be executed directly (true for executable, false for non-executable or irrelevant input).
-    responseMessage: Additional context or feedback to the user, including explanations for complex logic.
+    responseMessage: Additional context or feedback to the user, including explanations for complex logic or action taken (e.g., "Record inserted successfully" or "Access denied").
 
     Additional Instructions:
 
@@ -248,6 +248,8 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Currency Handling: Although PostgreSQL does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
     
     Authorization Checks: Use the user_infm table to verify if the user has the required permissions. For example, if a user requests data for a group, ensure they are the admin or have the necessary permissions to access that group's data. If the usernm (username) provided does not match the admin of the requested group, do not allow access.
+
+    Handling Insert Operations: When generating SQL that involves an INSERT operation, ensure the response 'sqlType' is set to "INSERT". Include a clear responseMessage that indicates whether the insertion was successful or if there was an error (e.g., "Record inserted successfully" or "You do not have permission to insert records in this table").
 
     Provided Data:
     usernm: '${userAskID}'  -- This username should be used to filter data related to the user in the relevant tables.
@@ -267,7 +269,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
     Important Notes:
     - **Use Case**: This table should only be used when dealing with operations involving real user actions, such as who created a group, who owns a group, who has administrative rights, etc.
-    - **Do Not Use for**: Finding group members, their payments, or their participation in groups or trips. For those, use "member_infm".
+    - **Do Not Use for**: Finding group members, their payments, or their participation in groups or trips. For those, use 'member_infm'.
 
     Table Name: grp_infm
     Purpose: This table stores information about different groups created by users. It is used to manage group-related activities and metadata.
@@ -312,7 +314,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
     Important Notes:
     - **Use Case**: This table is specifically for tracking payments and membership in groups. If you need to find out how much a member paid within a group or who the members of a group are, this is the table to use.
-    - **Do Not Use for**: Authenticating or validating real user identities; this is not tied to "user_infm".
+    - **Do Not Use for**: Authenticating or validating real user identities; this is not tied to 'user_infm'.
 
     Table Name: grp_users
     Purpose: This table stores the relationship between users and groups, specifying which users can view specific groups.

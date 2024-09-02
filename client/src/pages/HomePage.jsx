@@ -36,6 +36,7 @@ import { tokens } from "../theme";
 import { encodeObjectToBase64 } from "../help/helper";
 import { formatTimeDifference } from "../help/time";
 import moment from "moment";
+import FloatingChat from "../component/ChatWithDatabase";
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
@@ -454,6 +455,9 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
       >
         <AddIcon />
       </Fab>
+
+      <FloatingChat userId={user} />
+
       <Dialog
         open={openDeleteDialog}
         onClose={() => setOpenDeleteDialog(false)}

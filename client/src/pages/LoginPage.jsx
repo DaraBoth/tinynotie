@@ -70,7 +70,7 @@ export default function Login({ setUser, setSecret }) {
           passwd: password,
         }).unwrap();
         if (response.status) {
-          setUser(username);
+          setUser(response.usernm);
           setSecret(response._id);
           navigate(redirectUrl);
         } else {

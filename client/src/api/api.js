@@ -176,6 +176,13 @@ export const api = createApi({
         body: { trip_id, group_id }, // Sending the required parameters in the request body
       }),
     }),
+    askDatabase: build.mutation({
+      query: (payload) => ({
+        url: "openai/askDatabase",
+        method: "POST",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -201,4 +208,5 @@ export const {
   useGetGroupVisibilityMutation,
   useUserSearchMutation,
   useDeleteTripMutation,
+  useAskDatabaseMutation,
 } = api;
