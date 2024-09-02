@@ -139,6 +139,10 @@ export function functionRenderColumns(rows) {
   return newColumns;
 }
 
+export function numberAddition(s) {
+  return Math.floor(currency((s+"").replace("W","").replace("-","")).value);
+}
+
 /**
  * Encodes an object to a Base64 string, supporting Unicode characters.
  * @param {object} data - The object to encode.

@@ -22,10 +22,16 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import SaveIcon from "@mui/icons-material/Save";
 import { tokens } from "../theme";
 import CustomAlert from "../component/CustomAlert";
+import { numberAddition } from "../help/helper";
 
 const filter = createFilterOptions();
 
-export default function EditMember({ triggerMember, member, group_id, currencyType }) {
+export default function EditMember({
+  triggerMember,
+  member,
+  group_id,
+  currencyType,
+}) {
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddMember, resultAddMember] = usePostAddMemberMutation();
@@ -34,12 +40,11 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
   const [loading, setLoading] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(false);
   const [alertMessage, setAlertMessage] = React.useState("");
-  const [alertType, setAlertType] = React.useState("success"); 
+  const [alertType, setAlertType] = React.useState("success");
   const [selectedChip, setSelectedChip] = React.useState(null);
   const [customAmount, setCustomAmount] = React.useState(""); // New state for custom amount
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-
   const handleClose = () => {
     setDialogValue({
       mem_name: "",
@@ -54,6 +59,9 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
     mem_name: "",
     paid: "",
   });
+
+  console.log(value?.id);
+  console.log({ member });
 
   const handleTransaction = (type) => {
     if (!!value?.id && !isNaN(parseFloat(money))) {
@@ -127,16 +135,20 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
   };
 
   const handleAddClick = () => {
-    const amount = selectedChip !== null ? selectedChip : parseFloat(customAmount || 0);
+    const amount =
+      selectedChip !== null ? selectedChip : parseFloat(customAmount || 0);
     if (!isNaN(amount)) {
       setMoney((prev) => (parseFloat(prev || 0) + amount).toString());
     }
   };
 
   const handleSubtractClick = () => {
-    const amount = selectedChip !== null ? selectedChip : parseFloat(customAmount || 0);
+    const amount =
+      selectedChip !== null ? selectedChip : parseFloat(customAmount || 0);
     if (!isNaN(amount)) {
-      setMoney((prev) => Math.max(0, parseFloat(prev || 0) - amount).toString());
+      setMoney((prev) =>
+        Math.max(0, parseFloat(prev || 0) - amount).toString()
+      );
     }
   };
 
@@ -203,8 +215,10 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
             <li
               {...props}
               style={{
-                backgroundColor: value === option ? colors.primary[500] : "inherit",
-                color: value === option ? colors.grey[100] : colors.primary[600],
+                backgroundColor:
+                  value === option ? colors.primary[500] : "inherit",
+                color:
+                  value === option ? colors.grey[100] : colors.primary[600],
               }}
             >
               {option.mem_name}
@@ -244,7 +258,8 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
             value={money}
             onChange={(e) => {
               e.target.value = e.target.value.trim();
-              if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
+              if (isNaN(Number(e.target.value)) && e.target.value !== ".")
+                return;
               setMoney(e.target.value);
             }}
             disabled={loading}
@@ -288,11 +303,34 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
               color={selectedChip === amount ? "primary" : "default"}
               sx={{
                 m: 0.5,
-                backgroundColor: selectedChip === amount ? colors.primary[500] : "inherit",
+                backgroundColor:
+                  selectedChip === amount ? colors.primary[500] : "inherit",
                 color: selectedChip === amount ? "#fff" : colors.primary[600],
-              }} 
+              }}
             />
           ))}
+          {Array.isArray(member) &&
+            member.map((item,_) => {
+              if (item["id"] === value?.id) {
+                const amount = item["unpaid"];
+                return (
+                  <Chip
+                    label={`${currencyType}${amount}`}
+                    onClick={() => handleChipClick(amount)}
+                    color={selectedChip === amount ? "primary" : "default"}
+                    sx={{
+                      m: 0.5,
+                      backgroundColor:
+                        selectedChip === amount
+                          ? colors.primary[500]
+                          : "inherit",
+                      color:
+                        selectedChip === amount ? "#fff" : colors.primary[600],
+                    }}
+                  />
+                );
+              }
+            })}
           <TextField
             variant="standard"
             type="text"
@@ -313,7 +351,7 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
             }}
             sx={{
               ml: 1,
-              width: '80px',
+              width: "80px",
               "& .MuiInputLabel-root": {
                 color: colors.primary[500],
               },
@@ -399,7 +437,8 @@ export default function EditMember({ triggerMember, member, group_id, currencyTy
               value={dialogValue.paid}
               onChange={(e) => {
                 e.target.value = e.target.value.trim();
-                if (isNaN(Number(e.target.value)) && e.target.value !== ".") return;
+                if (isNaN(Number(e.target.value)) && e.target.value !== ".")
+                  return;
                 setDialogValue({
                   ...dialogValue,
                   paid: e.target.value,

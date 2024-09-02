@@ -807,28 +807,20 @@ router.post("/b2bAlert", async (req, res) => {
     const cambodiaTime = new Date(now.getTime() + 7 * 60 * 60 * 1000); // Adding 7 hours in milliseconds
 
     // Check if it's Friday in Cambodia time
-    if (cambodiaTime.getDay() !== 5) {
-      // 5 represents Friday
-      return res
-        .status(403)
-        .send(
-          "Request not allowed. This endpoint can only be accessed on Fridays in Cambodia time."
-        );
-    }
+    // if (cambodiaTime.getDay() !== 5) { // 5 represents Friday
+    //   return res.send("Request not allowed. This endpoint can only be accessed on Fridays in Cambodia time.");
+    // }
 
     // Fetch the message from the Google Apps Script API
-    const scriptApiUrl =
-      "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // Replace with your actual Google Apps Script URL
+    const scriptApiUrl = "https://script.googleusercontent.com/macros/echo?user_content_key=TwsJ7jex6PLemF05p9BdK_BCbEE531R1GrA5gM2l1r58ZRdw9bc7m3dbclp6GYpBDmOBr8XiaCzLr1aCuU-Dmxzxjw5Jdazbm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnPNSmOPPBzQR8lozoT6OxwPGQrgpAfI0wKXXrvzxMs-fHM23NmVLxLY3liaL8_dl_6mDP4EpG_7YO_8v-RFpfCGytJTJy1FNew&lib=MPxRb7it3yuEbLSAksiFzB9tuFW5X_7rU"; // Provided API URL
     const scriptResponse = await axios.get(scriptApiUrl); // Make a GET request to the Google Apps Script API
 
     if (scriptResponse.status !== 200) {
-      return res
-        .status(500)
-        .send("Failed to fetch message from Google Apps Script API.");
+      return res.status(500).send("Failed to fetch message from Google Apps Script API.");
     }
 
-    // Extract message from the response
-    let message = scriptResponse.data; // Assuming the API returns the message in the response body directly
+    // Extract message from the JSON response
+    const { message } = scriptResponse.data; // Extracting the 'message' field from the JSON response
     let isTest = req.body?.isTest;
 
     if (!isTest) {

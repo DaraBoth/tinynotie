@@ -1,4 +1,4 @@
-  import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Paper,
@@ -42,6 +42,7 @@ import {
   calculateMoney,
   decodeBase64ToObject,
   functionRenderColumns,
+  numberAddition,
 } from "../help/helper";
 
 export default function Group({ user, secret, setGroupInfo }) {
@@ -377,7 +378,12 @@ export default function Group({ user, secret, setGroupInfo }) {
       >
         <ToolTip
           triggerMember={triggerMember}
-          member={member}
+          member={member.map((mem, index) => {
+            return {
+              ...mem,
+              unpaid: numberAddition(newData[index].unpaid) - 0,
+            };
+          })}
           group_id={groupId}
           currencyType={groupInfoState?.currency}
         />
