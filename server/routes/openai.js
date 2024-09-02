@@ -265,7 +265,9 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     - profile_url (VARCHAR(260)): Stores the URL of the user's profile picture or page (optional).
     - create_date (VARCHAR(25)): Stores the date and time when the user account was created.
 
-    Important Note: This table is **not** used for tracking payments or memberships in groups. It is only for user authentication, profile information, and group admin management. If a user is not the admin of a group, do not provide them access to that group's sensitive data unless explicitly permitted.
+    Important Notes:
+    - **Use Case**: This table should only be used when dealing with operations involving real user actions, such as who created a group, who owns a group, who has administrative rights, etc.
+    - **Do Not Use for**: Finding group members, their payments, or their participation in groups or trips. For those, use "member_infm".
 
     Table Name: grp_infm
     Purpose: This table stores information about different groups created by users. It is used to manage group-related activities and metadata.
@@ -279,7 +281,9 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     - currency (VARCHAR(10), NOT NULL, DEFAULT '$'): Stores the currency code or symbol used within the group.
     - visibility (VARCHAR(10), NOT NULL, DEFAULT 'private'): Stores the visibility status of the group ('public' or 'private').
 
-    Important Note: This table is used to define group attributes and the admin who manages the group. It does not track individual user payments or membership details.
+    Important Notes:
+    - **Use Case**: This table is used to define group attributes and the admin who manages the group. It is related to high-level group information.
+    - **Do Not Use for**: Tracking individual user payments or membership details. 
 
     Table Name: trp_infm
     Purpose: This table stores information about trips associated with groups. It is used to manage trip-related data, including expenses and member participation.
@@ -294,7 +298,9 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     - create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the trip was created.
     - update_dttm (VARCHAR(25)): Stores the date and time when the trip was last updated (optional).
 
-    Important Note: This table manages trip-related data within groups, including total spending and participating members.
+    Important Notes:
+    - **Use Case**: Manages trip-related data within groups, including total spending and participating members.
+    - **Do Not Use for**: Checking group creation or administrative tasks; this table is purely about trip management.
 
     Table Name: member_infm
     Purpose: This table stores information about members in groups and tracks their financial contributions (payments) within groups.
@@ -304,7 +310,9 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     - paid (FLOAT, DEFAULT NULL): Stores the amount of money the member has paid or contributed.
     - group_id (INT, DEFAULT NULL): References the ID of the group that the member belongs to, linking to the grp_infm table.
 
-    Important Note: This table is specifically for tracking payments and membership in groups. If you need to find out how much a member paid within a group, this is the table to use.
+    Important Notes:
+    - **Use Case**: This table is specifically for tracking payments and membership in groups. If you need to find out how much a member paid within a group or who the members of a group are, this is the table to use.
+    - **Do Not Use for**: Authenticating or validating real user identities; this is not tied to "user_infm".
 
     Table Name: grp_users
     Purpose: This table stores the relationship between users and groups, specifying which users can view specific groups.
@@ -314,7 +322,9 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     - user_id (INT, NOT NULL): References the ID of the user, linking to the user_infm table.
     - can_view (BOOLEAN, DEFAULT FALSE): Indicates whether the user can view the group.
 
-    Important Note: This table manages user access to groups. It does not handle any group payments or trip details.
+    Important Notes:
+    - **Use Case**: This table manages user access to groups.
+    - **Do Not Use for**: Handling group payments or trip details.
 
     Validation Process:
     Schema Adherence: Ensure the SQL solution references only the columns and tables defined in the provided schema.
@@ -339,7 +349,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT T.trp_name, T.spend, G.grp_name FROM trp_infm T JOIN grp_infm G ON T.group_id = G.id JOIN user_infm U ON T.mem_id LIKE '%' || U.id || '%' WHERE U.usernm = '${userAskID}';",
+        "sql": "SELECT T.trp_name, T.spend, G.grp_name FROM trp_infm T JOIN grp_infm G ON T.group_id = G.id JOIN member_infm M ON T.mem_id LIKE '%' || M.id || '%' WHERE M.mem_name = '${userAskID}';",
         "executable": true,
         "responseMessage": "This query provides the amount you spent on each trip along with the associated group."
     }
@@ -348,7 +358,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     AI JSON Response:
     {
         "sqlType": "SELECT",
-        "sql": "SELECT G.grp_name, SUM(M.paid) AS total_paid FROM member_infm M JOIN grp_infm G ON M.group_id = G.id JOIN user_infm U ON M.id = U.id WHERE U.usernm = '${userAskID}' GROUP BY G.grp_name;",
+        "sql": "SELECT G.grp_name, SUM(M.paid) AS total_paid FROM member_infm M JOIN grp_infm G ON M.group_id = G.id WHERE M.mem_name = '${userAskID}' GROUP BY G.grp_name;",
         "executable": true,
         "responseMessage": "This query shows the total amount you have paid, grouped by the group you belong to."
     }
