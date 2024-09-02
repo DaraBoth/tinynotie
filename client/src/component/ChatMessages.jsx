@@ -1,23 +1,14 @@
 // ChatMessages.js
 import React from "react";
-import { Box, Paper, Avatar, Typography } from "@mui/material";
+import { Box, Paper, Avatar, Typography, CircularProgress } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm"; // Import for extended Markdown (tables, etc.)
+import remarkGfm from "remark-gfm";
 
-const ChatMessages = ({ messages, chatContainerRef , setMessages}) => {
+const ChatMessages = ({ messages, chatContainerRef, typing }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-
-  // Suggested messages before the user starts chatting
-  const suggestedMessages = [
-    "What can I do with my groups?",
-    "Show me a summary of my expenses.",
-    "Can you provide an overview of my recent activities?",
-    "Help me understand my trips.",
-    "How do I add a new group?",
-  ];
 
   return (
     <Box
@@ -64,32 +55,25 @@ const ChatMessages = ({ messages, chatContainerRef , setMessages}) => {
           </Box>
         ))
       ) : (
-        <Box>
-          <Typography variant="body2" component="div" sx={{ mb: 1 }}>
-            Here are some things you can ask:
-          </Typography>
-          {suggestedMessages.map((suggestion, index) => (
-            <Paper
-              key={index}
-              elevation={2}
-              sx={{
-                padding: "8px 12px",
-                borderRadius: "12px",
-                backgroundColor: colors.grey[800],
-                color: "#fff",
-                marginBottom: "8px",
-                cursor: "pointer",
-                "&:hover": {
-                  backgroundColor: colors.primary[500],
-                },
-              }}
-              onClick={() => {
-                // Optional: Trigger the suggestion as a message input if needed
-              }}
-            >
-              <Typography variant="body2">{suggestion}</Typography>
-            </Paper>
-          ))}
+        <Typography variant="body2" component="div">
+          No chat
+        </Typography>
+      )}
+      {typing && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            marginTop: 1,
+            padding: "12px 16px",
+            backgroundColor: colors.grey[800],
+            borderRadius: "18px",
+            color: "#fff",
+            maxWidth: "75%",
+          }}
+        >
+          <CircularProgress size={16} sx={{ mr: 1 }} />
+          <Typography variant="body2">AI is typing...</Typography>
         </Box>
       )}
     </Box>

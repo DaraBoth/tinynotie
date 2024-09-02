@@ -3,29 +3,34 @@ import {
   Box,
   Fab,
   Dialog,
-  DialogActions,
   DialogContent,
-  Button,
+  IconButton,
+  AppBar,
+  Toolbar,
   Typography,
 } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import DeleteIcon from "@mui/icons-material/Delete";
+import MinimizeIcon from "@mui/icons-material/Minimize";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
-import ChatInput from "./ChatInput";
-import ChatMessages from "./ChatMessages";
+import ChatInput from "./ChatInput"; // New Component for input
+import ChatMessages from "./ChatMessages"; // New Component for messages
 
 const FloatingChat = ({ userId }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [typing, setTyping] = useState(false);
+  const [suggestedMessage, setSuggestedMessage] = useState(""); // New state for suggested message
+  const [typing, setTyping] = useState(false); // State for typing indicator
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const chatContainerRef = useRef(null);
+  const chatContainerRef = useRef(null); // Ref for the chat container
 
   useEffect(() => {
     const chatHistory =
       JSON.parse(sessionStorage.getItem(`chatHistory_${userId}`)) || [];
     setMessages(chatHistory);
+    handleScrollToBottom();
   }, [userId]);
 
   useEffect(() => {
@@ -35,6 +40,11 @@ const FloatingChat = ({ userId }) => {
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+  const handleClearChat = () => setMessages([]); // Clear chat history
+
+  const handleSuggestionClick = (suggestion) => {
+    setSuggestedMessage(suggestion); // Set suggested message to send it automatically
+  };
 
   const handleScrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -65,29 +75,41 @@ const FloatingChat = ({ userId }) => {
       </Fab>
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+        <AppBar position="static" sx={{ backgroundColor: colors.grey[900] }}>
+          <Toolbar
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "0 8px",
+            }}
+          >
+            <Typography variant="h6">Chat with AI</Typography>
+            <Box>
+              <IconButton onClick={handleClearChat} color="inherit">
+                <DeleteIcon />
+              </IconButton>
+              <IconButton onClick={handleClose} color="inherit">
+                <MinimizeIcon />
+              </IconButton>
+            </Box>
+          </Toolbar>
+        </AppBar>
         <DialogContent>
-          {/* Add Chat Title */}
-          <Typography variant="h6" sx={{ mb: 2, textAlign: "center" }}>
-            Chat with AI
-          </Typography>
           <ChatMessages
             messages={messages}
             chatContainerRef={chatContainerRef}
-            setMessages={setMessages}
-            typing={typing}
+            onSuggestionClick={handleSuggestionClick} // Pass the suggestion handler
+            typing={typing} // Pass typing state
           />
           <ChatInput
             setMessages={setMessages}
-            messages={messages} // Pass messages to ChatInput
             userId={userId}
             chatContainerRef={chatContainerRef}
+            initialMessage={suggestedMessage} // Pass suggested message
+            handleScrollToBottom={handleScrollToBottom}
+            setTyping={setTyping} // Pass setTyping to handle typing animation
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="secondary">
-            Close
-          </Button>
-        </DialogActions>
       </Dialog>
     </React.Fragment>
   );

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// ChatInput.js
+import React, { useState, useEffect } from "react";
 import { Box, TextField, IconButton } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { useTheme } from "@mui/material/styles";
@@ -6,24 +7,42 @@ import { tokens } from "../theme";
 import { useAskDatabaseMutation } from "../api/api";
 import ScrollToBottomButton from "./ScrollToBottomButton";
 
-const ChatInput = ({ setMessages, messages, userId, chatContainerRef }) => { // Add messages as prop
-  const [inputMessage, setInputMessage] = useState("");
+const ChatInput = ({
+  setMessages,
+  userId,
+  chatContainerRef,
+  initialMessage = "",
+  handleScrollToBottom,
+  setTyping, // Add typing state setter
+}) => {
+  const [inputMessage, setInputMessage] = useState(initialMessage);
   const [askDatabase, { isLoading }] = useAskDatabaseMutation();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
-  const handleSendMessage = async () => {
-    if (inputMessage.trim() === "") return;
-    const newMessage = { role: "user", parts: [{ text: inputMessage }] };
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
+  useEffect(() => {
+    if (initialMessage) {
+      setInputMessage(initialMessage);
+      handleSendMessage(initialMessage);
+    }
+  }, [initialMessage]);
+
+  const handleSendMessage = async (message = inputMessage) => {
+    if (message.trim() === "") return;
+    handleScrollToBottom();
+    setTyping(true); // Set typing to true
+    setMessages((prevMessages) =>
+      Array.isArray(prevMessages)
+        ? [...prevMessages, { role: "user", parts: [{ text: message }] }]
+        : [{ role: "user", parts: [{ text: message }] }]
+    );
+
     setInputMessage("");
 
     try {
-      // Send chat history along with the current user message to the backend
       const response = await askDatabase({
         userAskID: userId.toLowerCase(),
-        userAsk: inputMessage,
-        chatHistory: messages, // Include the chat history
+        userAsk: message,
       }).unwrap();
 
       const aiMessage = {
@@ -35,6 +54,8 @@ const ChatInput = ({ setMessages, messages, userId, chatContainerRef }) => { // 
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
     } catch (error) {
       console.error("Error fetching AI response:", error);
+    } finally {
+      setTyping(false); // Set typing to false after response
     }
   };
 
@@ -47,7 +68,14 @@ const ChatInput = ({ setMessages, messages, userId, chatContainerRef }) => { // 
   };
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", mt: 2, position: "relative" }}>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        mt: 2,
+        position: "relative",
+      }}
+    >
       <TextField
         variant="outlined"
         fullWidth
@@ -65,9 +93,12 @@ const ChatInput = ({ setMessages, messages, userId, chatContainerRef }) => { // 
           },
         }}
       />
-      <ScrollToBottomButton chatContainerRef={chatContainerRef} />
+      <ScrollToBottomButton
+        handleScrollToBottom={handleScrollToBottom}
+        chatContainerRef={chatContainerRef}
+      />
       <IconButton
-        onClick={handleSendMessage}
+        onClick={() => handleSendMessage()}
         disabled={isLoading}
         color="primary"
         sx={{
