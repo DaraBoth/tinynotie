@@ -10,11 +10,11 @@ import {
   Typography,
   Tooltip,
   Slide,
-  useMediaQuery,  // Import useMediaQuery for responsiveness
+  useMediaQuery, // Import useMediaQuery for responsiveness
 } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import MinimizeIcon from "@mui/icons-material/Minimize";
+import RemoveIcon from '@mui/icons-material/Remove';
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 import ChatInput from "./ChatInput";
@@ -86,14 +86,14 @@ const FloatingChat = ({ userId }) => {
         open={open}
         onClose={handleClose}
         fullWidth
-        maxWidth={isMobile ? "xs" : "sm"}  // Adjust maxWidth based on screen size
+        maxWidth={isMobile ? "xs" : "sm"} // Adjust maxWidth based on screen size
         fullScreen={isMobile} // Make dialog full screen on mobile
         TransitionComponent={Slide}
         TransitionProps={{ direction: "up" }} // Adjust slide direction
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : 1,  // Remove border-radius on mobile for full-screen effect
-            height: isMobile ? '100%' : 'auto', // Full height on mobile
+            borderRadius: isMobile ? 0 : 1, // Remove border-radius on mobile for full-screen effect
+            height: isMobile ? "100%" : "auto", // Full height on mobile
           },
         }}
       >
@@ -152,13 +152,17 @@ const FloatingChat = ({ userId }) => {
                   },
                 }}
               >
-                <MinimizeIcon />
+                <RemoveIcon />
               </IconButton>
             </Tooltip>
           </Toolbar>
         </AppBar>
         <DialogContent
-          sx={{ backgroundColor: colors.grey[800], color: colors.grey[100], padding: isMobile ? '8px' : '16px' }}
+          sx={{
+            backgroundColor: colors.grey[800],
+            color: colors.grey[100],
+            padding: isMobile ? "8px" : "16px",
+          }}
         >
           <ChatMessages
             messages={messages}
@@ -168,6 +172,7 @@ const FloatingChat = ({ userId }) => {
           />
           <ChatInput
             setMessages={setMessages}
+            messages={messages} // Pass messages state here
             userId={userId}
             chatContainerRef={chatContainerRef}
             initialMessage={suggestedMessage}

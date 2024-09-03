@@ -8,11 +8,12 @@ import ScrollToBottomButton from "./ScrollToBottomButton";
 
 const ChatInput = ({
   setMessages,
+  messages, // Accept messages as a prop
   userId,
   chatContainerRef,
   initialMessage = "",
   handleScrollToBottom,
-  setTyping, // Add typing state setter
+  setTyping,
 }) => {
   const [inputMessage, setInputMessage] = useState(initialMessage);
   const [askDatabase, { isLoading }] = useAskDatabaseMutation();
@@ -36,12 +37,18 @@ const ChatInput = ({
         : [{ role: "user", parts: [{ text: message }] }]
     );
 
+    const updatedMessages = [
+      ...messages, // Use messages prop here
+      { role: "user", parts: [{ text: message }] },
+    ];
+
     setInputMessage("");
 
     try {
       const response = await askDatabase({
         userAskID: userId.toLowerCase(),
         userAsk: message,
+        chatHistory: updatedMessages, // Send the chat history
       }).unwrap();
 
       const aiMessage = {
@@ -104,11 +111,11 @@ const ChatInput = ({
         InputProps={{
           sx: {
             backgroundColor: colors.grey[900],
-            color: colors.grey[100],  // Ensure text color is visible in dark mode
+            color: colors.grey[100], // Ensure text color is visible in dark mode
             borderRadius: "24px",
             padding: "8px 16px",
             boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-            '::placeholder': { color: colors.grey[500] }, // Placeholder color
+            "::placeholder": { color: colors.grey[500] }, // Placeholder color
           },
           endAdornment: (
             <InputAdornment position="end">
@@ -117,7 +124,6 @@ const ChatInput = ({
                 disabled={isLoading || inputMessage.trim() === ""}
                 color="primary"
                 sx={{
-                  // backgroundColor: colors.primary[700],
                   "&:hover": {
                     backgroundColor: colors.primary[700],
                   },
