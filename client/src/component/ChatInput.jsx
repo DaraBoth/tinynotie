@@ -1,6 +1,5 @@
-// ChatInput.js
 import React, { useState, useEffect } from "react";
-import { Box, TextField, IconButton } from "@mui/material";
+import { Box, TextField, IconButton, InputAdornment } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
@@ -74,6 +73,10 @@ const ChatInput = ({
         alignItems: "center",
         mt: 2,
         position: "relative",
+        borderRadius: "24px",
+        boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+        backgroundColor: colors.grey[900], // Background color for the input area
+        padding: "4px 8px", // Inner padding for better spacing
       }}
     >
       <TextField
@@ -83,33 +86,56 @@ const ChatInput = ({
         value={inputMessage}
         onChange={(e) => setInputMessage(e.target.value)}
         onKeyPress={handleKeyPress} // Handle Enter key
-        sx={{ mr: 1 }}
+        sx={{
+          flex: 1, // Make it grow to fill space
+          "& .MuiOutlinedInput-root": {
+            borderRadius: "24px",
+            backgroundColor: "transparent", // Transparent to match the parent box
+            padding: "0 12px", // Less padding for a modern look
+          },
+          "& fieldset": {
+            border: "none", // Remove the border for a clean look
+          },
+          "& input:-webkit-autofill": {
+            WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
+            WebkitTextFillColor: `${colors.primary[100]} !important`,
+          },
+        }}
         InputProps={{
           sx: {
             backgroundColor: colors.grey[900],
+            color: colors.grey[100],  // Ensure text color is visible in dark mode
             borderRadius: "24px",
             padding: "8px 16px",
             boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+            '::placeholder': { color: colors.grey[500] }, // Placeholder color
           },
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={() => handleSendMessage()}
+                disabled={isLoading || inputMessage.trim() === ""}
+                color="primary"
+                sx={{
+                  // backgroundColor: colors.primary[700],
+                  "&:hover": {
+                    backgroundColor: colors.primary[700],
+                  },
+                  padding: 1,
+                  margin: "0 8px",
+                  borderRadius: "50%", // Circular send button
+                }}
+              >
+                <SendIcon />
+              </IconButton>
+            </InputAdornment>
+          ),
         }}
       />
       <ScrollToBottomButton
         handleScrollToBottom={handleScrollToBottom}
         chatContainerRef={chatContainerRef}
       />
-      <IconButton
-        onClick={() => handleSendMessage()}
-        disabled={isLoading}
-        color="primary"
-        sx={{
-          backgroundColor: colors.primary[500],
-          "&:hover": {
-            backgroundColor: colors.primary[700],
-          },
-        }}
-      >
-        <SendIcon />
-      </IconButton>
     </Box>
   );
 };

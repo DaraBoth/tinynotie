@@ -1,14 +1,24 @@
-// ChatMessages.js
 import React from "react";
-import { Box, Paper, Avatar, Typography, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Avatar,
+  Typography,
+  CircularProgress,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import remarkGfm from "remark-gfm"; // Import for extended Markdown (tables, etc.)
 
 const ChatMessages = ({ messages, chatContainerRef, typing }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  const userMessageColor =
+    theme.palette.mode === "dark" ? colors.primary[700] : colors.primary[300];
+  const aiMessageColor =
+    theme.palette.mode === "dark" ? colors.grey[800] : colors.grey[200];
 
   return (
     <Box
@@ -28,7 +38,11 @@ const ChatMessages = ({ messages, chatContainerRef, typing }) => {
           >
             {msg.role === "model" && (
               <Avatar
-                sx={{ marginRight: 1, backgroundColor: colors.primary[500] }}
+                sx={{
+                  marginRight: 1,
+                  backgroundColor: colors.primary[500],
+                  color: "#fff",
+                }}
               >
                 🤖
               </Avatar>
@@ -39,8 +53,8 @@ const ChatMessages = ({ messages, chatContainerRef, typing }) => {
                 padding: "12px 16px",
                 borderRadius: "18px",
                 backgroundColor:
-                  msg.role === "user" ? colors.primary[700] : colors.grey[800],
-                color: "#fff",
+                  msg.role === "user" ? userMessageColor : aiMessageColor,
+                color: theme.palette.mode === "dark" ? "#fff" : "#000",
                 maxWidth: "75%",
                 wordBreak: "break-word",
                 boxShadow: `0px 4px 8px rgba(0, 0, 0, 0.1)`,
@@ -55,25 +69,49 @@ const ChatMessages = ({ messages, chatContainerRef, typing }) => {
           </Box>
         ))
       ) : (
-        <Typography variant="body2" component="div">
-          No chat
+        <Typography
+          variant="body2"
+          component="div"
+          sx={{
+            color:
+              theme.palette.mode === "dark"
+                ? colors.grey[300]
+                : colors.grey[700],
+            textAlign: "center",
+            marginTop: 2,
+          }}
+        >
+          No chat yet. Start by typing a message!
         </Typography>
       )}
+
+      {/* Typing Indicator */}
       {typing && (
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
-            marginTop: 1,
-            padding: "12px 16px",
-            backgroundColor: colors.grey[800],
+            mt: 2,
+            p: 2,
+            backgroundColor: aiMessageColor,
             borderRadius: "18px",
             color: "#fff",
             maxWidth: "75%",
+            boxShadow: `0px 4px 8px rgba(0, 0, 0, 0.1)`,
           }}
         >
-          <CircularProgress size={16} sx={{ mr: 1 }} />
-          <Typography variant="body2">AI is typing...</Typography>
+          <CircularProgress size={20} sx={{ mr: 2 }} />
+          <Typography
+            variant="body2"
+            sx={{
+              color:
+                theme.palette.mode === "dark"
+                  ? colors.grey[300]
+                  : colors.grey[700],
+            }}
+          >
+            AI is typing...
+          </Typography>
         </Box>
       )}
     </Box>

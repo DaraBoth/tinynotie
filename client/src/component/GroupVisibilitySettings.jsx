@@ -245,7 +245,13 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                       </InputAdornment>
                     ),
                   }}
-                  sx={{ marginY: "8px" }}
+                  sx={{
+                    marginY: "8px",
+                    "& input:-webkit-autofill": {
+                      WebkitBoxShadow: `0 0 0 1000px ${colors.grey[800]} inset !important`,
+                      WebkitTextFillColor: `${colors.primary[100]} !important`,
+                    },
+                  }}
                 />
                 <Droppable droppableId="availableUsers">
                   {(provided, snapshot) => (

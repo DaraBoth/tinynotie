@@ -276,6 +276,10 @@ export default function EditMember({
               "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
                 borderColor: colors.primary[400],
               },
+              "& input:-webkit-autofill": {
+                WebkitBoxShadow: `0 0 0 1000px ${colors.grey[800]} inset !important`,
+                WebkitTextFillColor: `${colors.primary[100]} !important`,
+              },
             }}
           />
           <IconButton
@@ -310,7 +314,7 @@ export default function EditMember({
             />
           ))}
           {Array.isArray(member) &&
-            member.map((item,_) => {
+            member.map((item, _) => {
               if (item["id"] === value?.id) {
                 const amount = item["unpaid"];
                 return (
@@ -357,6 +361,10 @@ export default function EditMember({
               },
               "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
                 borderColor: colors.primary[400],
+              },
+              "& input:-webkit-autofill": {
+                WebkitBoxShadow: `0 0 0 1000px ${colors.grey[800]} inset !important`,
+                WebkitTextFillColor: `${colors.primary[100]} !important`,
               },
             }}
           />
@@ -459,6 +467,10 @@ export default function EditMember({
                 },
                 "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
                   borderColor: colors.primary[400],
+                },
+                "& input:-webkit-autofill": {
+                  WebkitBoxShadow: `0 0 0 1000px ${colors.grey[800]} inset !important`,
+                  WebkitTextFillColor: `${colors.primary[100]} !important`,
                 },
               }}
             />

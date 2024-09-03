@@ -8,14 +8,17 @@ import {
   AppBar,
   Toolbar,
   Typography,
+  Tooltip,
+  Slide,
+  useMediaQuery,  // Import useMediaQuery for responsiveness
 } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MinimizeIcon from "@mui/icons-material/Minimize";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
-import ChatInput from "./ChatInput"; // New Component for input
-import ChatMessages from "./ChatMessages"; // New Component for messages
+import ChatInput from "./ChatInput";
+import ChatMessages from "./ChatMessages";
 
 const FloatingChat = ({ userId }) => {
   const [open, setOpen] = useState(false);
@@ -25,18 +28,23 @@ const FloatingChat = ({ userId }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const chatContainerRef = useRef(null); // Ref for the chat container
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // Check if screen is mobile
 
   useEffect(() => {
     const chatHistory =
       JSON.parse(sessionStorage.getItem(`chatHistory_${userId}`)) || [];
     setMessages(chatHistory);
-    handleScrollToBottom();
-  }, [userId]);
+    if (open) {
+      handleScrollToBottom();
+    }
+  }, [userId, open]);
 
   useEffect(() => {
     sessionStorage.setItem(`chatHistory_${userId}`, JSON.stringify(messages));
-    handleScrollToBottom();
-  }, [messages, userId]);
+    if (open) {
+      handleScrollToBottom();
+    }
+  }, [messages, userId, open]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -74,40 +82,97 @@ const FloatingChat = ({ userId }) => {
         <ChatBubbleOutlineIcon />
       </Fab>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <AppBar position="static" sx={{ backgroundColor: colors.grey[900] }}>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        fullWidth
+        maxWidth={isMobile ? "xs" : "sm"}  // Adjust maxWidth based on screen size
+        fullScreen={isMobile} // Make dialog full screen on mobile
+        TransitionComponent={Slide}
+        TransitionProps={{ direction: "up" }} // Adjust slide direction
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 1,  // Remove border-radius on mobile for full-screen effect
+            height: isMobile ? '100%' : 'auto', // Full height on mobile
+          },
+        }}
+      >
+        <AppBar
+          position="static"
+          sx={{
+            borderBottom: `1px solid ${colors.grey[700]}`,
+            borderRadius: 0,
+            backgroundColor: colors.primary[500],
+          }}
+        >
           <Toolbar
             sx={{
               display: "flex",
               justifyContent: "space-between",
+              alignItems: "center",
               padding: "0 8px",
             }}
           >
-            <Typography variant="h6">Chat with AI</Typography>
-            <Box>
-              <IconButton onClick={handleClearChat} color="inherit">
+            <Tooltip title="Clear Chat">
+              <IconButton
+                onClick={handleClearChat}
+                disableRipple
+                disableFocusRipple
+                disableTouchRipple
+                sx={{
+                  color: colors.primary[100],
+                  marginRight: 1,
+                  "&:hover": {
+                    backgroundColor: "transparent", // No hover background
+                    color: colors.primary[100], // No hover color change
+                  },
+                }}
+              >
                 <DeleteIcon />
               </IconButton>
-              <IconButton onClick={handleClose} color="inherit">
+            </Tooltip>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 600, color: colors.primary[100] }}
+            >
+              Chat with AI
+            </Typography>
+            <Tooltip title="Minimize">
+              <IconButton
+                onClick={handleClose}
+                disableRipple
+                disableFocusRipple
+                disableTouchRipple
+                sx={{
+                  color: colors.primary[100],
+                  marginRight: 1,
+                  "&:hover": {
+                    backgroundColor: "transparent", // No hover background
+                    color: colors.primary[100], // No hover color change
+                  },
+                }}
+              >
                 <MinimizeIcon />
               </IconButton>
-            </Box>
+            </Tooltip>
           </Toolbar>
         </AppBar>
-        <DialogContent>
+        <DialogContent
+          sx={{ backgroundColor: colors.grey[800], color: colors.grey[100], padding: isMobile ? '8px' : '16px' }}
+        >
           <ChatMessages
             messages={messages}
             chatContainerRef={chatContainerRef}
-            onSuggestionClick={handleSuggestionClick} // Pass the suggestion handler
-            typing={typing} // Pass typing state
+            onSuggestionClick={handleSuggestionClick}
+            typing={typing}
           />
           <ChatInput
             setMessages={setMessages}
             userId={userId}
             chatContainerRef={chatContainerRef}
-            initialMessage={suggestedMessage} // Pass suggested message
+            initialMessage={suggestedMessage}
             handleScrollToBottom={handleScrollToBottom}
-            setTyping={setTyping} // Pass setTyping to handle typing animation
+            setTyping={setTyping}
           />
         </DialogContent>
       </Dialog>
