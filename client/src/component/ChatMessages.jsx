@@ -5,6 +5,7 @@ import {
   Avatar,
   Typography,
   CircularProgress,
+  useMediaQuery,  // Import useMediaQuery for responsiveness
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
@@ -14,6 +15,7 @@ import remarkGfm from "remark-gfm"; // Import for extended Markdown (tables, etc
 const ChatMessages = ({ messages, chatContainerRef, typing }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // Check if screen is mobile
 
   const userMessageColor =
     theme.palette.mode === "dark" ? colors.primary[700] : colors.primary[300];
@@ -23,7 +25,12 @@ const ChatMessages = ({ messages, chatContainerRef, typing }) => {
   return (
     <Box
       ref={chatContainerRef}
-      sx={{ maxHeight: "60vh", height: "60vh", overflowY: "auto", padding: 2 }}
+      sx={{
+        maxHeight: isMobile ? "80vh" : "60vh",  // Full height on mobile
+        height: isMobile ? "80vh" : "60vh",     // Full height on mobile
+        overflowY: "auto",
+        padding: 2,
+      }}
     >
       {Array.isArray(messages) && messages.length > 0 ? (
         messages.map((msg, index) => (
