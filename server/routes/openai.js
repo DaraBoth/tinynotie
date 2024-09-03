@@ -171,9 +171,9 @@ router.post("/text", async (req, res) => {
 
 router.post("/askDatabase", async (req, res) => {
   try {
-    const { userAsk, userAskID } = req.body;
+    const { userAsk, userAskID, chatHistory } = req.body;
 
-    const responseData = await AI_Database(userAsk, userAskID, []);
+    const responseData = await AI_Database(userAsk, userAskID, chatHistory);
 
     res.status(200).json(responseData);
   } catch (error) {
@@ -376,9 +376,18 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Text to Analyze:
     [${userAsk}]
     `;
+    
+  const result = model.startChat({
+    history: chatHistory,
+    generationConfig: {
+      maxOutputTokens: 250,
+    },
+    maxTokens: 150,
+    temperature: 0.7,
+  });
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
+  const chat = await result.sendMessage(prompt)
+  const response = await chat.response;
 
   const cleanedResponse = response.text().replace(/```json|```/g, "");
 
@@ -532,6 +541,8 @@ async function AI_Human_readble(prompt, chatHistory) {
     generationConfig: {
       maxOutputTokens: 250,
     },
+    maxTokens: 150,
+    temperature: 0.7,
   });
 
   const chat = await result.sendMessage(prompt);
