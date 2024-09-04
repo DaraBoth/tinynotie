@@ -11,10 +11,11 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Paper,
+  useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
-import { useTranslateMessageMutation } from "../api/api"; // Correctly use translate mutation
+import { useTranslateMessageMutation } from "../api/api";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -29,13 +30,14 @@ const TranslatePage = () => {
   const colors = tokens(theme.palette.mode);
   const [editing, setEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleTranslate = async () => {
     if (!inputText) return;
     setLoading(true);
 
     try {
-      const response = await translate({ message: inputText }).unwrap(); // Properly use mutation with parameters
+      const response = await translate({ message: inputText }).unwrap();
       const translated = (response.isTranslatedTo+"").replace("[","").replace("]","") || "Translation Error";
       setTranslatedText(translated);
       if (!editing) addToHistory(inputText, translated);
@@ -87,7 +89,7 @@ const TranslatePage = () => {
     <Box
       sx={{
         display: "flex",
-        flexDirection: { xs: "column", sm: "row" },
+        flexDirection: isMobile ? "column" : "row", // Adjust layout for mobile
         padding: 4,
         gap: 4,
         backgroundColor:
@@ -97,6 +99,81 @@ const TranslatePage = () => {
         minHeight: "100vh",
       }}
     >
+      {/* Translation Section */}
+      <Box sx={{ flex: 1, padding: 2 }}>
+        <Typography variant="h6">Translate English to Korean</Typography>
+        <TextField
+          fullWidth
+          variant="outlined"
+          multiline
+          rows={4}
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder="Enter text to translate"
+          sx={{
+            mt: 2,
+            backgroundColor:
+              theme.palette.mode === "dark" ? colors.grey[900] : colors.grey[100],
+            color:
+              theme.palette.mode === "dark" ? colors.grey[100] : colors.grey[900],
+            "& .MuiOutlinedInput-root": {
+              "& fieldset": {
+                borderColor: colors.grey[700],
+              },
+              "&:hover fieldset": {
+                borderColor: colors.primary[500],
+              },
+            },
+          }}
+        />
+        <Button
+          variant="contained"
+          onClick={handleTranslate}
+          sx={{
+            mt: 2,
+            backgroundColor: colors.primary[500],
+            "&:hover": {
+              backgroundColor: colors.primary[700],
+            },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          disabled={loading}
+        >
+          {loading ? (
+            <CircularProgress size={24} sx={{ color: colors.grey[100] }} />
+          ) : editing ? (
+            "Update"
+          ) : (
+            "Translate"
+          )}
+        </Button>
+
+        {translatedText && !loading && (
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              backgroundColor:
+                theme.palette.mode === "dark" ? colors.grey[900] : colors.grey[200],
+              borderRadius: 2,
+              position: "relative",
+              color:
+                theme.palette.mode === "dark" ? colors.grey[100] : colors.grey[900],
+            }}
+          >
+            <Typography variant="body1">{translatedText}</Typography>
+            <IconButton
+              sx={{ position: "absolute", top: 0, right: 0 }}
+              onClick={handleCopy}
+            >
+              <ContentCopyIcon />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
+
       {/* History Section */}
       <Box
         sx={{
@@ -105,14 +182,24 @@ const TranslatePage = () => {
           backgroundColor:
             theme.palette.mode === "dark" ? colors.grey[900] : colors.grey[200],
           borderRadius: 2,
+          overflowY: isMobile ? "visible" : "auto", // Vertical scroll on larger screens
+          overflowX: isMobile ? "auto" : "hidden", // Horizontal scroll on mobile
+          maxHeight: isMobile ? "none" : "80vh", // Limit height on larger screens
+          display: "flex",
+          flexDirection: "column",
+          mt: isMobile ? 4 : 0, // Add margin on mobile
         }}
       >
         <Typography variant="h6" sx={{ mb: 2 }}>
           Translation History
         </Typography>
-        <List>
+        <List sx={{ flexGrow: 1 }}>
           {history.map((item) => (
-            <ListItem key={item.id} component={Paper} sx={{ mb: 1, p: 1 }}>
+            <ListItem
+              key={item.id}
+              component={Paper}
+              sx={{ mb: 1, p: 1, flexShrink: 0 }}
+            >
               <ListItemText
                 primary={item.original}
                 secondary={item.translated}
@@ -135,81 +222,6 @@ const TranslatePage = () => {
             </ListItem>
           ))}
         </List>
-      </Box>
-
-      {/* Translation Section */}
-      <Box sx={{ flex: 1, padding: 2 }}>
-        <Typography variant="h6">Translate English to Korean</Typography>
-        <TextField
-          fullWidth
-          variant="outlined"
-          multiline
-          rows={4}
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Enter text to translate"
-          sx={{
-            mt: 2,
-            backgroundColor:
-              theme.palette.mode === "dark"
-                ? colors.grey[900]
-                : colors.grey[100],
-            color:
-              theme.palette.mode === "dark"
-                ? colors.grey[100]
-                : colors.grey[900],
-            "& .MuiOutlinedInput-root": {
-              "& fieldset": {
-                borderColor: colors.grey[700],
-              },
-              "&:hover fieldset": {
-                borderColor: colors.primary[500],
-              },
-            },
-          }}
-        />
-        <Button
-          variant="contained"
-          onClick={handleTranslate}
-          sx={{
-            mt: 2,
-            backgroundColor: colors.primary[500],
-            "&:hover": {
-              backgroundColor: colors.primary[700],
-            },
-          }}
-          disabled={loading}
-        >
-          {editing ? "Update" : "Translate"}
-          {/* {loading && <CircularProgress size={"small"} sx={{ mt: 2 }} />} */}
-        </Button>
-
-        {translatedText && (
-          <Box
-            sx={{
-              mt: 2,
-              p: 2,
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? colors.grey[900]
-                  : colors.grey[200],
-              borderRadius: 2,
-              position: "relative",
-              color:
-                theme.palette.mode === "dark"
-                  ? colors.grey[100]
-                  : colors.grey[900],
-            }}
-          >
-            <Typography variant="body1">{translatedText}</Typography>
-            <IconButton
-              sx={{ position: "absolute", top: 0, right: 0 }}
-              onClick={handleCopy}
-            >
-              <ContentCopyIcon />
-            </IconButton>
-          </Box>
-        )}
       </Box>
     </Box>
   );
