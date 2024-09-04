@@ -60,6 +60,18 @@ const ChatInput = ({
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
     } catch (error) {
       console.error("Error fetching AI response:", error);
+      // Handle API error and provide feedback
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          role: "model",
+          parts: [
+            {
+              text: "There was an error processing your request. Please try again.",
+            },
+          ],
+        },
+      ]);
     } finally {
       setTyping(false); // Set typing to false after response
     }

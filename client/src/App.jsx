@@ -10,6 +10,7 @@ import Home from './pages/HomePage';
 import CreateGroup from './pages/CreateGroupPage';
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import TranslatePage from './pages/TranslatePage';
 
 function App() {
   const [theme, colorMode, setMode] = useMode();
@@ -82,6 +83,10 @@ function App() {
                   <Navigate to="/login" />
                 )
               }
+            />
+            <Route
+              path="/translate"
+              element={ <TranslatePage/> }
             />
           </Routes>
         </BrowserRouter>

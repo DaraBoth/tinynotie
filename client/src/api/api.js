@@ -163,7 +163,7 @@ export const api = createApi({
       }),
     }),
     userSearch: build.mutation({
-      query: ({ filterBy, searchWords="ALL", excludeIds = [] }) => ({
+      query: ({ filterBy, searchWords = "ALL", excludeIds = [] }) => ({
         url: "api/userSearch",
         method: "GET",
         params: { filterBy, searchWords, excludeIds },
@@ -181,6 +181,13 @@ export const api = createApi({
         url: "openai/askDatabase",
         method: "POST",
         body: payload,
+      }),
+    }),
+    translateMessage: build.mutation({
+      query: (param) => ({
+        url: `/openai/translate`,
+        method: "GET",
+        params: param, // Passing the message as a query parameter
       }),
     }),
   }),
@@ -209,4 +216,5 @@ export const {
   useUserSearchMutation,
   useDeleteTripMutation,
   useAskDatabaseMutation,
+  useTranslateMessageMutation,
 } = api;
