@@ -36,8 +36,8 @@ const TranslatePage = () => {
 
     try {
       const response = await translate({ message: inputText }).unwrap(); // Properly use mutation with parameters
-      const translated = response.isTranslatedTo || "Translation Error";
-      setTranslatedText((translated+"").replace("[","").replace("]",""));
+      const translated = (response.isTranslatedTo+"").replace("[","").replace("]","") || "Translation Error";
+      setTranslatedText(translated);
       if (!editing) addToHistory(inputText, translated);
       else updateHistory(editId, inputText, translated);
     } catch (error) {
