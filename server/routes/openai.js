@@ -1310,12 +1310,15 @@ router.post("/push", async (req, res) => {
 });
 
 router.post("/subscribe", async (req, res) => {
-  const { deviceId, userAgent, subscription } = req.body; // Extract data from request body
+  const { deviceId, userAgent, subscription, userInfo } = req.body; // Extract data from request body
   console.log(deviceId, userAgent, subscription);
   const client = await pool.connect();
 
   try {
     const { endpoint, expirationTime, keys } = subscription; // Extract subscription details
+
+    // Start a transaction to ensure atomicity
+    await client.query('BEGIN');
 
     // Upsert the subscription: if it already exists, update it; otherwise, insert a new one.
     const upsertQuery = `
@@ -1329,10 +1332,27 @@ router.post("/subscribe", async (req, res) => {
     // Execute the query with values
     await client.query(upsertQuery, [endpoint, expirationTime, keys, deviceId, userAgent]);
 
-    res.json({ status: true, message: "Subscription added/updated successfully" });
+    if(userInfo){
+      // Update the user's device_id in the user_infm table based on the username
+      const updateUserDeviceIdQuery = `
+        UPDATE user_infm
+        SET device_id = $1
+        WHERE usernm = $2;
+      `;
+  
+      // Execute the query to update the user's device_id
+      await client.query(updateUserDeviceIdQuery, [deviceId, userInfo]);
+    }
+
+    // Commit the transaction after both queries succeed
+    await client.query('COMMIT');
+
+    res.json({ status: true, message: "Subscription added/updated successfully and user device ID updated." });
   } catch (error) {
-    console.error("Error saving subscription", error);
-    res.status(500).json({ status: false, message: "Failed to add subscription", error: error.message });
+    // Rollback the transaction in case of an error
+    await client.query('ROLLBACK');
+    console.error("Error saving subscription or updating user device ID", error);
+    res.status(500).json({ status: false, message: "Failed to add subscription or update user device ID", error: error.message });
   } finally {
     client.release();
   }
