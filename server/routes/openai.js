@@ -1311,7 +1311,7 @@ router.post("/push", async (req, res) => {
 
 router.post("/subscribe", async (req, res) => {
   const { deviceId, userAgent, subscription } = req.body; // Extract data from request body
-
+  console.log(deviceId, userAgent, subscription);
   const client = await pool.connect();
 
   try {
