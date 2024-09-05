@@ -1245,28 +1245,30 @@ async function callAI(text, chatHistory) {
 }
 
 // Endpoint to send a notification
-const sendNotification = (subscription, data) => {
+const sendNotification = (subscription, data, req, res) => {
   webPush
     .sendNotification(subscription, JSON.stringify(data))
     .then((response) => {
       console.log("Notification sent successfully", response);
+      res.json({
+        status: true,
+        message: "Notification sent successfully",
+        response,
+      });
     })
     .catch((error) => {
       console.error("Error sending notification", error);
+      res.send({
+        status: false,
+        message: "Error sending notification",
+        error,
+      });
     });
 };
 
 router.post("/push", async (req, res) => {
-
   const { subscription, payload } = req.body;
-
-  try {
-    sendNotification(subscription, payload);
-    res.json({ status: true });
-  } catch (e) {
-    console.log(e);
-    res.send("error " + e);
-  }
+  sendNotification(subscription, payload, req, res);
 });
 
 export default router;
