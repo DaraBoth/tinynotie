@@ -37,6 +37,7 @@ import { encodeObjectToBase64 } from "../help/helper";
 import { formatTimeDifference } from "../help/time";
 import moment from "moment";
 import FloatingChat from "../component/ChatWithDatabase";
+import useServiceWorker from "../component/useServiceWorker";
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
@@ -102,7 +103,7 @@ function GroupCard({ item, onDelete, onClick }) {
   );
 }
 
-export default function Home({ user, setUser, secret, setGroupInfo }) {
+export default function Home({ user, setUser, secret, setGroupInfo}) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [triggerUser, resultUser] = useGetGroupMutation();
@@ -122,6 +123,9 @@ export default function Home({ user, setUser, secret, setGroupInfo }) {
   const widthItem = rspWidth("calc(100%/2)", "100%", "260px");
   const gridColItem = rspWidth("repeat(4,1fr)", "repeat(1,1fr)", "auto");
   const fontSize = rspWidth("normal", "18px", "16px");
+
+  const { requestNotificationPermission } = useServiceWorker()
+  requestNotificationPermission();
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
