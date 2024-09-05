@@ -1246,8 +1246,21 @@ async function callAI(text, chatHistory) {
 
 // Endpoint to send a notification
 const sendNotification = (subscription, data, req, res) => {
+  console.log(subscription);
   webPush
-    .sendNotification(subscription, JSON.stringify(data))
+    .sendNotification(
+      {
+        endpoint:
+          "https://fcm.googleapis.com/fcm/send/dIsb-KA7014:APA91bGi9LW4JG9PdAGCiLse5av4u7G2jqnd4jrjbjCl5lrBNmGQNmSa5j5mYlIPz8xPzCQMNHPrx_F6lnLp7huHQ1ByNRKENkvBbGPpTJv71xNA_d2Fg5xh95sXPrqeEwDdIjdvUNTF",
+        expirationTime: null,
+        keys: {
+          p256dh:
+            "BNNhFp-sAM2Al9hnu2kWAyVyuhp1G-19qK1bUgWDG0ozE5sa64obQPZlaQWGy5pZgCLJeHmwD4_egsC6eOD88o4",
+          auth: "h_mqX43fKqkBC2fx-DSI6g",
+        },
+      },
+      JSON.stringify(data)
+    )
     .then((response) => {
       console.log("Notification sent successfully", response);
       res.json({
