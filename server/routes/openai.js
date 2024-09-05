@@ -1244,8 +1244,9 @@ async function callAI(text, chatHistory) {
   return chat.response;
 }
 
-// Function to send a push notification
-const sendNotification = (subscription, data, res) => {
+// Endpoint to send a notification
+const sendNotification = (subscription, data, req, res) => {
+  console.log(subscription);
   webPush
     .sendNotification(subscription, JSON.stringify(data))
     .then((response) => {
@@ -1258,54 +1259,63 @@ const sendNotification = (subscription, data, res) => {
     })
     .catch((error) => {
       console.error("Error sending notification", error);
-      res.json({
+      res.send({
         status: false,
         message: "Error sending notification",
-        error: error.message,
+        error,
       });
     });
 };
 
-// Endpoint to send push notification to a specific subscriber
 router.post("/push", async (req, res) => {
-  const { uniqueIdentifier, title, payload } = req.body; // uniqueIdentifier can be deviceId or user_id
+  const { identifier, payload } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const client = await pool.connect();
 
-  // Fetch subscription data from the database based on unique identifier
   try {
-    const fetchSubscriptionQuery = `
-      SELECT endpoint, expiration_time, keys
-      FROM subscriptions
-      WHERE device_id = $1;  -- You can use user_id or any unique column here
+    let subscription;
+
+    // Check if the identifier is a username or a deviceId
+    const userQuery = `
+      SELECT device_id FROM user_infm WHERE usernm = $1;
     `;
+    const userResult = await client.query(userQuery, [identifier]);
 
-    const result = await pool.query(fetchSubscriptionQuery, [uniqueIdentifier]);
+    if (userResult.rows.length > 0) {
+      // If a username is provided, retrieve the device_id from user_infm
+      const { device_id } = userResult.rows[0];
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        status: false,
-        message: "No subscription found for the provided unique identifier",
-      });
+      // Fetch the subscription details for the device_id
+      const subscriptionQuery = `
+        SELECT endpoint, expiration_time, keys FROM subscriptions WHERE device_id = $1;
+      `;
+      const subscriptionResult = await client.query(subscriptionQuery, [device_id]);
+
+      if (subscriptionResult.rows.length > 0) {
+        subscription = subscriptionResult.rows[0];
+      } else {
+        return res.status(404).json({ status: false, message: "No subscription found for the provided username" });
+      }
+    } else {
+      // If the identifier is not found in user_infm, assume it's a deviceId and fetch the subscription directly
+      const subscriptionQuery = `
+        SELECT endpoint, expiration_time, keys FROM subscriptions WHERE device_id = $1;
+      `;
+      const subscriptionResult = await client.query(subscriptionQuery, [identifier]);
+
+      if (subscriptionResult.rows.length > 0) {
+        subscription = subscriptionResult.rows[0];
+      } else {
+        return res.status(404).json({ status: false, message: "No subscription found for the provided device ID" });
+      }
     }
 
-    const { endpoint, expiration_time, keys } = result.rows[0];
-    const subscription = { endpoint, expirationTime: expiration_time, keys };
-
-    // Prepare notification data
-    const notificationData = {
-      title,  // Notification title sent by the user
-      body: payload,  // Message body sent by the user
-      timestamp: new Date().toISOString(),  // Add timestamp for more information
-    };
-
-    // Send push notification
-    sendNotification(subscription, notificationData, res);
+    // Send the notification using the fetched subscription
+    sendNotification(subscription, payload, req, res);
   } catch (error) {
-    console.error("Error fetching subscription", error);
-    res.status(500).json({
-      status: false,
-      message: "Failed to fetch subscription from the database",
-      error: error.message,
-    });
+    console.error("Error finding subscription or sending notification", error);
+    res.status(500).json({ status: false, message: "Failed to send notification", error: error.message });
+  } finally {
+    client.release();
   }
 });
 
