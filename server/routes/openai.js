@@ -1244,23 +1244,10 @@ async function callAI(text, chatHistory) {
   return chat.response;
 }
 
-// Endpoint to send a notification
-const sendNotification = (subscription, data, req, res) => {
-  console.log(subscription);
+// Function to send a push notification
+const sendNotification = (subscription, data, res) => {
   webPush
-    .sendNotification(
-      {
-        endpoint:
-          "https://fcm.googleapis.com/fcm/send/dIsb-KA7014:APA91bGi9LW4JG9PdAGCiLse5av4u7G2jqnd4jrjbjCl5lrBNmGQNmSa5j5mYlIPz8xPzCQMNHPrx_F6lnLp7huHQ1ByNRKENkvBbGPpTJv71xNA_d2Fg5xh95sXPrqeEwDdIjdvUNTF",
-        expirationTime: null,
-        keys: {
-          p256dh:
-            "BNNhFp-sAM2Al9hnu2kWAyVyuhp1G-19qK1bUgWDG0ozE5sa64obQPZlaQWGy5pZgCLJeHmwD4_egsC6eOD88o4",
-          auth: "h_mqX43fKqkBC2fx-DSI6g",
-        },
-      },
-      JSON.stringify(data)
-    )
+    .sendNotification(subscription, JSON.stringify(data))
     .then((response) => {
       console.log("Notification sent successfully", response);
       res.json({
@@ -1271,17 +1258,84 @@ const sendNotification = (subscription, data, req, res) => {
     })
     .catch((error) => {
       console.error("Error sending notification", error);
-      res.send({
+      res.json({
         status: false,
         message: "Error sending notification",
-        error,
+        error: error.message,
       });
     });
 };
 
+// Endpoint to send push notification to a specific subscriber
 router.post("/push", async (req, res) => {
-  const { subscription, payload } = req.body;
-  sendNotification(subscription, payload, req, res);
+  const { uniqueIdentifier, title, payload } = req.body; // uniqueIdentifier can be deviceId or user_id
+
+  // Fetch subscription data from the database based on unique identifier
+  try {
+    const fetchSubscriptionQuery = `
+      SELECT endpoint, expiration_time, keys
+      FROM subscriptions
+      WHERE device_id = $1;  -- You can use user_id or any unique column here
+    `;
+
+    const result = await pool.query(fetchSubscriptionQuery, [uniqueIdentifier]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "No subscription found for the provided unique identifier",
+      });
+    }
+
+    const { endpoint, expiration_time, keys } = result.rows[0];
+    const subscription = { endpoint, expirationTime: expiration_time, keys };
+
+    // Prepare notification data
+    const notificationData = {
+      title,  // Notification title sent by the user
+      body: payload,  // Message body sent by the user
+      timestamp: new Date().toISOString(),  // Add timestamp for more information
+    };
+
+    // Send push notification
+    sendNotification(subscription, notificationData, res);
+  } catch (error) {
+    console.error("Error fetching subscription", error);
+    res.status(500).json({
+      status: false,
+      message: "Failed to fetch subscription from the database",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/subscribe", async (req, res) => {
+  const { deviceId, userAgent, subscription } = req.body; // Extract data from request body
+
+  const client = await pool.connect();
+
+  try {
+    const { endpoint, expirationTime, keys } = subscription; // Extract subscription details
+
+    // Upsert the subscription: if it already exists, update it; otherwise, insert a new one.
+    const upsertQuery = `
+      INSERT INTO subscriptions (endpoint, expiration_time, keys, device_id, user_agent, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT (endpoint) 
+      DO UPDATE SET expiration_time = EXCLUDED.expiration_time, keys = EXCLUDED.keys, updated_at = CURRENT_TIMESTAMP,
+                    device_id = EXCLUDED.device_id, user_agent = EXCLUDED.user_agent;
+    `;
+
+    // Execute the query with values
+    await client.query(upsertQuery, [endpoint, expirationTime, keys, deviceId, userAgent]);
+
+    res.json({ status: true, message: "Subscription added/updated successfully" });
+  } catch (error) {
+    console.error("Error saving subscription", error);
+    res.status(500).json({ status: false, message: "Failed to add subscription", error: error.message });
+  } finally {
+    client.release();
+  }
 });
 
 export default router;
