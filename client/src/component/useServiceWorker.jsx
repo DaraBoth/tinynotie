@@ -12,6 +12,7 @@ function urlBase64ToUint8Array(base64String) {
 
 const useServiceWorker = () => {
   const [registration, setRegistration] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
 
   const registerServiceWorker = () => {
     if ("serviceWorker" in navigator) {
@@ -28,14 +29,17 @@ const useServiceWorker = () => {
     }
   };
 
-  const requestNotificationPermission = () => {
+  const requestNotificationPermission = (userInfo) => {
     if (registration) {
+      if (userInfo) {
+        setUserInfo(userInfo);
+      }
       Notification.requestPermission()
         .then((permission) => {
           console.log(`Notification permission status: ${permission}`);
           if (permission === "granted") {
             console.log("Notification permission granted.");
-            subscribeUserToPush(registration); // Subscribe user to push notifications
+            subscribeUserToPush(registration, userInfo); // Subscribe user to push notifications
           } else {
             console.log("Notification permission denied.");
           }
@@ -46,7 +50,7 @@ const useServiceWorker = () => {
     }
   };
 
-  const subscribeUserToPush = (reg) => {
+  const subscribeUserToPush = (reg, userInfo) => {
     const subscribeOptions = {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY),
@@ -70,6 +74,7 @@ const useServiceWorker = () => {
           deviceId: deviceId,
           userAgent: navigator.userAgent,
           subscription: pushSubscription,
+          userInfo,
         };
 
         console.log("Device info to be sent to backend:", deviceInfo);

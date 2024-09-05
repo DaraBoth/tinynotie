@@ -34,7 +34,7 @@ function App() {
   const [groupInfo, setGroupInfo] = useState(null);
   const isAuth = Boolean(user) && Boolean(secret);
 
-  const { registerServiceWorker } = useServiceWorker(isAuth);
+  const { registerServiceWorker, requestNotificationPermission } = useServiceWorker();
 
   let themeDefault = sessionStorage.getItem("theme");
 
@@ -74,6 +74,7 @@ function App() {
                     setUser={setUser}
                     secret={secret}
                     setGroupInfo={setGroupInfo}
+                    requestNotificationPermission={requestNotificationPermission}
                   />
                 ) : (
                   <Navigate to="/login" />
