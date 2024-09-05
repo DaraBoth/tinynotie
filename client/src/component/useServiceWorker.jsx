@@ -30,6 +30,8 @@ const useServiceWorker = () => {
 
   const requestNotificationPermission = (userInfo) => {
     if (registration) {
+      const isPWA = window.matchMedia("(display-mode: standalone)").matches;
+      if (!isPWA || !("Notification" in window)) return;
       Notification.requestPermission()
         .then((permission) => {
           console.log(`Notification permission status: ${permission}`);
