@@ -10,6 +10,19 @@ import moment from "moment";
 import pg from "pg";
 const Pool = pg.Pool;
 import { Telegraf } from "telegraf";
+import webPush from "web-push";
+
+const vapidKeys = {
+  publicKey:
+    "BGfjmqSQgx7J6HXnvhxAGSOJ2h5W7mwrWYN8Cqa0Nql5nkoyyhlc49v_x-dIckFRm0rIeAgNxgfAfekqCwX8TNo",
+  privateKey: "cjUUEl_-6WwkTwf9ty_QX8el2n021_YsmHGzfcuBd2k",
+};
+
+webPush.setVapidDetails(
+  "mailto:vongpichdarabot@gmail.com",
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
@@ -376,7 +389,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     Text to Analyze:
     [${userAsk}]
     `;
-    
+
   const result = model.startChat({
     history: chatHistory,
     generationConfig: {
@@ -386,7 +399,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
     temperature: 0.7,
   });
 
-  const chat = await result.sendMessage(prompt)
+  const chat = await result.sendMessage(prompt);
   const response = await chat.response;
 
   const cleanedResponse = response.text().replace(/```json|```/g, "");
@@ -835,11 +848,14 @@ router.post("/b2bAlert", async (req, res) => {
     // }
 
     // Fetch the message from the Google Apps Script API
-    const scriptApiUrl = "https://script.googleusercontent.com/macros/echo?user_content_key=TwsJ7jex6PLemF05p9BdK_BCbEE531R1GrA5gM2l1r58ZRdw9bc7m3dbclp6GYpBDmOBr8XiaCzLr1aCuU-Dmxzxjw5Jdazbm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnPNSmOPPBzQR8lozoT6OxwPGQrgpAfI0wKXXrvzxMs-fHM23NmVLxLY3liaL8_dl_6mDP4EpG_7YO_8v-RFpfCGytJTJy1FNew&lib=MPxRb7it3yuEbLSAksiFzB9tuFW5X_7rU"; // Provided API URL
+    const scriptApiUrl =
+      "https://script.googleusercontent.com/macros/echo?user_content_key=TwsJ7jex6PLemF05p9BdK_BCbEE531R1GrA5gM2l1r58ZRdw9bc7m3dbclp6GYpBDmOBr8XiaCzLr1aCuU-Dmxzxjw5Jdazbm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnPNSmOPPBzQR8lozoT6OxwPGQrgpAfI0wKXXrvzxMs-fHM23NmVLxLY3liaL8_dl_6mDP4EpG_7YO_8v-RFpfCGytJTJy1FNew&lib=MPxRb7it3yuEbLSAksiFzB9tuFW5X_7rU"; // Provided API URL
     const scriptResponse = await axios.get(scriptApiUrl); // Make a GET request to the Google Apps Script API
 
     if (scriptResponse.status !== 200) {
-      return res.status(500).send("Failed to fetch message from Google Apps Script API.");
+      return res
+        .status(500)
+        .send("Failed to fetch message from Google Apps Script API.");
     }
 
     // Extract message from the JSON response
@@ -1227,5 +1243,30 @@ async function callAI(text, chatHistory) {
   const chat = await result.sendMessage(text);
   return chat.response;
 }
+
+// Endpoint to send a notification
+const sendNotification = (subscription, data) => {
+  webPush
+    .sendNotification(subscription, JSON.stringify(data))
+    .then((response) => {
+      console.log("Notification sent successfully", response);
+    })
+    .catch((error) => {
+      console.error("Error sending notification", error);
+    });
+};
+
+router.post("/push", async (req, res) => {
+
+  const { subscription, payload } = req.body;
+
+  try {
+    sendNotification(subscription, payload);
+    res.json({ status: true });
+  } catch (e) {
+    console.log(e);
+    res.send("error " + e);
+  }
+});
 
 export default router;
