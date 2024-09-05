@@ -12,7 +12,6 @@ function urlBase64ToUint8Array(base64String) {
 
 const useServiceWorker = () => {
   const [registration, setRegistration] = useState(null);
-  const [userInfo, setUserInfo] = useState(null);
 
   const registerServiceWorker = () => {
     if ("serviceWorker" in navigator) {
@@ -31,9 +30,6 @@ const useServiceWorker = () => {
 
   const requestNotificationPermission = (userInfo) => {
     if (registration) {
-      if (userInfo) {
-        setUserInfo(userInfo);
-      }
       Notification.requestPermission()
         .then((permission) => {
           console.log(`Notification permission status: ${permission}`);
