@@ -18,6 +18,10 @@ import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import TranslatePage from "./pages/TranslatePage";
 import useServiceWorker from "./component/useServiceWorker";
+import NotFoundPage from "./pages/NotFoundPage";
+import Lottie from "lottie-react";
+import moon from "./assets/moon.json";
+import sun from "./assets/sun.json";
 
 function App() {
   const [theme, colorMode, setMode] = useMode();
@@ -34,13 +38,14 @@ function App() {
   const [groupInfo, setGroupInfo] = useState(null);
   const isAuth = Boolean(user) && Boolean(secret);
 
-  const { registerServiceWorker, requestNotificationPermission } = useServiceWorker();
+  const { registerServiceWorker, requestNotificationPermission } =
+    useServiceWorker();
 
   let themeDefault = sessionStorage.getItem("theme");
 
   useEffect(() => {
     themeDefault && setMode(themeDefault);
-    registerServiceWorker()
+    registerServiceWorker();
   }, []);
 
   useEffect(() => {
@@ -74,7 +79,9 @@ function App() {
                     setUser={setUser}
                     secret={secret}
                     setGroupInfo={setGroupInfo}
-                    requestNotificationPermission={requestNotificationPermission}
+                    requestNotificationPermission={
+                      requestNotificationPermission
+                    }
                   />
                 ) : (
                   <Navigate to="/login" />
@@ -112,6 +119,7 @@ function App() {
               }
             />
             <Route path="/translate" element={<TranslatePage />} />
+            <Route path="/*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>
@@ -144,15 +152,18 @@ const ColorMode = ({ theme, colorMode, colors }) => {
               ? colors.primary[700]
               : colors.grey[300], // Darken background on hover
         },
-        boxShadow: `0px 3px 10px rgba(0, 0, 0, 0.2)`, // Similar shadow to other Fabs
+        // boxShadow: `0px 3px 10px rgba(0, 0, 0, 0.2)`, // Similar shadow to other Fabs
         transition: "background-color 0.3s ease", // Smooth transition
       }}
     >
-      {theme.palette.mode === "dark" ? (
-        <DarkModeOutlinedIcon />
-      ) : (
-        <LightModeOutlinedIcon />
-      )}
+      <Lottie
+        animationData={theme.palette.mode === "dark" ? moon : sun}
+        loop={true}
+        style={{
+          width: 150,
+          height: 150,
+        }}
+      />
     </Fab>
   );
 };

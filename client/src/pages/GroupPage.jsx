@@ -44,6 +44,7 @@ import {
   functionRenderColumns,
   numberAddition,
 } from "../help/helper";
+import NotFoundPage from "./NotFoundPage";
 
 export default function Group({ user, secret, setGroupInfo }) {
   const theme = useTheme();
@@ -54,8 +55,11 @@ export default function Group({ user, secret, setGroupInfo }) {
     groupId,
     groupName,
     currency: groupCurrency,
+    isError,
   } = decodeBase64ToObject(groupParam);
-
+  if (isError) {
+    return <NotFoundPage />;
+  }
   const navigate = useNavigate();
 
   const [triggerGroupDetails, resultGroupDetails] =

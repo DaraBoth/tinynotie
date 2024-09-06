@@ -1,5 +1,5 @@
 import currency from "currency.js";
-import sjcl from 'sjcl';
+import sjcl from "sjcl";
 
 export function calculateMoney(allMembers, trips, currencyType) {
   let newData = [];
@@ -140,7 +140,7 @@ export function functionRenderColumns(rows) {
 }
 
 export function numberAddition(s) {
-  return Math.floor(currency((s+"").replace("W","").replace("-","")).value);
+  return Math.floor(currency((s + "").replace("W", "").replace("-", "")).value);
 }
 
 /**
@@ -150,18 +150,11 @@ export function numberAddition(s) {
  */
 export const encodeObjectToBase64 = (data) => {
   try {
-    // Convert object to JSON string
     const jsonString = JSON.stringify(data);
-
-    // Encode the JSON string to a Uint8Array (UTF-8 byte array)
     const utf8Bytes = new TextEncoder().encode(jsonString);
-
-    // Convert the UTF-8 byte array to a Base64 string
     const base64Encoded = btoa(String.fromCharCode(...utf8Bytes));
-
     return base64Encoded;
   } catch (error) {
-    console.error('Encoding Error:', error);
     return null; // Return null in case of an error
   }
 };
@@ -173,16 +166,10 @@ export const encodeObjectToBase64 = (data) => {
  */
 export const decodeBase64ToObject = (base64Data) => {
   try {
-    // Decode the Base64 string to a UTF-8 byte array
     const utf8Bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-
-    // Decode the UTF-8 byte array back to a JSON string
     const jsonString = new TextDecoder().decode(utf8Bytes);
-
-    // Parse JSON string back to object
     return JSON.parse(jsonString);
   } catch (error) {
-    console.error('Decoding Error:', error);
-    return null; // Return null in case of an error
+    return { isError: true }; 
   }
 };

@@ -37,17 +37,19 @@ import { encodeObjectToBase64 } from "../help/helper";
 import { formatTimeDifference } from "../help/time";
 import moment from "moment";
 import FloatingChat from "../component/ChatWithDatabase";
-import useServiceWorker from "../component/useServiceWorker";
+import sleepingmeow from "../assets/sleepingmeow.json";
+import background1 from "../assets/background1.json";
+import Lottie from "lottie-react";
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
   const currencyObject = {
-    W:"Korean Won",
-    $:"US Dollar",
-    R:"Khmer Reil",
-  }
+    W: "Korean Won",
+    $: "US Dollar",
+    R: "Khmer Reil",
+  };
 
   return (
     <Paper
@@ -72,14 +74,16 @@ function GroupCard({ item, onDelete, onClick }) {
       </Typography>
       <Typography variant="body2" color={colors.grey[300]}>
         Currency:{" "}
-        <span style={{ color: colors.primary[300] }}>{currencyObject[item.currency]}</span>
+        <span style={{ color: colors.primary[300] }}>
+          {currencyObject[item.currency]}
+        </span>
       </Typography>
       <Typography variant="body2" color={colors.grey[400]}>
         <span style={{ color: colors.primary[600] }}>
           {moment(item.create_date).format("YYYY-MM-DD hh:mm:ss (dd)")}
         </span>
         <span style={{ color: colors.primary[300] }}>
-          {" ~ "+formatTimeDifference(item.create_date)}
+          {" ~ " + formatTimeDifference(item.create_date)}
         </span>
       </Typography>
       {item.isAdmin && (
@@ -103,8 +107,14 @@ function GroupCard({ item, onDelete, onClick }) {
   );
 }
 
-export default function Home({ user, setUser, secret, setGroupInfo, requestNotificationPermission}) {
-  requestNotificationPermission(user)
+export default function Home({
+  user,
+  setUser,
+  secret,
+  setGroupInfo,
+  requestNotificationPermission,
+}) {
+  requestNotificationPermission(user);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [triggerUser, resultUser] = useGetGroupMutation();
@@ -217,7 +227,29 @@ export default function Home({ user, setUser, secret, setGroupInfo, requestNotif
           justifyContent="space-between"
           alignItems="center"
           marginBottom="20px"
+          position={"relative"}
         >
+          <Lottie
+            animationData={sleepingmeow}
+            loop={true}
+            style={
+              isNonMobile
+                ? {
+                    position: "absolute",
+                    top: "-42px",
+                    right: "50%",
+                    width: 200,
+                    height: 200,
+                  }
+                : {
+                    position: "absolute",
+                    top: "-49px",
+                    right: "100px",
+                    width: 200,
+                    height: 200,
+                  }
+            } // Adjust size as needed
+          />
           <Typography
             component="span"
             variant="h4"
@@ -236,6 +268,7 @@ export default function Home({ user, setUser, secret, setGroupInfo, requestNotif
               </>
             )}
           </Typography>
+
           <IconButton onClick={handleLogout} aria-label="logout">
             <LogoutIcon sx={{ fill: colors.redAccent[500] }} />
           </IconButton>
@@ -258,8 +291,22 @@ export default function Home({ user, setUser, secret, setGroupInfo, requestNotif
               padding: "8px 16px",
               borderRadius: "24px", // Rounded corners like a dock
               backgroundColor: colors.grey[900], // Background color
+              position:"relative",
+              overflow:"hidden",
             }}
           >
+            <Lottie
+              animationData={background1}
+              loop={true}
+              style={{
+                position:"absolute",
+                width: 200,
+                top:"-70px",
+                right:"70px",
+                height: 200,
+                mixBlendMode:"overlay"
+              }}
+            />
             <Button
               onClick={() => handleTabChange(null, 0)}
               color={tabIndex === 0 ? "primary" : "inherit"}

@@ -868,7 +868,7 @@ router.post("/b2bAlert", async (req, res) => {
 
     const messageObj = {
       chat: {
-        id: 485397124, // Replace with the actual user chat ID
+        id: -861143107, // Replace with the actual user chat ID
         // id: isTest ? 485397124 : -861143107, // Uncomment if you want to use different IDs for testing
       },
     };

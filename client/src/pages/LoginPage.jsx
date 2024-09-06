@@ -20,14 +20,18 @@ import Person4RoundedIcon from "@mui/icons-material/Person4Rounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { tokens } from "../theme";
 import { Alert } from "@mui/material";
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from "react-router-dom";
+import MeowFootprint from "../component/MeowFootprint";
+import Lottie from "lottie-react";
+import goingggg from "../assets/goingggg.json";
+import openeye from "../assets/openeye.json";
 
 export default function Login({ setUser, setSecret }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
   const { search } = useLocation();
-  const redirectUrl = new URLSearchParams(search).get('redirect') || '/';
+  const redirectUrl = new URLSearchParams(search).get("redirect") || "/";
 
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [triggerLogin, resultLogin] = usePostLoginMutation();
@@ -106,6 +110,7 @@ export default function Login({ setUser, setSecret }) {
         backgroundPosition: "center",
       }}
     >
+      {/* <MeowFootprint /> */}
       <Formik
         onSubmit={handleFormSubmit}
         initialValues={initialValues}
@@ -177,12 +182,14 @@ export default function Login({ setUser, setSecret }) {
                   "& input:-webkit-autofill": {
                     WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
                     WebkitTextFillColor: `${colors.primary[100]} !important`,
-                    transition: "background-color 5000s ease-in-out 0s !important",
+                    transition:
+                      "background-color 5000s ease-in-out 0s !important",
                   },
-                  "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus": {
-                    WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
-                    WebkitTextFillColor: `${colors.primary[100]} !important`,
-                  },
+                  "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus":
+                    {
+                      WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
+                      WebkitTextFillColor: `${colors.primary[100]} !important`,
+                    },
                 }}
               />
 
@@ -210,7 +217,16 @@ export default function Login({ setUser, setSecret }) {
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <Visibility style={{ color: colors.primary[300] }} />
+                           <Lottie
+                           animationData={openeye}
+                           loop={true}
+                           style={{
+                             width: 24,
+                             height: 24,
+                             mixBlendMode:"light"
+
+                           }}
+                         />
                         ) : (
                           <VisibilityOff
                             style={{ color: colors.primary[300] }}
@@ -242,12 +258,14 @@ export default function Login({ setUser, setSecret }) {
                   "& input:-webkit-autofill": {
                     WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
                     WebkitTextFillColor: `${colors.primary[100]} !important`,
-                    transition: "background-color 5000s ease-in-out 0s !important",
+                    transition:
+                      "background-color 5000s ease-in-out 0s !important",
                   },
-                  "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus": {
-                    WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
-                    WebkitTextFillColor: `${colors.primary[100]} !important`,
-                  },
+                  "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus":
+                    {
+                      WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
+                      WebkitTextFillColor: `${colors.primary[100]} !important`,
+                    },
                 }}
               />
 
@@ -271,9 +289,21 @@ export default function Login({ setUser, setSecret }) {
                   },
                 }}
                 disabled={loading}
-                startIcon={loading && <CircularProgress size="1rem" />}
+                endIcon={
+                  loading && (
+                    <Lottie
+                      animationData={goingggg}
+                      loop={true}
+                      style={{
+                        width: 90,
+                        height: 90,
+                        mixBlendMode: "multiply",
+                      }}
+                    />
+                  )
+                }
               >
-                {isRegister ? "Register" : "Login"}
+                {!loading && (isRegister ? "Register" : "Login")}
               </Button>
               <Box display="flex" justifyContent="center" mt={2}>
                 <Typography variant="body2" color={colors.grey[600]}>

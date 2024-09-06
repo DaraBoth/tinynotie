@@ -26,7 +26,9 @@ import { useGetAllMemberMutation, usePostAddGroupMutation } from "../api/api";
 import moment from "moment";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
+import cooking from "../assets/cooking.json";
 import CustomSnackbar from "../component/CustomSnackbar";
+import Lottie from "lottie-react";
 
 export default function CreateGroup({ secret, setGroupInfo }) {
   const [showUndoSnackbar, setShowUndoSnackbar] = useState(false);
@@ -168,8 +170,38 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                 padding: "32px", // Added padding
                 backgroundColor: colors.grey[800], // Form background color
                 boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)", // Added shadow for better visual
+                position: "relative",
               }}
             >
+              {isSubmitting && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                    marginLeft: "-32px",
+                    marginTop: "-32px",
+                    backgroundColor: "blanchedalmond",
+                    borderRadius: "12px",
+                    zIndex: "200",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mixBlendMode: "screen",
+                    transition: "ease-in",
+                  }}
+                >
+                  <Lottie
+                    animationData={cooking}
+                    loop={true}
+                    style={{
+                      width: 500,
+                      height: 500,
+                      mixBlendMode: "multiply",
+                    }}
+                  />
+                </Box>
+              )}
               <Typography
                 variant="h4"
                 textAlign="center"
