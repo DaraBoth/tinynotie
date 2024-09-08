@@ -32,7 +32,7 @@ const FloatingChat = ({ userId }) => {
 
   useEffect(() => {
     const chatHistory =
-      JSON.parse(sessionStorage.getItem(`chatHistory_${userId}`)) || [];
+      JSON.parse(localStorage.getItem(`chatHistory_${userId}`)) || [];
     setMessages(chatHistory);
     if (open) {
       handleScrollToBottom();
@@ -40,7 +40,7 @@ const FloatingChat = ({ userId }) => {
   }, [userId, open]);
 
   useEffect(() => {
-    sessionStorage.setItem(`chatHistory_${userId}`, JSON.stringify(messages));
+    localStorage.setItem(`chatHistory_${userId}`, JSON.stringify(messages));
     if (open) {
       handleScrollToBottom();
     }
