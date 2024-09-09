@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.55.4",
     "@vercel/postgres": "^0.10.0",
     "babel-plugin-react-compiler": "^0.0.0-experimental-7449567-20240905",
+    "bcrypt": "^5.1.1",
     "next": "^15.0.0-canary.146",
     "next-auth": "^4.24.7",
     "pg": "^8.12.0",
@@ -18,6 +20,7 @@
     "react-dom": "^19.0.0-rc-fb9a90fa48-20240614"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
