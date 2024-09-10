@@ -201,7 +201,7 @@ export default function Group({ user, secret, setGroupInfo }) {
     },
   ];
 
-  if (resultGroupDetails.isLoading || resultTrip.isLoading || resultMember.isLoading) {
+  if (resultGroupDetails.isLoading && resultTrip.isLoading && resultMember.isLoading) {
     return <LoadingPage />;
   } else if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
     if (user != null) {
