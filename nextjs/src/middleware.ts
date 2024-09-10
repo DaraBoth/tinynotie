@@ -6,4 +6,4 @@ export default withAuth({
   },
 });
 
-export const config = { matcher: ["/(root)/**"] };  // Protect these paths
+export const config = { matcher: ["/"] };  // Protect all paths

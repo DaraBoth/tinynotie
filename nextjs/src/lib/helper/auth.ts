@@ -1,3 +1,4 @@
+// src/lib/helper/auth.ts
 import type { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { JWT } from "next-auth/jwt";
@@ -8,6 +9,7 @@ import type {
   NextApiRequest,
   NextApiResponse,
 } from "next";
+import { Token, Users } from "@/types/auth";
 
 // Use it in server contexts
 export function auth(
@@ -19,46 +21,42 @@ export function auth(
   return getServerSession(...args, authOption);
 }
 
-export const jwt = async ({ token, user }: { token: JWT; user: User }) => {
+// JWT Callback
+export const jwt = async ({ token, user }: { token: JWT; user?: any }) => {
   if (user) {
-    // token = user
-    // token.user = user?.rec?.user;
-    // token.status = user?.rec?.user?.status;
-    // token.name = user.rec.user.fullname;
-    // token.Token = user.rec?.token;
-    // token.user.companies = user.rec?.companies;
-    console.log({user});
+    token.user = user; // Attach user to the token
+    token.accessToken = user.token.accessToken; // Attach access token
+    token.expiresAt = user.token.expiresAt; // Attach token expiration
   }
   return token;
 };
 
-export const session = ({
-  session,
-  token,
-}: {
-  session: Session;
-  token: JWT;
-}): Promise<Session> => {
-  if(token){
-    session.user = token.user;
-    session.token = token.Token;
+// Session Callback
+export const session = async ({ session, token }: { session: Session; token: JWT }) => {
+  if (token) {
+    session.user = token.user; // Attach user to the session
+    session.token = { // Attach token info to the session
+      accessToken: token.accessToken,
+      expiresAt: token.expiresAt,
+    };
   }
-  return Promise.resolve(session);
+  return session;
 };
 
+// NextAuth Options
 export const authOption: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        username: {},
-        password: {},
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         const authRequest = {
-          username: credentials?.username,
-          password: credentials?.password,
+          usernm: credentials?.username,
+          passwd: credentials?.password,
         };
 
         const response: any = await fetchJson(
@@ -72,11 +70,16 @@ export const authOption: NextAuthOptions = {
           }
         );
 
-        if (!response.error) {
-          // console.log("response = ", response);
-          console.log("Login Success");
-
-          return response;
+        if (response.status) {
+          console.log({response});
+          return {
+            id: response._id,
+            usernm: response.usernm,
+            token: {
+              accessToken: response.token,
+              expiresAt: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // Example expiration of 24 hours
+            },
+          };
         }
 
         throw new Error(response?.message || "Invalid username or password");
@@ -84,52 +87,30 @@ export const authOption: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "jwt",
-    maxAge: 2 * 60 * 60, // 2 hours
+    strategy: "jwt", // Use JWT strategy for session management
+    maxAge: 24 * 60 * 60, // Set maxAge to 24 hours
   },
   callbacks: {
     jwt,
     session,
   },
   pages: {
-    signIn: "/login",
+    signIn: "/login",  // Ensure this points to your login page
   },
 };
 
-export type Token = {
-  accessExpired: number;
-  refreshExpired: number;
-  access_token: string;
-  refresh_token: string;
-};
-
-export type Users = {
-  id: number;
-  username: string;
-  fullname: string;
-  role: string;
-  status: string;
-  companies: string;
-};
-
+// Declare TypeScript Types for NextAuth
 declare module "next-auth" {
-  /**
-   * Returned by `useSession`, `getSession` and received as
-   * a prop on the `SessionProvider` React Context
-   */
   interface Session {
     token?: Token;
-    user?: Users
+    user?: Users;
   }
 }
 
 declare module "next-auth/jwt" {
-  /** Returned by the `jwt` callback and `getToken`, when using JWT sessions */
   interface JWT {
-    Token: Token;
     user: Users;
-    exp?: number;
-    iat?: number;
-    jti?: string;
+    accessToken: string;
+    expiresAt: number;
   }
 }
