@@ -203,7 +203,8 @@ export default function Group({ user, secret, setGroupInfo }) {
 
   if (resultGroupDetails.isLoading || resultTrip.isLoading || resultMember.isLoading) {
     return <LoadingPage />;
-  } else if (!resultGroupDetails.isLoading && resultGroupDetails.error || !resultGroupDetails.data?.status) {
+  }  
+  if (!resultGroupDetails.isLoading && resultGroupDetails.error || !resultGroupDetails.data?.status) {
     if (!resultGroupDetails.isLoading && user != null) {
       return <UnauthorizedPage user={user} />;
     } else {
