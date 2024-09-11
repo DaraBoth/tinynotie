@@ -201,10 +201,10 @@ export default function Group({ user, secret, setGroupInfo }) {
     },
   ];
 
-  if (resultGroupDetails.isLoading && resultTrip.isLoading && resultMember.isLoading) {
+  if (resultGroupDetails.isLoading || resultTrip.isLoading || resultMember.isLoading) {
     return <LoadingPage />;
-  } else if (resultGroupDetails.error || !resultGroupDetails.data?.status) {
-    if (user != null) {
+  } else if (!resultGroupDetails.isLoading && resultGroupDetails.error || !resultGroupDetails.data?.status) {
+    if (!resultGroupDetails.isLoading && user != null) {
       return <UnauthorizedPage user={user} />;
     } else {
       return <UnauthorizedPage />;

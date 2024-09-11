@@ -137,7 +137,7 @@ router.get("/text", async (req, res) => {
     console.log({ text });
     console.log({ res: response.text() });
     // res.status(200).json({ text: response.text() });
-    res.status(200).json({
+    // res.status(200).json({
       text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap.",
     });
   } catch (error) {
@@ -1178,16 +1178,20 @@ const handleMessage = async function (messageObj) {
     default:
       if (messageText.charAt(0) == "/") {
         const command = messageText.slice(1);
-        if (command.includes("start")) {
+        if (command.startsWith("start")) {
           return darabothSendMessage(messageObj, "Hi! bro");
-        } else if (command.includes("whoclean")) {
-          const cleaningData = await getCleaningData();
-          const resText = await getCleaningProm(
-            cleaningData,
-            command.replace("whoclean", "who clean")
-          );
-          return darabothSendMessage(messageObj, resText);
-        } else if (command.includes("translate")) {
+        } else if (command.startsWith("whoclean")) {
+          try {
+            const cleaningData = await getCleaningData();
+            const resText = await getCleaningProm(
+              cleaningData,
+              command.replace("whoclean", "who clean")
+            );
+            return darabothSendMessage(messageObj, resText);
+          }catch(e){
+            return darabothSendMessage(messageObj, e);
+          }
+        } else if (command.startsWith("translate")) {
           const resText = await getTranslate(command.replace("translate", ""));
           return darabothSendMessage(messageObj, resText);
         } else {

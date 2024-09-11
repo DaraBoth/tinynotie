@@ -4,7 +4,7 @@ import axiosServer from "../instance/axiosServer";
 const API_ROUTES = {
     getGroupByUserId: (userId: number) => `/api/getGroupByUserId?user_id=${userId}`,
     addGroupByUserId: () => `/api/addGroupByUserId`,
-    getAllMembers: () => `/api/getAllMembers`, 
+    getAllMembers: () => `/api/getAllMember`, 
     getGroupDetails: (groupId: string, userId: string) => ({
       url: `/api/getGroupDetails?group_id=${groupId}&user_id=${userId}`,
       method: 'GET',
