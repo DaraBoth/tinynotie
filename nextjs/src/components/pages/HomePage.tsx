@@ -29,7 +29,10 @@ export default function HomePage({
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Welcome to TinyNotie!</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {groups.map((group) => (
+        {groups.filter((item:any) => (item.isAdmin)) // Filter notes based on the tab
+            .slice()
+            .reverse()
+            .map((group) => (
           <MagicCard
             key={group.id}
             className="relative cursor-pointer flex flex-col items-start justify-center p-4 shadow-2xl bg-pink-700 w-full"

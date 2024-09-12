@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { AutocompleteInput } from "@/components/ui/autocompleteInput";
+import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -18,16 +18,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGroups } from "@/hooks/useGroups";
-import { Member, MemberResponse } from "@/types/api";
-import { AutocompleteInput } from "@/components/ui/autocompleteInput";
+import { MemberResponse } from "@/types/api";
+import { useSession } from "next-auth/react";
+import { useState } from "react";
+import moment from 'moment'
 
 const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
+  const [redirectToNewGroup, setRedirectToNewGroup] = useState(false);
   const members = data.data.map((m) => m.mem_name); // Array of member names
   const [groupName, setGroupName] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("$");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { addGroup } = useGroups();
-
+  const session = useSession();
+  console.log(session);
   const handleAddMember = (name: string) => {
     setSelectedMembers((prev) => [...prev, name]);
   };
@@ -39,11 +43,27 @@ const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
   const handleSubmit = () => {
     if (!groupName) return alert("Group name is required!");
 
-    addGroup.mutate({
-      groupName,
-      currency,
-      members: selectedMembers, // Assuming you send names; adjust if needed
-    });
+    addGroup.mutate(
+      {
+        user_id: session?.data?.user?.id,
+        grp_name: groupName,
+        currency,
+        status: 1,
+        create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+        member: JSON.stringify(selectedMembers), // Assuming you send names; adjust if needed
+      },
+      {
+        onSuccess: (data: any) => {
+          if (redirectToNewGroup) {
+            // Redirect to new group page
+            window.location.href = `/group/${data.id}`;
+          } else {
+            // Redirect to home
+            window.location.href = "/";
+          }
+        },
+      }
+    );
   };
 
   return (
@@ -63,9 +83,9 @@ const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
             <SelectValue placeholder="Select Currency" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="USD">US Dollar</SelectItem>
-            <SelectItem value="KRW">Korean Won</SelectItem>
-            <SelectItem value="KHR">Khmer Riel</SelectItem>
+            <SelectItem value="$">US Dollar</SelectItem>
+            <SelectItem value="W">Korean Won</SelectItem>
+            <SelectItem value="R">Khmer Riel</SelectItem>
           </SelectContent>
         </Select>
 
@@ -76,9 +96,18 @@ const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
           onRemoveItem={handleRemoveMember}
           placeholder="Enter member names"
         />
+        <label className="flex items-center mt-4">
+          <input
+            type="checkbox"
+            checked={redirectToNewGroup}
+            onChange={() => setRedirectToNewGroup(!redirectToNewGroup)}
+            className="mr-2"
+          />
+          Redirect to the newly created group
+        </label>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={() => console.log("Cancelled")}>
+        <Button variant="outline" onClick={() => window.location.href = "/"}>
           Cancel
         </Button>
         <Button onClick={handleSubmit}>Create Group</Button>
