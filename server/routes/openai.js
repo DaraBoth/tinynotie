@@ -1,16 +1,15 @@
-import express, { response } from "express";
 import axios from "axios";
 import dotenv from "dotenv";
+import express from "express";
 // import { openai } from "../index.js";
-import { Configuration, OpenAIApi } from "openai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import glm from "@google-ai/generativelanguage";
 import emailjs from "@emailjs/nodejs";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import moment from "moment";
+import { Configuration, OpenAIApi } from "openai";
 import pg from "pg";
-const Pool = pg.Pool;
 import { Telegraf } from "telegraf";
 import webPush from "web-push";
+const Pool = pg.Pool;
 
 const vapidKeys = {
   publicKey:
@@ -138,8 +137,8 @@ router.get("/text", async (req, res) => {
     console.log({ res: response.text() });
     // res.status(200).json({ text: response.text() });
     // res.status(200).json({
-      text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap.",
-    });
+    //   text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap.",
+    // });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
