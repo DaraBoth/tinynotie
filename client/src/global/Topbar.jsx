@@ -56,7 +56,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
       {/* Back Button */}
       <IconButton
         onClick={() => {
-          setGroupInfo(false);
+          setGroupInfo(null);
           navigate("/");
         }}
         sx={{
