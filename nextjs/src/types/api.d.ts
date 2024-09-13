@@ -1,13 +1,16 @@
 // src/types/api.ts
+
 export interface Group {
-    id: string;
+    id: number;
     grp_name: string;
+    admin_id: number;
+    status: number;
     description?: string;
-    status?: number;
-    admin_id?: number;
-    currency?: string;
-    visibility?: string;
-    create_date?: string;
+    currency: string;
+    create_date: string;
+    update_date: string;
+    members: Member[];   // Added to Group
+    trips: Trip[];       // Added to Group
 }
 
 export interface ApiRequestOptions {
@@ -19,7 +22,7 @@ export interface ApiRequestOptions {
 }
 
 export interface UseGroupsResult {
-    res: GroupRes
+    res: GroupRes;
     isLoading: boolean;
     error: unknown;
     addGroup: ReturnType<typeof useMutation>;
@@ -27,7 +30,7 @@ export interface UseGroupsResult {
 
 export type GroupRes = {
     data: Group[];
-    status: boolean
+    status: boolean;
 };
 
 export type AddGroupVariables = {
@@ -45,4 +48,29 @@ export interface MemberResponse {
 
 export interface Member {
     mem_name: string;
+    paid?: number;  // assuming 'paid' is optional and represents amount paid by the member
+}
+
+export interface Trip {
+    id: number;
+    trp_name: string;
+    spend: number;
+    mem_id: string[];  // List of member IDs involved in the trip
+    group_id: number;
+    status: number;
+    description?: string;
+    create_date: string;
+    update_dttm: string;
+}
+
+export interface UseGroupDataResult {
+    members: ApiResponse<Member[]> | undefined;
+    trips: ApiResponse<Trip[]> | undefined;
+    isLoading: boolean;
+    error: unknown;
+}
+
+export interface ApiResponse<T> {
+    status: boolean;
+    data: T;
 }
