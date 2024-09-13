@@ -205,7 +205,7 @@ export default function Group({ user, secret, setGroupInfo }) {
     return <LoadingPage />;
   }  
   if (!resultGroupDetails.isLoading && resultGroupDetails.error || !resultGroupDetails.data?.status) {
-    if (!resultGroupDetails.isLoading && user != null) {
+    if (user != null) {
       return <UnauthorizedPage user={user} />;
     } else {
       return <UnauthorizedPage />;
