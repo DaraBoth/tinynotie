@@ -10,10 +10,15 @@ import { useRouter } from "next/navigation";
 import { ApiResponse, Member, Trip } from "@/types/api";
 import TanStackTable from "../ui/tanstacktable";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
-import FapButton from "@/components/ui/fab"; // Updated FAB import
+import FapButton from "@/components/ui/fab";
 import ReusablePopup from "@/components/ui/reusablepopup";
 import AutocompleteInput from "@/components/ui/autocompleteInput";
-import { DeleteIcon, EditIcon } from "lucide-react";
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon,
+} from "@mui/icons-material";
 
 interface GroupPageProps {
   groupId: number;
@@ -106,10 +111,31 @@ const GroupPage = ({
 
       <FapButton
         actions={[
-          { label: "Edit Member", icon: <EditIcon />, onClick: () => handlePopupOpen("editMember") },
-          { label: "Edit Trip", icon: <EditIcon />, onClick: () => handlePopupOpen("editTrip") },
-          { label: "Delete Member", icon: <DeleteIcon />, onClick: () => handlePopupOpen("deleteMember") },
-          { label: "Delete Trip", icon: <DeleteIcon />, onClick: () => handlePopupOpen("deleteTrip") },
+          {
+            label: "Edit Member",
+            icon: <PersonIcon />,
+            onClick: () => handlePopupOpen("editMember"),
+          },
+          {
+            label: "Edit Trip",
+            icon: <EditIcon />,
+            onClick: () => handlePopupOpen("editTrip"),
+          },
+          {
+            label: "Delete Member",
+            icon: <DeleteIcon />,
+            onClick: () => handlePopupOpen("deleteMember"),
+          },
+          {
+            label: "Delete Trip",
+            icon: <DeleteIcon />,
+            onClick: () => handlePopupOpen("deleteTrip"),
+          },
+          {
+            label: "Settings",
+            icon: <SettingsIcon />,
+            onClick: () => handlePopupOpen("settings"),
+          },
         ]}
       />
 
