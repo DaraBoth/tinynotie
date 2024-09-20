@@ -16,4 +16,5 @@ export default async function Page() {
   });
 
   return <HomePage initialGroups={groups} />;
+  
 }

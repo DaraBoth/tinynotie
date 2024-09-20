@@ -14,7 +14,7 @@ interface AutocompleteInputProps {
   placeholder?: string;
 }
 
-export const AutocompleteInput = ({
+const AutocompleteInput = ({
   suggestions,
   selectedItems,
   onAddItem,
@@ -98,3 +98,6 @@ export const AutocompleteInput = ({
     </div>
   );
 };
+
+
+export default AutocompleteInput;

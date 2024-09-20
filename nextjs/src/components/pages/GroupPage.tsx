@@ -1,23 +1,37 @@
+// src/components/GroupPage.tsx
+
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGroupData } from "@/hooks/useGroupData";
-// import { calculateMoney, functionRenderColumns } from "@/lib/helper/calculateFunc";
-import { Table } from "@/components/ui/table";
+import { calculateMoney } from "@/lib/helper/calculateFunc";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ApiResponse, Member, Trip } from "@/types/api";
+import TanStackTable from "../ui/tanstacktable";
+import { ArrowLeftIcon } from "@heroicons/react/24/solid";
+import FapButton from "@/components/ui/fab"; // Updated FAB import
+import ReusablePopup from "@/components/ui/reusablepopup";
+import AutocompleteInput from "@/components/ui/autocompleteInput";
+import { DeleteIcon, EditIcon } from "lucide-react";
 
 interface GroupPageProps {
   groupId: number;
+  currencyType: string;
   initialMembers: ApiResponse<Member[]>;
   initialTrips: ApiResponse<Trip[]>;
 }
 
-const GroupPage = ({ groupId, initialMembers, initialTrips }: GroupPageProps) => {
+const GroupPage = ({
+  groupId,
+  currencyType,
+  initialMembers,
+  initialTrips,
+}: GroupPageProps) => {
   const router = useRouter();
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [popupType, setPopupType] = useState("");
 
-  // Use the custom hook to fetch members and trips data with initial data
   const { members, trips, isLoading, error } = useGroupData({
     groupId,
     initialMembers,
@@ -37,43 +51,84 @@ const GroupPage = ({ groupId, initialMembers, initialTrips }: GroupPageProps) =>
     return <p>Error fetching data: {error?.toString()}</p>;
   }
 
-  // Calculate financial data for members
-  // const { info, newData } = calculateMoney(
-  //   members?.data || [],
-  //   trips?.data || [],
-  //   "$"
-  // );
+  const { info, newData } = calculateMoney(
+    members?.data || [],
+    trips?.data || [],
+    currencyType
+  );
 
-  // const memberColumns = functionRenderColumns(newData);
-  // const tripColumns = functionRenderColumns(trips?.data || []);
+  const tripsDataWithFakeIds = useMemo(() => {
+    return trips && trips.data
+      ? trips.data.map((trip, index) => ({
+          ...trip,
+          id: index + 1,
+          real_id: trip.id,
+        }))
+      : [];
+  }, [trips?.data]);
+
+  const handlePopupOpen = (type: string) => {
+    setPopupType(type);
+    setIsPopupOpen(true);
+  };
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Group Details</h1>
-      {/* <div className="mb-6">
-        <h2 className="text-xl font-semibold">Group Summary</h2>
-        <p>Total Members: {info.totalMember}</p>
-        <p>Total Paid: {info.totalPaid}</p>
-        <p>Total Remain: {info.totalRemain}</p>
-        <p>Total Unpaid: {info.totalUnPaid}</p>
-        <p>Total Spend: {info.totalSpend}</p>
-      </div> */}
+      <div className="flex justify-between items-center mb-4">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/")}
+          className="p-2"
+        >
+          <ArrowLeftIcon className="h-6 w-6 text-gray-500 hover:text-gray-700 transition-colors" />
+        </Button>
+        <h1 className="text-2xl font-bold">Group Details</h1>
+        <div className="w-6"></div>
+      </div>
 
       <div className="mb-6">
-        <h2 className="text-xl font-semibold">Members</h2>
-        {/* <Table columns={memberColumns} data={newData} /> */}
+        <h2 className="text-xl font-semibold mb-2">Members</h2>
+        <TanStackTable data={newData} />
+      </div>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-2">Trips</h2>
+        <TanStackTable
+          data={tripsDataWithFakeIds}
+          columnMapping={{
+            status: null,
+            description: null,
+            group_id: null,
+            id: "ID",
+            real_id: null,
+          }}
+        />
       </div>
 
-      <div>
-        <h2 className="text-xl font-semibold">Trips</h2>
-        {/* <Table columns={tripColumns} data={trips?.data || []} /> */}
-      </div>
+      <FapButton
+        actions={[
+          { label: "Edit Member", icon: <EditIcon />, onClick: () => handlePopupOpen("editMember") },
+          { label: "Edit Trip", icon: <EditIcon />, onClick: () => handlePopupOpen("editTrip") },
+          { label: "Delete Member", icon: <DeleteIcon />, onClick: () => handlePopupOpen("deleteMember") },
+          { label: "Delete Trip", icon: <DeleteIcon />, onClick: () => handlePopupOpen("deleteTrip") },
+        ]}
+      />
 
-      <div className="mt-6">
-        <Button variant="outline" onClick={() => router.push("/")}>
-          Back to Home
-        </Button>
-      </div>
+      {isPopupOpen && (
+        <ReusablePopup
+          isOpen={isPopupOpen}
+          onClose={() => setIsPopupOpen(false)}
+          content={
+            <>
+              <AutocompleteInput
+                suggestions={[]} // Add relevant suggestions here
+                selectedItems={[]}
+                onAddItem={(item) => console.log("Add:", item)}
+                onRemoveItem={(item) => console.log("Remove:", item)}
+              />
+            </>
+          }
+        />
+      )}
     </div>
   );
 };

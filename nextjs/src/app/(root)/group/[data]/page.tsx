@@ -1,5 +1,7 @@
+// src/app/group/[data]/page.tsx
+
 import GroupPage from "@/components/pages/GroupPage";
-import { apiRequest } from "@/lib/config/apiRoutes";
+import API_ROUTES, { apiRequest } from "@/lib/config/apiRoutes";
 import { ApiResponse, Member, Trip } from "@/types/api";
 import { decodeBase64ToObject } from "@/lib/helper/encode";
 
@@ -10,18 +12,18 @@ export default async function Page({ params }: { params: any }) {
     return <>No group found</>;
   }
 
-  const { groupId, groupName, adminId }: any = decodeBase64ToObject(data);
+  const { groupId, groupName, adminId, currencyType }: any = decodeBase64ToObject(data);
 
   // Fetch group members using the correct endpoint
   const membersResponse: ApiResponse<Member[]> = await apiRequest({
-    url: `/api/getMemberByGroupId?group_id=${groupId}`,
+    url: API_ROUTES.getGroupMembers(groupId),
     method: "GET",
     fetchType: "server",
   });
 
   // Fetch group trips using the correct endpoint
   const tripsResponse: ApiResponse<Trip[]> = await apiRequest({
-    url: `/api/getTripByGroupId?group_id=${groupId}`,
+    url: API_ROUTES.getGroupTrips(groupId),
     method: "GET",
     fetchType: "server",
   });
@@ -36,6 +38,7 @@ export default async function Page({ params }: { params: any }) {
     <>
       <GroupPage
         groupId={groupId}
+        currencyType={currencyType}
         initialMembers={membersResponse}
         initialTrips={tripsResponse}
       />
