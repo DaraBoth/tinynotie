@@ -194,48 +194,6 @@ router.post("/askDatabase", async (req, res) => {
   }
 });
 
-const dataBaseSchema = `Database Schema
-      Please adhere strictly to the following schema when generating SQL queries:
-
-      Table Name: user_infm
-      id (SERIAL, PRIMARY KEY):
-      An auto-incrementing integer that uniquely identifies each user.
-      usernm (VARCHAR(50), NOT NULL): Stores the username of the user.
-      passwd (VARCHAR(150), NOT NULL): Stores the hashed password of the user.
-      phone_number (VARCHAR(30)): Stores the phone number of the user (optional).
-      email (VARCHAR(30)): Stores the email address of the user (optional).
-      profile_url (VARCHAR(260)): Stores the URL of the user's profile picture or page (optional).
-      create_date (VARCHAR(25)): Stores the date and time when the user was created.
-      
-      Table Name: grp_infm
-      id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each group.
-      grp_name (VARCHAR(50), NOT NULL): Stores the name of the group.
-      status (INT, DEFAULT NULL): Stores the status of the group, typically represented as an integer.
-      description (VARCHAR(260), DEFAULT NULL): Stores a description of the group (optional).
-      admin_id (INT, DEFAULT NULL): References the ID of the group's administrator, linking to the user_infm table.
-      create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the group was created.
-      currency (VARCHAR(10), NOT NULL, DEFAULT '$'): Stores the currency code or symbol used within the group.
-      
-      Table Name: trp_infm
-      id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each trip.
-      trp_name (VARCHAR(50), NOT NULL): Stores the name of the trip.
-      spend (FLOAT, DEFAULT NULL): Stores the amount of money spent on the trip.
-      mem_id (VARCHAR(260), DEFAULT NULL): Stores a serialized array of member IDs who participated in the trip.
-      status (INT): Stores the status of the trip.
-      description (VARCHAR(260)): Stores additional information about the trip (optional).
-      group_id (INT, DEFAULT NULL): References the ID of the group that organized the trip, linking to the grp_infm table.
-      create_date (VARCHAR(25), DEFAULT NULL): Stores the date and time when the trip was created.
-      update_dttm (VARCHAR(25)): Stores the date and time when the trip was last updated (optional).
-      
-      Table Name: member_infm
-      id (SERIAL, PRIMARY KEY): An auto-incrementing integer that uniquely identifies each member.
-      mem_name (VARCHAR(50), NOT NULL): Stores the name of the member.
-      paid (FLOAT, DEFAULT NULL): Stores the amount of money the member has paid.
-      group_id (INT, DEFAULT NULL): References the ID of the group that the member belongs to, linking to the grp_infm table.
-
-      Use this schema to generate accurate SQL queries based on the user's input. Ensure that the SQL queries are compatible with PostgreSQL version, userAskID12 or earlier.
-`;
-
 async function AI_Database(userAsk, userAskID, chatHistory = []) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
