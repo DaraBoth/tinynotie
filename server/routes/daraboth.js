@@ -1,7 +1,8 @@
 // routes/daraboth.js
 
 import express from "express";
-import { Pool } from "pg";
+import pg from "pg";
+const Pool = pg.Pool;
 import { handleError } from "../helpers/errorHandler.js"; // Ensure this helper exists
 
 const router = express.Router();
