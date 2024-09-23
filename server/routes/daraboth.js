@@ -135,7 +135,7 @@ router.post("/testimonials", async (req, res) => {
 router.get("/testimonials", async (req, res) => {
   try {
     const selectQuery = `
-      SELECT id, name, title, message, photo_url, created_at 
+      SELECT id, name, title, company, message, photo_url, created_at 
       FROM testimonials_infm 
       WHERE is_approved = TRUE 
       ORDER BY created_at DESC;
@@ -148,6 +148,7 @@ router.get("/testimonials", async (req, res) => {
       name: sanitize(testimonial.name),
       title: sanitize(testimonial.title),
       message: sanitize(testimonial.message),
+      company: sanitize(testimonial.company),
       photo_url: testimonial.photo_url, // Assuming URLs are safe; sanitize if necessary
       created_at: testimonial.created_at,
     }));
