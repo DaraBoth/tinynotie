@@ -260,7 +260,7 @@ router.post("/track-visitor", async (req, res) => {
       (req.connection.socket ? req.connection.socket.remoteAddress : null);
 
     const userAgent = req.headers["user-agent"] || "Unknown";
-    const { visitedRoute } = req.body;
+    const { visitedRoute , visit_time} = req.body;
 
     const checkDuplicateQuery = `
       SELECT * FROM visitors_infm
@@ -280,11 +280,16 @@ router.post("/track-visitor", async (req, res) => {
     }
 
     const insertQuery = `
-      INSERT INTO visitors_infm (ip_address, user_agent, visited_route)
-      VALUES ($1, $2, $3)
+      INSERT INTO visitors_infm (ip_address, user_agent, visited_route${
+        visit_time && visit_time !== "" ? ", visit_time" : ""
+      })
+      VALUES ($1, $2, $3${visit_time && visit_time !== "" ? ", $4" : ""})
       RETURNING id;
     `;
     const values = [ip, userAgent, visitedRoute || "Unknown"];
+    if (visit_time && visit_time !== "") {
+      values.push(visit_time);
+    }
     const result = await pool.query(insertQuery, values);
 
     res.status(201).json({
