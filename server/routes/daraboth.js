@@ -43,7 +43,7 @@ const sanitize = (str) => {
  * @access  Public
  */
 router.post("/testimonials", async (req, res) => {
-  const { name, title, email, message, photo_url } = req.body;
+  const { name, title, email, message, photo_url, company } = req.body;
 
   // Basic input validation
   if (!name || !message) {
@@ -78,9 +78,7 @@ router.post("/testimonials", async (req, res) => {
     req.headers["x-forwarded-for"]?.split(",").shift().trim() ||
     req.connection.remoteAddress ||
     req.socket.remoteAddress ||
-    (req.connection.socket
-      ? req.connection.socket.remoteAddress
-      : null);
+    (req.connection.socket ? req.connection.socket.remoteAddress : null);
 
   try {
     // Rate Limiting: Check number of submissions from this IP within the window
@@ -108,7 +106,15 @@ router.post("/testimonials", async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, TRUE)
       RETURNING id;
     `;
-    const values = [name, title || null, email || null, message, photo_url || null, ip];
+    const values = [
+      name,
+      title || "",
+      email || "",
+      message,
+      photo_url || "",
+      ip,
+      company || "",
+    ];
     const insertResult = await pool.query(insertQuery, values);
 
     res.status(201).json({
@@ -183,7 +189,9 @@ router.put("/testimonials/:id/approve", async (req, res) => {
     const result = await pool.query(updateQuery, [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: false, message: "Testimonial not found." });
+      return res
+        .status(404)
+        .json({ status: false, message: "Testimonial not found." });
     }
 
     res.status(200).json({
@@ -219,7 +227,9 @@ router.delete("/testimonials/:id", async (req, res) => {
     const result = await pool.query(deleteQuery, [id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: false, message: "Testimonial not found." });
+      return res
+        .status(404)
+        .json({ status: false, message: "Testimonial not found." });
     }
 
     res.status(200).json({
