@@ -302,27 +302,20 @@ router.post("/track-visitor", async (req, res) => {
  * @access  Public
  */
 router.get("/track-visitor", async (req, res) => {
-  const { ip_address, visitedRoute } = req.query;
+  const { visitedRoute } = req.query;
 
   try {
     let query = `
-      SELECT id, ip_address, user_agent, visited_route, visit_time
+      SELECT count(*) as visitor_count
       FROM visitors_infm
       WHERE 1=1
     `;
     const params = [];
 
-    if (ip_address) {
-      query += ` AND ip_address = $${params.length + 1}`;
-      params.push(ip_address);
-    }
-
     if (visitedRoute) {
-      query += ` AND visited_route = $${params.length + 1}`;
+      query += ` AND visited_route = $${params.length + 1} ;`;
       params.push(visitedRoute);
     }
-
-    query += ` ORDER BY visit_time DESC;`;
 
     const result = await pool.query(query, params);
 
