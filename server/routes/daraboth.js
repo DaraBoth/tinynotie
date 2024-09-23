@@ -149,7 +149,7 @@ router.get("/testimonials", async (req, res) => {
       title: sanitize(testimonial.title),
       message: sanitize(testimonial.message),
       company: sanitize(testimonial.company),
-      photo_url: testimonial.photo_url, // Assuming URLs are safe; sanitize if necessary
+      photo_url: testimonial.photo_url,
       created_at: testimonial.created_at,
     }));
 
@@ -273,7 +273,7 @@ router.post("/track-visitor", async (req, res) => {
     ]);
 
     if (duplicateCheck.rows.length > 0) {
-      return res.status(409).json({
+      return res.json({
         status: false,
         message: "Visitor already tracked.",
       });
