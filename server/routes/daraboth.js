@@ -241,4 +241,98 @@ router.delete("/testimonials/:id", async (req, res) => {
   }
 });
 
+// ========================
+// Track Visitors Routes
+// ========================
+
+/**
+ * @route   POST /track-visitor
+ * @desc    Add a new visitor (no duplicate visitors)
+ * @access  Public
+ */
+router.post("/track-visitor", async (req, res) => {
+  try {
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",").shift().trim() ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      (req.connection.socket ? req.connection.socket.remoteAddress : null);
+
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const { visitedRoute } = req.body;
+
+    const checkDuplicateQuery = `
+      SELECT * FROM visitors_infm
+      WHERE ip_address = $1 AND user_agent = $2 AND visited_route = $3;
+    `;
+    const duplicateCheck = await pool.query(checkDuplicateQuery, [
+      ip,
+      userAgent,
+      visitedRoute || "Unknown",
+    ]);
+
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(409).json({
+        status: false,
+        message: "Visitor already tracked.",
+      });
+    }
+
+    const insertQuery = `
+      INSERT INTO visitors_infm (ip_address, user_agent, visited_route)
+      VALUES ($1, $2, $3)
+      RETURNING id;
+    `;
+    const values = [ip, userAgent, visitedRoute || "Unknown"];
+    const result = await pool.query(insertQuery, values);
+
+    res.status(201).json({
+      status: true,
+      message: "Visitor tracked successfully.",
+      visitorId: result.rows[0].id,
+    });
+  } catch (error) {
+    handleError(error, res);
+  }
+});
+
+/**
+ * @route   GET /track-visitor
+ * @desc    Get all visitors (with optional filters)
+ * @access  Public
+ */
+router.get("/track-visitor", async (req, res) => {
+  const { ip_address, visitedRoute } = req.query;
+
+  try {
+    let query = `
+      SELECT id, ip_address, user_agent, visited_route, visit_time
+      FROM visitors_infm
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (ip_address) {
+      query += ` AND ip_address = $${params.length + 1}`;
+      params.push(ip_address);
+    }
+
+    if (visitedRoute) {
+      query += ` AND visited_route = $${params.length + 1}`;
+      params.push(visitedRoute);
+    }
+
+    query += ` ORDER BY visit_time DESC;`;
+
+    const result = await pool.query(query, params);
+
+    res.status(200).json({
+      status: true,
+      data: result.rows,
+    });
+  } catch (error) {
+    handleError(error, res);
+  }
+});
+
 export default router;
