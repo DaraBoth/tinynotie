@@ -102,8 +102,8 @@ router.post("/testimonials", async (req, res) => {
 
     // Insert the testimonial into the database and auto-approve
     const insertQuery = `
-      INSERT INTO testimonials_infm (name, title, email, message, photo_url, ip_address, is_approved, company)
-      VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+      INSERT INTO testimonials_infm (name, title, email, message, photo_url, ip_address, company, is_approved)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)
       RETURNING id;
     `;
     const values = [
