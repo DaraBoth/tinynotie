@@ -231,7 +231,7 @@ router.get("/receiptText", async (req, res) => {
     const response = await result.response;
     console.log({ text });
     console.log({ res: response.text() });
-    res.status(200).json({ text: response.text() });
+    res.status(200).json({ text: JSON.parse(response.text()) });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
