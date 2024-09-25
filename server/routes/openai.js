@@ -194,6 +194,35 @@ router.post("/askDatabase", async (req, res) => {
   }
 });
 
+router.get("/receiptText", async (req, res) => {
+  try {
+    let { text } = req.query;
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    const prompt = `
+      I have extracted the following text from a receipt image. Please analyze it and organize the information in the format of a list showing each item with its price. If the restaurant name is present, include it at the top of the list. The format should be:
+      Restaurant Name: [Restaurant Name]
+      Items:
+      [Item 1]: [Price 1]
+      [Item 2]: [Price 2]
+      ...
+      If any items or prices are unclear or missing, provide a note. Here is the text from the receipt:
+
+      ${text}
+    `
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    console.log({ text });
+    console.log({ res: response.text() });
+    res.status(200).json({ text: response.text() });
+  } catch (error) {
+    console.error("error", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 async function AI_Database(userAsk, userAskID, chatHistory = []) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
@@ -940,12 +969,17 @@ async function getTranslate(str) {
 
 async function getCleaningData() {
   // The URL of your Google Apps Script API
-  const apiUrl =
-    "https://script.googleusercontent.com/macros/echo?user_content_key=PeNxb-mUXWFhq-YEaHWiTLivkfTyF7hzrCjp-BI8iltORM9zLyY8RZYlNVzhl_XL7dYg3qrL1zL8YSHQEwLOzblX2RBmBjRrm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnIzp1tDCVDtCoO8ckZ_a74pDZsQh9HNrk8nqXCkYhfvRhKGZ2jrIiz-YdhoVGT4g0x3wUCtaVAQUHaSaXFfALKfZIs9HOPLRLdz9Jw9Md8uu&lib=MgKmp91GXkA9SSJzubbc_qu8MXP5Cr7Q7";
+  try {
+    const apiUrl =
+      "https://script.googleusercontent.com/macros/echo?user_content_key=PeNxb-mUXWFhq-YEaHWiTLivkfTyF7hzrCjp-BI8iltORM9zLyY8RZYlNVzhl_XL7dYg3qrL1zL8YSHQEwLOzblX2RBmBjRrm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnIzp1tDCVDtCoO8ckZ_a74pDZsQh9HNrk8nqXCkYhfvRhKGZ2jrIiz-YdhoVGT4g0x3wUCtaVAQUHaSaXFfALKfZIs9HOPLRLdz9Jw9Md8uu&lib=MgKmp91GXkA9SSJzubbc_qu8MXP5Cr7Q7";
 
-  // Make the API call using axios
-  const response = await axios.get(apiUrl);
-  return response.data;
+    // Make the API call using axios
+    const response = await axios.get(apiUrl);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching cleaning data:", error);
+    return { error: "Failed to fetch cleaning data." };
+  }
 }
 
 // B2B_BatchMonitorBot
@@ -1145,7 +1179,7 @@ const handleMessage = async function (messageObj) {
               command.replace("whoclean", "who clean")
             );
             return darabothSendMessage(messageObj, resText);
-          }catch(e){
+          } catch (e) {
             return darabothSendMessage(messageObj, e);
           }
         } else if (command.startsWith("translate")) {
@@ -1251,24 +1285,38 @@ router.post("/push", async (req, res) => {
       const subscriptionQuery = `
         SELECT endpoint, expiration_time, keys FROM subscriptions WHERE device_id = $1;
       `;
-      const subscriptionResult = await client.query(subscriptionQuery, [device_id]);
+      const subscriptionResult = await client.query(subscriptionQuery, [
+        device_id,
+      ]);
 
       if (subscriptionResult.rows.length > 0) {
         subscription = subscriptionResult.rows[0];
       } else {
-        return res.status(404).json({ status: false, message: "No subscription found for the provided username" });
+        return res
+          .status(404)
+          .json({
+            status: false,
+            message: "No subscription found for the provided username",
+          });
       }
     } else {
       // If the identifier is not found in user_infm, assume it's a deviceId and fetch the subscription directly
       const subscriptionQuery = `
         SELECT endpoint, expiration_time, keys FROM subscriptions WHERE device_id = $1;
       `;
-      const subscriptionResult = await client.query(subscriptionQuery, [identifier]);
+      const subscriptionResult = await client.query(subscriptionQuery, [
+        identifier,
+      ]);
 
       if (subscriptionResult.rows.length > 0) {
         subscription = subscriptionResult.rows[0];
       } else {
-        return res.status(404).json({ status: false, message: "No subscription found for the provided device ID" });
+        return res
+          .status(404)
+          .json({
+            status: false,
+            message: "No subscription found for the provided device ID",
+          });
       }
     }
 
@@ -1276,7 +1324,13 @@ router.post("/push", async (req, res) => {
     sendNotification(subscription, payload, req, res);
   } catch (error) {
     console.error("Error finding subscription or sending notification", error);
-    res.status(500).json({ status: false, message: "Failed to send notification", error: error.message });
+    res
+      .status(500)
+      .json({
+        status: false,
+        message: "Failed to send notification",
+        error: error.message,
+      });
   } finally {
     client.release();
   }
@@ -1291,7 +1345,7 @@ router.post("/subscribe", async (req, res) => {
     const { endpoint, expirationTime, keys } = subscription; // Extract subscription details
 
     // Start a transaction to ensure atomicity
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Upsert the subscription: if it already exists, update it; otherwise, insert a new one.
     const upsertQuery = `
@@ -1303,29 +1357,48 @@ router.post("/subscribe", async (req, res) => {
     `;
 
     // Execute the query with values
-    await client.query(upsertQuery, [endpoint, expirationTime, keys, deviceId, userAgent]);
+    await client.query(upsertQuery, [
+      endpoint,
+      expirationTime,
+      keys,
+      deviceId,
+      userAgent,
+    ]);
 
-    if(userInfo){
+    if (userInfo) {
       // Update the user's device_id in the user_infm table based on the username
       const updateUserDeviceIdQuery = `
         UPDATE user_infm
         SET device_id = $1
         WHERE usernm = $2;
       `;
-  
+
       // Execute the query to update the user's device_id
       await client.query(updateUserDeviceIdQuery, [deviceId, userInfo]);
     }
 
     // Commit the transaction after both queries succeed
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
-    res.json({ status: true, message: "Subscription added/updated successfully and user device ID updated." });
+    res.json({
+      status: true,
+      message:
+        "Subscription added/updated successfully and user device ID updated.",
+    });
   } catch (error) {
     // Rollback the transaction in case of an error
-    await client.query('ROLLBACK');
-    console.error("Error saving subscription or updating user device ID", error);
-    res.status(500).json({ status: false, message: "Failed to add subscription or update user device ID", error: error.message });
+    await client.query("ROLLBACK");
+    console.error(
+      "Error saving subscription or updating user device ID",
+      error
+    );
+    res
+      .status(500)
+      .json({
+        status: false,
+        message: "Failed to add subscription or update user device ID",
+        error: error.message,
+      });
   } finally {
     client.release();
   }
