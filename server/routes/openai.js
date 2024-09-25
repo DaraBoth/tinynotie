@@ -203,14 +203,14 @@ router.get("/receiptText", async (req, res) => {
     const prompt = `
       You are an API endpoint that processes receipt data. 
       Based on the text extracted from the receipt, you must respond only in JSON format using the structure below. 
-      The key "data" should contain an array of objects where each object represents an item from the receipt, along with its price and additional metadata. 
+      The key "data" should contain an array of objects where each object represents an **item** from the receipt, along with its price and additional metadata. 
       Use the following format:
 
       {
           "status": true,
           "data": [
               {
-                  "trp_name": "[Item]",
+                  "trp_name": "[Item Name]",
                   "spend": [Price],
                   "mem_id": "[]",
                   "create_date": "[${moment().add(9,'hours').format("YYYY-MM-DD HH:mm:ss")} or Date from Receipt]"
@@ -219,12 +219,18 @@ router.get("/receiptText", async (req, res) => {
           ]
       }
 
+      Ensure all values are formatted correctly and none of them are null. Follow these rules for each field:
+      - "trp_name" should always be the name of the **item** from the receipt (e.g., Coca-Cola, Burger). If no item name is found, return an empty string ("").
+      - "spend" should always be the **price** of the item. If no price is found, set it to 0.
+      - "mem_id" is always set to "[]".
+      - "create_date" should use the **date from the receipt** if available. If no date is found, use the current date and time in the format YYYY-MM-DD HH:mm:ss.
+
       Here is the extracted text from the receipt:
 
       ${text}
 
-      Ensure all values are formatted correctly. If the restaurant name is present, it should be in the "trp_name" field of the first object. Each item from the receipt should have its corresponding price in "spend". If any information is missing or unclear, leave "description" blank."
-    `
+      Ensure all values are formatted correctly. Each item from the receipt should have its corresponding price in "spend". If any information is missing or unclear, leave "description" blank. No values in the response should be null or undefined.
+    `;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
