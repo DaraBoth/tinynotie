@@ -201,15 +201,30 @@ router.get("/receiptText", async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
-      I have extracted the following text from a receipt image. Please analyze it and organize the information in the format of a list showing each item with its price. If the restaurant name is present, include it at the top of the list. The format should be:
-      Restaurant Name: [Restaurant Name]
-      Items:
-      [Item 1]: [Price 1]
-      [Item 2]: [Price 2]
-      ...
-      If any items or prices are unclear or missing, provide a note. Here is the text from the receipt:
+      You are an API endpoint that processes receipt data. 
+      Based on the text extracted from the receipt, you must respond only in JSON format using the structure below. 
+      The key "data" should contain an array of objects where each object represents an item from the receipt, along with its price and additional metadata. 
+      Use the following format:
+
+      {
+          "status": true,
+          "data": [
+              {
+                  "trp_name": "[Item or Restaurant Name]",
+                  "spend": [Price],
+                  "mem_id": "[]",
+                  "description": "[Any additional notes or description if applicable]",
+                  "create_date": "[Current Date or Date from Receipt]"
+              },
+              ...
+          ]
+      }
+
+      Here is the extracted text from the receipt:
 
       ${text}
+
+      Ensure all values are formatted correctly. If the restaurant name is present, it should be in the "trp_name" field of the first object. Each item from the receipt should have its corresponding price in "spend". If any information is missing or unclear, leave "description" blank."
     `
 
     const result = await model.generateContent(prompt);
