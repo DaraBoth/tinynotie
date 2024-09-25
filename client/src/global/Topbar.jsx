@@ -11,12 +11,13 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ShareIcon from "@mui/icons-material/Share";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import FlipIcon from "@mui/icons-material/Flip";
 import { useNavigate } from "react-router-dom";
 import { tokens } from "../theme";
 import { rspWidth } from "../responsive";
 import GroupVisibilitySettings from "../component/GroupVisibilitySettings";
 
-const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
+const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
@@ -100,6 +101,9 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick }) => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
+        <MenuItem onClick={onScannerClick}>
+          <FlipIcon sx={{ marginRight: 1 }} /> Scan Reciept
+        </MenuItem>
         <MenuItem onClick={onShareClick}>
           <ShareIcon sx={{ marginRight: 1 }} /> Share
         </MenuItem>

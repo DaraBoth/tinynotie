@@ -190,6 +190,13 @@ export const api = createApi({
         params: param, // Passing the message as a query parameter
       }),
     }),
+    receiptText: build.mutation({
+      query: (param) => ({
+        url: `/openai/receiptText`,
+        method: "GET",
+        params: param, // Passing the message as a query parameter
+      }),
+    }),
   }),
 });
 
@@ -217,4 +224,5 @@ export const {
   useDeleteTripMutation,
   useAskDatabaseMutation,
   useTranslateMessageMutation,
+  useReceiptTextMutation,
 } = api;

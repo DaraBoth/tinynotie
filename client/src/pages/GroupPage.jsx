@@ -45,6 +45,7 @@ import {
   numberAddition,
 } from "../help/helper";
 import NotFoundPage from "./NotFoundPage";
+import RecieptScanner from "../component/RecieptScanner";
 
 export default function Group({ user, secret, setGroupInfo }) {
   const theme = useTheme();
@@ -72,6 +73,7 @@ export default function Group({ user, secret, setGroupInfo }) {
   const [openAddTripDialog, setOpenAddTripDialog] = useState(false);
   const [openEditTripDialog, setOpenEditTripDialog] = useState(false);
   const [openDeleteMemberDialog, setOpenDeleteMemberDialog] = useState(false);
+  const [openRecieptScannarDialog, setOpenRecieptScannarDialog] = useState(false);
   const [openShareModal, setOpenShareModal] = useState(false);
   const [groupInfoState, setGroupInfoState] = useState(null);
 
@@ -227,6 +229,7 @@ export default function Group({ user, secret, setGroupInfo }) {
         groupInfo={groupInfoState}
         setGroupInfo={setGroupInfo}
         onShareClick={() => setOpenShareModal(true)}
+        onScannerClick={() => setOpenRecieptScannarDialog(true)}
       />
       <Box
         sx={{
@@ -429,6 +432,20 @@ export default function Group({ user, secret, setGroupInfo }) {
         title="Delete Member"
       >
         <DeleteMember
+          triggerMember={triggerMember}
+          triggerTrips={triggerTrip} // New prop for triggering trip refresh
+          member={member}
+          trips={trip} // New prop for trip data
+          group_id={groupId}
+        />
+      </CustomDialog>
+
+      <CustomDialog
+        open={openRecieptScannarDialog}
+        onClose={() => setOpenRecieptScannarDialog(false)}
+        title="Reciept Scanner"
+      >
+        <RecieptScanner
           triggerMember={triggerMember}
           triggerTrips={triggerTrip} // New prop for triggering trip refresh
           member={member}
