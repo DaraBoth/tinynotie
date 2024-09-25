@@ -210,11 +210,10 @@ router.get("/receiptText", async (req, res) => {
           "status": true,
           "data": [
               {
-                  "trp_name": "[Item or Restaurant Name]",
+                  "trp_name": "[Item]",
                   "spend": [Price],
                   "mem_id": "[]",
-                  "description": "[Any additional notes or description if applicable]",
-                  "create_date": "[Current Date or Date from Receipt]"
+                  "create_date": "[${moment().add(9,'hours').format("YYYY-MM-DD HH:mm:ss")} or Date from Receipt]"
               },
               ...
           ]
