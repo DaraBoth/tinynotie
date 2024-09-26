@@ -76,6 +76,18 @@ const ReceiptScanner = ({
       let responseText = resultReceptText.data.text;
 
       try {
+        if (
+          typeof responseText === "string" &&
+          (responseText.includes("JSON") || responseText.includes("json"))
+        ) {
+          // Clean the escaped string by removing escape sequences
+          responseText = responseText
+            .replace("JSON", "")
+            .replace("json", "")
+            .replace("\n", "")
+            .replaceAll("```", "");
+        }
+
         // Parse OCR results
         const parsedData = JSON.parse(responseText);
 
@@ -88,6 +100,7 @@ const ReceiptScanner = ({
             parsedData.data.map((row, index) => ({
               id: index + 1,
               group_id,
+              mem_id:"[]",
               ...row,
             }))
           );
