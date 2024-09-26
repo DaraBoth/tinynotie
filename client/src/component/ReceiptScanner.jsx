@@ -100,8 +100,8 @@ const ReceiptScanner = ({
             parsedData.data.map((row, index) => ({
               id: index + 1,
               group_id,
-              mem_id:"[]",
               ...row,
+              mem_id:"[]",
             }))
           );
           setAccordionExpanded(false); // Auto-close accordion when data received
@@ -196,6 +196,7 @@ const ReceiptScanner = ({
         if (!result.status) {
           failedTrips.push(tableData[index]); // Keep failed trips
           setErrorMessages((prevMessages) => [...prevMessages, result.message]); // Add error message
+          setIsProcessing(null);
         }
       });
 

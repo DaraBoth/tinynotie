@@ -16,11 +16,15 @@ export function calculateMoney(allMembers, trips, currencyType) {
     let luySol = paid;
     trips.forEach((trip) => {
       let { mem_id, spend } = trip;
-      mem_id = JSON.parse(mem_id);
+      try {
+        mem_id = JSON.parse(mem_id);
+      }catch(e){
+        console.log("mem_id already array")
+      }
       let osMnek = 0;
       const joinedMemCount = getMemberID(allMembers, mem_id);
       mem_id.forEach((joined) => {
-        if (member.id === Number(joined)) {
+        if (member.id == Number(joined)) {
           osMnek = currency(spend).divide(joinedMemCount);
           luyForTrip += spend / joinedMemCount;
           luySol = member.paid - luyForTrip;
