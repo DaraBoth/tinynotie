@@ -495,12 +495,10 @@ router.post(
 
     // Validate that 'trips' is an array
     if (!Array.isArray(trips) || trips.length === 0) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "Trips must be an array of trip objects.",
-        });
+      return res.status(400).json({
+        status: false,
+        message: "Trips must be an array of trip objects.",
+      });
     }
 
     try {
@@ -616,13 +614,11 @@ router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
     res.send({ status: true, message: `Edit ${trp_name} success!` });
   } catch (error) {
     console.error("error", error);
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "An error occurred while updating the trip",
-        error: error.message,
-      });
+    res.status(500).json({
+      status: false,
+      message: "An error occurred while updating the trip",
+      error: error.message,
+    });
   }
 });
 
@@ -936,6 +932,12 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
     }
 
     await client.query("BEGIN");
+
+    // Delete related trips in the group
+    const deleteGroupUserQuery = `
+     DELETE FROM grp_users WHERE group_id = $1;
+   `;
+    await client.query(deleteGroupUserQuery, [group_id]);
 
     // Delete related trips in the group
     const deleteTripQuery = `
