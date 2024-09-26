@@ -452,6 +452,29 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   }
 });
 
+router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
+  const { mem_name, paid, group_id } = req.body;
+  const client = await pool.connect(); // Get a connection client
+
+  try {
+    await client.query("BEGIN"); 
+
+    const insertMemberQuery = `
+      INSERT INTO member_infm (mem_name, paid, group_id)
+      VALUES ($1, $2, $3);
+    `;
+    await client.query(insertMemberQuery, [mem_name, paid || 0, group_id]);
+    await client.query("COMMIT"); // Commit the transaction
+    res.send({ status: true, message:"Member added successfully!" });
+  } catch (error) {
+    await client.query("ROLLBACK"); // Rollback the transaction on error
+    console.error("error", error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release(); // Release the client back to the pool
+  }
+});
+
 // Add Trip by Group ID
 router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
   const { trp_name, spend, mem_id, description, group_id, update_dttm } =

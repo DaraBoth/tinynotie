@@ -60,9 +60,6 @@ export default function EditMember({
     paid: "",
   });
 
-  console.log(value?.id);
-  console.log({ member });
-
   const handleTransaction = (type) => {
     if (!!value?.id && !isNaN(parseFloat(money))) {
       setLoading(true);
