@@ -202,7 +202,7 @@ router.get("/receiptText", async (req, res) => {
 
     const prompt = `
       You are an API endpoint that processes receipt data. 
-      Based on the text extracted from the receipt, you must respond only in JSON format using the structure below. 
+      Based on the text extracted from the receipt, you must respond only in proper JSON format using the structure below. 
       The key "data" should contain an array of objects where each object represents an **item** from the receipt, along with its price and additional metadata. 
       Use the following format:
 
@@ -218,6 +218,8 @@ router.get("/receiptText", async (req, res) => {
               ...
           ]
       }
+
+      **Important**: Do not respond with an escaped JSON string (e.g., \`\`\`json\\n{\ ... }\`\`\`). You must return a **clean JSON object** without escape characters. Each key-value pair should be properly structured as a JSON object, and the output must not include any stringified or escaped characters.
 
       Ensure all values are formatted correctly and none of them are null. Follow these rules for each field:
       - "trp_name" should always be the name of the **item** from the receipt (e.g., Coca-Cola, Burger). If no item name is found, return an empty string ("").

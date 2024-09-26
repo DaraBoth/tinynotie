@@ -20,9 +20,11 @@ import UploadIcon from "@mui/icons-material/Upload";
 import CloseIcon from "@mui/icons-material/Close";
 import Tesseract from "tesseract.js";
 import { DataGrid } from "@mui/x-data-grid";
-import axios from "axios"; // Use axios for API requests
 import moment from "moment";
-import { usePostAddMultipleTripsMutation } from "../api/api";
+import {
+  usePostAddMultipleTripsMutation,
+  useReceiptTextMutation,
+} from "../api/api";
 
 const StickyIconButton = styled(IconButton)({
   position: "absolute",
@@ -31,7 +33,13 @@ const StickyIconButton = styled(IconButton)({
   zIndex: 1,
 });
 
-const ReceiptScanner = (props) => {
+const ReceiptScanner = ({
+  triggerMember,
+  triggerTrips,
+  member,
+  trips,
+  group_id,
+}) => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const cameraInputRef = useRef(null);
   const uploadInputRef = useRef(null);
@@ -77,7 +85,11 @@ const ReceiptScanner = (props) => {
             setIsProcessing(null);
           }, 2000);
           setTableData(
-            parsedData.data.map((row, index) => ({ id: index + 1, ...row }))
+            parsedData.data.map((row, index) => ({
+              id: index + 1,
+              group_id,
+              ...row,
+            }))
           );
           setAccordionExpanded(false); // Auto-close accordion when data received
         } else {
@@ -158,7 +170,7 @@ const ReceiptScanner = (props) => {
   const handleConfirm = async () => {
     // Reset error messages
     setErrorMessages([]);
-
+    setIsProcessing("Adding all trips....");
     try {
       const response = await triggerAddMultipleTrips({ trips: tableData });
 
@@ -181,6 +193,7 @@ const ReceiptScanner = (props) => {
         setIsProcessing("All trips added successfully!");
         setTimeout(() => setIsProcessing(null), 2000); // Clear message after 2 seconds
       }
+      triggerTrips({ group_id });
     } catch (error) {
       console.error("Error adding trips:", error);
       setIsProcessing("Error adding trips. Please try again.");
@@ -193,6 +206,7 @@ const ReceiptScanner = (props) => {
       trp_name: `New trip ${tableData.length + 1}`,
       spend: 0,
       mem_id: "[]",
+      group_id,
       create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
     };
     setTableData([...tableData, newRow]);
@@ -363,6 +377,7 @@ const ReceiptScanner = (props) => {
                 variant="contained"
                 color="secondary"
                 onClick={handleConfirm}
+                disabled={isProcessing != null}
               >
                 Confirm
               </Button>
