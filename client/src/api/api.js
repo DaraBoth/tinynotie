@@ -56,6 +56,13 @@ export const api = createApi({
         body: payload,
       }),
     }),
+    postAddMultipleTrips: build.mutation({
+      query: (payload) => ({
+        url: "api/addMultipleTripsByGroupId",
+        method: "POST",
+        body: payload,
+      }),
+    }),
     postEditTrip: build.mutation({
       query: (payload) => ({
         url: "api/editTripByGroupId",
@@ -225,4 +232,5 @@ export const {
   useAskDatabaseMutation,
   useTranslateMessageMutation,
   useReceiptTextMutation,
+  usePostAddMultipleTripsMutation,
 } = api;

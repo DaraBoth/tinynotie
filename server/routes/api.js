@@ -84,23 +84,27 @@ router.get("/listUsers", authenticateToken, async (req, res) => {
 // Filter Members by Specific Field or Search Across All Fields
 router.get("/userSearch", authenticateToken, async (req, res) => {
   const { filterBy, searchWords, excludeIds } = req.query;
-  const { _id:user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
+  const { _id: user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
 
   try {
     // Map filterBy to the actual database columns
     const filterMap = {
-      ID: 'id',
-      NAME: 'usernm',
-      EMAIL: 'email',
-      PHONE: 'phone_number',
-      PROFILE: 'profile_url',
-      ALL: 'ALL'
+      ID: "id",
+      NAME: "usernm",
+      EMAIL: "email",
+      PHONE: "phone_number",
+      PROFILE: "profile_url",
+      ALL: "ALL",
     };
 
     // Validate the filterBy parameter
     const filterColumn = filterMap[filterBy?.toUpperCase()];
     if (!filterColumn) {
-      return res.json({ status: false, message: "Invalid filterBy value. Allowed values are: ID, NAME, EMAIL, PHONE, PROFILE, ALL." });
+      return res.json({
+        status: false,
+        message:
+          "Invalid filterBy value. Allowed values are: ID, NAME, EMAIL, PHONE, PROFILE, ALL.",
+      });
     }
 
     // Start building the SQL query
@@ -113,32 +117,42 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
     // Apply exclusion logic if excludeIds are provided
     let values = [user_id]; // Start with the searcher's ID for exclusion
     if (excludeIds) {
-      const excludedIdsArray = Array.isArray(excludeIds) ? excludeIds : [excludeIds];
-      sql += ` AND id NOT IN (${excludedIdsArray.map((_, idx) => `$${idx + 2}`).join(', ')})`;
+      const excludedIdsArray = Array.isArray(excludeIds)
+        ? excludeIds
+        : [excludeIds];
+      sql += ` AND id NOT IN (${excludedIdsArray
+        .map((_, idx) => `$${idx + 2}`)
+        .join(", ")})`;
       values = values.concat(excludedIdsArray);
     }
 
     // Apply filtering based on filterBy value
-    if (filterColumn === 'ALL') {
+    if (filterColumn === "ALL") {
       let searchConditions = [];
 
       // Loop through filterMap to dynamically add search conditions
       for (let key in filterMap) {
-        if (key !== 'ALL') {
-          if (filterMap[key] === 'id') {
-            searchConditions.push(`CAST(${filterMap[key]} AS TEXT) ILIKE '%' || $${values.length + 1} || '%'`);
+        if (key !== "ALL") {
+          if (filterMap[key] === "id") {
+            searchConditions.push(
+              `CAST(${filterMap[key]} AS TEXT) ILIKE '%' || $${
+                values.length + 1
+              } || '%'`
+            );
           } else {
-            searchConditions.push(`${filterMap[key]} ILIKE '%' || $${values.length + 1} || '%'`);
+            searchConditions.push(
+              `${filterMap[key]} ILIKE '%' || $${values.length + 1} || '%'`
+            );
           }
         }
       }
 
-      sql += ` AND (${searchConditions.join(' OR ')})`;
+      sql += ` AND (${searchConditions.join(" OR ")})`;
     } else {
       sql += ` AND ${filterColumn} ILIKE '%' || $${values.length + 1} || '%'`;
     }
 
-    sql += ' ORDER BY usernm ASC'; // Optionally order by username
+    sql += " ORDER BY usernm ASC"; // Optionally order by username
 
     // Add the searchWords parameter to values
     values.push(searchWords);
@@ -247,7 +261,11 @@ router.get("/getGroupDetail", async (req, res) => {
       });
     } else {
       // If the group is not found or the user is not authorized, return a custom JSON response
-      return res.json({ status: false, message: "You are not authorized to view this group or the group does not exist." });
+      return res.json({
+        status: false,
+        message:
+          "You are not authorized to view this group or the group does not exist.",
+      });
     }
   } catch (error) {
     console.error("error", error);
@@ -258,7 +276,7 @@ router.get("/getGroupDetail", async (req, res) => {
 // Update Group Visibility and Access Control
 router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
   const { group_id, visibility, allowed_users } = req.body; // allowed_users is an array of user IDs
-  const { _id:user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
+  const { _id: user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
 
   try {
     // First, check if the user is the admin of the group
@@ -272,7 +290,10 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
     }
 
     if (adminCheckResult.rows[0].admin_id != user_id) {
-      return res.json({ status: false, message: "You are not authorized to update this group." });
+      return res.json({
+        status: false,
+        message: "You are not authorized to update this group.",
+      });
     }
 
     // Update the group's visibility
@@ -284,7 +305,7 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
     await pool.query(updateVisibilitySql, [group_id, visibility]);
 
     // If the group is set to private, update the allowed users
-    if (visibility === 'private' && Array.isArray(allowed_users)) {
+    if (visibility === "private" && Array.isArray(allowed_users)) {
       // Remove all existing entries for the group in grp_users
       const deleteExistingUsersSql = `
         DELETE FROM grp_users WHERE group_id = $1::int;
@@ -299,11 +320,16 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
 
       // Use Promise.all to handle multiple inserts asynchronously
       await Promise.all(
-        allowed_users.map(userId => pool.query(insertUserSql, [group_id, userId]))
+        allowed_users.map((userId) =>
+          pool.query(insertUserSql, [group_id, userId])
+        )
       );
     }
 
-    res.json({ status: true, message: "Group visibility updated successfully." });
+    res.json({
+      status: true,
+      message: "Group visibility updated successfully.",
+    });
   } catch (error) {
     console.error("error", error);
     res.json({ status: false, error: error.message });
@@ -330,7 +356,7 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
     const group = groupResult.rows[0];
 
     // If the group is private, fetch the list of allowed users
-    if (group.visibility === 'private') {
+    if (group.visibility === "private") {
       const usersSql = `
         SELECT u.id, u.usernm, u.email, u.profile_url
         FROM grp_users gu
@@ -345,8 +371,8 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
           id: group.id,
           grp_name: group.grp_name,
           visibility: group.visibility,
-          allowed_users: usersResult.rows
-        }
+          allowed_users: usersResult.rows,
+        },
       });
     } else {
       // If the group is public, just return the visibility
@@ -356,8 +382,8 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
           id: group.id,
           grp_name: group.grp_name,
           visibility: group.visibility,
-          allowed_users: []  // No specific users for public groups
-        }
+          allowed_users: [], // No specific users for public groups
+        },
       });
     }
   } catch (error) {
@@ -366,14 +392,20 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
   }
 });
 
-
 // Add Group by User ID
 router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
-  const { user_id, grp_name, status = 1, description, currency = 'W', member } = req.body;
+  const {
+    user_id,
+    grp_name,
+    status = 1,
+    description,
+    currency = "W",
+    member,
+  } = req.body;
   let create_date;
-  if(!req.body.create_date){
-    create_date = format(new Date())
-  }else {
+  if (!req.body.create_date) {
+    create_date = format(new Date());
+  } else {
     create_date = req.body.create_date;
   }
   const newMember = JSON.parse(member);
@@ -381,7 +413,7 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   const client = await pool.connect(); // Get a connection client
 
   try {
-    await client.query('BEGIN'); // Start a transaction
+    await client.query("BEGIN"); // Start a transaction
 
     // Insert into grp_infm and return the inserted group_id
     const insertGroupQuery = `
@@ -389,7 +421,14 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id;
     `;
-    const result = await client.query(insertGroupQuery, [grp_name, status, description, currency, user_id, create_date]);
+    const result = await client.query(insertGroupQuery, [
+      grp_name,
+      status,
+      description,
+      currency,
+      user_id,
+      create_date,
+    ]);
     const group_id = result.rows[0].id;
 
     // Insert each member into member_infm with the returned group_id
@@ -401,11 +440,11 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
       await client.query(insertMemberQuery, [mem_name, 0, group_id]);
     }
 
-    await client.query('COMMIT'); // Commit the transaction
+    await client.query("COMMIT"); // Commit the transaction
 
     res.send({ status: true, data: { id: group_id } });
   } catch (error) {
-    await client.query('ROLLBACK'); // Rollback the transaction on error
+    await client.query("ROLLBACK"); // Rollback the transaction on error
     console.error("error", error);
     res.status(500).json({ error: error.message });
   } finally {
@@ -413,10 +452,10 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   }
 });
 
-
 // Add Trip by Group ID
 router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
-  const { trp_name, spend, mem_id, description, group_id , update_dttm } = req.body;
+  const { trp_name, spend, mem_id, description, group_id, update_dttm } =
+    req.body;
   let create_date = req.body?.create_date || format(new Date());
   try {
     const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
@@ -426,16 +465,95 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
       const sql2 = `
         INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date , update_dttm)
         VALUES ($1, $2, $3, $4, $5, $6 , $7);`;
-      await pool.query(sql2, [trp_name, spend, mem_id, description, group_id, create_date, update_dttm]);
+      await pool.query(sql2, [
+        trp_name,
+        spend,
+        mem_id,
+        description,
+        group_id,
+        create_date,
+        update_dttm,
+      ]);
       res.send({ status: true, message: "Add trip success!" });
     } else {
-      res.status(409).json({ status: false, message: `Trip ${trp_name} already exists!` });
+      res
+        .status(409)
+        .json({ status: false, message: `Trip ${trp_name} already exists!` });
     }
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ error: error.message });
   }
 });
+
+// Add Multiple Trips by Group ID
+router.post(
+  "/addMultipleTripsByGroupId",
+  authenticateToken,
+  async (req, res) => {
+    const { trips } = req.body; // trips should be an array of trip objects
+
+    // Validate that 'trips' is an array
+    if (!Array.isArray(trips) || trips.length === 0) {
+      return res
+        .status(400)
+        .json({
+          status: false,
+          message: "Trips must be an array of trip objects.",
+        });
+    }
+
+    try {
+      const insertTripPromises = trips.map(async (trip) => {
+        const {
+          trp_name,
+          spend,
+          mem_id,
+          description,
+          group_id,
+          create_date,
+          update_dttm,
+        } = trip;
+        const createDate = create_date || format(new Date());
+
+        // Check if the trip already exists
+        const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
+        const results = await pool.query(sql, [group_id, trp_name]);
+
+        if (results.rows.length === 0) {
+          // If the trip doesn't exist, insert a new one
+          const sql2 = `
+          INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date, update_dttm)
+          VALUES ($1, $2, $3, $4, $5, $6, $7);`;
+          await pool.query(sql2, [
+            trp_name,
+            spend,
+            mem_id,
+            description,
+            group_id,
+            createDate,
+            update_dttm,
+          ]);
+          return {
+            status: true,
+            trp_name,
+            message: `Trip ${trp_name} added successfully.`,
+          };
+        } else {
+          return { status: false, message: `Trip ${trp_name} already exists!` };
+        }
+      });
+
+      // Execute all the insert queries in parallel
+      const results = await Promise.all(insertTripPromises);
+
+      res.send({ status: true, results });
+    } catch (error) {
+      console.error("Error adding multiple trips:", error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
 
 // Edit Trip Members by Trip ID
 router.post("/editTripMem", authenticateToken, async (req, res) => {
@@ -460,7 +578,10 @@ router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
     const results = await pool.query(sql, [group_id, trp_name]);
 
     if (results.rows.length === 0) {
-      return res.json({ status: false, message: `Trip ${trp_name} not found!` });
+      return res.json({
+        status: false,
+        message: `Trip ${trp_name} not found!`,
+      });
     }
 
     const currentSpend = results.rows[0].spend;
@@ -474,25 +595,36 @@ router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
 
       // Ensure the new spend value is not below zero
       if (newSpend < 0) {
-        return res.json({ status: false, message: "Cannot reduce spend below 0" });
+        return res.json({
+          status: false,
+          message: "Cannot reduce spend below 0",
+        });
       }
-    } else if(type === "UPDATE") {
-      newSpend = spend
+    } else if (type === "UPDATE") {
+      newSpend = spend;
     } else {
-      return res.json({ status: false, message: "Invalid type specified. Use 'ADD' or 'REDUCE'." });
+      return res.json({
+        status: false,
+        message: "Invalid type specified. Use 'ADD' or 'REDUCE'.",
+      });
     }
 
     // Update the spend value in the database
     const sql2 = `UPDATE trp_infm SET spend = $1 , update_dttm = $2 WHERE id = $3;`;
-    await pool.query(sql2, [newSpend, update_dttm ,results.rows[0].id]);
+    await pool.query(sql2, [newSpend, update_dttm, results.rows[0].id]);
 
     res.send({ status: true, message: `Edit ${trp_name} success!` });
   } catch (error) {
     console.error("error", error);
-    res.status(500).json({ status: false, message: "An error occurred while updating the trip", error: error.message });
+    res
+      .status(500)
+      .json({
+        status: false,
+        message: "An error occurred while updating the trip",
+        error: error.message,
+      });
   }
 });
-
 
 // Get All Trips
 router.get("/getAllTrip", authenticateToken, async (req, res) => {
@@ -516,12 +648,14 @@ router.get("/getTripByGroupId", async (req, res) => {
 
     if (groupCheckResult.rows.length === 0) {
       // Group not found
-      return res.status(404).send({ status: false, message: "Group not found" });
+      return res
+        .status(404)
+        .send({ status: false, message: "Group not found" });
     }
 
     const { visibility } = groupCheckResult.rows[0];
 
-    if (visibility === 'private') {
+    if (visibility === "private") {
       // If the group is private, authenticate the user
       authenticateToken(req, res, async () => {
         try {
@@ -529,7 +663,10 @@ router.get("/getTripByGroupId", async (req, res) => {
           const sql = `SELECT * FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
           const results = await pool.query(sql, [group_id]);
 
-          res.send({ status: true, data: results.rows.length > 0 ? results.rows : [] });
+          res.send({
+            status: true,
+            data: results.rows.length > 0 ? results.rows : [],
+          });
         } catch (error) {
           handleError(error, res);
         }
@@ -539,7 +676,10 @@ router.get("/getTripByGroupId", async (req, res) => {
       const sql = `SELECT * FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
       const results = await pool.query(sql, [group_id]);
 
-      res.send({ status: true, data: results.rows.length > 0 ? results.rows : [] });
+      res.send({
+        status: true,
+        data: results.rows.length > 0 ? results.rows : [],
+      });
     }
   } catch (error) {
     handleError(error, res);
@@ -603,29 +743,42 @@ router.delete("/deleteTripById", authenticateToken, async (req, res) => {
     const { admin_id } = checkAdminResult.rows[0];
 
     if (admin_id !== user_id) {
-      return res.json({ status: false, message: "You do not have permission to delete trips from this group" });
+      return res.json({
+        status: false,
+        message: "You do not have permission to delete trips from this group",
+      });
     }
 
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Delete the trip itself
     const deleteTripQuery = `
       DELETE FROM trp_infm WHERE id = $1 AND group_id = $2;
     `;
-    const deleteTripResult = await client.query(deleteTripQuery, [trip_id, group_id]);
+    const deleteTripResult = await client.query(deleteTripQuery, [
+      trip_id,
+      group_id,
+    ]);
 
     if (deleteTripResult.rowCount === 0) {
-      await client.query('ROLLBACK');
-      return res.json({ status: false, message: "Trip not found in the specified group" });
+      await client.query("ROLLBACK");
+      return res.json({
+        status: false,
+        message: "Trip not found in the specified group",
+      });
     }
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
 
     res.json({ status: true, message: "Trip deleted successfully" });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     console.error("error", error);
-    res.json({ status: false, message: "Failed to delete trip", error: error.message });
+    res.json({
+      status: false,
+      message: "Failed to delete trip",
+      error: error.message,
+    });
   } finally {
     client.release();
   }
@@ -642,12 +795,14 @@ router.get("/getMemberByGroupId", async (req, res) => {
 
     if (groupCheckResult.rows.length === 0) {
       // Group not found
-      return res.status(404).send({ status: false, message: "Group not found" });
+      return res
+        .status(404)
+        .send({ status: false, message: "Group not found" });
     }
 
     const { visibility } = groupCheckResult.rows[0];
 
-    if (visibility === 'private') {
+    if (visibility === "private") {
       // If the group is private, authenticate the user
       authenticateToken(req, res, async () => {
         try {
@@ -678,14 +833,14 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
   const client = await pool.connect(); // Get a connection client
 
   try {
-    await client.query('BEGIN'); // Start a transaction
+    await client.query("BEGIN"); // Start a transaction
 
     // Lock the row for the member to prevent concurrent updates
     const selectForUpdateSql = `SELECT paid FROM member_infm WHERE id = $1 FOR UPDATE;`;
     const result = await client.query(selectForUpdateSql, [user_id]);
 
     if (result.rows.length === 0) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       return res.json({ status: false, message: "Member not found!" });
     }
 
@@ -700,27 +855,36 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
 
       // Ensure the new paid value is not below zero
       if (newPaid < 0) {
-        await client.query('ROLLBACK');
-        return res.json({ status: false, message: "Cannot reduce paid amount below 0" });
+        await client.query("ROLLBACK");
+        return res.json({
+          status: false,
+          message: "Cannot reduce paid amount below 0",
+        });
       }
-    } else if(type === "UPDATE") {
-      newPaid = paid
+    } else if (type === "UPDATE") {
+      newPaid = paid;
     } else {
-      await client.query('ROLLBACK');
-      return res.json({ status: false, message: "Invalid type specified. Use 'ADD' or 'REDUCE'." });
+      await client.query("ROLLBACK");
+      return res.json({
+        status: false,
+        message: "Invalid type specified. Use 'ADD' or 'REDUCE'.",
+      });
     }
 
     // Update the paid value in the database
     const updateSql = `UPDATE member_infm SET paid = $1 WHERE id = $2;`;
     await client.query(updateSql, [newPaid, user_id]);
 
-    await client.query('COMMIT'); // Commit the transaction
+    await client.query("COMMIT"); // Commit the transaction
     res.send({ status: true, message: "Update successful!" });
-
   } catch (error) {
-    await client.query('ROLLBACK'); // Rollback the transaction on error
+    await client.query("ROLLBACK"); // Rollback the transaction on error
     console.error("error", error);
-    res.json({ status: false, message: "An error occurred while updating the member", error: error.message });
+    res.json({
+      status: false,
+      message: "An error occurred while updating the member",
+      error: error.message,
+    });
   } finally {
     client.release(); // Release the client back to the pool
   }
@@ -749,7 +913,10 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
     const { admin_id, create_date } = checkAdminResult.rows[0];
 
     if (admin_id !== user_id) {
-      return res.json({ status: false, message: "You do not have permission to delete this group" });
+      return res.json({
+        status: false,
+        message: "You do not have permission to delete this group",
+      });
     }
 
     // Check if the group is older than 30 minutes or less than a day
@@ -757,11 +924,18 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
     const currentTime = new Date();
     const timeDifference = currentTime - groupCreationTime;
 
-    if (timeDifference > 30 * 60 * 1000 && timeDifference < 24 * 60 * 60 * 1000) {
-      return res.json({ status: false, message: "Group cannot be deleted between 30 minutes and 24 hours of creation" });
+    if (
+      timeDifference > 30 * 60 * 1000 &&
+      timeDifference < 24 * 60 * 60 * 1000
+    ) {
+      return res.json({
+        status: false,
+        message:
+          "Group cannot be deleted between 30 minutes and 24 hours of creation",
+      });
     }
 
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // Delete related trips in the group
     const deleteTripQuery = `
@@ -775,13 +949,17 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
     `;
     await client.query(deleteGroupQuery, [group_id]);
 
-    await client.query('COMMIT');
-    
+    await client.query("COMMIT");
+
     res.json({ status: true, message: "Group deleted successfully" });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     console.error("error", error);
-    res.json({ status: false, message: "Failed to delete group", error: error.message });
+    res.json({
+      status: false,
+      message: "Failed to delete group",
+      error: error.message,
+    });
   } finally {
     client.release();
   }

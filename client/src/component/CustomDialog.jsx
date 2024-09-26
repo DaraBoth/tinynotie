@@ -2,7 +2,7 @@ import React from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, useTheme } from '@mui/material';
 import { tokens } from '../theme';
 
-const CustomDialog = ({ open, onClose, title, children }) => {
+const CustomDialog = ({ open, onClose, title, children, sx }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -16,6 +16,7 @@ const CustomDialog = ({ open, onClose, title, children }) => {
         sx: {
           backgroundColor: colors.background, // Dialog background color
           color: colors.primary[500], // Text color for title and content
+          ...sx,
         },
       }}
     >

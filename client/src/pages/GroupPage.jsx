@@ -45,7 +45,8 @@ import {
   numberAddition,
 } from "../help/helper";
 import NotFoundPage from "./NotFoundPage";
-import RecieptScanner from "../component/RecieptScanner";
+import ReceiptScanner from "../component/ReceiptScanner";
+import { borderRadius, minHeight, minWidth } from "@mui/system";
 
 export default function Group({ user, secret, setGroupInfo }) {
   const theme = useTheme();
@@ -73,9 +74,11 @@ export default function Group({ user, secret, setGroupInfo }) {
   const [openAddTripDialog, setOpenAddTripDialog] = useState(false);
   const [openEditTripDialog, setOpenEditTripDialog] = useState(false);
   const [openDeleteMemberDialog, setOpenDeleteMemberDialog] = useState(false);
-  const [openRecieptScannarDialog, setOpenRecieptScannarDialog] = useState(false);
+  const [openRecieptScannarDialog, setOpenRecieptScannarDialog] =
+    useState(false);
   const [openShareModal, setOpenShareModal] = useState(false);
   const [groupInfoState, setGroupInfoState] = useState(null);
+  const [isLoading, setIsLoading] = useState("loadingPage");
 
   useEffect(() => {
     triggerGroupDetails({ group_id: groupId, user_id: secret });
@@ -90,14 +93,17 @@ export default function Group({ user, secret, setGroupInfo }) {
       if (groupData.visibility === "public" || groupData.isAuthorized) {
         triggerTrip({ group_id: groupId });
         triggerMember({ group_id: groupId });
+        setIsLoading("");
       } else if (groupData.visibility === "private") {
         // If the group is private and the user is not authorized, redirect to login
         if (!groupData.isAuthorized) {
           navigate("/login");
+          setIsLoading("unauthorizedPageWithUser");
         }
       }
     }
   }, [resultGroupDetails, groupId, triggerTrip, triggerMember, navigate]);
+
 
   // Update trip state when data is fetched
   useEffect(() => {
@@ -203,15 +209,15 @@ export default function Group({ user, secret, setGroupInfo }) {
     },
   ];
 
-  if (resultGroupDetails.isLoading || resultTrip.isLoading || resultMember.isLoading) {
+  
+  if (isLoading.includes("loadingPage")) {
     return <LoadingPage />;
-  }  
-  if (!resultGroupDetails.isLoading && resultGroupDetails.error || !resultGroupDetails.data?.status) {
-    if (user != null) {
-      return <UnauthorizedPage user={user} />;
-    } else {
-      return <UnauthorizedPage />;
-    }
+  }
+  if (isLoading.includes("unauthorizedPageWithUser")) {
+    return <UnauthorizedPage user={user} />;
+  }
+  if (isLoading.includes("unauthorizedPage")) {
+    return <UnauthorizedPage />;
   }
 
   return (
@@ -444,8 +450,9 @@ export default function Group({ user, secret, setGroupInfo }) {
         open={openRecieptScannarDialog}
         onClose={() => setOpenRecieptScannarDialog(false)}
         title="Reciept Scanner"
+        sx={{ minHeight: "100vh", minWidth: "100vw", borderRadius: "0px" }}
       >
-        <RecieptScanner
+        <ReceiptScanner
           triggerMember={triggerMember}
           triggerTrips={triggerTrip} // New prop for triggering trip refresh
           member={member}
