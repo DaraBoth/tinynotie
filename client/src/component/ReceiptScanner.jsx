@@ -18,6 +18,7 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import NoPhotographyRoundedIcon from "@mui/icons-material/NoPhotographyRounded";
 import UploadIcon from "@mui/icons-material/Upload";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete"; // Added for delete functionality
 import Tesseract from "tesseract.js";
 import { DataGrid } from "@mui/x-data-grid";
 import moment from "moment";
@@ -101,7 +102,7 @@ const ReceiptScanner = ({
               id: index + 1,
               group_id,
               ...row,
-              mem_id:"[]",
+              mem_id: "[]",
             }))
           );
           setAccordionExpanded(false); // Auto-close accordion when data received
@@ -181,16 +182,12 @@ const ReceiptScanner = ({
   };
 
   const handleConfirm = async () => {
-    // Reset error messages
     setErrorMessages([]);
     setIsProcessing("Adding all trips....");
     try {
       const response = await triggerAddMultipleTrips({ trips: tableData });
 
-      // Check for trip submission results
       const results = response.data.results;
-
-      // Process results: success trips are removed, failed trips remain
       const failedTrips = [];
       results.forEach((result, index) => {
         if (!result.status) {
@@ -200,12 +197,11 @@ const ReceiptScanner = ({
         }
       });
 
-      // Update table with failed trips
       setTableData(failedTrips);
 
       if (failedTrips.length === 0) {
         setIsProcessing("All trips added successfully!");
-        setTimeout(() => setIsProcessing(null), 2000); // Clear message after 2 seconds
+        setTimeout(() => setIsProcessing(null), 2000);
       }
       triggerTrips({ group_id });
     } catch (error) {
@@ -226,6 +222,12 @@ const ReceiptScanner = ({
     setTableData([...tableData, newRow]);
   };
 
+  // Function to remove a row
+  const handleRemoveRow = (id) => {
+    const updatedTableData = tableData.filter((row) => row.id !== id);
+    setTableData(updatedTableData);
+  };
+
   const handleAccordionChange = (event, isExpanded) => {
     setAccordionExpanded(isExpanded);
   };
@@ -240,7 +242,7 @@ const ReceiptScanner = ({
         <AccordionSummary
           aria-controls="panel1a-content"
           id="panel1a-header"
-          sx={{ padding: 0, minHeight: 0 }} // Minimize space for the Accordion button
+          sx={{ padding: 0, minHeight: 0 }}
         >
           <IconButton
             sx={{
@@ -364,6 +366,19 @@ const ReceiptScanner = ({
                   headerName: "Create Date",
                   width: 150,
                   editable: true,
+                },
+                {
+                  field: "actions", // Column for removing a row
+                  headerName: "Actions",
+                  width: 100,
+                  renderCell: (params) => (
+                    <IconButton
+                      onClick={() => handleRemoveRow(params.row.id)}
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  ),
                 },
               ]}
               processRowUpdate={handleProcessRowUpdate}
