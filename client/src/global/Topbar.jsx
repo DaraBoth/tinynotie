@@ -101,9 +101,9 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={onScannerClick}>
+        {groupInfo?.isAdmin && <MenuItem onClick={onScannerClick}>
           <FlipIcon sx={{ marginRight: 1 }} /> Scan Reciept
-        </MenuItem>
+        </MenuItem>}
         <MenuItem onClick={onShareClick}>
           <ShareIcon sx={{ marginRight: 1 }} /> Share
         </MenuItem>
