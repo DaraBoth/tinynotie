@@ -706,7 +706,8 @@ You will provide information based on the context given below. Do not indicate t
 - **Location**: Phnom Penh, Cambodia
 
 ### Contact Information
-- **Phone Number**: 061895528
+- **Phone Number in Cambodia**: 061895528
+- **Phone Number in Korea**: 01083931330
 - **Emails**: 
   - vongpichdarabot@gmail.com
   - daraboth0331@gmail.com
@@ -721,10 +722,15 @@ You will provide information based on the context given below. Do not indicate t
 ### Interests and Hobbies
 - **Hobbies**:
   - Playing guitar
-  - Coding
+  - Playing piano
   - Singing
+  - Coding
   - Watching movies and anime
   - Playing Mobile Legend Bang Bang
+  - Bowling
+  - Ping Pong
+  - Soccer
+  - Basketball 
 - **Favorite Anime**:
   - Naruto
   - One Punch Man
@@ -734,7 +740,7 @@ You will provide information based on the context given below. Do not indicate t
 
 ### Work and Educational Background
 - **Education**: BakTouk High School and also Kindergarten School
-- **Education**: Bachelor's Degree in Computer Science from RUPP (2017 - 2021)
+- **Education**: Bachelor's Degree in Computer Science from RUPP
 - **Work Experience**:
   - Google Adsense: Side Hustle (2016 - 2017)
   - Phsar Tech: Angular Developer (October 2019 - March 2020)
@@ -764,15 +770,18 @@ You will provide information based on the context given below. Do not indicate t
 
 const friendInfo = `
 ### Friends
-Friend 1:
 Name: [Mean Khaw]
 Phone Number: [010 7428 4635]
 BIO [Fall in love with her alone, because I am introvert.]
 Location: [Busan, South Korean]
-Friend 2:
+
 Name: [Ngoeun Chivorn]
 Phone Number: [070 414 707]
 BIO [Nothing more common than unsuccessful people with talent.]
+Location: [Phnom Penh]
+
+Name: [Davin Sou]
+BIO [Love one girl is enough. But I'm not a girl.]
 Location: [Phnom Penh]
 `;
 
@@ -914,6 +923,63 @@ router.post("/sendMessage", async (req, res) => {
     res.status(500).send("Error processing data");
   }
 });
+
+router.post("/getKoreanWords", async (req, res) => {
+  try {
+
+    const messageObj = {
+      chat: {
+        id: 485397124,
+      },
+    };
+
+    let resText = await getKoreanWords();
+    darabothSendMessage(messageObj, resText);
+
+    res.status(200).send("Data received successfully");
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    res.status(500).send("Error processing data");
+  }
+});
+
+async function getKoreanWords () {
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+  const prompt = `
+      You are a Korean language tutor. 
+      Each day, introduce me to 2 new Korean words that are useful for everyday life and work, 
+      focusing on words that are commonly used and slightly advanced (beyond basic beginner level). 
+      Include meanings, pronunciation, and example sentences in both English and Korean. Use the following format, 
+      without any markdown text formatting. Check the chat history to make sure these words are new. 
+      The response will be shared in a Telegram chat, so keep it clean and easy to read.
+
+      Template for Daily Korean Vocabulary Lesson:
+
+      Word 1
+
+      Korean: [Korean word]
+      Pronunciation: [Pronunciation]
+      Meaning: [Meaning in English]
+      Example Sentence: [Example sentence in Korean]
+      Translation: [Translation in English]
+      Word 2
+
+      Korean: [Korean word]
+      Pronunciation: [Pronunciation]
+      Meaning: [Meaning in English]
+      Example Sentence: [Example sentence in Korean]
+      Translation: [Translation in English]
+      Practice:
+      "Try creating your own sentence using one or both of today's words."
+
+      `;
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  console.log("response text : " + response.text());
+
+  return response.text();
+}
 
 async function getCleaningProm(data, msg) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
