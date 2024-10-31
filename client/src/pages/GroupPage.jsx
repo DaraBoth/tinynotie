@@ -209,7 +209,7 @@ export default function Group({ user, secret, setGroupInfo }) {
     },
   ];
 
-  
+
   if (isLoading.includes("loadingPage")) {
     return <LoadingPage />;
   }
@@ -253,11 +253,10 @@ export default function Group({ user, secret, setGroupInfo }) {
                 height: "100%",
                 backgroundColor: colors.background,
                 borderRadius: "8px",
-                boxShadow: `0px 4px 10px ${
-                  theme.palette.mode === "light"
-                    ? "rgba(0, 0, 0, 0.1)"
-                    : "rgba(0, 0, 0, 0.5)"
-                }`,
+                boxShadow: `0px 4px 10px ${theme.palette.mode === "light"
+                  ? "rgba(0, 0, 0, 0.1)"
+                  : "rgba(0, 0, 0, 0.5)"
+                  }`,
               }}
             >
               <CardContent
@@ -446,7 +445,7 @@ export default function Group({ user, secret, setGroupInfo }) {
         />
       </CustomDialog>
 
-      <CustomDialog
+      {groupInfoState?.isAdmin && <CustomDialog
         open={openRecieptScannarDialog}
         onClose={() => setOpenRecieptScannarDialog(false)}
         title="Reciept Scanner"
@@ -459,7 +458,7 @@ export default function Group({ user, secret, setGroupInfo }) {
           trips={trip} // New prop for trip data
           group_id={groupId}
         />
-      </CustomDialog>
+      </CustomDialog>}
 
       {groupInfoState?.isAdmin && (
         <SpeedDial
