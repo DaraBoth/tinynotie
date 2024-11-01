@@ -915,7 +915,7 @@ router.post("/sendMessage", async (req, res) => {
     };
 
     let resText = await getCleaningProm(data, "Who is cleaning this week?");
-    darabothSendMessage(messageObj, resText);
+    await darabothSendMessage(messageObj, resText);
 
     res.status(200).send("Data received successfully");
   } catch (error) {
