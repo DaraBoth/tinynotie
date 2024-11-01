@@ -936,7 +936,7 @@ router.post("/getKoreanWords", async (req, res) => {
     let resText = await getKoreanWords();
     darabothSendMessage(messageObj, resText);
 
-    res.status(200).send("Data received successfully");
+    res.status(200).send({resText});
   } catch (error) {
     console.error("Error parsing JSON:", error);
     res.status(500).send("Error processing data");
