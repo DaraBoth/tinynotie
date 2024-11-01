@@ -1056,39 +1056,35 @@ async function getTranslate(str) {
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
   const prompt = `
       Instruction
-      Translate the following English text into Korean using a highly polite and formal tone, suitable for communication with managers, team leaders, and coworkers. The translation should reflect respect and professionalism, similar to the style used in the examples provided.
+      Translate the following text based on its original language:
+      - If the text is in English, translate it into Korean using a highly polite and formal tone, suitable for communication with managers, team leaders, and coworkers.
+      - If the text is in Korean, translate it into English with a tone that reflects respect and professionalism, similar to the style in the examples provided.
 
       Examples
-      English: "Development has been completed. Please test."
-      Korean: "개발 완료 되었습니다. 테스트 부탁드립니다."
+      English to Korean:
+      "Development has been completed. Please test."
+      -> "개발 완료 되었습니다. 테스트 부탁드립니다."
 
-      English: "The requested data has been shared."
-      Korean: "요청하신 데이터 공유드립니다."
+      "The requested data has been shared."
+      -> "요청하신 데이터 공유드립니다."
 
-      English: "The part you shared has been corrected."
-      Korean: "공유해주신 부분 수정되었습니다."
+      "Thank you for your help. I'll try again based on your guidance."
+      -> "도와주셔서 대단히 감사합니다. 알려주신 내용을 바탕으로 다시 시도해 보겠습니다."
 
-      English: "Applied to the development."
-      Korean: "개발계 적용되었습니다."
+      Korean to English:
+      "개발 완료 되었습니다. 테스트 부탁드립니다."
+      -> "Development has been completed. Please test."
 
-      English: "Please confirm after the corrections have been made."
-      Korean: "수정완료 했습니다. 확인 부탁드립니다."
+      "요청하신 데이터 공유드립니다."
+      -> "The requested data has been shared."
 
-      English: "Hello [Title/Name]. Do you have a moment?"
-      Korean: "안녕하세요, [직책 이름]님. 잠시 시간 내주실 수 있으실까요?"
-
-      English: "I've been reviewing the data logic and SQL queries, but some of the logical structures aren't quite clear to me."
-      Korean: "제가 이번 데이터 로직과 SQL 쿼리 부분을 검토하고 있는데, 일부 논리 구조가 명확하지 않은 것 같습니다."
-
-      English: "Specifically, with [specific part or query], I'm not sure what logic should be applied. Could you explain how to approach this part?"
-      Korean: "특히, [specific part or query] 부분에서 어떤 논리를 적용해야 할지 잘 모르겠습니다. 이 부분에 대해 설명해 주실 수 있으신가요?"
-
-      English: "Thank you for your help. I'll try again based on your guidance."
-      Korean: "도와주셔서 대단히 감사합니다. 알려주신 내용을 바탕으로 다시 시도해 보겠습니다."
+      "도와주셔서 대단히 감사합니다. 알려주신 내용을 바탕으로 다시 시도해 보겠습니다."
+      -> "Thank you for your help. I'll try again based on your guidance."
 
       Text to Translate
       [${str}]
       `;
+
   const result = await model.generateContent(prompt);
   const response = await result.response;
   console.log("response text : " + response.text());
