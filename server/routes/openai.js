@@ -1200,7 +1200,7 @@ const saveChat = async ({ chat_id, chat_history }) => {
     DO UPDATE SET
       chat_history = EXCLUDED.chat_history;
   `;
-  const values = [chat_id, JSON.stringify({ chat: chat_history })];
+  const values = [chat_id, { chat: chat_history }];
 
   try {
     await runQuery({ sql, values });
