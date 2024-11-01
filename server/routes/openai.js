@@ -928,7 +928,7 @@ router.post("/sendMessage", async (req, res) => {
 
 router.post("/getKoreanWords", async (req, res) => {
   try {
-    const chatIds = [485397124]; // Array of chat IDs to send messages to
+    const chatIds = [485397124, 1238939350]; // Array of chat IDs to send messages to
 
     for (const chatId of chatIds) {
       const messageObj = { chat: { id: chatId } };
