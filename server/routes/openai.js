@@ -973,7 +973,9 @@ async function getKoreanWords(messageObj) {
   Each day, introduce me to 2 new Korean words that are useful for everyday life and work.
   Focus on words that are commonly used and slightly advanced (beyond basic beginner level).
 
-  Include the meaning in both English and Khmer, but do not add example sentences in Khmer.
+  Include the meaning in both English and Khmer, and make sure to include an example sentence and its English translation. 
+  Only focus on common words, and check the chat history to avoid repeating words.
+
   Send the response in plain text, formatted simply for Telegram without any markdown symbols or unnecessary labels.
 
   Template for Daily Korean Vocabulary Lesson:
@@ -984,7 +986,7 @@ async function getKoreanWords(messageObj) {
   Meaning: [Meaning in English]
   Khmer Meaning: [Meaning in Khmer]
   Example: [Example sentence in Korean]
-  Translation: [Translation in English]
+  Translation: [Translation of example in English]
 
   Word 2:
   Korean: [Korean word]
@@ -992,7 +994,7 @@ async function getKoreanWords(messageObj) {
   Meaning: [Meaning in English]
   Khmer Meaning: [Meaning in Khmer]
   Example: [Example sentence in Korean]
-  Translation: [Translation in English]
+  Translation: [Translation of example in English]
 
   Practice:
   Try creating your own sentence using one or both of today's words.
