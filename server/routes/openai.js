@@ -1294,17 +1294,6 @@ const handleMessage = async function (messageObj) {
         const command = messageText.slice(1);
         if (command.startsWith("start")) {
           return darabothSendMessage(messageObj, "Hi! bro");
-        } else if (command.startsWith("whoclean")) {
-          try {
-            const cleaningData = await getCleaningData();
-            const resText = await getCleaningProm(
-              cleaningData,
-              command.replace("whoclean", "who clean")
-            );
-            return darabothSendMessage(messageObj, resText);
-          } catch (e) {
-            return darabothSendMessage(messageObj, e);
-          }
         } else if (command.startsWith("translate")) {
           const resText = await getTranslate(command.replace("translate", ""));
           return darabothSendMessage(messageObj, resText);
