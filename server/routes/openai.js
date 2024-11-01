@@ -969,23 +969,22 @@ async function getKoreanWords(messageObj) {
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
   const prompt = `
-      You are a Korean language tutor. 
-      Each day, introduce me to 2 new Korean words that are useful for everyday life and work. 
+      You are a Korean language tutor.
+      Each day, introduce me to 2 new Korean words that are useful for everyday life and work.
       Focus on words that are commonly used and slightly advanced (beyond basic beginner level).
-
-      Keep the format compact, easy to read, and with enough spacing for clarity. 
-      The response will be shared in a Telegram chat, so keep it simple, clean, and organized.
+      
+      Send the response in plain text, formatted simply for Telegram without any markdown symbols or unnecessary labels.
 
       Template for Daily Korean Vocabulary Lesson:
 
-      Word 1
+      Word 1:
       Korean: [Korean word]
       Pronunciation: [Pronunciation]
       Meaning: [Meaning in English]
       Example: [Example sentence in Korean]
       Translation: [Translation in English]
 
-      Word 2
+      Word 2:
       Korean: [Korean word]
       Pronunciation: [Pronunciation]
       Meaning: [Meaning in English]
@@ -993,8 +992,9 @@ async function getKoreanWords(messageObj) {
       Translation: [Translation in English]
 
       Practice:
-      "Try creating your own sentence using one or both of today's words."
+      Try creating your own sentence using one or both of today's words.
       `;
+
 
 
   const result = model.startChat({
