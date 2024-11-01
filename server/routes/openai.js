@@ -1283,13 +1283,6 @@ const handleMessage = async function (messageObj) {
           responseText: responseText.text(),
         });
         return darabothSendMessage(messageObj, responseText.text());
-      } else if (command.startsWith("whoclean")) {
-        const cleaningData = await getCleaningData();
-        const resText = await getCleaningProm(
-          cleaningData,
-          command.replace("whoclean", "who clean")
-        );
-        return darabothSendMessage(messageObj, resText);
       } else if (command.startsWith("translate")) {
         if (command.replace("translate", "").trim().length == 0) return;
         const resText = await getTranslate(command.replace("translate", ""));
