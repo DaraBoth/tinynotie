@@ -928,17 +928,18 @@ router.post("/sendMessage", async (req, res) => {
 
 router.post("/getKoreanWords", async (req, res) => {
   try {
-    const messageObj = {
-      chat: {
-        id: 485397124,
-      },
-    };
+    const chatIds = [485397124]; // Array of chat IDs to send messages to
 
-    let resText = await getKoreanWords(messageObj);
+    for (const chatId of chatIds) {
+      const messageObj = { chat: { id: chatId } };
 
-    await darabothSendMessage(messageObj, resText);
+      // Get Korean words for each chat ID
+      const resText = await getKoreanWords(messageObj);
 
-    res.status(200).send({ resText });
+      // Send message to each chat ID
+      await darabothSendMessage(messageObj, resText);
+    }
+    res.status(200).send({ resText: "done" });
   } catch (error) {
     console.error("Error parsing JSON:", error);
     res.status(500).send("Error processing data");
@@ -1010,11 +1011,11 @@ async function getKoreanWords(messageObj) {
   const chat = await result.sendMessage(prompt);
   const response = await chat.response;
   console.log("response text : " + response.text());
-  
+
   templateSaveChat({
     Chat_ID,
     chatHistory,
-    messageText:"Let's start learning today!",
+    messageText: "Let's start learning today!",
     responseText: response.text(),
   });
 
@@ -1270,6 +1271,7 @@ const handleMessage = async function (messageObj) {
   switch (Chat_ID) {
     case -406610085: // Family
     case -1001754103737: // BTB Class
+    case -1001883283529: // B2B
     case -861143107: // 2024_B2B R&D
       const command = messageText.slice(1);
       if (command.startsWith("ask")) {
