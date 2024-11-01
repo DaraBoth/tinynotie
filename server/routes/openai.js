@@ -213,7 +213,9 @@ router.get("/receiptText", async (req, res) => {
                   "trp_name": "[Item Name]",
                   "spend": [Price],
                   "mem_id": "[]",
-                  "create_date": "[${moment().add(9,'hours').format("YYYY-MM-DD HH:mm:ss")} or Date from Receipt]"
+                  "create_date": "[${moment()
+                    .add(9, "hours")
+                    .format("YYYY-MM-DD HH:mm:ss")} or Date from Receipt]"
               },
               ...
           ]
@@ -238,7 +240,7 @@ router.get("/receiptText", async (req, res) => {
     const response = await result.response;
     console.log({ text });
     console.log({ res: response.text() });
-    res.status(200).json({text: response.text()});
+    res.status(200).json({ text: response.text() });
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
@@ -917,7 +919,7 @@ router.post("/sendMessage", async (req, res) => {
     let resText = await getCleaningProm(data, "Who is cleaning this week?");
     await darabothSendMessage(messageObj, resText);
 
-    res.status(200).send({resText});
+    res.status(200).send({ resText });
   } catch (error) {
     console.error("Error parsing JSON:", error);
     res.status(500).send("Error processing data");
@@ -926,57 +928,112 @@ router.post("/sendMessage", async (req, res) => {
 
 router.post("/getKoreanWords", async (req, res) => {
   try {
-
     const messageObj = {
       chat: {
         id: 485397124,
       },
     };
 
-    let resText = await getKoreanWords();
+    let resText = await getKoreanWords(messageObj);
+
     await darabothSendMessage(messageObj, resText);
 
-    res.status(200).send({resText});
+    res.status(200).send({ resText });
   } catch (error) {
     console.error("Error parsing JSON:", error);
     res.status(500).send("Error processing data");
   }
 });
 
-async function getKoreanWords () {
+async function getKoreanWords(messageObj) {
+  if (!messageObj) return;
+  const Chat_ID = 1083931330;
+  let chatHistory = [];
+
+  getChat({
+    chat_id: Chat_ID,
+    onSuccess: ({ results }) => {
+      if (results != []) {
+        chatHistory = results;
+      } else {
+        chatHistory = defaultChatHistory;
+        saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+      }
+    },
+    onError: (response) => {
+      console.log({ response });
+    },
+  });
+
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+
   const prompt = `
       You are a Korean language tutor. 
-      Each day, introduce me to 2 new Korean words that are useful for everyday life and work, 
-      focusing on words that are commonly used and slightly advanced (beyond basic beginner level). 
-      Include meanings, pronunciation, and example sentences in both English and Korean. Use the following format, 
-      without any markdown text formatting. Check the chat history to make sure these words are new. 
-      The response will be shared in a Telegram chat, so keep it clean and easy to read.
+      Each day, introduce me to 2 new Korean words that are useful for everyday life and work. 
+      Focus on words that are commonly used and slightly advanced (beyond basic beginner level).
+      
+      Remember: 
+      - Keep the format easy to read, with clear spacing between sections.
+      - Make it engaging, but simple to follow. 
+      - The user has ADHD, so design this to be easy to scan and remember.
 
       Template for Daily Korean Vocabulary Lesson:
 
       Word 1
 
       Korean: [Korean word]
+
       Pronunciation: [Pronunciation]
+
       Meaning: [Meaning in English]
-      Example Sentence: [Example sentence in Korean]
-      Translation: [Translation in English]
+
+      Example Sentence: 
+      [Example sentence in Korean] 
+
+      Translation: 
+      [Translation in English]
+
+      -----------------------
+
       Word 2
 
       Korean: [Korean word]
+
       Pronunciation: [Pronunciation]
+
       Meaning: [Meaning in English]
-      Example Sentence: [Example sentence in Korean]
-      Translation: [Translation in English]
+
+      Example Sentence: 
+      [Example sentence in Korean]
+
+      Translation: 
+      [Translation in English]
+
+      -----------------------
+
       Practice:
       "Try creating your own sentence using one or both of today's words."
 
       `;
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
+
+  const result = model.startChat({
+    history: chatHistory,
+    generationConfig: {
+      maxOutputTokens: 250,
+    },
+  });
+
+  const chat = await result.sendMessage(prompt);
+  const response = await chat.response;
   console.log("response text : " + response.text());
+  
+  templateSaveChat({
+    Chat_ID,
+    chatHistory,
+    messageText:"Let's start learning today!",
+    responseText: response.text(),
+  });
 
   return response.text();
 }
@@ -1380,12 +1437,10 @@ router.post("/push", async (req, res) => {
       if (subscriptionResult.rows.length > 0) {
         subscription = subscriptionResult.rows[0];
       } else {
-        return res
-          .status(404)
-          .json({
-            status: false,
-            message: "No subscription found for the provided username",
-          });
+        return res.status(404).json({
+          status: false,
+          message: "No subscription found for the provided username",
+        });
       }
     } else {
       // If the identifier is not found in user_infm, assume it's a deviceId and fetch the subscription directly
@@ -1399,12 +1454,10 @@ router.post("/push", async (req, res) => {
       if (subscriptionResult.rows.length > 0) {
         subscription = subscriptionResult.rows[0];
       } else {
-        return res
-          .status(404)
-          .json({
-            status: false,
-            message: "No subscription found for the provided device ID",
-          });
+        return res.status(404).json({
+          status: false,
+          message: "No subscription found for the provided device ID",
+        });
       }
     }
 
@@ -1412,13 +1465,11 @@ router.post("/push", async (req, res) => {
     sendNotification(subscription, payload, req, res);
   } catch (error) {
     console.error("Error finding subscription or sending notification", error);
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "Failed to send notification",
-        error: error.message,
-      });
+    res.status(500).json({
+      status: false,
+      message: "Failed to send notification",
+      error: error.message,
+    });
   } finally {
     client.release();
   }
@@ -1480,13 +1531,11 @@ router.post("/subscribe", async (req, res) => {
       "Error saving subscription or updating user device ID",
       error
     );
-    res
-      .status(500)
-      .json({
-        status: false,
-        message: "Failed to add subscription or update user device ID",
-        error: error.message,
-      });
+    res.status(500).json({
+      status: false,
+      message: "Failed to add subscription or update user device ID",
+      error: error.message,
+    });
   } finally {
     client.release();
   }
