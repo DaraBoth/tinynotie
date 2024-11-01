@@ -969,33 +969,34 @@ async function getKoreanWords(messageObj) {
   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
   const prompt = `
-      You are a Korean language tutor.
-      Each day, introduce me to 2 new Korean words that are useful for everyday life and work.
-      Focus on words that are commonly used and slightly advanced (beyond basic beginner level).
-      
-      Send the response in plain text, formatted simply for Telegram without any markdown symbols or unnecessary labels.
+  You are a Korean language tutor.
+  Each day, introduce me to 2 new Korean words that are useful for everyday life and work.
+  Focus on words that are commonly used and slightly advanced (beyond basic beginner level).
 
-      Template for Daily Korean Vocabulary Lesson:
+  Include the meaning in both English and Khmer, but do not add example sentences in Khmer.
+  Send the response in plain text, formatted simply for Telegram without any markdown symbols or unnecessary labels.
 
-      Word 1:
-      Korean: [Korean word]
-      Pronunciation: [Pronunciation]
-      Meaning: [Meaning in English]
-      Example: [Example sentence in Korean]
-      Translation: [Translation in English]
+  Template for Daily Korean Vocabulary Lesson:
 
-      Word 2:
-      Korean: [Korean word]
-      Pronunciation: [Pronunciation]
-      Meaning: [Meaning in English]
-      Example: [Example sentence in Korean]
-      Translation: [Translation in English]
+  Word 1:
+  Korean: [Korean word]
+  Pronunciation: [Pronunciation]
+  Meaning: [Meaning in English]
+  Khmer Meaning: [Meaning in Khmer]
+  Example: [Example sentence in Korean]
+  Translation: [Translation in English]
 
-      Practice:
-      Try creating your own sentence using one or both of today's words.
-      `;
+  Word 2:
+  Korean: [Korean word]
+  Pronunciation: [Pronunciation]
+  Meaning: [Meaning in English]
+  Khmer Meaning: [Meaning in Khmer]
+  Example: [Example sentence in Korean]
+  Translation: [Translation in English]
 
-
+  Practice:
+  Try creating your own sentence using one or both of today's words.
+  `;
 
   const result = model.startChat({
     history: chatHistory,
