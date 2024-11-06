@@ -971,17 +971,19 @@ async function getKoreanWords(messageObj) {
 
   const prompt = `
   You are a Korean language tutor.
-  Each day, introduce me to 2 new Korean words that are useful for everyday life and work.
-  Focus on words that are commonly used and slightly advanced (beyond basic beginner level).
 
-  Include the meaning in both English and Khmer, and make sure to include an example sentence and its English translation. 
-  Only focus on common words, and check the chat history to avoid repeating words.
+  Each day, introduce me to 2 new Korean words that are especially useful for everyday life, work, and interactions as an IT web developer currently living in Busan, Korea. Choose words that go beyond basic beginner level, focusing on vocabulary that would be helpful both in daily activities and professional situations in Korea. 
+
+  1. Select one **object** word that might be relevant or commonly encountered.
+  2. Select one **verb** that is useful in work, social, or daily settings.
+
+  Provide the meaning in both English and Khmer, along with an example sentence and its English translation. Avoid repeating words by checking the chat history.
 
   Send the response in plain text, formatted simply for Telegram without any markdown symbols or unnecessary labels.
 
   Template for Daily Korean Vocabulary Lesson:
 
-  Word 1:
+  **Word 1** (Object):
   Korean: [Korean word]
   Pronunciation: [Pronunciation]
   Meaning: [Meaning in English]
@@ -989,7 +991,7 @@ async function getKoreanWords(messageObj) {
   Example: [Example sentence in Korean]
   Translation: [Translation of example in English]
 
-  Word 2:
+  **Word 2** (Verb):
   Korean: [Korean word]
   Pronunciation: [Pronunciation]
   Meaning: [Meaning in English]
@@ -997,8 +999,9 @@ async function getKoreanWords(messageObj) {
   Example: [Example sentence in Korean]
   Translation: [Translation of example in English]
 
-  Practice:
-  Try creating your own sentence using one or both of today's words.
+  **Practice:**
+  Try creating your own sentence using one or both of today’s words.
+
   `;
 
   const result = model.startChat({
@@ -1059,6 +1062,7 @@ async function getTranslate(str) {
       Translate the following text based on its original language:
       - If the text is in English, translate it into Korean using a highly polite and formal tone, suitable for communication with managers, team leaders, and coworkers.
       - If the text is in Korean, translate it into English with a tone that reflects respect and professionalism, similar to the style in the examples provided.
+      - Don't translate to the same language that provided.
 
       Examples
       English to Korean:
