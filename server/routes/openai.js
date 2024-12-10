@@ -1409,7 +1409,7 @@ const sendBatchNotification = async (message) => {
     // Map subscription data into the format required by webPush
     const subscriptions = result.rows.map((row) => ({
       endpoint: row.endpoint,
-      keys: JSON.parse(row.keys), // Ensure keys are parsed as JSON
+      keys: row.keys, // Ensure keys are parsed as JSON
     }));
 
     // Send notifications to all subscriptions
