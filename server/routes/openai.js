@@ -1388,6 +1388,70 @@ const sendNotification = (subscription, data, req, res) => {
     });
 };
 
+// Batch notification function
+const sendBatchNotification = async (message) => {
+  try {
+    // Query to fetch all subscriptions
+    const query = `
+      SELECT endpoint, keys, expiration_time 
+      FROM subscriptions;
+    `;
+    const client = await pool.connect();
+    const result = await client.query(query);
+
+    if (!result.rows || result.rows.length === 0) {
+      return {
+        status: false,
+        message: "No subscriptions found to send notifications.",
+      }
+    }
+
+    // Map subscription data into the format required by webPush
+    const subscriptions = result.rows.map((row) => ({
+      endpoint: row.endpoint,
+      keys: JSON.parse(row.keys), // Ensure keys are parsed as JSON
+    }));
+
+    // Send notifications to all subscriptions
+    const notificationPromises = subscriptions.map((subscription) =>
+      webPush.sendNotification(subscription, JSON.stringify({ message }))
+    );
+
+    // Wait for all notifications to resolve
+    const results = await Promise.allSettled(notificationPromises);
+
+    const successful = results.filter((result) => result.status === 'fulfilled');
+    const failed = results.filter((result) => result.status === 'rejected');
+
+    return {
+      status: true,
+      message: "Batch notifications processed.",
+      summary: {
+        total: subscriptions.length,
+        successful: successful.length,
+        failed: failed.length,
+      },
+    }
+  } catch (error) {
+    console.error("Error sending batch notifications", error);
+    return {
+      status: false,
+      message: "Error sending batch notifications",
+      error,
+    }
+  }
+};
+
+router.post("/batchPush", async (req, res) => {
+  const { message } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  try {
+    res.send(await sendBatchNotification(message));
+  }catch (error) {
+    console.error("Error sending batch notifications", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/push", async (req, res) => {
   const { identifier, payload } = req.body; // Extract identifier (username or deviceId) and payload from request body
   const client = await pool.connect();
