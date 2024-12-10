@@ -147,32 +147,32 @@ router.get("/text", async (req, res) => {
 
 router.post("/text", async (req, res) => {
   try {
-    const { text, activeChatId } = req.body;
+    const { text, activeChatId, chatId } = req.body;
+    let chatHistory = [];
+    
+    if (chatId) {
+      getChat({
+        chat_id: chatId,
+        onSuccess: ({ results }) => {
+          if (results != []) {
+            chatHistory = results;
+          } else {
+            chatHistory = defaultChatHistory;
+            saveChat({ chat_id: chatId, chat_history: chatHistory });
+          }
+        },
+        onError: (response) => {
+          console.log({ response });
+        },
+      });
+    
+    }
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
-    console.log({ text });
-    console.log({ res: response.text() });
-    // sendEmail(text, response.text());
-
-    // try {
-    //   await axios.post(
-    //     `https://api.chatengine.io/chats/${activeChatId}/messages/`,
-    //     { text: response.text() },
-    //     {
-    //       headers: {
-    //         "Project-ID": process.env.PROJECT_ID,
-    //         "User-Name": process.env.BOT_USER_NAME,
-    //         "User-Secret": process.env.BOT_USER_SECRET,
-    //       },
-    //     }
-    //   );
-    // } catch (e) {
-    //   console.log(e?.message);
-    //   console.log("error ");
-    // }
+    saveChat({ chat_id: chatId, chat_history: chatHistory });
 
     res.status(200).json({ text: response.text() });
   } catch (error) {
@@ -772,18 +772,30 @@ You will provide information based on the context given below. Do not indicate t
 
 const friendInfo = `
 ### Friends
-Name: [Mean Khaw]
+Name: [Mean Khaw] (b khaw)
 Phone Number: [010 7428 4635]
 BIO [Fall in love with her alone, because I am introvert.]
 Location: [Busan, South Korean]
 
-Name: [Ngoeun Chivorn]
+Name: [Ngoeun Chivorn] (b jione)
 Phone Number: [070 414 707]
 BIO [Nothing more common than unsuccessful people with talent.]
 Location: [Phnom Penh]
 
-Name: [Davin Sou]
+Name: [Davin Sou] (ah vin)
 BIO [Love one girl is enough. But I'm not a girl.]
+Location: [Phnom Penh]
+
+Name: [Chey ChansovanRith] (rith moki)
+BIO [Going to the gym everyday is eaiser than explaining her wha's going on.]
+Location: [Phnom Penh]
+
+Name: [Honn Molizak] (OK bek)
+BIO [My friend told me to stop drinking everyday. So I drink everynight.]
+Location: [Phnom Penh]
+
+Name: [Thai Khahy] (ah hy)
+BIO [I like girl but girl don't like me.]
 Location: [Phnom Penh]
 `;
 
@@ -843,7 +855,7 @@ router.post("/darabothlistening", async (req, res) => {
     const { body } = req;
     if (body) {
       const messageObj = body.message;
-      // console.log(messageObj);
+      console.log(messageObj);
       await handleMessage(messageObj);
       res.status(200).json({ response: req.body });
     }

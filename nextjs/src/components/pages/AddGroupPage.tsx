@@ -1,6 +1,6 @@
 "use client";
 
-import { AutocompleteInput } from "@/components/ui/autocompleteInput";
+import AutocompleteInput from "@/components/ui/autocompleteInput";
 import { Button } from "@/components/ui/button";
 import {
   Card,
