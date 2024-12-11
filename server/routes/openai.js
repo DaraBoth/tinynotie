@@ -1414,7 +1414,7 @@ const sendBatchNotification = async (message) => {
 
     // Send notifications to all subscriptions
     const notificationPromises = subscriptions.map((subscription) =>
-      webPush.sendNotification(subscription, JSON.stringify({ message }))
+      webPush.sendNotification(subscription, JSON.stringify(message))
     );
 
     // Wait for all notifications to resolve
