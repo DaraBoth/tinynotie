@@ -1389,7 +1389,7 @@ const sendNotification = (subscription, data, req, res) => {
 };
 
 // Batch notification function
-const sendBatchNotification = async (message) => {
+const sendBatchNotification = async (payload) => {
   try {
     // Query to fetch all subscriptions
     const query = `
@@ -1414,7 +1414,7 @@ const sendBatchNotification = async (message) => {
 
     // Send notifications to all subscriptions
     const notificationPromises = subscriptions.map((subscription) =>
-      webPush.sendNotification(subscription, JSON.stringify(message))
+      webPush.sendNotification(subscription, JSON.stringify(payload))
     );
 
     // Wait for all notifications to resolve
@@ -1443,9 +1443,9 @@ const sendBatchNotification = async (message) => {
 };
 
 router.post("/batchPush", async (req, res) => {
-  const { message } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const { payload } = req.body; // Extract identifier (username or deviceId) and payload from request body
   try {
-    res.send(await sendBatchNotification(message));
+    res.send(await sendBatchNotification(payload));
   }catch (error) {
     console.error("Error sending batch notifications", error);
     res.status(500).json({ error: error.message });
@@ -1529,23 +1529,46 @@ router.post("/subscribe", async (req, res) => {
     // Start a transaction to ensure atomicity
     await client.query("BEGIN");
 
-    // Upsert the subscription: if it already exists, update it; otherwise, insert a new one.
-    const upsertQuery = `
-      INSERT INTO subscriptions (endpoint, expiration_time, keys, device_id, user_agent, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      ON CONFLICT (endpoint) 
-      DO UPDATE SET expiration_time = EXCLUDED.expiration_time, keys = EXCLUDED.keys, updated_at = CURRENT_TIMESTAMP,
-                    device_id = EXCLUDED.device_id, user_agent = EXCLUDED.user_agent;
+    // Check if the device ID already exists in the subscriptions table
+    const checkDeviceQuery = `
+      SELECT 1 FROM subscriptions WHERE device_id = $1;
     `;
+    const deviceExistsResult = await client.query(checkDeviceQuery, [deviceId]);
 
-    // Execute the query with values
-    await client.query(upsertQuery, [
-      endpoint,
-      expirationTime,
-      keys,
-      deviceId,
-      userAgent,
-    ]);
+    if (deviceExistsResult.rowCount > 0) {
+      // Device ID exists, update the push data only
+      const updateSubscriptionQuery = `
+        UPDATE subscriptions
+        SET endpoint = $1, 
+            expiration_time = $2, 
+            keys = $3, 
+            user_agent = $4,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE device_id = $5;
+      `;
+
+      await client.query(updateSubscriptionQuery, [
+        endpoint,
+        expirationTime,
+        keys,
+        userAgent,
+        deviceId,
+      ]);
+    } else {
+      // Device ID does not exist, insert a new subscription
+      const insertSubscriptionQuery = `
+        INSERT INTO subscriptions (endpoint, expiration_time, keys, device_id, user_agent, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+      `;
+
+      await client.query(insertSubscriptionQuery, [
+        endpoint,
+        expirationTime,
+        keys,
+        deviceId,
+        userAgent,
+      ]);
+    }
 
     if (userInfo) {
       // Update the user's device_id in the user_infm table based on the username
@@ -1559,7 +1582,7 @@ router.post("/subscribe", async (req, res) => {
       await client.query(updateUserDeviceIdQuery, [deviceId, userInfo]);
     }
 
-    // Commit the transaction after both queries succeed
+    // Commit the transaction after all queries succeed
     await client.query("COMMIT");
 
     res.json({
@@ -1583,5 +1606,6 @@ router.post("/subscribe", async (req, res) => {
     client.release();
   }
 });
+
 
 export default router;
