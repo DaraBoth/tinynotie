@@ -1442,6 +1442,53 @@ const sendBatchNotification = async (payload) => {
   }
 };
 
+router.get("/getWeatherNotificatioin", async (req, res) => {
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY1);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+    const prompt = `
+        Instruction
+        You are a virtual assistant tasked with generating a short and concise daily weather forecast notification every morning. The notification should include:
+
+        Date: Today's date.
+        Location: Mention the location for the forecast. If the location is not specified, default to "Busan, Dong-gu."
+        Weather Overview: A brief summary of the weather (e.g., sunny, cloudy, rainy).
+        Temperature: Include the high and low temperatures in Celsius or Fahrenheit.
+        Notification Style
+        Keep the message as short as possible while remaining informative.
+        Example: "Good morning! ☀️ Today in Busan, Dong-gu: Sunny, 25°C/18°C. Enjoy your day!"
+        Use emojis sparingly to keep it engaging and friendly.
+        Guidelines
+        Default to "Busan, Dong-gu" if the location is not provided.
+        Ensure the notification is brief and easy to read, ideally under 2 sentences.
+        Provide only the essential details to save time.
+        Example Notifications
+        Sunny Day: "Good morning! ☀️ Busan, Dong-gu: Sunny, 28°C/18°C. Have a great day!"
+
+        Rainy Day: "Good morning! ☔ Busan, Dong-gu: Rainy, 22°C/16°C. Don't forget your umbrella!"
+
+        Windy Day: "Good morning! 🌬️ Busan, Dong-gu: Windy, 20°C/12°C. Stay warm!"
+
+        Cloudy Day: "Good morning! ☁️ Busan, Dong-gu: Cloudy, 25°C/18°C. Have a nice day!"
+
+        Daily Execution
+        Generate this weather notification every morning at 7:00 AM local time.
+        `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    console.log("response text : " + response.text());
+    const payload = {
+      "title":"New Notification",
+      "body": response.text()
+    }
+    res.send(await sendBatchNotification(payload));
+  }catch (error) {
+    console.error("Error sending batch notifications", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/batchPush", async (req, res) => {
   const { payload } = req.body; // Extract identifier (username or deviceId) and payload from request body
   try {
