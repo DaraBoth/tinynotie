@@ -1444,66 +1444,67 @@ const sendBatchNotification = async (payload) => {
 
 router.get("/getWeatherNotification", async (req, res) => {
   try {
-    // Initialize GoogleGenerativeAI
+    // Fetch real-time weather data using an API (e.g., OpenWeatherMap)
+    const weatherApiKey = process.env.WEATHER_API_KEY; // Store your API key in the environment variables
+    const location = "Busan, South Korea"; // Default location
+    const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?q=Busan&units=metric&appid=${weatherApiKey}`;
+
+    // Make the API call
+    const weatherResponse = await axios.get(weatherApiUrl);
+    const weatherData = weatherResponse.data;
+
+    // Extract relevant data
+    const temp = weatherData.main.temp; // Current temperature
+    const tempMin = weatherData.main.temp_min; // Min temperature
+    const tempMax = weatherData.main.temp_max; // Max temperature
+    const weatherCondition = weatherData.weather[0].description; // Weather description
+    const date = new Date().toLocaleDateString("en-US"); // Today's date
+
+    // Construct the prompt with real-time data
+    const prompt = `
+        Instruction
+        You are a virtual assistant tasked with generating a short and concise daily weather forecast notification every morning. 
+        The notification should include:
+
+        Date: ${date}.
+        Location: ${location}.
+        Weather Overview: ${weatherCondition}.
+        Temperature: High of ${tempMax}°C, low of ${tempMin}°C. Current temperature is ${temp}°C.
+
+        Notification Style
+        Keep the message as short as possible while remaining informative.
+        Example: "Good morning! ☀️ Today in Busan: Sunny, 25°C/18°C. Enjoy your day!"
+        Use emojis sparingly to keep it engaging and friendly.
+    `;
+
+    // Initialize the AI with your API key
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
-    // Define the prompt
-    const prompt = `
-        Instruction
-        You are a virtual assistant tasked with generating a short and concise daily weather forecast notification every morning. The notification should include:
-
-        Date: Today's date.
-        Location: Mention the location for the forecast. If the location is not specified, default to "Busan, Dong-gu."
-        Weather Overview: A brief summary of the weather (e.g., sunny, cloudy, rainy).
-        Temperature: Include the high and low temperatures in Celsius or Fahrenheit.
-        Notification Style
-        Keep the message as short as possible while remaining informative.
-        Example: "Good morning! ☀️ Today in Busan, Dong-gu: Sunny, 25°C/18°C. Enjoy your day!"
-        Use emojis sparingly to keep it engaging and friendly.
-        Guidelines
-        Default to "Busan, Dong-gu" if the location is not provided.
-        Ensure the notification is brief and easy to read, ideally under 2 sentences.
-        Provide only the essential details to save time.
-        Example Notifications
-        Sunny Day: "Good morning! ☀️ Busan, Dong-gu: Sunny, 28°C/18°C. Have a great day!"
-
-        Rainy Day: "Good morning! ☔ Busan, Dong-gu: Rainy, 22°C/16°C. Don't forget your umbrella!"
-
-        Windy Day: "Good morning! 🌬️ Busan, Dong-gu: Windy, 20°C/12°C. Stay warm!"
-
-        Cloudy Day: "Good morning! ☁️ Busan, Dong-gu: Cloudy, 25°C/18°C. Have a nice day!"
-
-        Daily Execution
-        Generate this weather notification every morning at 7:00 AM local time.
-    `;
-
-    // Generate content from AI
+    // Generate content using the AI
     const result = await model.generateContent(prompt);
-    const aiMessage = result.response.text(); // Get the AI-generated weather notification
+    const aiMessage = result.response.text(); // AI-generated weather notification
 
-    // Define payload for the notification
+    // Respond with the AI message
+    res.json({
+      status: "success",
+      message: aiMessage,
+    });
+
+    // Send notification in the background
     const payload = {
-      title: "Weather Update", // Notification title
-      body: aiMessage, // Custom notification body
+      title: "Weather Update",
+      body: aiMessage,
     };
 
-    // Send the notification in the background
     try {
-      await sendBatchNotification(payload);
+      await sendBatchNotification(payload); // Custom function to send notifications
       console.log("Notification sent successfully:", payload);
-        
-      // Respond to the client with the AI message immediately
-      res.json({
-        status: "success",
-        message: aiMessage,
-      });
-
     } catch (notificationError) {
       console.error("Error sending notification:", notificationError);
     }
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error("Error processing weather notification:", error);
     res.status(500).json({ error: error.message });
   }
 });
