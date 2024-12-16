@@ -1442,10 +1442,13 @@ const sendBatchNotification = async (payload) => {
   }
 };
 
-router.get("/getWeatherNotificatioin", async (req, res) => {
+router.get("/getWeatherNotification", async (req, res) => {
   try {
+    // Initialize GoogleGenerativeAI
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+    
+    // Define the prompt
     const prompt = `
         Instruction
         You are a virtual assistant tasked with generating a short and concise daily weather forecast notification every morning. The notification should include:
@@ -1473,16 +1476,34 @@ router.get("/getWeatherNotificatioin", async (req, res) => {
 
         Daily Execution
         Generate this weather notification every morning at 7:00 AM local time.
-        `;
+    `;
 
+    // Generate content from AI
     const result = await model.generateContent(prompt);
+    const notificationBody = result.response.text();
+
+    // Send the AI-generated message as the HTTP response
+    res.json({
+      status: "success",
+      message: notificationBody,
+    });
+
+    // Define payload for the notification
     const payload = {
-      "title":"New Notification",
-      "body": ""
-    }
-    res.send(await sendBatchNotification({...payload,body: await result.response.text()}));
-  }catch (error) {
-    console.error("Error sending batch notifications", error);
+      title: "New Notification",
+      body: notificationBody,
+    };
+
+    // Send the notification in the background
+    sendBatchNotification(payload)
+      .then(() => {
+        console.log("Notification sent successfully:", payload);
+      })
+      .catch((error) => {
+        console.error("Error sending notification:", error);
+      });
+  } catch (error) {
+    console.error("Error processing request:", error);
     res.status(500).json({ error: error.message });
   }
 });
