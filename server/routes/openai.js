@@ -1390,6 +1390,7 @@ const sendNotification = (subscription, data, req, res) => {
 
 // Batch notification function
 const sendBatchNotification = async (payload) => {
+  console.log({payload})
   try {
     // Query to fetch all subscriptions
     const query = `
