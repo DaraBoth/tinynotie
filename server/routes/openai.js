@@ -1444,7 +1444,7 @@ const sendBatchNotification = async (payload) => {
 
 router.get("/getWeatherNotificatioin", async (req, res) => {
   try {
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY1);
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
     const prompt = `
         Instruction
