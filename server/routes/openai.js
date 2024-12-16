@@ -1482,22 +1482,23 @@ router.get("/getWeatherNotification", async (req, res) => {
     const result = await model.generateContent(prompt);
     const aiMessage = result.response.text(); // Get the AI-generated weather notification
 
-    // Respond to the client with the AI message immediately
-    res.json({
-      status: "success",
-      message: aiMessage,
-    });
-
     // Define payload for the notification
     const payload = {
       title: "Weather Update", // Notification title
-      body: "Check out today's weather update now!", // Custom notification body
+      body: aiMessage, // Custom notification body
     };
 
     // Send the notification in the background
     try {
       await sendBatchNotification(payload);
       console.log("Notification sent successfully:", payload);
+        
+      // Respond to the client with the AI message immediately
+      res.json({
+        status: "success",
+        message: aiMessage,
+      });
+
     } catch (notificationError) {
       console.error("Error sending notification:", notificationError);
     }
