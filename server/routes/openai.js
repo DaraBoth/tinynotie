@@ -1498,7 +1498,7 @@ router.get("/getWeatherNotification", async (req, res) => {
     body: await getWeather(),
   };
   try {
-    res.send(await sendBatchNotification(JSON.stringify(payload)));
+    res.send(await sendBatchNotification(JSON.stringify({payload})));
     console.log("Notification sent successfully:", payload);
   } catch (notificationError) {
     console.error("Error sending notification:", notificationError);
