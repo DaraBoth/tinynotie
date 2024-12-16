@@ -1476,13 +1476,11 @@ router.get("/getWeatherNotificatioin", async (req, res) => {
         `;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    console.log("response text : " + response.text());
     const payload = {
       "title":"New Notification",
-      "body": response.text()
+      "body": ""
     }
-    res.send(await sendBatchNotification(payload));
+    res.send(await sendBatchNotification({...payload,body: await result.response.text()}));
   }catch (error) {
     console.error("Error sending batch notifications", error);
     res.status(500).json({ error: error.message });

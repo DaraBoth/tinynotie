@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useGroups } from "@/hooks/useGroups";
-import { Group, GroupRes } from "@/types/api";
+import { GroupRes } from "@/types/api";
 import { MagicCard } from "../magicui/magic-card";
 import { Trash2, Moon, Sun } from "lucide-react"; // Import icons for dark/light mode
 import { useState } from "react";
