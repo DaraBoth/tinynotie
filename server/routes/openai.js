@@ -1446,6 +1446,11 @@ router.get("/getWeatherNotification", async (req, res) => {
   try {
     // Fetch real-time weather data using an API (e.g., OpenWeatherMap)
     const weatherApiKey = process.env.WEATHER_API_KEY; // Store your API key in the environment variables
+    if(!weatherApiKey) {
+      res.send({
+        error:"API Key is undefined. Check your environment variables."
+      })
+    }
     const location = "Busan, South Korea"; // Default location
     const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?q=Busan&units=metric&appid=${weatherApiKey}`;
 
