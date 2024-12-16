@@ -1447,7 +1447,7 @@ router.get("/getWeatherNotification", async (req, res) => {
     // Initialize GoogleGenerativeAI
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
-    
+
     // Define the prompt
     const prompt = `
         Instruction
@@ -1480,28 +1480,27 @@ router.get("/getWeatherNotification", async (req, res) => {
 
     // Generate content from AI
     const result = await model.generateContent(prompt);
-    const notificationBody = result.response.text();
+    const aiMessage = result.response.text(); // Get the AI-generated weather notification
 
-    // Send the AI-generated message as the HTTP response
+    // Respond to the client with the AI message immediately
     res.json({
       status: "success",
-      message: notificationBody,
+      message: aiMessage,
     });
 
     // Define payload for the notification
     const payload = {
-      title: "New Notification",
-      body: notificationBody,
+      title: "Weather Update", // Notification title
+      body: "Check out today's weather update now!", // Custom notification body
     };
 
     // Send the notification in the background
-    sendBatchNotification(payload)
-      .then(() => {
-        console.log("Notification sent successfully:", payload);
-      })
-      .catch((error) => {
-        console.error("Error sending notification:", error);
-      });
+    try {
+      await sendBatchNotification(payload);
+      console.log("Notification sent successfully:", payload);
+    } catch (notificationError) {
+      console.error("Error sending notification:", notificationError);
+    }
   } catch (error) {
     console.error("Error processing request:", error);
     res.status(500).json({ error: error.message });
