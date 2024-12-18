@@ -1444,52 +1444,78 @@ const sendBatchNotification = async (payload) => {
 };
 
 async function getWeather() {
-  // Fetch real-time weather data using an API (e.g., OpenWeatherMap)
-  const weatherApiKey = process.env.WEATHER_API_KEY; // Store your API key in the environment variables
-  if(!weatherApiKey) {
-    res.send({
-      error:"API Key is undefined. Check your environment variables."
-    })
-  }
-  const location = "Busan, South Korea"; // Default location
-  const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?q=Busan&units=metric&appid=${weatherApiKey}`;
+  try {
+    // Fetch real-time weather data using an API (e.g., OpenWeatherMap)
+    const weatherApiKey = process.env.WEATHER_API_KEY; // Store your API key in the environment variables
+    if (!weatherApiKey) {
+      throw new Error("Weather API Key is undefined. Check your environment variables.");
+    }
 
-  // Make the API call
-  const weatherResponse = await axios.get(weatherApiUrl);
-  const weatherData = weatherResponse.data;
+    const location = "Busan, South Korea"; // Default location
+    const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?q=Busan&units=metric&appid=${weatherApiKey}`;
 
-  // Extract relevant data
-  const temp = weatherData.main.temp; // Current temperature
-  const tempMin = weatherData.main.temp_min; // Min temperature
-  const tempMax = weatherData.main.temp_max; // Max temperature
-  const weatherCondition = weatherData.weather[0].description; // Weather description
-  const date = new Date().toLocaleDateString("en-US"); // Today's date
+    // Make the API call
+    const weatherResponse = await axios.get(weatherApiUrl);
+    const weatherData = weatherResponse.data;
 
-  // Construct the prompt with real-time data
-  const prompt = `
-      Instruction
-      You are a virtual assistant tasked with generating a short and concise daily weather forecast notification every morning. 
+    // Extract relevant data
+    const temp = weatherData.main.temp; // Current temperature
+    const tempMin = weatherData.main.temp_min; // Min temperature
+    const tempMax = weatherData.main.temp_max; // Max temperature
+    const weatherCondition = weatherData.weather[0].description; // Weather description
+    const date = new Date().toLocaleDateString("en-US"); // Today's date
+
+    // Determine the greeting based on the current time in Seoul (KST)
+    const timezone = "Asia/Seoul";
+    const currentTime = new Date().toLocaleString("en-US", { timeZone: timezone });
+    const hour = new Date(currentTime).getHours();
+
+    let greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = "Good morning! ☀️";
+    } else if (hour >= 12 && hour < 17) {
+      greeting = "Good afternoon! 🌤️";
+    } else if (hour >= 17 && hour < 21) {
+      greeting = "Good evening! 🌆";
+    } else {
+      greeting = "Good night! 🌙";
+    }
+
+    // Construct the prompt with real-time data
+    const prompt = `
+      Instruction:
+      You are a virtual assistant tasked with generating a short and concise daily weather forecast notification.
       The notification should include:
 
-      Date: ${date}.
-      Location: ${location}.
-      Weather Overview: ${weatherCondition}.
-      Temperature: High of ${tempMax}°C, low of ${tempMin}°C. Current temperature is ${temp}°C.
+      - Greeting: ${greeting}.
+      - Date: ${date}.
+      - Location: ${location}.
+      - Weather Overview: ${weatherCondition}.
+      - Temperature: High of ${tempMax}°C, low of ${tempMin}°C. Current temperature is ${temp}°C.
 
-      Notification Style
+      Context:
+      The user's timezone is ${timezone}. Adjust your language to fit their local time.
+
+      Notification Style:
       Keep the message as short as possible while remaining informative.
-      Example: "Good morning! ☀️ Today in Busan: Sunny, 25°C/18°C. Enjoy your day!"
+      Example: "${greeting} Today in ${location}: ${weatherCondition}, ${tempMax}°C/${tempMin}°C. Have a great day!"
       Use emojis sparingly to keep it engaging and friendly.
-  `;
+    `;
 
-  // Initialize the AI with your API key
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+    // Initialize the AI with your API key
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
-  // Generate content using the AI
-  const result = await model.generateContent(prompt);
-  const aiMessage = result.response.text(); // AI-generated weather notification
-  return aiMessage;
+    // Generate content using the AI
+    const result = await model.generateContent(prompt);
+    const aiMessage = result.response.text(); // AI-generated weather notification
+
+    return aiMessage;
+
+  } catch (error) {
+    console.error("Error in getWeather function:", error);
+    return `Error: Unable to fetch weather data or generate notification. Please try again later.`;
+  }
 }
 
 router.get("/getWeatherNotification", async (req, res) => {
