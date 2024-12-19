@@ -76,7 +76,7 @@ const TanStackTable = <TData,>({
           {tablePageData.map((row, rowIndex) => (
             <div
               key={rowIndex}
-              className="border rounded-lg p-4 bg-white shadow-md hover:bg-gray-100 transition-colors"
+              className="border rounded-lg p-4  shadow-md transition-colors"
             >
               {Object.entries(row as any).map(
                 ([key, value]) =>
@@ -85,10 +85,10 @@ const TanStackTable = <TData,>({
                       key={key}
                       className="flex justify-between py-1 border-b last:border-none"
                     >
-                      <span className="font-semibold text-gray-800">
+                      <span className="font-semibold ">
                         {columnMapping[key] ?? key}
                       </span>
-                      <span className="text-gray-600">{String(value)}</span>
+                      <span className="">{String(value)}</span>
                     </div>
                   )
               )}
@@ -107,14 +107,14 @@ const TanStackTable = <TData,>({
   return (
     <div className="overflow-x-auto">
       <div className="relative max-h-[500px] overflow-y-auto">
-        <table className="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
-          <thead className="bg-blue-100 sticky top-0 z-10">
+        <table className="min-w-full rounded-lg shadow-md">
+          <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-2 text-left text-sm font-semibold text-gray-800"
+                    className="px-4 py-2 text-left text-sm font-semibold"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -129,10 +129,10 @@ const TanStackTable = <TData,>({
             {table.getRowModel().rows.map((row) => (
               <tr
                 key={row.id}
-                className="border-t hover:bg-gray-50 transition-colors duration-200"
+                className="border-t transition-colors duration-200"
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-2 text-sm text-gray-700">
+                  <td key={cell.id} className="px-4 py-2 text-sm">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

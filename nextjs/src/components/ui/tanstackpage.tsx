@@ -35,13 +35,13 @@ const TanStackPagination: React.FC<TanStackPaginationProps> = ({
         disabled={pageIndex === 0}
         className={`px-4 py-2 rounded-md ${
           pageIndex === 0
-            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-            : "bg-blue-600 text-white hover:bg-blue-700"
+            ? " text-gray-500 cursor-not-allowed"
+            : " text-white hover:bg-blue-700"
         }`}
       >
         Previous
       </button>
-      <span className="text-gray-700">
+      <span className="">
         Page {pageIndex + 1} of {pageCount}
       </span>
       <button
@@ -49,8 +49,8 @@ const TanStackPagination: React.FC<TanStackPaginationProps> = ({
         disabled={pageIndex >= pageCount - 1}
         className={`px-4 py-2 rounded-md ${
           pageIndex >= pageCount - 1
-            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-            : "bg-blue-600 text-white hover:bg-blue-700"
+            ? " text-gray-500 cursor-not-allowed"
+            : " text-white hover:bg-blue-700"
         }`}
       >
         Next

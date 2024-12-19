@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import Navbar from "@/components/custom/Navbar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function RootLayout({
@@ -10,7 +11,7 @@ export default function RootLayout({
     <SidebarProvider>
       <AppSidebar />
       <main className="flex h-full w-full flex-col p-4">
-        <SidebarTrigger />
+        <Navbar />
         {children}
       </main>
     </SidebarProvider>

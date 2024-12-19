@@ -1,6 +1,6 @@
 // src/app/group/[data]/page.tsx
 
-import GroupPage from "@/components/pages/GroupPage";
+import GroupPage from "@/components/pages/Trips/TripsDetailPage";
 import API_ROUTES, { apiRequest } from "@/lib/config/apiRoutes";
 import { ApiResponse, Member, Trip } from "@/types/api";
 import { decodeBase64ToObject } from "@/lib/helper/encode";
@@ -37,7 +37,7 @@ export default async function Page({ params }: { params: any }) {
   return (
     <>
       <GroupPage
-        groupId={groupId}
+        groupObj={{ groupId, groupName, adminId, currencyType }}
         currencyType={currencyType}
         initialMembers={membersResponse}
         initialTrips={tripsResponse}

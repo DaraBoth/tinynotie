@@ -8,7 +8,6 @@ import { calculateMoney } from "@/lib/helper/calculateFunc";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ApiResponse, Member, Trip } from "@/types/api";
-import TanStackTable from "../ui/tanstacktable";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 import FapButton from "@/components/ui/fab";
 import ReusablePopup from "@/components/ui/reusablepopup";
@@ -19,16 +18,24 @@ import {
   Person as PersonIcon,
   Settings as SettingsIcon,
 } from "@mui/icons-material";
+import TanStackTable from "@/components/ui/tanstacktable";
+
+type GroupObject = {
+  groupId: number;
+  groupName: string;
+  adminId: number;
+  currencyType: string;
+};
 
 interface GroupPageProps {
-  groupId: number;
+  groupObj: GroupObject;
   currencyType: string;
   initialMembers: ApiResponse<Member[]>;
   initialTrips: ApiResponse<Trip[]>;
 }
 
 const GroupPage = ({
-  groupId,
+  groupObj,
   currencyType,
   initialMembers,
   initialTrips,
@@ -38,7 +45,7 @@ const GroupPage = ({
   const [popupType, setPopupType] = useState("");
 
   const { members, trips, isLoading, error } = useGroupData({
-    groupId,
+    groupId: groupObj.groupId,
     initialMembers,
     initialTrips,
   });
@@ -46,6 +53,7 @@ const GroupPage = ({
   useEffect(() => {
     console.log("Members Data:", members);
     console.log("Trips Data:", trips);
+    console.log(groupObj);
   }, [members, trips]);
 
   if (isLoading) {
@@ -77,17 +85,15 @@ const GroupPage = ({
     setIsPopupOpen(true);
   };
 
+  console.log({newData});
+
   return (
-    <div className="container mx-auto p-4">
+    <div className="w-fullmx-auto p-4">
       <div className="flex justify-between items-center mb-4">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/")}
-          className="p-2"
-        >
+        <Button variant="link" onClick={() => router.back()} className="p-2">
           <ArrowLeftIcon className="h-6 w-6 text-gray-500 hover:text-gray-700 transition-colors" />
         </Button>
-        <h1 className="text-2xl font-bold">Group Details</h1>
+        <h1 className="text-2xl font-bold">{groupObj.groupName}</h1>
         <div className="w-6"></div>
       </div>
 
@@ -100,11 +106,13 @@ const GroupPage = ({
         <TanStackTable
           data={tripsDataWithFakeIds}
           columnMapping={{
-            status: null,
-            description: null,
-            group_id: null,
             id: "ID",
-            real_id: null,
+            trp_name: "Name",
+            spend: "Spend",
+            mem_id: "Member ID",
+            group_id: null,
+            create_date: "CreatedAt",
+            update_dttm: "UpdatedAt",
           }}
         />
       </div>
