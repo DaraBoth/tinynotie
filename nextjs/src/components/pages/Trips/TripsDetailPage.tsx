@@ -61,7 +61,6 @@ const GroupPage = ({
   useEffect(() => {
     console.log("Members Data:", members);
     console.log("Trips Data:", trips);
-    console.log(groupObj);
   }, [members, trips]);
 
   if (isLoading) {
