@@ -15,6 +15,8 @@ export default async function Page() {
     fetchType: "server",
   });
 
+  console.log(groups);
+
   return <TripsPage initialGroups={groups} />;
   
 }

@@ -1,5 +1,3 @@
-// src/components/GroupPage.tsx
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -58,6 +56,18 @@ const GroupPage = ({
     initialTrips,
   });
 
+  // Ensures the `useMemo` hook is always called.
+  const tripsDataWithFakeIds = useMemo(() => {
+    if (trips && trips.data) {
+      return trips.data.map((trip, index) => ({
+        ...trip,
+        id: index + 1,
+        real_id: trip.id,
+      }));
+    }
+    return [];
+  }, [trips]);
+
   useEffect(() => {
     console.log("Members Data:", members);
     console.log("Trips Data:", trips);
@@ -76,17 +86,6 @@ const GroupPage = ({
     trips?.data || [],
     currencyType
   );
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const tripsDataWithFakeIds = useMemo(() => {
-    return trips && trips.data
-      ? trips.data.map((trip, index) => ({
-          ...trip,
-          id: index + 1,
-          real_id: trip.id,
-        }))
-      : [];
-  }, [trips]);
 
   const toggleDrawer =
     (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -107,7 +106,7 @@ const GroupPage = ({
   };
 
   return (
-    <div className="w-fullmx-auto p-4">
+    <div className="w-full mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <Button variant="link" onClick={() => router.back()} className="p-2">
           <ArrowLeftIcon className="h-6 w-6 text-gray-500 hover:text-gray-700 transition-colors" />
@@ -144,13 +143,8 @@ const GroupPage = ({
           onOpen={toggleDrawer(true)}
         >
           <div className="flex flex-col items-center justify-center p-4">
-            is open
-            <EditMember />
             {drawerType === "editMember" && <EditMember />}
-            {/* {drawerType === "editTrip" && <EditTrip />}
-            {drawerType === "deleteMember" && <DeleteMember />}
-            {drawerType === "deleteTrip" && <DeleteTrip />}
-            {drawerType === "settings" && <Settings />} */}
+            {/* Other drawer components can be added here */}
           </div>
         </SwipeableDrawer>
         <FapButton
