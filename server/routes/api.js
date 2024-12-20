@@ -192,6 +192,40 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   }
 });
 
+// Get Groups by Search with Dynamic Conditions
+router.get("/searchGroups", authenticateToken, async (req, res) => {
+  const { _id: user_id } = req.user; // Logged-in user ID
+  const { search = "", startDate, endDate } = req.query;
+
+  try {
+    const sql = `
+      SELECT DISTINCT g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date,
+             CASE 
+               WHEN g.admin_id = $1::int THEN TRUE
+               ELSE FALSE
+             END AS "isAdmin"
+      FROM grp_infm g
+      LEFT JOIN member_infm m ON g.id = m.group_id
+      WHERE 
+        (
+          $2::text IS NULL OR g.grp_name ILIKE '%' || $2 || '%'
+          OR m.mem_name ILIKE '%' || $2 || '%'
+        ) -- Match group name or member name
+        AND ($3::date IS NULL OR g.create_date >= $3::date) -- Start date filter
+        AND ($4::date IS NULL OR g.create_date <= $4::date) -- End date filter
+        AND (g.admin_id = $1::int OR EXISTS (
+          SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $1::int
+        )) -- Ensure the user has access to the group
+      ORDER BY g.create_date DESC;
+    `;
+    const results = await pool.query(sql, [user_id, search, startDate, endDate]);
+    res.send({ status: true, data: results.rows });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get Group Details by Group ID and User ID
 router.get("/getGroupDetail", async (req, res) => {
   const { group_id, user_id } = req.query;
