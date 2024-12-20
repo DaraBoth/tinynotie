@@ -196,7 +196,7 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
 router.get("/searchGroups", authenticateToken, async (req, res) => {
   const { _id: user_id } = req.user;
   const { search = "", start_date, end_date } = req.query;
-  console.log({ search = "", start_date, end_date });
+  console.log({ search, start_date, end_date });
   try {
     const sql = `
       SELECT DISTINCT g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date,
