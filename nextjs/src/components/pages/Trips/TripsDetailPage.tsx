@@ -86,7 +86,7 @@ const GroupPage = ({
           real_id: trip.id,
         }))
       : [];
-  }, [trips?.data]);
+  }, [trips,trips?.data]);
 
   const toggleDrawer =
     (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
