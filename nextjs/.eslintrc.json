@@ -4,6 +4,7 @@
     "next/typescript"
   ],
   "rules": {
-    "@typescript-eslint/no-explicit-any": "off" // Turn off the rule globally
+    "@typescript-eslint/no-explicit-any": "off", // Turn off the rule globally
+    "no-unused-vars": "off"
   }
 }

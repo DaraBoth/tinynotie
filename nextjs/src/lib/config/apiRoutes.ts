@@ -1,5 +1,6 @@
 // src/lib/config/apiRoutes.ts
 
+import { SearchGroupType } from "@/types/api";
 import axiosClient from "../instance/axiosClient";
 import axiosServer from "../instance/axiosServer";
 
@@ -19,6 +20,7 @@ const API_ROUTES = {
   addTrip: () => `/api/addTripByGroupId`,
   editTrip: () => `/api/editTripByGroupId`,
   deleteTrip: () => `/api/deleteTripById`,
+  searchGroups: ({ search = null, startDate = null, endDate = null }:SearchGroupType) => `/api/searchGroups?search=${search}&startDate=${startDate}&endDate=${endDate}`,
 };
 
 export const apiRequest = async <T = any>({

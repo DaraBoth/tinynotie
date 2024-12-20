@@ -10,8 +10,6 @@ import { useRouter } from "next/navigation";
 import { ApiResponse, Member, Trip } from "@/types/api";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 import FapButton from "@/components/ui/fab";
-import ReusablePopup from "@/components/ui/reusablepopup";
-import AutocompleteInput from "@/components/ui/autocompleteInput";
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -19,6 +17,8 @@ import {
   Settings as SettingsIcon,
 } from "@mui/icons-material";
 import TanStackTable from "@/components/ui/tanstacktable";
+import { SwipeableDrawer } from "@mui/material";
+import EditMember from "./UpdateDetail/editMember";
 
 type GroupObject = {
   groupId: number;
@@ -34,6 +34,14 @@ interface GroupPageProps {
   initialTrips: ApiResponse<Trip[]>;
 }
 
+type DrawerType =
+  | "editMember"
+  | "editTrip"
+  | "deleteMember"
+  | "deleteTrip"
+  | "settings"
+  | "";
+
 const GroupPage = ({
   groupObj,
   currencyType,
@@ -41,8 +49,8 @@ const GroupPage = ({
   initialTrips,
 }: GroupPageProps) => {
   const router = useRouter();
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [popupType, setPopupType] = useState("");
+  const [drawerType, setDrawerType] = useState<DrawerType>("");
+  const [openDrawer, setOpenDrawer] = useState(false);
 
   const { members, trips, isLoading, error } = useGroupData({
     groupId: groupObj.groupId,
@@ -80,12 +88,23 @@ const GroupPage = ({
       : [];
   }, [trips?.data]);
 
-  const handlePopupOpen = (type: string) => {
-    setPopupType(type);
-    setIsPopupOpen(true);
-  };
+  const toggleDrawer =
+    (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
+      if (
+        event &&
+        event.type === "keydown" &&
+        ((event as React.KeyboardEvent).key === "Tab" ||
+          (event as React.KeyboardEvent).key === "Shift")
+      ) {
+        return;
+      }
+      setOpenDrawer(open);
+    };
 
-  console.log({newData});
+  const handleDrawerState = (type: DrawerType) => {
+    setDrawerType(type);
+    toggleDrawer(true);
+  };
 
   return (
     <div className="w-fullmx-auto p-4">
@@ -117,52 +136,53 @@ const GroupPage = ({
         />
       </div>
 
-      <FapButton
-        actions={[
-          {
-            label: "Edit Member",
-            icon: <PersonIcon />,
-            onClick: () => handlePopupOpen("editMember"),
-          },
-          {
-            label: "Edit Trip",
-            icon: <EditIcon />,
-            onClick: () => handlePopupOpen("editTrip"),
-          },
-          {
-            label: "Delete Member",
-            icon: <DeleteIcon />,
-            onClick: () => handlePopupOpen("deleteMember"),
-          },
-          {
-            label: "Delete Trip",
-            icon: <DeleteIcon />,
-            onClick: () => handlePopupOpen("deleteTrip"),
-          },
-          {
-            label: "Settings",
-            icon: <SettingsIcon />,
-            onClick: () => handlePopupOpen("settings"),
-          },
-        ]}
-      />
-
-      {isPopupOpen && (
-        <ReusablePopup
-          isOpen={isPopupOpen}
-          onClose={() => setIsPopupOpen(false)}
-          content={
-            <>
-              <AutocompleteInput
-                suggestions={[]} // Add relevant suggestions here
-                selectedItems={[]}
-                onAddItem={(item) => console.log("Add:", item)}
-                onRemoveItem={(item) => console.log("Remove:", item)}
-              />
-            </>
-          }
+      <div className="mb-2">
+        <SwipeableDrawer
+          anchor={"right"}
+          open={openDrawer}
+          onClose={toggleDrawer(false)}
+          onOpen={toggleDrawer(true)}
+        >
+          <div className="flex flex-col items-center justify-center p-4">
+            is open
+            <EditMember />
+            {drawerType === "editMember" && <EditMember />}
+            {/* {drawerType === "editTrip" && <EditTrip />}
+            {drawerType === "deleteMember" && <DeleteMember />}
+            {drawerType === "deleteTrip" && <DeleteTrip />}
+            {drawerType === "settings" && <Settings />} */}
+          </div>
+        </SwipeableDrawer>
+        <FapButton
+          actions={[
+            {
+              label: "Edit Member",
+              icon: <PersonIcon />,
+              onClick: () => handleDrawerState("editMember"),
+            },
+            {
+              label: "Edit Trip",
+              icon: <EditIcon />,
+              onClick: () => handleDrawerState("editTrip"),
+            },
+            {
+              label: "Delete Member",
+              icon: <DeleteIcon />,
+              onClick: () => handleDrawerState("deleteMember"),
+            },
+            {
+              label: "Delete Trip",
+              icon: <DeleteIcon />,
+              onClick: () => handleDrawerState("deleteTrip"),
+            },
+            {
+              label: "Settings",
+              icon: <SettingsIcon />,
+              onClick: () => handleDrawerState("settings"),
+            },
+          ]}
         />
-      )}
+      </div>
     </div>
   );
 };

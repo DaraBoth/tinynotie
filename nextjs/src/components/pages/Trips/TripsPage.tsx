@@ -10,6 +10,7 @@ import Link from "next/link";
 import { encodeObjectToBase64 } from "@/lib/helper/encode";
 import { useTheme } from "next-themes"; // Import the useTheme hook
 import { MagicCard } from "@/components/magicui/magic-card";
+import API_ROUTES, { apiRequest } from "@/lib/config/apiRoutes";
 
 export default function TripsPage({
   initialGroups,
@@ -28,6 +29,16 @@ export default function TripsPage({
   if (error) {
     return <p>Error loading groups.</p>;
   }
+
+  // const handleSearch = async () =>{
+  //   const groups = await apiRequest({
+  //     url: API_ROUTES.searchGroups(session?.user.id),
+  //     method: "GET",
+  //     fetchType: "server",
+  //   });
+
+  // }
+
 
   return (
     <div className="w-full mx-auto p-4">
@@ -54,10 +65,6 @@ export default function TripsPage({
                 </div>
                 <p className="text-sm text-gray-500">
                   Currency: {group.currency}
-                </p>
-                <p className="text-xs flex-1 text-gray-400">
-                  {group.create_date} ~{" "}
-                  <span className="text-blue-500">{group.update_date}</span>
                 </p>
 
                 {/* Buttons placed below create date */}

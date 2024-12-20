@@ -6,4 +6,4 @@ export default withAuth({
   },
 });
 
-export const config = { matcher: ["/", "/trips", "/createGroup"], };  // Protect all paths
+export const config = { matcher: ["/", "/trips/:path*"], };  // Protect all paths export

@@ -22,6 +22,7 @@ import { MemberResponse } from "@/types/api";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import moment from 'moment'
+import { useRouter } from "next/navigation";
 
 const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
   const [redirectToNewGroup, setRedirectToNewGroup] = useState(false);
@@ -31,7 +32,8 @@ const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { addGroup } = useGroups();
   const session = useSession();
-  console.log(session);
+  const router = useRouter();
+
   const handleAddMember = (name: string) => {
     setSelectedMembers((prev) => [...prev, name]);
   };
@@ -55,11 +57,9 @@ const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
       {
         onSuccess: (data: any) => {
           if (redirectToNewGroup) {
-            // Redirect to new group page
-            window.location.href = `/group/${data.id}`;
+            router.push(`/group/${data.id}`);
           } else {
-            // Redirect to home
-            window.location.href = "/";
+            router.back();            
           }
         },
       }
@@ -107,7 +107,7 @@ const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
         </label>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={() => window.location.href = "/"}>
+        <Button variant="outline" onClick={() => router.back()}>
           Cancel
         </Button>
         <Button onClick={handleSubmit}>Create Group</Button>

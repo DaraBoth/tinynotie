@@ -10,7 +10,7 @@ export default async function Page() {
   }
 
   const groups = await apiRequest({
-    url: API_ROUTES.getGroupByUserId(session.user.id),
+    url: API_ROUTES.searchGroups({}),
     method: "GET",
     fetchType: "server",
   });
