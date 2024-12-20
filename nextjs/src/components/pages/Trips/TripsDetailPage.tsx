@@ -18,7 +18,7 @@ import {
 } from "@mui/icons-material";
 import TanStackTable from "@/components/ui/tanstacktable";
 import { SwipeableDrawer } from "@mui/material";
-import EditMember from "./UpdateDetail/editMember";
+import EditMember from "./UpdateDetail/EditMember";
 
 type GroupObject = {
   groupId: number;
