@@ -78,6 +78,7 @@ const GroupPage = ({
     currencyType
   );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const tripsDataWithFakeIds = useMemo(() => {
     return trips && trips.data
       ? trips.data.map((trip, index) => ({
@@ -86,7 +87,7 @@ const GroupPage = ({
           real_id: trip.id,
         }))
       : [];
-  }, [trips,trips?.data]);
+  }, [trips]);
 
   const toggleDrawer =
     (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
