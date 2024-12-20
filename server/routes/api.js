@@ -192,33 +192,29 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   }
 });
 
-// Get Groups by Search with Dynamic Conditions
+// Get Groups by User with Advanced Search
 router.get("/searchGroups", authenticateToken, async (req, res) => {
-  const { _id: user_id } = req.user; // Logged-in user ID
-  const { search = "", startDate, endDate } = req.query;
+  const { _id: user_id } = req.user;
+  const { search = "", start_date, end_date } = req.query;
 
   try {
     const sql = `
       SELECT DISTINCT g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date,
              CASE 
-               WHEN g.admin_id = $1::int THEN TRUE
+               WHEN g.admin_id = $1 THEN TRUE
                ELSE FALSE
              END AS "isAdmin"
       FROM grp_infm g
       LEFT JOIN member_infm m ON g.id = m.group_id
+      LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $1
       WHERE 
-        (
-          $2::text IS NULL OR g.grp_name ILIKE '%' || $2 || '%'
-          OR m.mem_name ILIKE '%' || $2 || '%'
-        ) -- Match group name or member name
-        AND ($3::date IS NULL OR g.create_date >= $3::date) -- Start date filter
-        AND ($4::date IS NULL OR g.create_date <= $4::date) -- End date filter
-        AND (g.admin_id = $1::int OR EXISTS (
-          SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $1::int
-        )) -- Ensure the user has access to the group
-      ORDER BY g.create_date DESC;
+        (LOWER(g.grp_name) LIKE LOWER('%' || $2 || '%') -- Match Group Name
+         OR LOWER(m.mem_name) LIKE LOWER('%' || $2 || '%')) -- Match Member Name
+        AND (CAST(g.create_date AS DATE) >= $3::date OR $3::date IS NULL) -- Start Date Filter
+        AND (CAST(g.create_date AS DATE) <= $4::date OR $4::date IS NULL) -- End Date Filter
+      ORDER BY g.id ASC;
     `;
-    const results = await pool.query(sql, [user_id, search, startDate, endDate]);
+    const results = await pool.query(sql, [user_id, search, start_date || null, end_date || null]);
     res.send({ status: true, data: results.rows });
   } catch (error) {
     console.error("Error:", error);
