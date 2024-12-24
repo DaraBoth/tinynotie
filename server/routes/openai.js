@@ -1273,49 +1273,55 @@ const handleMessage = async function (messageObj) {
   const telegram_chat_id = messageObj.chat.id;
 
   // if is command and not /ask
-  if (isCommand && !messageText.startsWith("/ask")) {
+  if (isCommand) {
     const command = messageText.slice(1);
     if (command.startsWith("start")) {
       return darabothSendMessage(messageObj, "Hi! bro");
     } else if (command.startsWith("translate")) {
       const resText = await getTranslate(command.replace("translate", ""));
       return darabothSendMessage(messageObj, resText);
-    } else if (command.startsWith("register") && chatType == "private") {
+    } else if (chatType == "private") {
 
-      // check if user already existed
-      let sql = `SELECT telegram_chat_id FROM user_infm WHERE telegram_chat_id = $1;`;
-      let values = [telegram_chat_id];
-      let { rows } = await pool.query(sql, values);
-      if (rows.length === 0) {
-        // check if id existed
-        sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
-        values = [username];
-        const { rows } = await pool.query(sql, values);
+      // special feature only private mode
+      if (command.startsWith("register")) {
+        // check if user already existed
+        let sql = `SELECT telegram_chat_id FROM user_infm WHERE telegram_chat_id = $1;`;
+        let values = [telegram_chat_id];
+        let { rows } = await pool.query(sql, values);
         if (rows.length === 0) {
-          // if not exist then create user
-          sql = `INSERT INTO user_infm (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,$6) `;
-            const hashedPassword = await bcrypt.hash("123456", 10);
-            try {
-              await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id+"",moment().format("YYYYMMDDHH:mm:ss")]});
-              await darabothSendMessage(messageObj, `Register Successful \n Username: ${username} \n Password: 123456`);
-              return darabothSendMessage(messageObj, "How to Set Your Password \n Format: /password [YourPassword] \n Example: /password Rt@231");
-            } catch (error) {
-              console.error("Error executing query:", error);
-              await ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
-              return darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
-            }
-            
+          // check if id existed
+          sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
+          values = [username];
+          const { rows } = await pool.query(sql, values);
+          if (rows.length === 0) {
+            // if not exist then create user
+            sql = `INSERT INTO user_infm (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,$6) `;
+              const hashedPassword = await bcrypt.hash("123456", 10);
+              try {
+                await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id+"",moment().format("YYYYMMDDHH:mm:ss")]});
+                await darabothSendMessage(messageObj, `Register Successful \n Username: ${username} \n Password: 123456`);
+                return darabothSendMessage(messageObj, "How to Set Your Password \n Format: /password [YourPassword] \n Example: /password Rt@231");
+              } catch (error) {
+                console.error("Error executing query:", error);
+                await ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
+                return darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
+              }
+              
+          } else {
+            return darabothSendMessage(
+              messageObj,
+              `Username: ${username} already exist`
+            );
+          }
         } else {
           return darabothSendMessage(
             messageObj,
-            `Username: ${username} already exist`
+            `U already register with this chat`
           );
         }
-      } else {
-        return darabothSendMessage(
-          messageObj,
-          `U already register with this chat`
-        );
+        
+      }else if (command.startsWith("password")) {
+
       }
       
     } else if (command.startsWith("allow") && chatType == "group") {
@@ -1348,27 +1354,43 @@ const handleMessage = async function (messageObj) {
       );
     }
   } else {
-    // get chat from DB if don't have then create chat
-    getChat({
-      chat_id: Chat_ID,
-      onSuccess: ({ results }) => {
-        if (results != []) {
-          chatHistory = results;
-        } else {
-          chatHistory = defaultChatHistory;
-          saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
-        }
-      },
-      onError: (response) => {
-        console.log({ response });
-      },
-    });
-
+    let ismention = false;
     const condition1 = chatType == "private";
-    const condition2 = chatType == "group" && messageText.startsWith("/ask");
+    const condition2 = chatType == "group"
 
-    if (condition1 || condition2) {
-      if (condition2) messageText = messageText.replace("/ask", "");
+    if (messageObj.entities && messageObj.entities.length > 0) {
+      const mentions = messageObj.entities
+          .filter(entity => entity.type === 'mention')
+          .map(entity => {
+              return messageObj.text.substring(entity.offset, entity.offset + entity.length);
+          });
+
+      // Check if @DarabothBot is in the extracted mentions
+      if (mentions.includes('@DarabothBot')) {
+        ismention = true;
+      }
+    }
+
+    if (condition1 || (condition2 && ismention)) {
+      
+      if (condition2 && ismention) messageText = messageText.replace("@DarabothBot", "");
+
+      // get chat from DB if don't have then create chat
+      getChat({
+        chat_id: Chat_ID,
+        onSuccess: ({ results }) => {
+          if (results != []) {
+            chatHistory = results;
+          } else {
+            chatHistory = defaultChatHistory;
+            saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+          }
+        },
+        onError: (response) => {
+          console.log({ response });
+        },
+      });
+      
       const responseText = await callAI(messageText, chatHistory);
       templateSaveChat({
         Chat_ID,
