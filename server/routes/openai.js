@@ -1321,18 +1321,25 @@ const handleMessage = async function (messageObj) {
         }
         
       }else if (command.startsWith("password")) {
-        const newPassword = command.replace("password", "").trim();
         // check if user already existed
         let sql = `SELECT * FROM user_infm WHERE telegram_chat_id = $1;`;
         let values = [telegram_chat_id];
         let { rows } = await pool.query(sql, values);
         if (rows.length > 0) {
+          const newPassword = command.replace("password", "").trim();
+
+          if(newPassword.length === 0){
+            return darabothSendMessage(messageObj, "Please provide a password.");
+          }
+          if(newPassword.length < 6){
+            return darabothSendMessage(messageObj, "Password must be at least 6 characters long.");
+          }
           const oldPassword = rows[0].passwd;
           sql = `UDPATE user_infm set passwd = $1 where usernm = $2;`;
           const hashedPassword = await bcrypt.hash(newPassword, 10);
           try {
             await runQuery({sql,values: [hashedPassword, username]});
-            return darabothSendMessage(messageObj, `${oldPassword} -> ${newPassword}`);
+            return darabothSendMessage(messageObj, `Don't let others know your password. \n ${oldPassword} to ${newPassword}`);
           } catch (error) {
             console.error("Error executing query:", error);
             await ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
