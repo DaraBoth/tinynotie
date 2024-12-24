@@ -1285,12 +1285,12 @@ const handleMessage = async function (messageObj) {
       // special feature only private mode
       if (command.startsWith("register")) {
         // check if user already existed
-        let sql = `SELECT telegram_chat_id FROM user_infm WHERE telegram_chat_id = $1;`;
+        let sql = `SELECT * FROM user_infm WHERE telegram_chat_id = $1;`;
         let values = [telegram_chat_id];
         let { rows } = await pool.query(sql, values);
         if (rows.length === 0) {
           // check if id existed
-          sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
+          sql = `SELECT * FROM user_infm WHERE usernm = $1;`;
           values = [username];
           const { rows } = await pool.query(sql, values);
           if (rows.length === 0) {
@@ -1321,7 +1321,23 @@ const handleMessage = async function (messageObj) {
         }
         
       }else if (command.startsWith("password")) {
-
+        const newPassword = command.replace("password", "").trim();
+        // check if user already existed
+        let sql = `SELECT * FROM user_infm WHERE telegram_chat_id = $1;`;
+        let values = [telegram_chat_id];
+        let { rows } = await pool.query(sql, values);
+        if (rows.length > 0) {
+          const oldPassword = rows[0].passwd;
+          sql = `UDPATE user_infm set passwd = $1 where usernm = $2;`;
+          const hashedPassword = await bcrypt.hash(newPassword, 10);
+          try {
+            await runQuery({sql,values: [hashedPassword, username]});
+            return darabothSendMessage(messageObj, `${oldPassword} -> ${newPassword}`);
+          } catch (error) {
+            console.error("Error executing query:", error);
+            await ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
+            return darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
+          }
       }
       
     } else if (command.startsWith("allow") && chatType == "group") {
@@ -1350,7 +1366,7 @@ const handleMessage = async function (messageObj) {
     else {
       return darabothSendMessage(
         messageObj,
-        "Hey hi, I don't know that command."
+        "Hey hi, I don't know that command.🤷‍♂️ \n Ask him to make -> @l3oth"
       );
     }
   } else {
