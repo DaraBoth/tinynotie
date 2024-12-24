@@ -1293,7 +1293,7 @@ const handleMessage = async function (messageObj) {
         const { rows } = await pool.query(sql, values);
         if (rows.length === 0) {
           // if not exist then create user
-          sql = `INSERT INTO user_info (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,CURRENT_TIMESTAMP) `;
+          sql = `INSERT INTO user_infm (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,CURRENT_TIMESTAMP) `;
             const hashedPassword = await bcrypt.hash("123456", 10);
             try {
               await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id]});
