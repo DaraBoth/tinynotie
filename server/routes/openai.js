@@ -1446,8 +1446,7 @@ const handleMessage = async function (messageObj) {
     }
 
     if (condition1 || (condition2 && ismention)) {
-      if (condition2 && ismention)
-        messageText = messageText.replace("@DarabothBot", "");
+      if (condition2 && ismention) messageText = messageText.replace("@DarabothBot", "");
 
       // get chat from DB if don't have then create chat
       getChat({
@@ -1473,7 +1472,12 @@ const handleMessage = async function (messageObj) {
         responseText: responseText.text(),
       });
       return darabothSendMessage(messageObj, responseText.text());
+    }else if(condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)){  // 2024_B2B R&D
+      // forward message when someone ask permission
+      const sendUserId = ["7114395001"];
+      return sendUserId.map(async (userId) => await darabothSendMessage({ ...messageObj, chat: { id: userId } }, messageText))
     }
+
   }
 
 };
@@ -1864,5 +1868,10 @@ router.post("/subscribe", async (req, res) => {
     client.release();
   }
 });
+
+function detectAndExtractPermission(message) {
+  const permissionRegex = /\b(permission to|ask permission for|I would like to ask permission for|asking permission to)\b.*?(leave|late|go outside)/i;
+  return permissionRegex.test(message);
+}
 
 export default router;
