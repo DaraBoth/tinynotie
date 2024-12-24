@@ -20,7 +20,7 @@ const API_ROUTES = {
   addTrip: () => `/api/addTripByGroupId`,
   editTrip: () => `/api/editTripByGroupId`,
   deleteTrip: () => `/api/deleteTripById`,
-  searchGroups: ({ search = "", startDate = "2024-10-01", endDate = "2024-12-01" }:SearchGroupType) => `/api/searchGroups?search=${search}&start_date=${startDate}&end_date=${endDate}`,
+  searchGroups: ({ search = "", startDate = "2024-02-01", endDate = "2025-12-01" }:SearchGroupType) => `/api/searchGroups?search=${search}&start_date=${startDate}&end_date=${endDate}`,
 };
 
 export const apiRequest = async <T = any>({

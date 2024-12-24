@@ -149,7 +149,7 @@ router.post("/text", async (req, res) => {
   try {
     const { text, activeChatId, chatId } = req.body;
     let chatHistory = [];
-    
+
     if (chatId) {
       getChat({
         chat_id: chatId,
@@ -165,7 +165,6 @@ router.post("/text", async (req, res) => {
           console.log({ response });
         },
       });
-    
     }
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
@@ -1264,69 +1263,136 @@ const handleMessage = async function (messageObj) {
   const { id: Chat_ID } = messageObj?.chat;
   let messageText = messageObj?.text + "" || "";
   let chatHistory = [];
+  let chatType = messageObj?.chat?.type;
+  const isCommand = messageText.startsWith("/");
+  // data
+  let username = messageObj.from.username;
+  const first_name = messageObj.from.first_name;
+  const last_name = messageObj.from.last_name;
+  const telegram_chat_id = messageObj.chat.id;
 
-  getChat({
-    chat_id: Chat_ID,
-    onSuccess: ({ results }) => {
-      if (results != []) {
-        chatHistory = results;
-      } else {
-        chatHistory = defaultChatHistory;
-        saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
-      }
-    },
-    onError: (response) => {
-      console.log({ response });
-    },
-  });
+  // if is command and not /ask
+  if (isCommand && !messageText.startsWith("/ask")) {
+    const command = messageText.slice(1);
+    if (command.startsWith("start")) {
+      return darabothSendMessage(messageObj, "Hi! bro");
+    } else if (command.startsWith("translate")) {
+      const resText = await getTranslate(command.replace("translate", ""));
+      return darabothSendMessage(messageObj, resText);
+    } else if (command.startsWith("register") && chatType == "private") {
 
-  switch (Chat_ID) {
-    case -406610085: // Family
-    case -1001754103737: // BTB Class
-    case -1001883283529: // B2B
-    case -861143107: // 2024_B2B R&D
-      const command = messageText.slice(1);
-      if (command.startsWith("ask")) {
-        const responseText = await callAI(messageText, chatHistory);
-        templateSaveChat({
-          Chat_ID,
-          chatHistory,
-          messageText,
-          responseText: responseText.text(),
-        });
-        return darabothSendMessage(messageObj, responseText.text());
-      } else if (command.startsWith("translate")) {
-        if (command.replace("translate", "").trim().length == 0) return;
-        const resText = await getTranslate(command.replace("translate", ""));
-        return darabothSendMessage(messageObj, resText);
-      }
-      break;
-    default:
-      if (messageText.charAt(0) == "/") {
-        const command = messageText.slice(1);
-        if (command.startsWith("start")) {
-          return darabothSendMessage(messageObj, "Hi! bro");
-        } else if (command.startsWith("translate")) {
-          const resText = await getTranslate(command.replace("translate", ""));
-          return darabothSendMessage(messageObj, resText);
+      // check if user already existed
+      let sql = `SELECT telegram_chat_id FROM user_infm WHERE telegram_chat_id = $1;`;
+      let values = [telegram_chat_id];
+      let { rows } = await pool.query(sql, values);
+      if (rows.length === 0) {
+        // check if id existed
+        sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
+        values = [username];
+        const { rows } = await pool.query(sql, values);
+        if (rows.length === 0) {
+          // if not exist then create user
+          sql = `INSERT INTO user_info (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,CURRENT_TIMESTAMP) `;
+            const hashedPassword = await bcrypt.hash("123456", 10);
+            try {
+              await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id]});
+              await darabothSendMessage(messageObj, `Register Successful \n Username: ${username} \n Password: 123456`);
+              return darabothSendMessage(messageObj, "How to Set Your Password \n Format: /password [YourPassword] \n Example: /password Rt@231");
+            } catch (error) {
+              console.error("Error executing query:", error);
+              await darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
+              return ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
+            }
+            
         } else {
           return darabothSendMessage(
             messageObj,
-            "Hey hi, I don't know that command."
+            `Username: ${username} already exist`
           );
         }
       } else {
-        const responseText = await callAI(messageText, chatHistory);
-        templateSaveChat({
-          Chat_ID,
-          chatHistory,
-          messageText,
-          responseText: responseText.text(),
-        });
-        return darabothSendMessage(messageObj, responseText.text());
+        return darabothSendMessage(
+          messageObj,
+          `U already register with this chat`
+        );
       }
+      
+    } else if (command.startsWith("allow") && chatType == "group") {
+      if (chatType == "group") {
+        let sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
+        let values = [username];
+        const { rows } = await pool.query(sql, values);
+
+        if (rows.length === 0) {
+          sql = `INSERT INTO tel_grp_chat (usernm, group_chat_id, group_chat_title) VALUES ($1, $2, $3)`; 
+          try {
+            const groupTitle = messageObj.chat.title;
+            const groupChatId = messageObj.chat.id;
+            await runQuery({sql,values: [username, groupChatId ,groupTitle]});
+            await darabothSendMessage(messageObj, `@${username} has allowed me to send invoice to this group chat.`);
+          } catch (error) {
+            console.error("Error executing query:", error);
+            await darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
+            return ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
+          }
+        } else {
+          return darabothSendMessage(messageObj, `@${messageObj.from.username} please register before using this bot.\n Here -> @DarabothBot`);
+        }
+      }
+    }
+    else {
+      return darabothSendMessage(
+        messageObj,
+        "Hey hi, I don't know that command."
+      );
+    }
+  } else {
+    // get chat from DB if don't have then create chat
+    getChat({
+      chat_id: Chat_ID,
+      onSuccess: ({ results }) => {
+        if (results != []) {
+          chatHistory = results;
+        } else {
+          chatHistory = defaultChatHistory;
+          saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+        }
+      },
+      onError: (response) => {
+        console.log({ response });
+      },
+    });
+
+    const condition1 = chatType == "private";
+    const condition2 = chatType == "group" && messageText.startsWith("/ask");
+
+    if (condition1 || condition2) {
+      if (condition2) messageText = messageText.replace("/ask", "");
+      const responseText = await callAI(messageText, chatHistory);
+      templateSaveChat({
+        Chat_ID,
+        chatHistory,
+        messageText,
+        responseText: responseText.text(),
+      });
+      return darabothSendMessage(messageObj, responseText.text());
+    }
   }
 };
+
+async function ErrorReport(messageObj,errorMessage) {
+  return await darabothSendMessage(messageObj,errorMessage);
+}
+
+async function handleRegisterMessage(messageObj) {
+  if (!messageObj) return;
+  const { id } = messageObj?.chat;
+  let messageText = messageObj?.text + "" || "";
+  const command = messageText.slice(1);
+  if (command.startsWith("register")) {
+    return darabothSendMessage(messageObj, responseText.text());
+  }
+}
 
 function templateSaveChat({ Chat_ID, chatHistory, messageText, responseText }) {
   if (Array.isArray(chatHistory)) {
@@ -1390,7 +1456,7 @@ const sendNotification = (subscription, data, req, res) => {
 
 // Batch notification function
 const sendBatchNotification = async (payload) => {
-  console.log({payload})
+  console.log({ payload });
   try {
     // Query to fetch all subscriptions
     const query = `
@@ -1404,7 +1470,7 @@ const sendBatchNotification = async (payload) => {
       return {
         status: false,
         message: "No subscriptions found to send notifications.",
-      }
+      };
     }
 
     // Map subscription data into the format required by webPush
@@ -1421,8 +1487,10 @@ const sendBatchNotification = async (payload) => {
     // Wait for all notifications to resolve
     const results = await Promise.allSettled(notificationPromises);
 
-    const successful = results.filter((result) => result.status === 'fulfilled');
-    const failed = results.filter((result) => result.status === 'rejected');
+    const successful = results.filter(
+      (result) => result.status === "fulfilled"
+    );
+    const failed = results.filter((result) => result.status === "rejected");
 
     return {
       status: true,
@@ -1432,14 +1500,14 @@ const sendBatchNotification = async (payload) => {
         successful: successful.length,
         failed: failed.length,
       },
-    }
+    };
   } catch (error) {
     console.error("Error sending batch notifications", error);
     return {
       status: false,
       message: "Error sending batch notifications",
       error,
-    }
+    };
   }
 };
 
@@ -1448,7 +1516,9 @@ async function getWeather() {
     // Fetch real-time weather data using an API (e.g., OpenWeatherMap)
     const weatherApiKey = process.env.WEATHER_API_KEY; // Store your API key in the environment variables
     if (!weatherApiKey) {
-      throw new Error("Weather API Key is undefined. Check your environment variables.");
+      throw new Error(
+        "Weather API Key is undefined. Check your environment variables."
+      );
     }
 
     const location = "Busan, South Korea"; // Default location
@@ -1467,7 +1537,9 @@ async function getWeather() {
 
     // Determine the greeting based on the current time in Seoul (KST)
     const timezone = "Asia/Seoul";
-    const currentTime = new Date().toLocaleString("en-US", { timeZone: timezone });
+    const currentTime = new Date().toLocaleString("en-US", {
+      timeZone: timezone,
+    });
     const hour = new Date(currentTime).getHours();
 
     let greeting;
@@ -1511,7 +1583,6 @@ async function getWeather() {
     const aiMessage = result.response.text(); // AI-generated weather notification
 
     return aiMessage;
-
   } catch (error) {
     console.error("Error in getWeather function:", error);
     return `Error: Unable to fetch weather data or generate notification. Please try again later.`;
@@ -1535,7 +1606,7 @@ router.post("/batchPush", async (req, res) => {
   const { payload } = req.body; // Extract identifier (username or deviceId) and payload from request body
   try {
     res.send(await sendBatchNotification(payload));
-  }catch (error) {
+  } catch (error) {
     console.error("Error sending batch notifications", error);
     res.status(500).json({ error: error.message });
   }
@@ -1695,6 +1766,5 @@ router.post("/subscribe", async (req, res) => {
     client.release();
   }
 });
-
 
 export default router;
