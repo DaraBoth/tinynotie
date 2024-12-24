@@ -2,6 +2,7 @@ import axios from "axios";
 import dotenv from "dotenv";
 import express from "express";
 // import { openai } from "../index.js";
+import bcrypt from "bcrypt";
 import emailjs from "@emailjs/nodejs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import moment from "moment";
