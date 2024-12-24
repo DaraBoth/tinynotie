@@ -1281,7 +1281,6 @@ const handleMessage = async function (messageObj) {
       const resText = await getTranslate(command.replace("translate", ""));
       return darabothSendMessage(messageObj, resText);
     } else if (chatType == "private") {
-
       // special feature only private mode
       if (command.startsWith("register")) {
         // check if user already existed
@@ -1296,17 +1295,38 @@ const handleMessage = async function (messageObj) {
           if (rows.length === 0) {
             // if not exist then create user
             sql = `INSERT INTO user_infm (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,$6) `;
-              const hashedPassword = await bcrypt.hash("123456", 10);
-              try {
-                await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id+"",moment().format("YYYYMMDDHH:mm:ss")]});
-                await darabothSendMessage(messageObj, `Register Successful \n Username: ${username} \n Password: 123456`);
-                return darabothSendMessage(messageObj, "How to Set Your Password \n Format: /password [YourPassword] \n Example: /password Rt@231");
-              } catch (error) {
-                console.error("Error executing query:", error);
-                await ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
-                return darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
-              }
-              
+            const hashedPassword = await bcrypt.hash("123456", 10);
+            try {
+              await runQuery({
+                sql,
+                values: [
+                  username,
+                  hashedPassword,
+                  first_name,
+                  last_name,
+                  telegram_chat_id + "",
+                  moment().format("YYYYMMDDHH:mm:ss"),
+                ],
+              });
+              await darabothSendMessage(
+                messageObj,
+                `Register Successful \n Username: ${username} \n Password: 123456`
+              );
+              return darabothSendMessage(
+                messageObj,
+                "How to Set Your Password \n Format: /password [YourPassword] \n Example: /password Rt@231"
+              );
+            } catch (error) {
+              console.error("Error executing query:", error);
+              await ErrorReport(
+                { ...messageObj, chat: { id: 7114395001 } },
+                error
+              );
+              return darabothSendMessage(
+                messageObj,
+                `Wait there is an error. I'll send report to my boss @l3oth `
+              );
+            }
           } else {
             return darabothSendMessage(
               messageObj,
@@ -1319,8 +1339,7 @@ const handleMessage = async function (messageObj) {
             `U already register with this chat`
           );
         }
-        
-      }else if (command.startsWith("password")) {
+      } else if (command.startsWith("password")) {
         // check if user already existed
         let sql = `SELECT * FROM user_infm WHERE telegram_chat_id = $1;`;
         let values = [telegram_chat_id];
@@ -1328,75 +1347,107 @@ const handleMessage = async function (messageObj) {
         if (rows.length > 0) {
           const newPassword = command.replace("password", "").trim();
 
-          if(newPassword.length === 0){
-            return darabothSendMessage(messageObj, "Please provide a password.");
+          if (newPassword.length === 0) {
+            return darabothSendMessage(
+              messageObj,
+              "Please provide a password."
+            );
           }
-          if(newPassword.length < 6){
-            return darabothSendMessage(messageObj, "Password must be at least 6 characters long.");
+          if (newPassword.length < 6) {
+            return darabothSendMessage(
+              messageObj,
+              "Password must be at least 6 characters long."
+            );
           }
           const oldPassword = rows[0].passwd;
           sql = `UDPATE user_infm set passwd = $1 where usernm = $2;`;
           const hashedPassword = await bcrypt.hash(newPassword, 10);
           try {
-            await runQuery({sql,values: [hashedPassword, username]});
-            return darabothSendMessage(messageObj, `Don't let others know your password. \n ${oldPassword} to ${newPassword}`);
+            await runQuery({ sql, values: [hashedPassword, username] });
+            return darabothSendMessage(
+              messageObj,
+              `Don't let others know your password. \n Your password is now from ${oldPassword} to ${newPassword}`
+            );
           } catch (error) {
             console.error("Error executing query:", error);
-            await ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
-            return darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
+            await ErrorReport(
+              { ...messageObj, chat: { id: 7114395001 } },
+              error
+            );
+            return darabothSendMessage(
+              messageObj,
+              `Wait there is an error. I'll send report to my boss @l3oth `
+            );
           }
-      }
-      
-    } else if (command.startsWith("allow") && chatType == "group") {
-      if (chatType == "group") {
-        let sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
-        let values = [username];
-        const { rows } = await pool.query(sql, values);
-
-        if (rows.length > 0) {
-          sql = `INSERT INTO tel_grp_chat (usernm, group_chat_id, group_chat_title) VALUES ($1, $2, $3)`; 
-          try {
-            const groupTitle = messageObj.chat.title;
-            const groupChatId = messageObj.chat.id;
-            await runQuery({sql,values: [username, groupChatId+"" ,groupTitle]});
-            await darabothSendMessage(messageObj, `@${username} has allowed me to send invoice to this group chat.`);
-          } catch (error) {
-            console.error("Error executing query:", error);
-            await darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
-            return ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
-          }
-        } else {
-          return darabothSendMessage(messageObj, `@${messageObj.from.username} please register before using this bot.\n Here -> @DarabothBot`);
         }
+      } else if (command.startsWith("allow") && chatType == "group") {
+        if (chatType == "group") {
+          let sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
+          let values = [username];
+          const { rows } = await pool.query(sql, values);
+
+          if (rows.length > 0) {
+            sql = `INSERT INTO tel_grp_chat (usernm, group_chat_id, group_chat_title) VALUES ($1, $2, $3)`;
+            try {
+              const groupTitle = messageObj.chat.title;
+              const groupChatId = messageObj.chat.id;
+              await runQuery({
+                sql,
+                values: [username, groupChatId + "", groupTitle],
+              });
+              await darabothSendMessage(
+                messageObj,
+                `@${username} has allowed me to send invoice to this group chat.`
+              );
+            } catch (error) {
+              console.error("Error executing query:", error);
+              await darabothSendMessage(
+                messageObj,
+                `Wait there is an error. I'll send report to my boss @l3oth `
+              );
+              return ErrorReport(
+                { ...messageObj, chat: { id: 7114395001 } },
+                error
+              );
+            }
+          } else {
+            return darabothSendMessage(
+              messageObj,
+              `@${messageObj.from.username} please register before using this bot.\n Here -> @DarabothBot`
+            );
+          }
+        }
+      } else {
+        return darabothSendMessage(
+          messageObj,
+          "Hey hi, I don't know that command.🤷‍♂️ \n Ask him to make -> @l3oth"
+        );
       }
-    }
-    else {
-      return darabothSendMessage(
-        messageObj,
-        "Hey hi, I don't know that command.🤷‍♂️ \n Ask him to make -> @l3oth"
-      );
-    }
-  } else {
+    } 
+  }else {
     let ismention = false;
     const condition1 = chatType == "private";
-    const condition2 = chatType == "group"
+    const condition2 = chatType == "group";
 
     if (messageObj.entities && messageObj.entities.length > 0) {
       const mentions = messageObj.entities
-          .filter(entity => entity.type === 'mention')
-          .map(entity => {
-              return messageObj.text.substring(entity.offset, entity.offset + entity.length);
-          });
+        .filter((entity) => entity.type === "mention")
+        .map((entity) => {
+          return messageObj.text.substring(
+            entity.offset,
+            entity.offset + entity.length
+          );
+        });
 
       // Check if @DarabothBot is in the extracted mentions
-      if (mentions.includes('@DarabothBot')) {
+      if (mentions.includes("@DarabothBot")) {
         ismention = true;
       }
     }
 
     if (condition1 || (condition2 && ismention)) {
-      
-      if (condition2 && ismention) messageText = messageText.replace("@DarabothBot", "");
+      if (condition2 && ismention)
+        messageText = messageText.replace("@DarabothBot", "");
 
       // get chat from DB if don't have then create chat
       getChat({
@@ -1413,7 +1464,7 @@ const handleMessage = async function (messageObj) {
           console.log({ response });
         },
       });
-      
+
       const responseText = await callAI(messageText, chatHistory);
       templateSaveChat({
         Chat_ID,
@@ -1424,10 +1475,11 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, responseText.text());
     }
   }
+
 };
 
-async function ErrorReport(messageObj,errorMessage) {
-  return await darabothSendMessage(messageObj,errorMessage);
+async function ErrorReport(messageObj, errorMessage) {
+  return await darabothSendMessage(messageObj, errorMessage);
 }
 
 async function handleRegisterMessage(messageObj) {
