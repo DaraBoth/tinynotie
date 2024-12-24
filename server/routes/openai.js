@@ -1293,16 +1293,16 @@ const handleMessage = async function (messageObj) {
         const { rows } = await pool.query(sql, values);
         if (rows.length === 0) {
           // if not exist then create user
-          sql = `INSERT INTO user_infm (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,CURRENT_TIMESTAMP) `;
+          sql = `INSERT INTO user_infm (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,$6) `;
             const hashedPassword = await bcrypt.hash("123456", 10);
             try {
-              await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id+""]});
+              await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id+"",moment().format("YYYYMMDDHH:mm:ss")]});
               await darabothSendMessage(messageObj, `Register Successful \n Username: ${username} \n Password: 123456`);
               return darabothSendMessage(messageObj, "How to Set Your Password \n Format: /password [YourPassword] \n Example: /password Rt@231");
             } catch (error) {
               console.error("Error executing query:", error);
-              await darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
-              return ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
+              await ErrorReport({...messageObj,chat:{id: 7114395001 }}, error);
+              return darabothSendMessage(messageObj, `Wait there is an error. I'll send report to my boss @l3oth `);
             }
             
         } else {
@@ -1324,7 +1324,7 @@ const handleMessage = async function (messageObj) {
         let values = [username];
         const { rows } = await pool.query(sql, values);
 
-        if (rows.length === 0) {
+        if (rows.length > 0) {
           sql = `INSERT INTO tel_grp_chat (usernm, group_chat_id, group_chat_title) VALUES ($1, $2, $3)`; 
           try {
             const groupTitle = messageObj.chat.title;
