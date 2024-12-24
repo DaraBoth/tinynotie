@@ -1360,7 +1360,7 @@ const handleMessage = async function (messageObj) {
             );
           }
           const oldPassword = rows[0].passwd;
-          sql = `UDPATE user_infm set passwd = $1 where usernm = $2;`;
+          sql = `UPDATE user_infm set passwd = $1 where usernm = $2;`;
           const hashedPassword = await bcrypt.hash(newPassword, 10);
           try {
             await runQuery({ sql, values: [hashedPassword, username] });
