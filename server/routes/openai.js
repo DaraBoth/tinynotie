@@ -1296,7 +1296,7 @@ const handleMessage = async function (messageObj) {
           sql = `INSERT INTO user_infm (usernm, passwd, first_name, last_name, telegram_chat_id ,create_date) VALUES ($1,$2,$3,$4,$5,CURRENT_TIMESTAMP) `;
             const hashedPassword = await bcrypt.hash("123456", 10);
             try {
-              await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id]});
+              await runQuery({sql,values: [username, hashedPassword ,first_name, last_name, telegram_chat_id+""]});
               await darabothSendMessage(messageObj, `Register Successful \n Username: ${username} \n Password: 123456`);
               return darabothSendMessage(messageObj, "How to Set Your Password \n Format: /password [YourPassword] \n Example: /password Rt@231");
             } catch (error) {
@@ -1329,7 +1329,7 @@ const handleMessage = async function (messageObj) {
           try {
             const groupTitle = messageObj.chat.title;
             const groupChatId = messageObj.chat.id;
-            await runQuery({sql,values: [username, groupChatId ,groupTitle]});
+            await runQuery({sql,values: [username, groupChatId+"" ,groupTitle]});
             await darabothSendMessage(messageObj, `@${username} has allowed me to send invoice to this group chat.`);
           } catch (error) {
             console.error("Error executing query:", error);
