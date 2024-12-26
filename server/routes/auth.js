@@ -27,13 +27,13 @@ router.post("/login", async (req, res) => {
       const match = await bcrypt.compare(passwd, user.passwd);
       if (match) {
         // Generate JWT token
-        const token = jwt.sign({ ...user, _id: user.id }, JWT_SECRET, { expiresIn: "1d" });
-        res.send({ status: true, usernm, token, _id: user.id }); res
+        const token = jwt.sign({ _id: user.id, usernm: usernm }, JWT_SECRET, { expiresIn: "1d" });
+        res.send({ status: true, token, usernm, _id: user.id });
       } else {
         res.status(401).send({ status: false, message: `Your password is inncorrect!` });
       }
     } else {
-      res.status(404).send({ status: false, message: `Your username is not found!` });
+      res.status(404).send({ status: false, message: `Username ${usernm} doesn't exist. Please register instead!` });
     }
   } catch (error) {
     console.error("error", error);
@@ -64,7 +64,7 @@ router.post("/register", async (req, res) => {
 
       res.send({ status: true, message: "Registration successful!", token, _id: newUserId });
     } else {
-      res.status(409).send({ status: false, message: `Username already exists!` });
+      res.status(409).send({ status: false, message: `Username ${usernm} is already taken!` });
     }
   } catch (error) {
     console.error("error", error);
