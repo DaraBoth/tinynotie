@@ -1060,7 +1060,7 @@ async function getCleaningProm(data, msg) {
       `;
 
   const result = await model.generateContent(prompt);
-  const response = await result.response;
+  const response =  result.response;
   console.log("response text : " + response.text());
 
   return response.text();
@@ -1112,7 +1112,7 @@ async function getCleaningData() {
   // The URL of your Google Apps Script API
   try {
     const apiUrl =
-      "https://script.googleusercontent.com/macros/echo?user_content_key=PeNxb-mUXWFhq-YEaHWiTLivkfTyF7hzrCjp-BI8iltORM9zLyY8RZYlNVzhl_XL7dYg3qrL1zL8YSHQEwLOzblX2RBmBjRrm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnIzp1tDCVDtCoO8ckZ_a74pDZsQh9HNrk8nqXCkYhfvRhKGZ2jrIiz-YdhoVGT4g0x3wUCtaVAQUHaSaXFfALKfZIs9HOPLRLdz9Jw9Md8uu&lib=MgKmp91GXkA9SSJzubbc_qu8MXP5Cr7Q7";
+      "https://script.googleusercontent.com/macros/echo?user_content_key=rKhoW9uCG2syWMII3cW1GIeGoFtl9rYF91Xlthr6uAJTaMHcFy1A6u9lZ80EeCDZif1i2nRMGTh_qBI-tegyNh3YIg7OlwEDm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnDmWlYd3wNSKKmOB_ypd5L9o8pUyLWcEic7p1IzsRDGWV4NtAh6ZG6GN-B_5UGACqSqUjLIRV7XOYxRpO8TGDT59Q0eFiSQ1eNz9Jw9Md8uu&lib=MgKmp91GXkA9SSJzubbc_qu8MXP5Cr7Q7";
 
     // Make the API call using axios
     const response = await axios.get(apiUrl);
@@ -1280,6 +1280,10 @@ const handleMessage = async function (messageObj) {
     } else if (command.startsWith("translate")) {
       const resText = await getTranslate(command.replace("translate", ""));
       return darabothSendMessage(messageObj, resText);
+    } else if(command.startsWith("whoclean")) {
+      const cleaningData = await getCleaningData();
+      const getCleaningData = await getCleaningProm(cleaningData, command.replace("whoclean", "who clean"));
+      return darabothSendMessage(messageObj, getCleaningData);
     } else if (chatType == "private") {
       // special feature only private mode
       if (command.startsWith("register")) {
