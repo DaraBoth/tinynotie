@@ -28,6 +28,8 @@ const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
 });
 
+const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
+
 // const pool = new Pool({
 //   user: "kjjelxjh",
 //   host: "chunee.db.elephantsql.com",
@@ -1048,7 +1050,7 @@ async function getCleaningProm(data, msg) {
       THe memberName is the house member's name.
       Look to the array in each object the "isTurnToClean" key is there turn to clean.
       So answer to the question depend on the user want.
-      Today date = ${moment().format("YYYY-MM-DD HH:mm:ss")} // format YYYY-MM-DD HH:mm:ss
+      Today date = ${moment().format("YYYY-MM-DD HH:mm:ss (dd) Z")} // format YYYY-MM-DD HH:mm:ss (dd) Z
       
       Here is the data in JSON :
       ${JSON.stringify(data)}
@@ -1284,6 +1286,8 @@ const handleMessage = async function (messageObj) {
       const cleaningData = await getCleaningData();
       const cleaningMessage = await getCleaningProm(cleaningData, command.replace("whoclean", "who clean"));
       return darabothSendMessage(messageObj, cleaningMessage);
+    } else if(command.startsWith("excel2002")) {
+      return darabothSendMessage(messageObj, excel2002Url)
     } else if (chatType == "private") {
       // special feature only private mode
       if (command.startsWith("register")) {
