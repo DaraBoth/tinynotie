@@ -1475,7 +1475,7 @@ const handleMessage = async function (messageObj) {
     }else if(condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)){  // 2024_B2B R&D
       // forward message when someone ask permission
       const sendUserId = ["7114395001"];
-      return sendUserId.map(async (userId) => await darabothSendMessage({ ...messageObj, chat: { id: userId } }, messageText))
+      return await darabothSendMessage({ ...messageObj, chat: { id: sendUserId[0] } }, messageText)
     }
 
   }
