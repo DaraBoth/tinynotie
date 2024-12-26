@@ -25,7 +25,7 @@ export interface UseGroupsResult {
     res: GroupRes;
     isLoading: boolean;
     error: unknown;
-    addGroup: ReturnType<typeof useMutation>;
+    addGroup: UseMutationResult<Group, unknown, AddGroupVariables, unknown>;
 }
 
 export type GroupRes = {
@@ -38,7 +38,7 @@ export type AddGroupVariables = {
     status: number;
     description?: string;
     currency?: string;
-    member: string[]; // An array of member names
+    member: string; // An array of member names
 };
 
 export interface MemberResponse {
