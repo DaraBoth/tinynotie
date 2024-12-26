@@ -52,7 +52,7 @@ export type AddGroupVariables = {
   status: number;
   description?: string;
   currency?: string;
-  member: string[]; // An array of member names
+  member: string; // An array of member names
 };
 
 export interface MemberResponse {
