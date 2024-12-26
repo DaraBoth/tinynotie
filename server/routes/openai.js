@@ -1448,7 +1448,7 @@ const handleMessage = async function (messageObj) {
         ismention = true;
       }
     }
-
+    console.log("Is ask for permission = ",condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText));
     if (condition1 || (condition2 && ismention)) {
       if (condition2 && ismention) messageText = messageText.replace("@DarabothBot", "");
 
