@@ -28,7 +28,7 @@ router.post("/login", async (req, res) => {
       if (match) {
         // Generate JWT token
         const token = jwt.sign({ ...user, _id: user.id }, JWT_SECRET, { expiresIn: "1d" });
-        res.send({ status: true, userInfo: user, token, _id: user.id }); res
+        res.send({ status: true, usernm, token, _id: user.id }); res
       } else {
         res.status(401).send({ status: false, message: `Your password is inncorrect!` });
       }
