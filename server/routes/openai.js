@@ -1048,8 +1048,8 @@ async function getCleaningProm(data, msg) {
       THe memberName is the house member's name.
       Look to the array in each object the "isTurnToClean" key is there turn to clean.
       So answer to the question depend on the user want.
-      Here is this week date = ${new Date()}
-
+      Today date = ${moment().format("YYYY-MM-DD HH:mm:ss")} // format YYYY-MM-DD HH:mm:ss
+      
       Here is the data in JSON :
       ${JSON.stringify(data)}
       
@@ -1282,8 +1282,8 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, resText);
     } else if(command.startsWith("whoclean")) {
       const cleaningData = await getCleaningData();
-      const getCleaningData = await getCleaningProm(cleaningData, command.replace("whoclean", "who clean"));
-      return darabothSendMessage(messageObj, getCleaningData);
+      const cleaningMessage = await getCleaningProm(cleaningData, command.replace("whoclean", "who clean"));
+      return darabothSendMessage(messageObj, cleaningMessage);
     } else if (chatType == "private") {
       // special feature only private mode
       if (command.startsWith("register")) {
