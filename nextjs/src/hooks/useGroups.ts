@@ -42,6 +42,6 @@ export const useGroups = (initialGroups?: GroupRes): UseGroupsResult => {
     res,
     isLoading,
     error,
-    addGroup,
+    addGroup
   };
 };

@@ -10,6 +10,8 @@ import Link from "next/link";
 import { encodeObjectToBase64 } from "@/lib/helper/encode";
 import { useTheme } from "next-themes"; // Import the useTheme hook
 import { MagicCard } from "@/components/magicui/magic-card";
+import { CalendarForm } from "@/components/ui/calendarform";
+import moment from "moment";
 import API_ROUTES, { apiRequest } from "@/lib/config/apiRoutes";
 
 export default function TripsPage({
@@ -18,6 +20,11 @@ export default function TripsPage({
   initialGroups: GroupRes;
 }) {
   const { res, isLoading, error } = useGroups(initialGroups);
+  const [searchValue, setSearchValue] = useState({
+    search: "",
+    start_date: "",
+    end_date: "",
+  });
   const [groups] = useState(res.data);
   const { data: session } = useSession(); // Get session data (user)
   const { theme, setTheme } = useTheme(); // Using next-themes to toggle themes
@@ -30,19 +37,34 @@ export default function TripsPage({
     return <p>Error loading groups.</p>;
   }
 
-  // const handleSearch = async () =>{
-  //   const groups = await apiRequest({
-  //     url: API_ROUTES.searchGroups(session?.user.id),
-  //     method: "GET",
-  //     fetchType: "server",
-  //   });
-
-  // }
-
+  const handleSearch = async () => {
+    const groups = await apiRequest({
+      url: API_ROUTES.searchGroups(searchValue),
+      method: "GET",
+      fetchType: "client",
+    });
+  };
 
   return (
     <div className="w-full mx-auto p-4">
-
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 py-4">
+        <div>
+          <CalendarForm
+            onChange={(date) => {
+              const newDate = moment(date).format("YYYY-MM-DD");
+              setSearchValue({ ...searchValue, start_date: newDate });
+            }}
+          />
+        </div>
+        <div>
+          <CalendarForm
+            onChange={(date) => {
+              const newDate = moment(date).format("YYYY-MM-DD");
+              setSearchValue({ ...searchValue, end_date: newDate });
+            }}
+          />
+        </div>
+      </div>
       {/* Group cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {groups

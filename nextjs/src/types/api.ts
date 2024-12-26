@@ -1,6 +1,6 @@
 // src/types/api.ts
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, UseMutationResult } from "@tanstack/react-query";
 
 export type Token = {
   accessToken: string;
@@ -39,7 +39,7 @@ export interface UseGroupsResult {
   res: GroupRes;
   isLoading: boolean;
   error: unknown;
-  addGroup: ReturnType<typeof useMutation>;
+  addGroup: UseMutationResult<Group, unknown, AddGroupVariables, unknown>;
 }
 
 export type GroupRes = {

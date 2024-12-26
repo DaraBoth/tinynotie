@@ -27,13 +27,13 @@ router.post("/login", async (req, res) => {
       const match = await bcrypt.compare(passwd, user.passwd);
       if (match) {
         // Generate JWT token
-        const token = jwt.sign({ _id: user.id, usernm: usernm }, JWT_SECRET, { expiresIn: "1d" });
-        res.send({ status: true, token, usernm, _id: user.id });
+        const token = jwt.sign({ ...user, _id: user.id }, JWT_SECRET, { expiresIn: "1d" });
+        res.send({ status: true, userInfo: user, token, _id: user.id }); res
       } else {
-        res.status(401).send({ status: false, message: "Invalid username or password." });
+        res.status(401).send({ status: false, message: `Your password is inncorrect!` });
       }
     } else {
-      res.status(404).send({ status: false, message: `Username ${usernm} doesn't exist. Please register instead!` });
+      res.status(404).send({ status: false, message: `Your username is not found!` });
     }
   } catch (error) {
     console.error("error", error);
@@ -46,7 +46,7 @@ router.post("/register", async (req, res) => {
   const { usernm, passwd } = req.body;
   try {
     const sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
-    const values = [usernm.toLowerCase()];
+    const values = [usernm];
     
     const { rows } = await pool.query(sql, values);
     if (rows.length === 0) {
@@ -54,17 +54,17 @@ router.post("/register", async (req, res) => {
       const hashedPassword = await bcrypt.hash(passwd, 10);
 
       const sql2 = `INSERT INTO user_infm (usernm, passwd) VALUES ($1, $2) RETURNING id;`;
-      const values2 = [usernm.toLowerCase(), hashedPassword];
+      const values2 = [usernm, hashedPassword];
       
       const result = await pool.query(sql2, values2);
       const newUserId = result.rows[0].id;
 
+      const { rows } = await pool.query(sql, values); // get user again
       // Generate JWT token upon registration
-      const token = jwt.sign({ _id: newUserId, usernm: usernm }, JWT_SECRET, { expiresIn: "1h" });
-
-      res.send({ status: true, message: "Registration successful!", token, _id: newUserId });
+      const token = jwt.sign({ _id: newUserId, userInfo: rows[0] }, JWT_SECRET, { expiresIn: "1h" });
+      res.send({ status: true, message: "Registration successful!", token, _id: newUserId, userInfo: rows[0]});
     } else {
-      res.status(409).send({ status: false, message: `Username ${usernm} is already taken!` });
+      res.status(409).send({ status: false, message: `Username already exists!` });
     }
   } catch (error) {
     console.error("error", error);
