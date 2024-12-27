@@ -196,7 +196,7 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
 router.get("/searchGroups", authenticateToken, async (req, res) => {
   const { _id: user_id } = req.user;
   const { search = "", start_date, end_date } = req.query;
-  console.log({ search, start_date, end_date });
+  
   try {
     const sql = `
       SELECT DISTINCT g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date,
@@ -210,13 +210,19 @@ router.get("/searchGroups", authenticateToken, async (req, res) => {
       WHERE 
         (LOWER(g.grp_name) LIKE LOWER('%' || $2 || '%') -- Match Group Name
          OR LOWER(m.mem_name) LIKE LOWER('%' || $2 || '%')) -- Match Member Name
+        AND g.admin_id = $1
         AND (CAST(g.create_date AS DATE) >= $3::date OR $3::date IS NULL) -- Start Date Filter
         AND (CAST(g.create_date AS DATE) <= $4::date OR $4::date IS NULL) -- End Date Filter
       ORDER BY g.id ASC;
     `;
 
+    const values = [user_id, search, start_date || null, end_date || null]
+    
+    console.log({ search, start_date, end_date });
     console.log({sql});
-    const results = await pool.query(sql, [user_id, search, start_date || null, end_date || null]);
+    console.log({values});
+
+    const results = await pool.query(sql, values);
     console.log({results});
     res.send({ status: true, data: results.rows });
   } catch (error) {
