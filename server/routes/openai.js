@@ -1483,6 +1483,7 @@ const handleMessage = async function (messageObj) {
     }else if(condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)){  // 2024_B2B R&D
       // forward message when someone ask permission
       const sendUserId = [7114395001]; // Array of chat IDs to send messages to
+      console.log("Workkk ",sendUserId);
       let response
       for (const chatId of sendUserId) {
         const messageObj = { chat: { id: chatId } };
@@ -1644,18 +1645,19 @@ async function getWeather() {
     const weatherResponse = await axios.get(weatherApiUrl);
     const weatherData = weatherResponse.data;
 
-    // Extract relevant data
-    const temp = weatherData.main.temp; // Current temperature
-    const tempMin = weatherData.main.temp_min; // Min temperature
-    const tempMax = weatherData.main.temp_max; // Max temperature
-    const weatherCondition = weatherData.weather[0].description; // Weather description
-    const date = new Date().toLocaleDateString("en-US"); // Today's date
-
     // Determine the greeting based on the current time in Seoul (KST)
     const timezone = "Asia/Seoul";
     const currentTime = new Date().toLocaleString("en-US", {
       timeZone: timezone,
     });
+
+    // Extract relevant data
+    const temp = weatherData.main.temp; // Current temperature
+    const tempMin = weatherData.main.temp_min; // Min temperature
+    const tempMax = weatherData.main.temp_max; // Max temperature
+    const weatherCondition = weatherData.weather[0].description; // Weather description
+    const date = new Date(currentTime); // Today's date
+
     const hour = new Date(currentTime).getHours();
 
     let greeting;
