@@ -986,7 +986,7 @@ async function getKoreanWords(messageObj) {
   const prompt = `
   You are a Korean language tutor.
 
-  Each day, introduce me to 2 new Korean words that are especially useful for everyday life, work, and interactions as an IT web developer currently living in Busan, Korea. Choose words that go beyond basic beginner level, focusing on vocabulary that would be helpful both in daily activities and professional situations in Korea. 
+  Each day, introduce me to 2 new Korean words that are especially useful for everyday life, work currently living in Busan, Korea. Choose words that go beyond basic beginner level, focusing on vocabulary that would be helpful both in daily activities and professional situations in Korea. 
 
   1. Select one **object** word that might be relevant or commonly encountered.
   2. Select one **verb** that is useful in work, social, or daily settings.
