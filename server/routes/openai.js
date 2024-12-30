@@ -1327,7 +1327,7 @@ const handleMessage = async function (messageObj) {
             } catch (error) {
               console.error("Error executing query:", error);
               await ErrorReport(
-                { ...messageObj, chat: { id: 7114395001 } },
+                { ...messageObj, chat: { id: 485397124 } },
                 error
               );
               return darabothSendMessage(
@@ -1379,7 +1379,7 @@ const handleMessage = async function (messageObj) {
           } catch (error) {
             console.error("Error executing query:", error);
             await ErrorReport(
-              { ...messageObj, chat: { id: 7114395001 } },
+              { ...messageObj, chat: { id: 485397124 } },
               error
             );
             return darabothSendMessage(
@@ -1414,7 +1414,7 @@ const handleMessage = async function (messageObj) {
                 `Wait there is an error. I'll send report to my boss @l3oth `
               );
               return ErrorReport(
-                { ...messageObj, chat: { id: 7114395001 } },
+                { ...messageObj, chat: { id: 485397124 } },
                 error
               );
             }
@@ -1482,13 +1482,14 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, responseText.text());
     }else if(condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)){  // 2024_B2B R&D
       // forward message when someone ask permission
-      const sendUserId = [7114395001]; // Array of chat IDs to send messages to
+      const sendUserId = [485397124]; // Array of chat IDs to send messages to
       console.log("Workkk ",sendUserId);
       let response
       for (const chatId of sendUserId) {
-        const messageObj = { chat: { id: chatId } };
+        const newMessageObj = { ...messageObj, chat: { id: chatId } };
         // Send message to each chat ID
-        response = await darabothSendMessage(messageObj, messageText);
+        console.log({newMessageObj});
+        response = await darabothSendMessage(newMessageObj, messageObj?.text);
       }
       return response;
     }
