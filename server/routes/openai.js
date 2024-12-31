@@ -1802,19 +1802,24 @@ router.get("/translateforhouyly", async (req, res) => {
     const { query } = req;
     if (query) {
       const str = query.message;
-      const action = query.action || "translate";  // Default to translation
-      const targetLang = query.targetLang || "English";  // Target language, default to English
-      const context = query.context || "general";  // Domain for explanation
-      const level = query.level || "basic";  // Basic or advanced explanation
+      const action = query.action || "translate";  
+      const targetLang = query.targetLang || "English";  
+      const context = query.context || "general";  
+      const level = query.level || "basic";  
 
       console.log(`Request: ${str} | Action: ${action} | Target: ${targetLang} | Context: ${context}`);
 
       const resText = await getTranslateOrExplain(str, action, targetLang, context, level);
-      res.status(200).json({ input: str, translatedTo: targetLang, output: resText });
+      
+      res.status(200).json({ 
+        input: str, 
+        translatedTo: targetLang, 
+        output: resText 
+      });
     }
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: error.message });
+    console.error("Error processing request:", error.message);
+    res.status(500).json({ error: "Internal Server Error. Please try again later." });
   }
 });
 
@@ -1827,25 +1832,36 @@ async function getTranslateOrExplain(str, action, targetLang, context, level) {
     ${action === "translate" 
       ? `Translate the following text into ${targetLang}.  
          Automatically detect the input language and translate it accurately.  
-         Ensure the translation is context-appropriate and formal if needed.  
-         If the text is already in ${targetLang}, return the same text.`
+         If the text cannot be translated, return "Translation not available."  
+         If already in ${targetLang}, return the same text.`
       : `Explain the meaning of the word or phrase in English.  
-         Provide a ${level} explanation focusing on the context of ${context}.`}
+         Provide a ${level} explanation focusing on ${context}.`}
 
     Examples:
     - "Hola, ¿cómo estás?" to English -> "Hello, how are you?"  
     - "ありがとう" to English -> "Thank you."  
-    - "Merci beaucoup" to Korean -> "대단히 감사합니다."  
 
     Text to ${action === "translate" ? "Translate" : "Explain"}  
     [${str}]
   `;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  console.log("Response text: " + response.text());
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const output = response.text();
 
-  return response.text();
+    // Fallback if the response is empty
+    if (!output || output.toLowerCase().includes("not available")) {
+      console.warn("Fallback triggered - No translation found.");
+      return `Translation not available for: "${str}". Original text returned.`;
+    }
+
+    console.log("Response text:", output);
+    return output;
+  } catch (error) {
+    console.error("Translation failed:", error.message);
+    return `Error: Could not process the text "${str}". Please try again later.`;
+  }
 }
 
 router.post("/subscribe", async (req, res) => {
