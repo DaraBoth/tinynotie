@@ -1797,6 +1797,57 @@ router.post("/push", async (req, res) => {
   }
 });
 
+router.get("/translateforhouyly", async (req, res) => {
+  try {
+    const { query } = req;
+    if (query) {
+      const str = query.message;
+      const action = query.action || "translate";  // Default to translation
+      const targetLang = query.targetLang || "English";  // Target language, default to English
+      const context = query.context || "general";  // Domain for explanation
+      const level = query.level || "basic";  // Basic or advanced explanation
+
+      console.log(`Request: ${str} | Action: ${action} | Target: ${targetLang} | Context: ${context}`);
+
+      const resText = await getTranslateOrExplain(str, action, targetLang, context, level);
+      res.status(200).json({ input: str, translatedTo: targetLang, output: resText });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function getTranslateOrExplain(str, action, targetLang, context, level) {
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+
+  const prompt = `
+    Instruction
+    ${action === "translate" 
+      ? `Translate the following text into ${targetLang}.  
+         Automatically detect the input language and translate it accurately.  
+         Ensure the translation is context-appropriate and formal if needed.  
+         If the text is already in ${targetLang}, return the same text.`
+      : `Explain the meaning of the word or phrase in English.  
+         Provide a ${level} explanation focusing on the context of ${context}.`}
+
+    Examples:
+    - "Hola, ¿cómo estás?" to English -> "Hello, how are you?"  
+    - "ありがとう" to English -> "Thank you."  
+    - "Merci beaucoup" to Korean -> "대단히 감사합니다."  
+
+    Text to ${action === "translate" ? "Translate" : "Explain"}  
+    [${str}]
+  `;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  console.log("Response text: " + response.text());
+
+  return response.text();
+}
+
 router.post("/subscribe", async (req, res) => {
   const { deviceId, userAgent, subscription, userInfo } = req.body; // Extract data from request body
   console.log(deviceId, userAgent, subscription);
