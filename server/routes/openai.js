@@ -1864,6 +1864,91 @@ async function getTranslateOrExplain(str, action, targetLang, context, level) {
   }
 }
 
+router.get("/listTranslations", authenticateToken, async (req, res) => {
+  try {
+    const { search = "", page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    const userId = req.user._id;  // Get user_id from the authenticated session
+
+    const sql = `
+      SELECT id, input_text, output_text, target_language, action_type, created_at 
+      FROM translations
+      WHERE (input_text ILIKE $1 OR output_text ILIKE $1)
+      AND user_id = $2
+      ORDER BY created_at DESC
+      LIMIT $3 OFFSET $4;
+    `;
+
+    const results = await pool.query(sql, [`%${search}%`, userId, limit, offset]);
+
+    res.json({ 
+      status: true, 
+      page, 
+      total: results.rowCount,
+      data: results.rows 
+    });
+  } catch (error) {
+    console.error("Error listing translations:", error.message);
+    res.status(500).json({ error: "Failed to fetch translations." });
+  }
+});
+
+router.post("/saveTranslation", authenticateToken, async (req, res) => {
+  try {
+    const { input, output, targetLang, action } = req.body;
+    const userId = req.user._id;  // Extract user_id from the token (after authentication)
+
+    if (!input || !output || !targetLang || !action) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    const sql = `
+      INSERT INTO translations (input_text, output_text, target_language, action_type, user_id)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *;
+    `;
+    const values = [input, output, targetLang, action, userId];
+
+    const result = await pool.query(sql, values);
+    res.status(201).json({ 
+      message: "Translation saved.", 
+      data: result.rows[0] 
+    });
+  } catch (error) {
+    console.error("Error saving translation:", error.message);
+    res.status(500).json({ error: "Failed to save translation." });
+  }
+});
+
+router.delete("/deleteTranslation/:id", authenticateToken, async (req, res) => {
+  try {
+    const translationId = req.params.id;
+    const userId = req.user._id;  // Extract user_id from the authenticated session
+
+    const sql = `
+      DELETE FROM translations
+      WHERE id = $1 AND user_id = $2
+      RETURNING *;
+    `;
+
+    const result = await pool.query(sql, [translationId, userId]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ 
+        error: "Translation not found or you don't have permission to delete it." 
+      });
+    }
+
+    res.json({ 
+      message: "Translation deleted successfully.", 
+      deletedTranslation: result.rows[0] 
+    });
+  } catch (error) {
+    console.error("Error deleting translation:", error.message);
+    res.status(500).json({ error: "Failed to delete translation." });
+  }
+});
+
 router.post("/subscribe", async (req, res) => {
   const { deviceId, userAgent, subscription, userInfo } = req.body; // Extract data from request body
   console.log(deviceId, userAgent, subscription);
