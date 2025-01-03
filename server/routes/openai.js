@@ -1438,7 +1438,7 @@ const handleMessage = async function (messageObj) {
       }
     } 
   }else if (messageObj.from.username == "j1inda") {
-    const text = messageObj.text.replace("@DarabothBot","")
+    const text = messageObj.text.replaceAll("@DarabothBot","")
     if(text) return darabothSendMessage(messageObj,);
   } else {
     let ismention = false;
