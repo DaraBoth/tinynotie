@@ -1483,7 +1483,7 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, responseText.text());
     }else if(condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)){  // 2024_B2B R&D
       // forward message when someone ask permission
-      const sendUserId = [485397124]; // Array of chat IDs to send messages to
+      const sendUserId = [485397124,5985950554]; // Array of chat IDs to send messages to
       console.log("Workkk ",sendUserId);
       let response
       for (const chatId of sendUserId) {
