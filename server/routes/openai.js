@@ -1287,6 +1287,9 @@ const handleMessage = async function (messageObj) {
     } else if (command.startsWith("translate")) {
       const resText = await getTranslate(command.replace("translate", ""));
       return darabothSendMessage(messageObj, resText);
+    } else if(command.startsWith("getWeather")) {
+      const weatherText = await getWeather();
+      return darabothSendMessage(messageObj, weatherText);
     } else if(command.startsWith("whoclean")) {
       const cleaningData = await getCleaningData();
       const cleaningMessage = await getCleaningProm(cleaningData, command.replace("whoclean", "who clean"));
@@ -1506,6 +1509,10 @@ const handleMessage = async function (messageObj) {
   }
 
 };
+
+async function handleInsertIntoExcel({ messageObj, messageText }) {
+
+}
 
 async function ErrorReport(messageObj, errorMessage) {
   return await darabothSendMessage(messageObj, errorMessage);
