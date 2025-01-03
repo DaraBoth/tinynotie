@@ -1279,7 +1279,7 @@ const handleMessage = async function (messageObj) {
   if (isCommand) {
     const command = messageText.slice(1);
     if (command.startsWith("start")) {
-      return darabothSendMessage(messageObj, "Hi! bro");
+      return darabothSendMessage(messageObj, "Hello I'm Daraboth");
     } else if (command.startsWith("translate")) {
       const resText = await getTranslate(command.replace("translate", ""));
       return darabothSendMessage(messageObj, resText);
@@ -1436,7 +1436,7 @@ const handleMessage = async function (messageObj) {
   }else {
     let ismention = false;
     const condition1 = chatType == "private";
-    const condition2 = chatType == "group";
+    const condition2 = (chatType == "group" || chatType == "supergroup"); // -1002369402163
 
     if (messageObj.entities && messageObj.entities.length > 0) {
       const mentions = messageObj.entities
@@ -1453,6 +1453,7 @@ const handleMessage = async function (messageObj) {
         ismention = true;
       }
     }
+    console.log(ismention);
     console.log("Is ask for permission = ",condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText));
     if (condition1 || (condition2 && ismention)) {
       if (condition2 && ismention) messageText = messageText.replace("@DarabothBot", "");
