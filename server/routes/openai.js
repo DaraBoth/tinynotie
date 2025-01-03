@@ -1296,6 +1296,9 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, cleaningMessage);
     } else if(command.startsWith("excel2002")) {
       return darabothSendMessage(messageObj, excel2002Url)
+    } else if(command.startsWith("2002Test")) {
+      const requestJson = await handleInsertIntoExcel({ messageObj, messageText: command.replace("excel2002Test", "") });
+      return darabothSendMessage(messageObj, requestJson)
     } else if (chatType == "private") {
       // special feature only private mode
       if (command.startsWith("register")) {
@@ -1511,7 +1514,55 @@ const handleMessage = async function (messageObj) {
 };
 
 async function handleInsertIntoExcel({ messageObj, messageText }) {
+ // Initialize the AI with your API key
+ const genAI = new GoogleGenerativeAI(process.env.API_KEY3);
+ const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
+ const prompt = `
+ Generate a structured JSON response based on the following human text input. 
+ Extract key details like date, withdrawal amount, location, item purchased, and the buyer. 
+ If the date is not mentioned, use the current date. 
+ Ensure the 'withdrawal', 'notes' (item bought), and 'other' (buyer) fields are mandatory. 
+ The location is optional but default it to 'Main Branch' if not specified.
+ 
+ Sample Text:
+ "On January 5th, John bought shoes for 100 dollars from Branch A."
+
+ Expected JSON Output:
+ {
+  "operatingDate": "2025-01-05",
+  "withdrawal": 100,
+  "deposit": 0,
+  "operatingLocation": "Branch A",
+  "notes": "Buy Shoes",
+  "other": "John"
+}
+
+Sample Text Without Date and Location:
+"Sarah bought a laptop for 800 dollars."
+
+Expected JSON Output:
+{
+  "operatingDate": "2025-01-03",
+  "withdrawal": 800,
+  "deposit": 0,
+  "operatingLocation": "",
+  "notes": "Buy Laptop",
+  "other": "Sarah"
+}
+
+Notes on Behavior:
+- If the date is missing ➝ Use the current date ${getDateInSeoulTime()}
+- If the location is missing ➝ Use the ""
+- Ensure every output includes "withdrawal", "notes", and "other".
+- "deposit" defaults to 0 unless explicitly stated.
+ `
+
+ // Generate content using the AI
+ const result = await model.generateContent(prompt);
+ const aiMessage = result.response.text();
+ console.log({aiMessage});
+ return aiMessage;
 }
 
 async function ErrorReport(messageObj, errorMessage) {
@@ -2043,6 +2094,15 @@ router.post("/subscribe", async (req, res) => {
     client.release();
   }
 });
+
+function getDateInSeoulTime () {
+  // Determine the greeting based on the current time in Seoul (KST)
+  const timezone = "Asia/Seoul";
+  const currentTime = new Date().toLocaleString("en-US", {
+    timeZone: timezone,
+  });
+  return currentTime;
+}
 
 function detectAndExtractPermission(message) {
   const permissionRegex = /\b(permission to|ask permission for|I would like to ask permission for|asking permission to)\b.*?(leave|late|go outside)/i;
