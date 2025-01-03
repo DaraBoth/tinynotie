@@ -1439,7 +1439,7 @@ const handleMessage = async function (messageObj) {
     } 
   }else if (messageObj.from.username == "j1inda") {
     const text = messageObj.text.replaceAll("@DarabothBot","")
-    if(text) return darabothSendMessage(messageObj,);
+    if(text) return darabothSendMessage(messageObj,text);
   } else {
     let ismention = false;
     const condition1 = chatType == "private";
