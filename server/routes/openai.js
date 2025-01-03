@@ -1556,6 +1556,10 @@ Notes on Behavior:
 - If the location is missing ➝ Use the ""
 - Ensure every output includes "withdrawal", "notes", and "other".
 - "deposit" defaults to 0 unless explicitly stated.
+
+
+Here is the text to analyze:
+${messageText}
  `
 
  // Generate content using the AI
