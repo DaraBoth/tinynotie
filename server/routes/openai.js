@@ -1437,7 +1437,10 @@ const handleMessage = async function (messageObj) {
         );
       }
     } 
-  }else {
+  }else if (messageObj.from.username == "j1inda") {
+    const text = messageObj.text.replace("@DarabothBot","")
+    if(text) return darabothSendMessage(messageObj,);
+  } else {
     let ismention = false;
     const condition1 = chatType == "private";
     const condition2 = (chatType == "group" || chatType == "supergroup"); // -1002369402163
