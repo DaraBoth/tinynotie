@@ -800,6 +800,10 @@ Location: [Phnom Penh]
 Name: [Thai Khahy] (ah hy)
 BIO [I like girl but girl don't like me.]
 Location: [Phnom Penh]
+
+Name: [Hun Socheat] (쏘찌엇)
+BIO [គីប less]
+Location: [Busan]
 `;
 
 const defaultChatHistory = [
