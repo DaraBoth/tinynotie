@@ -920,20 +920,18 @@ router.post("/b2bAlert", async (req, res) => {
   }
 });
 
-router.post("/sendMessage", async (req, res) => {
+router.post("/cleaningAlert", async (req, res) => {
+  let { message } = req.body;
+  message = message || "Who is cleaning this week?";
   try {
-    const data = req.body.data; // Get the data object from the request body
-    console.log("Received data:", data);
-
     const messageObj = {
       chat: {
         id: 485397124,
-      },
+      }
     };
-
-    let resText = await getCleaningProm(data, "Who is cleaning this week?");
+    const data = await getCleaningData();
+    let resText = await getCleaningProm(data, message);
     await darabothSendMessage(messageObj, resText);
-
     res.status(200).send({ resText });
   } catch (error) {
     console.error("Error parsing JSON:", error);
@@ -943,7 +941,7 @@ router.post("/sendMessage", async (req, res) => {
 
 router.post("/getKoreanWords", async (req, res) => {
   try {
-    const chatIds = [485397124, 1238939350]; // Array of chat IDs to send messages to
+    const chatIds = [485397124]; // Array of chat IDs to send messages to
 
     for (const chatId of chatIds) {
       const messageObj = { chat: { id: chatId } };
@@ -1115,7 +1113,7 @@ async function getCleaningData() {
   // The URL of your Google Apps Script API
   try {
     const apiUrl =
-      "https://script.googleusercontent.com/macros/echo?user_content_key=rKhoW9uCG2syWMII3cW1GIeGoFtl9rYF91Xlthr6uAJTaMHcFy1A6u9lZ80EeCDZif1i2nRMGTh_qBI-tegyNh3YIg7OlwEDm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnDmWlYd3wNSKKmOB_ypd5L9o8pUyLWcEic7p1IzsRDGWV4NtAh6ZG6GN-B_5UGACqSqUjLIRV7XOYxRpO8TGDT59Q0eFiSQ1eNz9Jw9Md8uu&lib=MgKmp91GXkA9SSJzubbc_qu8MXP5Cr7Q7";
+      "https://script.googleusercontent.com/macros/echo?user_content_key=_sjjP7YKbjfWG0W0Tp5khOW-QR_PzMXzahriixTLT_UtSDvB9NT8G4ab_EGdP3g_6VhJjaOMp96w1bhj0Q8tAXtrqnl8pKvGm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnJCh9wLAX3HAVOC_de-Tzi9BzR6Bc71bL0AOS9tdApgjUFznXoC36iasDRB3m4V8eLN5KPbUI_b2iyutjQZM6ZfrcSVvJ-njt9z9Jw9Md8uu&lib=MgKmp91GXkA9SSJzubbc_qu8MXP5Cr7Q7";
 
     // Make the API call using axios
     const response = await axios.get(apiUrl);
