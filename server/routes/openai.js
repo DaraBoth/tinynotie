@@ -921,7 +921,7 @@ router.post("/b2bAlert", async (req, res) => {
 });
 
 router.post("/cleaningAlert", async (req, res) => {
-  let { message } = req.body;
+  let { message, data } = req.body;
   message = message || "Who is cleaning this week?";
   try {
     const messageObj = {
@@ -929,7 +929,9 @@ router.post("/cleaningAlert", async (req, res) => {
         id: 485397124,
       }
     };
-    const data = await getCleaningData();
+    if(!data) {
+      data = await getCleaningData();
+    }
     let resText = await getCleaningProm(data, message);
     await darabothSendMessage(messageObj, resText);
     res.status(200).send({ resText });
@@ -1500,16 +1502,6 @@ const handleMessage = async function (messageObj) {
 
 async function ErrorReport(messageObj, errorMessage) {
   return await darabothSendMessage(messageObj, errorMessage);
-}
-
-async function handleRegisterMessage(messageObj) {
-  if (!messageObj) return;
-  const { id } = messageObj?.chat;
-  let messageText = messageObj?.text + "" || "";
-  const command = messageText.slice(1);
-  if (command.startsWith("register")) {
-    return darabothSendMessage(messageObj, responseText.text());
-  }
 }
 
 function templateSaveChat({ Chat_ID, chatHistory, messageText, responseText }) {
