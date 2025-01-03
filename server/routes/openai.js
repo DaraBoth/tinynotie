@@ -1389,8 +1389,8 @@ const handleMessage = async function (messageObj) {
             );
           }
         }
-      } else if (command.startsWith("allow") && chatType == "group") {
-        if (chatType == "group") {
+      } else if (command.startsWith("allow") && (chatType == "group" || chatType == "supergroup")) {
+        if ((chatType == "group" || chatType == "supergroup")) {
           let sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
           let values = [username];
           const { rows } = await pool.query(sql, values);
