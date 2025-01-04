@@ -1297,7 +1297,7 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, cleaningMessage);
     } else if(command.startsWith("excel2002")) {
       return darabothSendMessage(messageObj, excel2002Url)
-    } else if(command.startsWith("2002Test")) {
+    } else if(command.startsWith("buyStaff")) {
       const requestJson = await handleInsertIntoExcel({ messageObj, messageText: command.replace("excel2002Test", "") });
       try {
         const requestJsonData = JSON.parse(requestJson);
