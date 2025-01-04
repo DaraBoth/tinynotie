@@ -29,7 +29,7 @@ const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
 });
 
-const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbwT_lISC_M6p9SKYpUaj2d2LzGBwgEc4N86E71ON2cQX76mVIvrcCz35vKDgSoPCk4pLA/exec"
+const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbwmxo_woI8GNWJ2aXOK7ieSD6fLQkGTTrsSnLyfqDdJvBHaUMEgrTsxwOBhFc0oxuOtzQ/exec"
 const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
 
 // const pool = new Pool({
