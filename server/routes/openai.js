@@ -29,6 +29,7 @@ const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
 });
 
+const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbwT_lISC_M6p9SKYpUaj2d2LzGBwgEc4N86E71ON2cQX76mVIvrcCz35vKDgSoPCk4pLA/exec"
 const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
 
 // const pool = new Pool({
@@ -1298,7 +1299,17 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, excel2002Url)
     } else if(command.startsWith("2002Test")) {
       const requestJson = await handleInsertIntoExcel({ messageObj, messageText: command.replace("excel2002Test", "") });
-      return darabothSendMessage(messageObj, requestJson)
+      try {
+        const requestJsonData = JSON.parse(requestJson);
+        if(requestJsonData){
+          await callInsertIntoExcel(requestJsonData);
+          return darabothSendMessage(messageObj, "Successfully inserted into excel");	
+        }
+      }catch(e) {
+        console.log(e);
+        return darabothSendMessage(messageObj, requestJson)
+      }
+      
     } else if (chatType == "private") {
       // special feature only private mode
       if (command.startsWith("register")) {
@@ -1567,6 +1578,11 @@ ${messageText}
  const aiMessage = result.response.text();
  console.log({aiMessage});
  return aiMessage;
+}
+
+async function callInsertIntoExcel(objectParams) {
+  const resquest = await axios.post(insertExcelEndpoint, objectParams);
+  return resquest.data;
 }
 
 async function ErrorReport(messageObj, errorMessage) {
