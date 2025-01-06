@@ -926,6 +926,25 @@ router.post("/b2bAlert", async (req, res) => {
   }
 });
 
+router.post("/sendMessageViaBot", async (req, res) => {
+  let { telegramObjectRecord } = req.body; // telegramObjectRecord = [ { chatId: 123456, message: "Hello" } ] 
+  let response = [];
+  if(Array.isArray(telegramObjectRecord) && telegramObjectRecord.length > 0) {
+    for (const telegramObject of telegramObjectRecord) {
+      try {
+        const messageObj = { chat: { id: telegramObject?.chatId } };
+        await darabothSendMessage(messageObj, telegramObject?.message);
+        response.push({ chatId: telegramObject?.chatId, message: telegramObject.message, status: true });
+      } catch (error) {
+        response.push({ chatId: telegramObject?.chatId, message: telegramObject.message, status: false });
+        console.error("Error parsing JSON:", error);
+      }
+    }
+    res.status(200).send({ response });
+  }
+  res.status(200).send({ status: false, message: "Incorrect data", telegramObjectRecord :[ { chatId: 123456, message: 'Hello' } ] });
+});
+
 router.post("/cleaningAlert", async (req, res) => {
   let { message, data, isNotAlert } = req.body;
   message = message || "Who is cleaning this week?";
