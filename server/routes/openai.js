@@ -31,6 +31,7 @@ const pool = new Pool({
 });
 
 const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbyBE2iov4vm_iT4Pm9cC0p3VUj1QeT5GhWeJnISJMfVQlhkTPB-acz1uT25HcTEpGzUrw/exec"
+const rollBackExcelEndpoint = "https://script.google.com/macros/s/AKfycbwdB3vPUEgvhVR2gEBH9B9qqx9m46Uv8O-cnWICP9-KCXsPr3iP_BCnqWz3HIimqTtDIQ/exec"
 const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
 
 // const pool = new Pool({
@@ -1354,7 +1355,12 @@ const handleMessage = async function (messageObj) {
           console.log(e);
           return darabothSendMessage(messageObj, requestJson)
         }
-      } 
+      } else if(command.startsWith("rollback")) {
+        const response = await callRollBackExcel();
+        if(response.status == "200") {
+          return darabothSendMessage(messageObj, response?.message);
+        }
+      }
     } else if (chatType == "private") {
       // special feature only private mode
       if (command.startsWith("register")) {
@@ -1632,6 +1638,11 @@ ${messageText}
 
 async function callInsertIntoExcel(objectParams) {
   const resquest = await axios.post(insertExcelEndpoint, objectParams);
+  return resquest.data;
+}
+
+async function callRollBackExcel() {
+  const resquest = await axios.post(rollBackExcelEndpoint);
   return resquest.data;
 }
 
