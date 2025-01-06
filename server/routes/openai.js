@@ -30,7 +30,7 @@ const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
 });
 
-const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbwmxo_woI8GNWJ2aXOK7ieSD6fLQkGTTrsSnLyfqDdJvBHaUMEgrTsxwOBhFc0oxuOtzQ/exec"
+const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbz_ZzvDiF8C7-RyZKsF7BAxwk9SonqXv_m-1u4oD1S-qI2vclevfK6-Y48869Yfr-Z-XA/exec"
 const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
 
 // const pool = new Pool({
@@ -1327,8 +1327,9 @@ const handleMessage = async function (messageObj) {
       try {
         const requestJsonData = JSON.parse(requestJson);
         if(requestJsonData){
-          await callInsertIntoExcel(requestJsonData);
-          return darabothSendMessage(messageObj, "Successfully inserted into excel");	
+          const response = await callInsertIntoExcel(requestJsonData);
+          const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
+          return darabothSendMessage(messageObj, telegramResponse);	
         }
       }catch(e) {
         console.log(e);
@@ -1588,6 +1589,7 @@ Expected JSON Output:
 }
 
 Notes on Behavior:
+- Current date = ${getDateInSeoulTime()}
 - If the date is missing ➝ Use the current date ${getDateInSeoulTime()}
 - If the location is missing ➝ Use the ""
 - Ensure every output includes "withdrawal", "notes", and "other".
@@ -2153,5 +2155,41 @@ function detectAndExtractPermission(message) {
   const permissionRegex = /\b(permission to|ask permission for|I would like to ask permission for|asking permission to)\b.*?(leave|late|go outside)/i;
   return permissionRegex.test(message);
 }
+
+function formatTelegramResponseKhmer(apiResponse, telegramData) {
+  const data = apiResponse.data.insertedRow;
+  const username = telegramData.from.username;
+
+  let message = `👋 សួស្ដី @${username} !\n\n✅ ការចំណាយរបស់អ្នកត្រូវបានបញ្ចូលដោយជោគជ័យ!\n`;
+
+  message += `🧾 លេខរៀង: ${data.no}\n`;
+  message += `📅 កាលបរិច្ឆេទ: ${data.operatingDate}\n`;
+
+  if (data.withdrawal && data.withdrawal !== 0) {
+    message += `💸 ចំនួនដែលបានដក: ${data.withdrawal}원\n`;
+  }
+  if (data.deposit && data.deposit !== 0) {
+    message += `💰 ចំនួនដាក់បញ្ចូល: ${data.deposit}원\n`;
+  }
+  if (data.operatingLocation) {
+    message += `🏦 ទីតាំងប្រតិបត្តិការ: ${data.operatingLocation}\n`;
+  } else {
+    message += `🏦 ទីតាំងប្រតិបត្តិការ: មិនបានបញ្ជាក់\n`;
+  }
+  if (data.notes) {
+    message += `🛒 ឥវ៉ាន់ដែលបានទិញ: ${data.notes}\n`;
+  }
+  if (data.other) {
+    message += `🙋‍♂️ អ្នកទិញ: ${data.other}\n`;
+  }
+
+  message += `\n💵 សមតុល្យចាស់: ${apiResponse.data.oldTotalAmount}៛\n`;
+  message += `💵 សមតុល្យថ្មី: ${apiResponse.data.newTotalAmount}៛\n\n`;
+  message += `📣 @cooconratha, សូមពិនិត្យ និងធ្វើការបង្វិលប្រាក់វិញ!\n`;
+
+  return message;
+}
+
+
 
 export default router;
