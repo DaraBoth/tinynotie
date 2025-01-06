@@ -2185,8 +2185,7 @@ function formatTelegramResponseKhmer(apiResponse, telegramData) {
   // Handle messages based on transaction type
   if (data.withdrawal && data.withdrawal > 0) {
     // Withdrawal (Spend) Message
-    message += `✅ ការចំណាយរបស់អ្នកត្រូវបានបញ្ចូលដោយជោគជ័យ!\n`;
-    message += `🧾 លេខរៀង: ${data.no}\n`;
+    message += `✅ ការចំណាយជោគជ័យ!\n`;
     message += `📅 កាលបរិច្ឆេទ: ${data.operatingDate}\n`;
     message += `💸 ចំនួនដែលបានដក: ${data.withdrawal}원\n`;
     if (data.operatingLocation) {
@@ -2200,25 +2199,19 @@ function formatTelegramResponseKhmer(apiResponse, telegramData) {
     if (data.other) {
       message += `🙋‍♂️ អ្នកទិញ: ${data.other}\n`;
     }
-
-    message += `\n💵 សមតុល្យចាស់: ${apiResponse.data.oldTotalAmount}៛\n`;
-    message += `💵 សមតុល្យថ្មី: ${apiResponse.data.newTotalAmount}៛\n\n`;
-    message += `📣 បង @cooconratha, សូមពិនិត្យ និងធ្វើការបង្វិលប្រាក់វិញ!\n`;
+    message += `💵 សមតុល្យ: ${apiResponse.data.oldTotalAmount}원 -> ${apiResponse.data.newTotalAmount}원\n`;
+    message += `📣 បងៗ, សូមជួយពិនិត្យ និងធ្វើការបង្វិលប្រាក់វិញ!\n`;
     message += `Please react ✅ after send or recieved.\n`;
   } else if (data.deposit && data.deposit > 0) {
     // Deposit (Top-Up) Message
-    message += `✅ ការដាក់ប្រាក់របស់អ្នកត្រូវបានបញ្ចូលដោយជោគជ័យ!\n`;
-    message += `🧾 លេខរៀង: ${data.no}\n`;
-    message += `📅 កាលបរិច្ឆេទ: ${data.operatingDate}\n`;
+    message += `✅ ការដាក់ប្រាក់ជោគជ័យ!\n`;
     message += `💰 ចំនួនដាក់បញ្ចូល: ${data.deposit}원\n`;
-    message += `\n💵 សមតុល្យចាស់: ${apiResponse.data.oldTotalAmount}៛\n`;
-    message += `💵 សមតុល្យថ្មី: ${apiResponse.data.newTotalAmount}៛\n\n`;
-    message += `📢 បង @cooconratha, Please react ✅ after recieved.\n`;
+    message += `💵 សមតុល្យ: ${apiResponse.data.oldTotalAmount}원 -> ${apiResponse.data.newTotalAmount}원\n`;
+    message += `📢 Please react ✅ after recieved.\n`;
   } else {
     // Default message for no transaction
     message += `⚠️ មិនមានការដកឬដាក់ប្រាក់ឡើយ!\n`;
   }
-
   return message;
 }
 
