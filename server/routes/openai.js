@@ -967,8 +967,8 @@ router.post("/cleaningAlert", async (req, res) => {
         let resText = await getCleaningProm(data, message);
         await darabothSendMessage(messageObj, resText);
       }
+      res.status(200).send({ status: true, data });
     }
-    res.status(200).send({ resText });
   } catch (error) {
     console.error("Error parsing JSON:", error);
     res.status(500).send("Error processing data");
