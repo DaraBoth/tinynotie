@@ -1357,8 +1357,10 @@ const handleMessage = async function (messageObj) {
         }
       } else if(command.startsWith("rollback")) {
         const response = await callRollBackExcel();
-        if(response.status == "200") {
+        if(response.status) {
           return darabothSendMessage(messageObj, response?.message);
+        }else {
+          return darabothSendMessage(messageObj, "Rollback Failed");
         }
       }
     } else if (chatType == "private") {
