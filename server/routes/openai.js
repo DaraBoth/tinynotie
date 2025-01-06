@@ -1644,7 +1644,7 @@ async function callInsertIntoExcel(objectParams) {
 }
 
 async function callRollBackExcel() {
-  const resquest = await axios.post(rollBackExcelEndpoint);
+  const resquest = await axios.get(rollBackExcelEndpoint);
   return resquest.data;
 }
 
