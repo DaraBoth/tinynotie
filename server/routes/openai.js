@@ -2213,7 +2213,7 @@ function formatTelegramResponseKhmer(apiResponse, telegramData) {
     message += `💰 ចំនួនដាក់បញ្ចូល: ${data.deposit}원\n`;
     message += `\n💵 សមតុល្យចាស់: ${apiResponse.data.oldTotalAmount}៛\n`;
     message += `💵 សមតុល្យថ្មី: ${apiResponse.data.newTotalAmount}៛\n\n`;
-    message += `📢 បង @cooconratha, ✅ (ត្រួតពិនិត្យ) បន្ទាប់ពីបានឃើញការដាក់ប្រាក់នេះ!\n`;
+    message += `📢 បង @cooconratha, Please react ✅ after recieved.\n`;
   } else {
     // Default message for no transaction
     message += `⚠️ មិនមានការដកឬដាក់ប្រាក់ឡើយ!\n`;
