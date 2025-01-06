@@ -1305,6 +1305,7 @@ const handleMessage = async function (messageObj) {
   const last_name = messageObj.from.last_name;
   const telegram_chat_id = messageObj.chat.id;
   const is2002Group = chatType == "supergroup" && Chat_ID == "-1002369402163";
+  const isDaraboth = username == "l3oth";
 
   // is command
   if (isCommand) {
@@ -1323,7 +1324,7 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, cleaningMessage);
     } else if(command.startsWith("excel2002")) {
       return darabothSendMessage(messageObj, excel2002Url)
-    } else if(is2002Group) {
+    } else if(is2002Group && isDaraboth) {
       if(command.startsWith("donetopup")) {
         const date = moment(getDateInSeoulTime());
         const requestJsonData = {
