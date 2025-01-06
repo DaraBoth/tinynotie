@@ -12,6 +12,7 @@ import { Telegraf } from "telegraf";
 import webPush from "web-push";
 const Pool = pg.Pool;
 import { authenticateToken } from "./middleware/auth.js"; // Assuming you have a middleware for JWT
+import { stat } from "fs";
 
 const vapidKeys = {
   publicKey:
@@ -926,19 +927,23 @@ router.post("/b2bAlert", async (req, res) => {
 });
 
 router.post("/cleaningAlert", async (req, res) => {
-  let { message, data } = req.body;
+  let { message, data, isNotAlert } = req.body;
   message = message || "Who is cleaning this week?";
   try {
-    const messageObj = {
-      chat: {
-        id: 485397124,
+    const chatIds = [485397124]; // Array of chat IDs to send messages to
+    if(!isNotAlert) {
+      const data = await getCleaningData();
+      res.status(200).send({ status: true, data });
+    }else {
+      for (const chatId of chatIds) {
+        const messageObj = { chat: { id: chatId } };
+        if(!data) {
+          data = await getCleaningData();
+        }
+        let resText = await getCleaningProm(data, message);
+        await darabothSendMessage(messageObj, resText);
       }
-    };
-    if(!data) {
-      data = await getCleaningData();
     }
-    let resText = await getCleaningProm(data, message);
-    await darabothSendMessage(messageObj, resText);
     res.status(200).send({ resText });
   } catch (error) {
     console.error("Error parsing JSON:", error);
