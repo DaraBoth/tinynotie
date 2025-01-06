@@ -31,7 +31,7 @@ const pool = new Pool({
 });
 
 const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbyBE2iov4vm_iT4Pm9cC0p3VUj1QeT5GhWeJnISJMfVQlhkTPB-acz1uT25HcTEpGzUrw/exec"
-const rollBackExcelEndpoint = "https://script.google.com/macros/s/AKfycbwdB3vPUEgvhVR2gEBH9B9qqx9m46Uv8O-cnWICP9-KCXsPr3iP_BCnqWz3HIimqTtDIQ/exec"
+const rollBackExcelEndpoint = "https://script.google.com/macros/s/AKfycbw--R2jgKGlPvpfuPaPp-Y8OEpBBgJg7J0lbrhs0gvTZKVIucIzVFg_kGnnv9QNx-IPKA/exec"
 const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
 
 // const pool = new Pool({
@@ -1644,8 +1644,12 @@ async function callInsertIntoExcel(objectParams) {
 }
 
 async function callRollBackExcel() {
-  const resquest = await axios.get(rollBackExcelEndpoint);
-  return resquest.data;
+  try {
+    const response = await axios.get(rollBackExcelEndpoint);
+    console.log(response.data); // The rollback response
+  } catch (error) {
+    console.error("Rollback failed:", error);
+  }
 }
 
 async function ErrorReport(messageObj, errorMessage) {
