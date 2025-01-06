@@ -929,6 +929,7 @@ router.post("/b2bAlert", async (req, res) => {
 router.post("/sendMessageViaBot", async (req, res) => {
   let { telegramObjectRecord } = req.body; // telegramObjectRecord = [ { chatId: 123456, message: "Hello" } ] 
   let response = [];
+  console.log("resquest: ",telegramObjectRecord);
   if(Array.isArray(telegramObjectRecord) && telegramObjectRecord.length > 0) {
     for (const telegramObject of telegramObjectRecord) {
       try {
