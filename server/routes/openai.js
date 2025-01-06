@@ -1357,7 +1357,7 @@ const handleMessage = async function (messageObj) {
         }
       } else if(command.startsWith("rollback")) {
         const response = await callRollBackExcel();
-        if(response.status) {
+        if(response?.status) {
           return darabothSendMessage(messageObj, response?.message);
         }else {
           return darabothSendMessage(messageObj, "Rollback Failed");
@@ -1647,6 +1647,7 @@ async function callRollBackExcel() {
   try {
     const response = await axios.get(rollBackExcelEndpoint);
     console.log(response.data); // The rollback response
+    return response.data;
   } catch (error) {
     console.error("Rollback failed:", error);
   }
