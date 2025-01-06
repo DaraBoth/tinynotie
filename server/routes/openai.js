@@ -30,7 +30,7 @@ const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
 });
 
-const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbz_ZzvDiF8C7-RyZKsF7BAxwk9SonqXv_m-1u4oD1S-qI2vclevfK6-Y48869Yfr-Z-XA/exec"
+const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbyBE2iov4vm_iT4Pm9cC0p3VUj1QeT5GhWeJnISJMfVQlhkTPB-acz1uT25HcTEpGzUrw/exec"
 const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
 
 // const pool = new Pool({
@@ -1304,16 +1304,17 @@ const handleMessage = async function (messageObj) {
   const first_name = messageObj.from.first_name;
   const last_name = messageObj.from.last_name;
   const telegram_chat_id = messageObj.chat.id;
+  const is2002Group = chatType == "supergroup" && Chat_ID == "-1002369402163";
 
-  // if is command and not /ask
+  // is command
   if (isCommand) {
-    const command = messageText.slice(1);
+    const command = messageText.slice(1).toLocaleLowerCase();
     if (command.startsWith("start")) {
       return darabothSendMessage(messageObj, "Hello I'm Daraboth");
     } else if (command.startsWith("translate")) {
       const resText = await getTranslate(command.replace("translate", ""));
       return darabothSendMessage(messageObj, resText);
-    } else if(command.startsWith("getWeather")) {
+    } else if(command.startsWith("getweather")) {
       const weatherText = await getWeather();
       return darabothSendMessage(messageObj, weatherText);
     } else if(command.startsWith("whoclean")) {
@@ -1322,20 +1323,34 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, cleaningMessage);
     } else if(command.startsWith("excel2002")) {
       return darabothSendMessage(messageObj, excel2002Url)
-    } else if(command.startsWith("buyStaff")) {
-      const requestJson = await handleInsertIntoExcel({ messageObj, messageText: command.replace("excel2002Test", "") });
-      try {
-        const requestJsonData = JSON.parse(requestJson);
-        if(requestJsonData){
-          const response = await callInsertIntoExcel(requestJsonData);
-          const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
-          return darabothSendMessage(messageObj, telegramResponse);	
+    } else if(is2002Group) {
+      if(command.startsWith("donetopup")) {
+        const date = moment(getDateInSeoulTime());
+        const requestJsonData = {
+          "operatingDate": date.format("YYYY-MM-DD"),
+          "withdrawal": 0,
+          "deposit": 10000,
+          "operatingLocation": "",
+          "notes": "បង់លុយខែ "+date.format("MM"),
+          "other": messageObj.from.username
         }
-      }catch(e) {
-        console.log(e);
-        return darabothSendMessage(messageObj, requestJson)
-      }
-      
+        const response = await callInsertIntoExcel(requestJsonData);
+        const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
+        return darabothSendMessage(messageObj, telegramResponse);	
+      } else if(command.startsWith("buystuff")) {
+        const requestJson = await handleInsertIntoExcel({ messageObj, messageText: command.replace("buystuff", "") });
+        try {
+          const requestJsonData = JSON.parse(requestJson);
+          if(requestJsonData){
+            const response = await callInsertIntoExcel(requestJsonData);
+            const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
+            return darabothSendMessage(messageObj, telegramResponse);	
+          }
+        }catch(e) {
+          console.log(e);
+          return darabothSendMessage(messageObj, requestJson)
+        }
+      } 
     } else if (chatType == "private") {
       // special feature only private mode
       if (command.startsWith("register")) {
@@ -1555,6 +1570,8 @@ async function handleInsertIntoExcel({ messageObj, messageText }) {
  const genAI = new GoogleGenerativeAI(process.env.API_KEY3);
  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
+ const today = moment(getDateInSeoulTime()).format("YYYY-MM-DD");
+
  const prompt = `
  Generate a structured JSON response based on the following human text input. 
  Extract key details like date, withdrawal amount, location, item purchased, and the buyer. 
@@ -1564,10 +1581,12 @@ async function handleInsertIntoExcel({ messageObj, messageText }) {
  
  Sample Text:
  "On January 5th, John bought shoes for 100 dollars from Branch A."
+ Sample Text:
+ "On January 5th, John bought shoes for 100 dollars from Branch A."
 
  Expected JSON Output:
  {
-  "operatingDate": "2025-01-05",
+  "operatingDate": "${today}",
   "withdrawal": 100,
   "deposit": 0,
   "operatingLocation": "Branch A",
@@ -1580,7 +1599,7 @@ Sample Text Without Date and Location:
 
 Expected JSON Output:
 {
-  "operatingDate": "2025-01-03",
+  "operatingDate": "${today}",
   "withdrawal": 800,
   "deposit": 0,
   "operatingLocation": "",
@@ -1589,8 +1608,8 @@ Expected JSON Output:
 }
 
 Notes on Behavior:
-- Current date = ${getDateInSeoulTime()}
-- If the date is missing ➝ Use the current date ${getDateInSeoulTime()}
+- Current date = ${today}
+- If the date is missing ➝ Use the current date ${today}
 - If the location is missing ➝ Use the ""
 - Ensure every output includes "withdrawal", "notes", and "other".
 - "deposit" defaults to 0 unless explicitly stated.
@@ -2160,36 +2179,46 @@ function formatTelegramResponseKhmer(apiResponse, telegramData) {
   const data = apiResponse.data.insertedRow;
   const username = telegramData.from.username;
 
-  let message = `👋 សួស្ដី @${username} !\n\n✅ ការចំណាយរបស់អ្នកត្រូវបានបញ្ចូលដោយជោគជ័យ!\n`;
+  let message = `👋 សួស្ដី @${username} !\n\n`;
 
-  message += `🧾 លេខរៀង: ${data.no}\n`;
-  message += `📅 កាលបរិច្ឆេទ: ${data.operatingDate}\n`;
-
-  if (data.withdrawal && data.withdrawal !== 0) {
+  // Handle messages based on transaction type
+  if (data.withdrawal && data.withdrawal > 0) {
+    // Withdrawal (Spend) Message
+    message += `✅ ការចំណាយរបស់អ្នកត្រូវបានបញ្ចូលដោយជោគជ័យ!\n`;
+    message += `🧾 លេខរៀង: ${data.no}\n`;
+    message += `📅 កាលបរិច្ឆេទ: ${data.operatingDate}\n`;
     message += `💸 ចំនួនដែលបានដក: ${data.withdrawal}원\n`;
-  }
-  if (data.deposit && data.deposit !== 0) {
-    message += `💰 ចំនួនដាក់បញ្ចូល: ${data.deposit}원\n`;
-  }
-  if (data.operatingLocation) {
-    message += `🏦 ទីតាំងប្រតិបត្តិការ: ${data.operatingLocation}\n`;
-  } else {
-    message += `🏦 ទីតាំងប្រតិបត្តិការ: មិនបានបញ្ជាក់\n`;
-  }
-  if (data.notes) {
-    message += `🛒 ឥវ៉ាន់ដែលបានទិញ: ${data.notes}\n`;
-  }
-  if (data.other) {
-    message += `🙋‍♂️ អ្នកទិញ: ${data.other}\n`;
-  }
+    if (data.operatingLocation) {
+      message += `🏦 ទីតាំងប្រតិបត្តិការ: ${data.operatingLocation}\n`;
+    } else {
+      message += `🏦 ទីតាំងប្រតិបត្តិការ: មិនបានបញ្ជាក់\n`;
+    }
+    if (data.notes) {
+      message += `🛒 ឥវ៉ាន់ដែលបានទិញ: ${data.notes}\n`;
+    }
+    if (data.other) {
+      message += `🙋‍♂️ អ្នកទិញ: ${data.other}\n`;
+    }
 
-  message += `\n💵 សមតុល្យចាស់: ${apiResponse.data.oldTotalAmount}៛\n`;
-  message += `💵 សមតុល្យថ្មី: ${apiResponse.data.newTotalAmount}៛\n\n`;
-  message += `📣 @cooconratha, សូមពិនិត្យ និងធ្វើការបង្វិលប្រាក់វិញ!\n`;
+    message += `\n💵 សមតុល្យចាស់: ${apiResponse.data.oldTotalAmount}៛\n`;
+    message += `💵 សមតុល្យថ្មី: ${apiResponse.data.newTotalAmount}៛\n\n`;
+    message += `📣 បង @cooconratha, សូមពិនិត្យ និងធ្វើការបង្វិលប្រាក់វិញ!\n`;
+    message += `Please react ✅ after send or recieved.\n`;
+  } else if (data.deposit && data.deposit > 0) {
+    // Deposit (Top-Up) Message
+    message += `✅ ការដាក់ប្រាក់របស់អ្នកត្រូវបានបញ្ចូលដោយជោគជ័យ!\n`;
+    message += `🧾 លេខរៀង: ${data.no}\n`;
+    message += `📅 កាលបរិច្ឆេទ: ${data.operatingDate}\n`;
+    message += `💰 ចំនួនដាក់បញ្ចូល: ${data.deposit}원\n`;
+    message += `\n💵 សមតុល្យចាស់: ${apiResponse.data.oldTotalAmount}៛\n`;
+    message += `💵 សមតុល្យថ្មី: ${apiResponse.data.newTotalAmount}៛\n\n`;
+    message += `📢 បង @cooconratha, ✅ (ត្រួតពិនិត្យ) បន្ទាប់ពីបានឃើញការដាក់ប្រាក់នេះ!\n`;
+  } else {
+    // Default message for no transaction
+    message += `⚠️ មិនមានការដកឬដាក់ប្រាក់ឡើយ!\n`;
+  }
 
   return message;
 }
-
-
 
 export default router;
