@@ -31,7 +31,7 @@ const pool = new Pool({
 });
 
 const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbyBE2iov4vm_iT4Pm9cC0p3VUj1QeT5GhWeJnISJMfVQlhkTPB-acz1uT25HcTEpGzUrw/exec"
-const rollBackExcelEndpoint = "https://script.google.com/macros/s/AKfycbw--R2jgKGlPvpfuPaPp-Y8OEpBBgJg7J0lbrhs0gvTZKVIucIzVFg_kGnnv9QNx-IPKA/exec"
+const rollBackExcelEndpoint = "https://script.google.com/macros/s/AKfycbzV8t07t8WJ_kYkWy1m-5V83SWv68PGeCPO5P7B_PctMG4BxmXODKRkqrKaSY9sQSB_og/exec"
 const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
 
 // const pool = new Pool({
