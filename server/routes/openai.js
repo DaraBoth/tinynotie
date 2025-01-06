@@ -1324,7 +1324,7 @@ const handleMessage = async function (messageObj) {
       return darabothSendMessage(messageObj, cleaningMessage);
     } else if(command.startsWith("excel2002")) {
       return darabothSendMessage(messageObj, excel2002Url)
-    } else if(is2002Group && isDaraboth) {
+    } else if(is2002Group || isDaraboth) {
       if(command.startsWith("donetopup")) {
         const date = moment(getDateInSeoulTime());
         const requestJsonData = {
