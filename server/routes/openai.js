@@ -1355,6 +1355,8 @@ const handleMessage = async function (messageObj) {
           console.log(e);
           return darabothSendMessage(messageObj, requestJson)
         }
+      } else if(command.startsWith("guideline")) {
+        return darabothSendMessage(messageObj, getGuideLineCommand());
       } else if(command.startsWith("rollback")) {
         const response = await callRollBackExcel();
         if(response?.status) {
@@ -2196,6 +2198,72 @@ function getDateInSeoulTime () {
 function detectAndExtractPermission(message) {
   const permissionRegex = /\b(permission to|ask permission for|I would like to ask permission for|asking permission to)\b.*?(leave|late|go outside)/i;
   return permissionRegex.test(message);
+}
+
+function getGuideLineCommand() {
+  const guideMessage = `
+  📋 *Guide to Commands*
+
+  ---
+
+  *1️⃣ donetopup*  
+  💳 *Record a monthly payment*.  
+  - Just type:  
+  \`\`\`
+  donetopup
+  \`\`\`  
+  - *What it does*:  
+    - Adds a payment of *10,000* for the current month.  
+    - 📝 Notes will include the month (e.g., *បង់លុយខែ 01* for January).  
+
+  ---
+
+  *2️⃣ buystuff*  
+  🛒 *Record a purchase/expense*.  
+  - Type:  
+  \`\`\`
+  buystuff <description>
+  \`\`\`  
+    - Replace \`<description>\` with what you bought.  
+    - Example:  
+      \`\`\`
+      buystuff Coffee at Starbucks
+      \`\`\`  
+  - *What it does*:  
+    - Asks for the amount and optional notes.  
+    - Saves the record to your Excel sheet.
+
+  ---
+
+  *3️⃣ rollback*  
+  🔄 *Undo the last entry*.  
+  - Just type:  
+  \`\`\`
+  rollback
+  \`\`\`  
+  - *What it does*:  
+    - Removes the *latest row* from the Excel sheet.  
+    - Restores the total balance to the previous row.  
+
+  ⚠️ *Important*:  
+  - Rollback works only if the last entry was made *today*.  
+  - For older entries, you’ll need to fix them manually.
+
+  ---
+
+  ❓ *FAQs*  
+  - *What if I make a mistake?*  
+    Use \`rollback\` for today's entry. For older mistakes, correct them manually.  
+
+  - *How do I confirm success?*  
+    The bot will let you know if the command worked or failed.  
+
+  - *Can I change the amount for \`donetopup\`?*  
+    No, it’s fixed at *10,000*. For other amounts, use \`buystuff\`.  
+
+  ---
+  `;
+  return guideMessage;
 }
 
 function formatTelegramResponseKhmer(apiResponse, telegramData) {
