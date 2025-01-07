@@ -2216,7 +2216,7 @@ function getGuideLineCommand() {
 - Usage:  
 \`/buystuff <description (Buyer, Stuff, Date, Location, Cost)>\`  
 - Example:  
-\`/buystuff បថបានទិញ​ អំបិល ១​កញ្ចប់​​ នៅ King Mart, 2024-05-01.\`  
+\`/buystuff បថបានទិញ​ អំបិល ១​កញ្ចប់​​ នៅ King Mart អស់ 3500원, 2024-05-01.\`  
 
 3️⃣ *rollback*  
 🔄 Undo the last entry (only if added *today*).  
