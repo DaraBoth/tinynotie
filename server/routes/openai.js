@@ -1801,6 +1801,7 @@ async function getWeather() {
     const temp = weatherData.main.temp; // Current temperature
     const tempMin = weatherData.main.temp_min; // Min temperature
     const tempMax = weatherData.main.temp_max; // Max temperature
+    const feelsLike = weatherData.main.feels_like; // Max temperature
     const weatherCondition = weatherData.weather[0].description; // Weather description
     const date = new Date(currentTime); // Today's date
 
@@ -1827,14 +1828,14 @@ async function getWeather() {
       - Date: ${date}.
       - Location: ${location}.
       - Weather Overview: ${weatherCondition}.
-      - Temperature: High of ${tempMax}°C, low of ${tempMin}°C. Current temperature is ${temp}°C.
+      - Temperature: High of ${tempMax}°C, low of ${tempMin}°C. Current temperature is ${temp}°C. Feels like ${feelsLike}°C.
 
       Context:
       The user's timezone is ${timezone}. Adjust your language to fit their local time.
 
       Notification Style:
       Keep the message as short as possible while remaining informative.
-      Example: "${greeting} Today in ${location}: ${weatherCondition}, ${tempMax}°C/${tempMin}°C. Have a great day!"
+      Example: "${greeting} Today in ${location}: ${weatherCondition}, ${tempMax}°C/${tempMin}°C.Feels like ${feelsLike}°C. Have a great day!"
       Use emojis sparingly to keep it engaging and friendly.
     `;
 
