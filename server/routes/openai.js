@@ -2205,21 +2205,21 @@ function getGuideLineCommand() {
 📋 *Command Guide:*
 
 1️⃣ *donetopup*  
-💳 Records a monthly payment of *10,000* for this month.  
+💳 Records a monthly save. 10000원 for this month.
 - Usage:  
-\`donetopup\`  
+\`/donetopup\`  
 
 2️⃣ *buystuff*  
 🛒 Records an expense with a description.  
 - Usage:  
-\`buystuff <description>\`  
+\`/buystuff <description (Buyer,Stuff,Date,Location,Cost)>\`  
 - Example:  
-\`buystuff Coffee at Starbucks\`  
+\`/buystuff បថទិញ​ អំបិល ១​កញ្ចប់​​ នៅ King Mart, 2024-05-01.\`   
 
 3️⃣ *rollback*  
-🔄 Undoes the last entry (only if added *today*).  
+🔄 Undoes the last entry (only if added *today*).   
 - Usage:  
-\`rollback\`  
+\`/rollback\`  
 
 ⚠️ *Notes:*  
 - For older mistakes, manual fixes are needed.  
