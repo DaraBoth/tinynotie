@@ -1322,12 +1322,6 @@ const handleMessage = async function (messageObj) {
     } else if(command.startsWith("getweather")) {
       const weatherText = await getWeather();
       return darabothSendMessage(messageObj, weatherText);
-    } else if(command.startsWith("whoclean")) {
-      const cleaningData = await getCleaningData();
-      const cleaningMessage = await getCleaningProm(cleaningData, command.replace("whoclean", "who clean"));
-      return darabothSendMessage(messageObj, cleaningMessage);
-    } else if(command.startsWith("excel2002")) {
-      return darabothSendMessage(messageObj, excel2002Url)
     } else if(is2002Group || isDaraboth) {
       if(command.startsWith("donetopup")) {
         const date = moment(getDateInSeoulTime());
@@ -1355,8 +1349,6 @@ const handleMessage = async function (messageObj) {
           console.log(e);
           return darabothSendMessage(messageObj, requestJson)
         }
-      } else if(command.startsWith("guideline")) {
-        return darabothSendMessage(messageObj, getGuideLineCommand());
       } else if(command.startsWith("rollback")) {
         const response = await callRollBackExcel();
         if(response?.status) {
@@ -1364,6 +1356,16 @@ const handleMessage = async function (messageObj) {
         }else {
           return darabothSendMessage(messageObj, "Rollback Failed");
         }
+      } else if(command.startsWith("whoclean")) {
+        // will send schedule of cleaning
+        const cleaningData = await getCleaningData();
+        const cleaningMessage = await getCleaningProm(cleaningData, command.replace("whoclean", "who clean"));
+        return darabothSendMessage(messageObj, cleaningMessage);
+      } else if(command.startsWith("excel2002")) {
+        // will send the excel link
+        return darabothSendMessage(messageObj, excel2002Url)
+      } else if(command.startsWith("guideline")) {
+        return darabothSendMessage(messageObj, getGuideLineCommand());
       }
     } else if (chatType == "private") {
       // special feature only private mode
@@ -2205,21 +2207,36 @@ function getGuideLineCommand() {
 📋 *Command Guide:*
 
 1️⃣ *donetopup*  
-💳 Records a monthly save. 10000원 for this month.
+💳 Save 10000원 for this month.  
 - Usage:  
 \`/donetopup\`  
 
 2️⃣ *buystuff*  
-🛒 Records an expense with a description.  
+🛒 Record an expense with details.  
 - Usage:  
-\`/buystuff <description (Buyer,Stuff,Date,Location,Cost)>\`  
+\`/buystuff <description (Buyer, Stuff, Date, Location, Cost)>\`  
 - Example:  
-\`/buystuff បថទិញ​ អំបិល ១​កញ្ចប់​​ នៅ King Mart, 2024-05-01.\`   
+\`/buystuff បថបានទិញ​ អំបិល ១​កញ្ចប់​​ នៅ King Mart, 2024-05-01.\`  
 
 3️⃣ *rollback*  
-🔄 Undoes the last entry (only if added *today*).   
+🔄 Undo the last entry (only if added *today*).  
 - Usage:  
 \`/rollback\`  
+
+4️⃣ *whoclean*  
+🧹 Get the cleaning schedule.  
+- Usage:  
+\`/whoclean\`  
+
+5️⃣ *excel2002*  
+📊 Get the link to the Excel file.  
+- Usage:  
+\`/excel2002\`  
+
+6️⃣ *guideline*  
+📖 Display this command guide.  
+- Usage:  
+\`/guideline\`  
 
 ⚠️ *Notes:*  
 - For older mistakes, manual fixes are needed.  
@@ -2227,7 +2244,6 @@ function getGuideLineCommand() {
 `;
   return guideMessage;
 }
-
 
 function formatTelegramResponseKhmer(apiResponse, telegramData) {
   const data = apiResponse.data.insertedRow;
