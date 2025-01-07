@@ -2206,7 +2206,7 @@ function getGuideLineCommand() {
 
 ---
 
-1️⃣ *donetopup*  
+1️⃣ */donetopup*  
 💳 Record a monthly payment.  
 - Just type:  
 donetopup  
@@ -2216,7 +2216,7 @@ donetopup
 
 ---
 
-2️⃣ *buystuff*  
+2️⃣ */buystuff*  
 🛒 Record a purchase/expense.  
 - Type:  
 buystuff <description>  
@@ -2229,7 +2229,7 @@ buystuff <description>
 
 ---
 
-3️⃣ *rollback*  
+3️⃣ */rollback*  
 🔄 Undo the last entry.  
 - Just type:  
 rollback  
