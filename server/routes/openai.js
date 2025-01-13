@@ -710,7 +710,7 @@ You will provide information based on the context given below. Do not indicate t
 - **Middle Name**: Pich
 - **Full Name**: Vong Pich DaraBoth
 - **Currently living in**: Busan, Korea
-- **Date of Birth**: March 31
+- **Date of Birth**: March 31 ( Age is private)
 - **Location**: Phnom Penh, Cambodia
 
 ### Contact Information
@@ -750,12 +750,12 @@ You will provide information based on the context given below. Do not indicate t
 - **Education**: BakTouk High School and also Kindergarten School
 - **Education**: Bachelor's Degree in Computer Science from RUPP
 - **Work Experience**:
-  - Google Adsense: Side Hustle (2016 - 2017)
-  - Phsar Tech: Angular Developer (October 2019 - March 2020)
-  - ACC Premium Wraps: Content Creator (2020 - 2021)
-  - Manker Light Cambodia: Content Creator (2021 - 2022)
-  - Korea Software HRD Center: Trainee (February 14th - July 21st, 2022)
-  - KOSIGN: Software Engineer (August 14th, 2022 - Present)
+  - Google Adsense: Side Hustle 
+  - Phsar Tech: Angular Developer 
+  - ACC Premium Wraps: Content Creator 
+  - Manker Light Cambodia: Content Creator 
+  - Korea Software HRD Center: Trainee 
+  - KOSIGN: Software Engineer (Present)
 
 ### Projects
 - **Developed Website Projects**:
@@ -769,6 +769,12 @@ You will provide information based on the context given below. Do not indicate t
   - English songs
   - Tena's songs
 - **Favorite Colors**: Pink, Black, Dark Blue
+
+### Love Life
+- **Relationship status**:
+  - single
+- **Current Feeling**:
+  - Slanh ke mnek eng
 
 ### Notes
 - **Current Date**: ${new Date()}
@@ -1323,6 +1329,15 @@ const handleMessage = async function (messageObj) {
       const weatherText = await getWeather();
       return darabothSendMessage(messageObj, weatherText);
     } else if(is2002Group || isDaraboth) {
+      const khDate = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩", "១០", "១១", "១២"];
+      const memID = {
+        "l3oth":"Both",
+        "seudylim":"Seudy",
+        "hounhong":"Hong",
+        "sim_kimheang":"Kimheang",
+        "sovanthoeun88":"សុវណ្ណធឿន",
+        "cooconratha":"រដ្ឋា",
+      }
       if(command.startsWith("donetopup")) {
         const date = moment(getDateInSeoulTime());
         const requestJsonData = {
@@ -1330,8 +1345,8 @@ const handleMessage = async function (messageObj) {
           "withdrawal": 0,
           "deposit": 10000,
           "operatingLocation": "",
-          "notes": "បង់លុយខែ "+date.format("MM"),
-          "other": messageObj.from.username
+          "notes": "បង់លុយខែ"+ khDate[Number(date.format("MM"))],
+          "other": memID[messageObj.from.username]
         }
         const response = await callInsertIntoExcel(requestJsonData);
         const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
@@ -1511,10 +1526,7 @@ const handleMessage = async function (messageObj) {
         );
       }
     } 
-  }else if (messageObj.from.username == "j1inda") {
-    const text = messageObj.text.replaceAll("@DarabothBot","")
-    if(text) return darabothSendMessage(messageObj,text);
-  } else {
+  }else  {
     let ismention = false;
     const condition1 = chatType == "private";
     const condition2 = (chatType == "group" || chatType == "supergroup"); // -1002369402163
