@@ -20,6 +20,7 @@ export const api = createApi({
   }),
   reducerPath: "main",
   tagTypes: [],
+  refetchOnFocus: true, // Add this line to enable refetching on focus globally
   endpoints: (build) => ({
     getGroupDetails: build.mutation({
       query: ({ group_id, user_id }) => ({
