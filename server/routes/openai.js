@@ -727,6 +727,12 @@ You will provide information based on the context given below. Do not indicate t
   - Vong PichRachna
   - Vong PichMarina
 
+### Crush
+- **Name**: PorPor
+- **Nickname**: ស៊ុជ
+- **BIO**: Cute, Cute x2, Cute x3
+- Crush since 2018
+
 ### Interests and Hobbies
 - **Hobbies**:
   - Playing guitar
