@@ -729,6 +729,7 @@ You will provide information based on the context given below. Do not indicate t
 
 ### Crush
 - **Name**: PorPor
+- **Real Name**: Vorn ChanSoPor
 - **Nickname**: ស៊ុជ
 - **BIO**: Cute, Cute x2, Cute x3
 - Crush since 2018
@@ -1265,7 +1266,7 @@ const runQuery = async ({ sql, values }) => {
 const saveChat = async ({ chat_id, chat_history, user_id = null }) => {
   
   if(user_id != null && user_id.length >= 20) user_id = user_id.slice(0, 20);
-  
+
   const sql = `
     INSERT INTO json_data (chat_id, chat_history, user_id)
     VALUES ($1, $2, $3)
@@ -1704,14 +1705,18 @@ async function callAI(text, chatHistory) {
     model = genAI.getGenerativeModel({
       model: "gemini-1.0-pro-001",
     });
+    console.log("Try 1");
   }catch(e){
     console.log(e);
+    console.log("Try 2");
     try {
       genAI = new GoogleGenerativeAI(process.env.API_KEY3);
       model = genAI.getGenerativeModel({
         model: "gemini-1.0-pro-001",
       });
     }catch(e){
+      console.log(e);
+      console.log("Try 3");
       genAI = new GoogleGenerativeAI(process.env.API_KEY);
       model = genAI.getGenerativeModel({
         model: "gemini-1.0-pro-001",
