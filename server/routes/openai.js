@@ -1695,10 +1695,26 @@ async function templateSaveChat({ Chat_ID, user_id = null, chatHistory, messageT
 }
 
 async function callAI(text, chatHistory) {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.0-pro-001",
-  });
+  let genAI = null, model = null;
+  try {
+    genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    model = genAI.getGenerativeModel({
+      model: "gemini-1.0-pro-001",
+    });
+  }catch(e){
+    console.log(e);
+    try {
+      genAI = new GoogleGenerativeAI(process.env.API_KEY3);
+      model = genAI.getGenerativeModel({
+        model: "gemini-1.0-pro-001",
+      });
+    }catch(e){
+      genAI = new GoogleGenerativeAI(process.env.API_KEY);
+      model = genAI.getGenerativeModel({
+        model: "gemini-1.0-pro-001",
+      });
+    }
+  }
   if (!chatHistory) {
     chatHistory = defaultChatHistory;
   } else {
