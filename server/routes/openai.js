@@ -1265,7 +1265,7 @@ const runQuery = async ({ sql, values }) => {
 
 const saveChat = async ({ chat_id, chat_history, user_id = null }) => {
   
-  if(user_id != null && user_id.length >= 20) user_id = user_id.slice(0, 20);
+  if(user_id != null && user_id.length >= 20) user_id = user_id.slice(0, 19);
 
   const sql = `
     INSERT INTO json_data (chat_id, chat_history, user_id)
