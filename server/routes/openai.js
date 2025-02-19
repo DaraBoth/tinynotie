@@ -1262,15 +1262,15 @@ const runQuery = async ({ sql, values }) => {
   });
 };
 
-const saveChat = async ({ chat_id, chat_history }) => {
+const saveChat = async ({ chat_id, chat_history, user_id = null }) => {
   const sql = `
-    INSERT INTO json_data (chat_id, chat_history)
-    VALUES ($1, $2)
+    INSERT INTO json_data (chat_id, chat_history, user_id)
+    VALUES ($1, $2, $3)
     ON CONFLICT (chat_id)
     DO UPDATE SET
       chat_history = EXCLUDED.chat_history;
   `;
-  const values = [chat_id, { chat: chat_history }];
+  const values = [chat_id, { chat: chat_history }, user_id];
 
   try {
     await runQuery({ sql, values });
@@ -1571,7 +1571,7 @@ const handleMessage = async function (messageObj) {
             chatHistory = results;
           } else {
             chatHistory = defaultChatHistory;
-            saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+            saveChat({ chat_id: Chat_ID, chat_history: chatHistory, user_id: `${username}, ${first_name} ${last_name}` });
           }
         },
         onError: (response) => {
@@ -1580,13 +1580,14 @@ const handleMessage = async function (messageObj) {
       });
 
       const responseText = await callAI(messageText, chatHistory);
-      templateSaveChat({
+      await templateSaveChat({
         Chat_ID,
+        user_id: `${username}, ${first_name} ${last_name}`,
         chatHistory,
         messageText,
         responseText: responseText.text(),
       });
-      return darabothSendMessage(messageObj, responseText.text());
+      return await darabothSendMessage(messageObj, responseText.text());
     }else if(condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)){  // 2024_B2B R&D
       // forward message when someone ask permission
       const sendUserId = [485397124,5985950554]; // Array of chat IDs to send messages to
@@ -1685,15 +1686,12 @@ async function ErrorReport(messageObj, errorMessage) {
   return await darabothSendMessage(messageObj, errorMessage);
 }
 
-function templateSaveChat({ Chat_ID, chatHistory, messageText, responseText }) {
+async function templateSaveChat({ Chat_ID, user_id = null, chatHistory, messageText, responseText }) {
   if (Array.isArray(chatHistory)) {
     chatHistory.push({ role: "user", parts: [{ text: messageText }] });
-    chatHistory.push({
-      role: "model",
-      parts: [{ text: responseText }],
-    });
+    chatHistory.push({ role: "model", parts: [{ text: responseText }]});
   }
-  saveChat({ chat_id: Chat_ID, chat_history: chatHistory });
+  return await saveChat({ chat_id: Chat_ID, chat_history: chatHistory, user_id});
 }
 
 async function callAI(text, chatHistory) {
