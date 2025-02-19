@@ -732,6 +732,7 @@ You will provide information based on the context given below. Do not indicate t
 - **Nickname**: ស៊ុជ
 - **BIO**: Cute, Cute x2, Cute x3
 - Crush since 2018
+- Birthday Nov 13
 
 ### Interests and Hobbies
 - **Hobbies**:
