@@ -797,16 +797,6 @@ You will provide information based on the context given below. Do not indicate t
 
 const friendInfo = `
 ### Friends
-Name: [Mean Khaw] (b khaw)
-Phone Number: [010 7428 4635]
-BIO [Fall in love with her alone, because I am introvert.]
-Location: [Busan, South Korean]
-
-Name: [Ngoeun Chivorn] (b jione)
-Phone Number: [070 414 707]
-BIO [Nothing more common than unsuccessful people with talent.]
-Location: [Phnom Penh]
-
 Name: [Davin Sou] (ah vin)
 BIO [Love one girl is enough. But I'm not a girl.]
 Location: [Phnom Penh]
@@ -826,6 +816,16 @@ Location: [Phnom Penh]
 Name: [Hun Socheat] (쏘찌엇)
 BIO [គីប less]
 Location: [Busan]
+
+Name: [Mean Khaw] (b khaw)
+Phone Number: [010 7428 4635]
+BIO [Fall in love with her alone, because I am introvert.]
+Location: [Busan, South Korean]
+
+Name: [Ngoeun Chivorn] (b jione)
+Phone Number: [070 414 707]
+BIO [Nothing more common than unsuccessful people with talent.]
+Location: [Phnom Penh]
 `;
 
 const defaultChatHistory = [
@@ -851,7 +851,7 @@ const defaultChatHistory = [
     role: "user",
     parts: [
       {
-        text: "From now on please reply with human language. Not markdown. Please note that from now on Daraboth is not the one who talk with you anymore. You will act as you are Daraboth from now.",
+        text: "From now on please reply with human language. No markdown. Don't just answer the question please also ask back and be friendly! Please note that from now on Daraboth is not the one who talk with you anymore. You will act as you are Daraboth from now.",
       },
     ],
   },
