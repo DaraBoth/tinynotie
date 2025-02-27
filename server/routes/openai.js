@@ -50,7 +50,7 @@ const openai = new OpenAIApi(configuration);
 
 const genAISupporter = new GoogleGenerativeAI(process.env.API_KEY3);
 const modelSupporter = genAISupporter.getGenerativeModel({
-  model: "gemini-1.0-pro-001",
+  model: "gemini-1.5-flash",
 });
 
 dotenv.config();
@@ -103,7 +103,7 @@ router.get("/text", async (req, res) => {
   try {
     let { text, random } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     if (random == "true") {
       const prompt = `
@@ -175,7 +175,7 @@ router.post("/text", async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
     saveChat({ chat_id: chatId, chat_history: chatHistory });
@@ -204,7 +204,7 @@ router.get("/receiptText", async (req, res) => {
   try {
     let { text } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
       You are an API endpoint that processes receipt data. 
@@ -255,7 +255,7 @@ router.get("/receiptText", async (req, res) => {
 
 async function AI_Database(userAsk, userAskID, chatHistory = []) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
   Instruction:
@@ -484,7 +484,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 async function AI_Human_readble(prompt, chatHistory) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.0-pro-001",
+    model: "gemini-1.5-flash",
   });
 
   const template = `
@@ -1035,7 +1035,7 @@ async function getKoreanWords(messageObj) {
   });
 
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
   You are a Korean language tutor.
@@ -1095,7 +1095,7 @@ async function getKoreanWords(messageObj) {
 
 async function getCleaningProm(data, msg) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = `
       This data is about cleaning schedule in a house.
       And it's a trigger when there is change updated in excel.
@@ -1124,7 +1124,7 @@ async function getCleaningProm(data, msg) {
 
 async function getTranslate(str) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = `
       Instruction
       Translate the following text based on its original language:
@@ -1613,7 +1613,7 @@ const handleMessage = async function (messageObj) {
 async function handleInsertIntoExcel({ messageObj, messageText }) {
  // Initialize the AI with your API key
  const genAI = new GoogleGenerativeAI(process.env.API_KEY3);
- const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
  const today = moment(getDateInSeoulTime()).format("YYYY-MM-DD");
 
@@ -1703,7 +1703,7 @@ async function callAI(text, chatHistory) {
   try {
     genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     model = genAI.getGenerativeModel({
-      model: "gemini-1.0-pro-001",
+      model: "gemini-1.5-flash",
     });
     console.log("Try 1");
   }catch(e){
@@ -1712,14 +1712,14 @@ async function callAI(text, chatHistory) {
     try {
       genAI = new GoogleGenerativeAI(process.env.API_KEY3);
       model = genAI.getGenerativeModel({
-        model: "gemini-1.0-pro-001",
+        model: "gemini-1.5-flash",
       });
     }catch(e){
       console.log(e);
       console.log("Try 3");
       genAI = new GoogleGenerativeAI(process.env.API_KEY);
       model = genAI.getGenerativeModel({
-        model: "gemini-1.0-pro-001",
+        model: "gemini-1.5-flash",
       });
     }
   }
@@ -1891,7 +1891,7 @@ async function getWeather() {
 
     // Initialize the AI with your API key
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Generate content using the AI
     const result = await model.generateContent(prompt);
@@ -2021,7 +2021,7 @@ router.get("/translateforhouyly", async (req, res) => {
 
 async function getTranslateOrExplain(str, action, targetLang, context, level) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
     Instruction
