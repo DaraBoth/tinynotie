@@ -163,12 +163,12 @@ const ReceiptScanner = ({
   };
 
   const handleProcessRowUpdate = (newRow, oldRow) => {
-    const isNameValid = typeof newRow.trp_name === "string";
+    const isNameValid = typeof newRow.trp_name === "string" && newRow.trp_name.trim() !== "";
     const isSpendValid = !isNaN(newRow.spend);
 
     if (!isNameValid || !isSpendValid) {
       setValidationError(
-        "Invalid data: 'Name' must be a string and 'Spend' must be a number."
+        "Invalid data: 'Name' must be a non-empty string and 'Spend' must be a number."
       );
       return oldRow;
     }
@@ -184,6 +184,16 @@ const ReceiptScanner = ({
   const handleConfirm = async () => {
     setErrorMessages([]);
     setIsProcessing("Adding all trips....");
+
+    // Validate that all trips have a name
+    const invalidTrips = tableData.filter((trip) => !trip.trp_name || trip.trp_name.trim() === "");
+    if (invalidTrips.length > 0) {
+      console.log("Invalid trips:", invalidTrips); // Add logging for debugging
+      setValidationError("All trips must have a name.");
+      setIsProcessing(null);
+      return;
+    }
+
     try {
       const response = await triggerAddMultipleTrips({ trips: tableData });
 
