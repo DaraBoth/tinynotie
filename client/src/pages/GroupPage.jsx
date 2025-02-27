@@ -13,6 +13,7 @@ import {
   CardContent,
   Divider,
   Tooltip,
+  IconButton,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
@@ -20,6 +21,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PeopleIcon from "@mui/icons-material/People";
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
+import TableViewIcon from "@mui/icons-material/TableView";
+import ListViewIcon from "@mui/icons-material/ViewList";
 import Topbar from "../global/Topbar";
 import TableComponent from "../component/TableComponent";
 import CustomDialog from "../component/CustomDialog";
@@ -79,6 +82,8 @@ export default function Group({ user, secret, setGroupInfo }) {
   const [openShareModal, setOpenShareModal] = useState(false);
   const [groupInfoState, setGroupInfoState] = useState(null);
   const [isLoading, setIsLoading] = useState("loadingPage");
+  const [memberViewMode, setMemberViewMode] = useState(isNonMobile ? "table" : "list");
+  const [tripViewMode, setTripViewMode] = useState(isNonMobile ? "table" : "list");
 
   useEffect(() => {
     triggerGroupDetails({ group_id: groupId, user_id: secret });
@@ -104,7 +109,6 @@ export default function Group({ user, secret, setGroupInfo }) {
     }
   }, [resultGroupDetails, groupId, triggerTrip, triggerMember, navigate]);
 
-
   // Update trip state when data is fetched
   useEffect(() => {
     if (resultTrip?.data?.status) {
@@ -118,6 +122,12 @@ export default function Group({ user, secret, setGroupInfo }) {
       setMember(resultMember.data.data);
     }
   }, [resultMember]);
+
+  // Automatically switch view mode based on screen size
+  useEffect(() => {
+    setMemberViewMode(isNonMobile ? "table" : "list");
+    setTripViewMode(isNonMobile ? "table" : "list");
+  }, [isNonMobile]);
 
   const { info, newData } = useMemo(
     () => calculateMoney(member, trip, groupInfoState?.currency),
@@ -209,7 +219,6 @@ export default function Group({ user, secret, setGroupInfo }) {
     },
   ];
 
-
   if (isLoading.includes("loadingPage")) {
     return <LoadingPage />;
   }
@@ -270,19 +279,36 @@ export default function Group({ user, secret, setGroupInfo }) {
                   sx={{
                     display: "flex",
                     flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     marginBottom: 2,
                   }}
                 >
-                  <StickyNote2Icon
-                    sx={{ marginRight: 1, color: colors.primary[500] }}
-                  />
-                  <Typography
-                    variant="h6"
-                    color={colors.primary[600]}
-                    gutterBottom
+                  <Box sx={{ display: "flex", flexDirection: "row" }}>
+                    <StickyNote2Icon
+                      sx={{ marginRight: 1, color: colors.primary[500] }}
+                    />
+                    <Typography
+                      variant="h6"
+                      color={colors.primary[600]}
+                      gutterBottom
+                    >
+                      Note Member Contributions
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    onClick={() =>
+                      setMemberViewMode((prevMode) =>
+                        prevMode === "table" ? "list" : "table"
+                      )
+                    }
                   >
-                    Note Member Contributions
-                  </Typography>
+                    {memberViewMode === "table" ? (
+                      <ListViewIcon />
+                    ) : (
+                      <TableViewIcon />
+                    )}
+                  </IconButton>
                 </Box>
                 <Divider sx={{ marginBottom: 2 }} />
                 <TableComponent
@@ -291,6 +317,8 @@ export default function Group({ user, secret, setGroupInfo }) {
                   height={{ xs: "650px", md: "100%" }}
                   isLoading={!resultTrip.isSuccess || !resultMember.isSuccess}
                   sx={{ flexGrow: 1 }}
+                  rowsPerPage={5}
+                  viewMode={memberViewMode}
                 />
               </CardContent>
             </Card>
@@ -327,19 +355,36 @@ export default function Group({ user, secret, setGroupInfo }) {
                   sx={{
                     display: "flex",
                     flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                     marginBottom: 2,
                   }}
                 >
-                  <StickyNote2Icon
-                    sx={{ marginRight: 1, color: colors.primary[500] }}
-                  />
-                  <Typography
-                    variant="h6"
-                    color={colors.primary[500]}
-                    gutterBottom
+                  <Box sx={{ display: "flex", flexDirection: "row" }}>
+                    <StickyNote2Icon
+                      sx={{ marginRight: 1, color: colors.primary[500] }}
+                    />
+                    <Typography
+                      variant="h6"
+                      color={colors.primary[500]}
+                      gutterBottom
+                    >
+                      Recent Trips
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    onClick={() =>
+                      setTripViewMode((prevMode) =>
+                        prevMode === "table" ? "list" : "table"
+                      )
+                    }
                   >
-                    Recent Trips
-                  </Typography>
+                    {tripViewMode === "table" ? (
+                      <ListViewIcon />
+                    ) : (
+                      <TableViewIcon />
+                    )}
+                  </IconButton>
                 </Box>
                 <Divider sx={{ marginBottom: 2 }} />
                 <TableComponent
@@ -350,6 +395,8 @@ export default function Group({ user, secret, setGroupInfo }) {
                   sx={{
                     flexGrow: 1,
                   }}
+                  rowsPerPage={3}
+                  viewMode={tripViewMode}
                 />
               </CardContent>
             </Card>
@@ -534,6 +581,7 @@ const TotalSpendTable = ({ info, isLoading }) => {
         minHeight: "250px",
         backgroundColor: "rgba(0, 123, 255, 0.1)",
       }}
+      viewMode="list"
     />
   );
 };

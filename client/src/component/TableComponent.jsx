@@ -2,21 +2,40 @@ import React, { useState } from 'react';
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../theme";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
+import PaginatedList from './PaginatedList';
 
-function TableComponent({ rows, columns, height, hideFooter = false, isLoading = false, addToolBar = true }) {
+function TableComponent({ rows, columns, height, hideFooter = false, isLoading = false, addToolBar = true, rowsPerPage = 5, viewMode = 'table' }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const [pageSize, setPageSize] = useState(10);
 
-  const isDark = theme.palette.mode === 'dark'
+  const isDark = theme.palette.mode === 'dark';
+
+  if (viewMode === 'list' || (!isNonMobile && viewMode === 'table')) {
+    // Render paginated list view for mobile screens or when viewMode is 'list'
+    return (
+      <Box
+        height={height}
+        sx={{
+          overflowX: "auto",
+          width: "100%",
+          backgroundColor: colors.background,
+          border: `2px solid ${colors.primary[600]}`,
+          padding: 2,
+        }}
+      >
+        <PaginatedList rows={rows} columns={columns} rowsPerPage={rowsPerPage} />
+      </Box>
+    );
+  }
 
   return (
     <Box
       height={height}
       sx={{
-        overflowX: "auto", // Allow horizontal scrolling if needed
-        width: "100%", // Make sure the table takes the full width of its container
+        overflowX: "auto",
+        width: "100%",
         "& .MuiDataGrid-root": {
           border: `2px solid ${colors.primary[600]}`,
           backgroundColor: colors.background,
@@ -64,7 +83,7 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
         resizable
         hideFooter={hideFooter}
         sx={{
-          width: '100%', // Ensure the table itself takes the full width of its container
+          width: '100%',
         }}
       />
     </Box>
