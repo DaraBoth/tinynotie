@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Box, List, ListItem, Typography, Divider, IconButton, MenuItem, Select, useTheme, Tooltip } from '@mui/material';
+import { Box, List, ListItem, Typography, Divider, IconButton, MenuItem, Select, useTheme, Tooltip, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import currency from 'currency.js';
 import { formatTimeDifference } from '../help/time';
 
-function PaginatedList({ rows, columns, rowsPerPage = 5 }) {
+function PaginatedList({ rows, columns, rowsPerPage = 5, isLoading = false }) {
   const [page, setPage] = useState(0);
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -32,36 +32,42 @@ function PaginatedList({ rows, columns, rowsPerPage = 5 }) {
 
   return (
     <Box sx={{ position: 'relative', paddingBottom: rows.length > rowsPerPage ? '60px' : '0' }}>
-      <List>
-        {currentRows.map((row, index) => (
-          <React.Fragment key={row.id}>
-            <ListItem alignItems="flex-start" sx={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.background.paper }}>
-              <Box sx={{ width: '100%' }}>
-                {columns.map((col) => {
-                  let value = row[col.field];
-                  if (col.valueGetter) {
-                    value = col.valueGetter({ value });
-                  }
-                  if (col.renderCell) {
-                    value = col.renderCell({ value });
-                  }
-                  return (
-                    <Box key={col.field} sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
-                      <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 'bold' }}>
-                        {col.headerName}:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
-                        {value}
-                      </Typography>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </ListItem>
-            {index < currentRows.length - 1 && <Divider />}
-          </React.Fragment>
-        ))}
-      </List>
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <List>
+          {currentRows.map((row, index) => (
+            <React.Fragment key={row.id}>
+              <ListItem alignItems="flex-start" sx={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.background.paper }}>
+                <Box sx={{ width: '100%' }}>
+                  {columns.map((col) => {
+                    let value = row[col.field];
+                    if (col.valueGetter) {
+                      value = col.valueGetter({ value });
+                    }
+                    if (col.renderCell) {
+                      value = col.renderCell({ value });
+                    }
+                    return (
+                      <Box key={col.field} sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
+                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                          {col.headerName}:
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
+                          {value}
+                        </Typography>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </ListItem>
+              {index < currentRows.length - 1 && <Divider />}
+            </React.Fragment>
+          ))}
+        </List>
+      )}
       {rows.length > rowsPerPage && (
         <Box sx={{ 
           display: 'flex', 

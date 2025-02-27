@@ -50,7 +50,7 @@ const openai = new OpenAIApi(configuration);
 
 const genAISupporter = new GoogleGenerativeAI(process.env.API_KEY3);
 const modelSupporter = genAISupporter.getGenerativeModel({
-  model: "gemini-pro",
+  model: "gemini-1.0-pro-001",
 });
 
 dotenv.config();
@@ -103,7 +103,7 @@ router.get("/text", async (req, res) => {
   try {
     let { text, random } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
     if (random == "true") {
       const prompt = `
@@ -175,7 +175,7 @@ router.post("/text", async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
     const result = await model.generateContent(`${text}`);
     const response = await result.response;
     saveChat({ chat_id: chatId, chat_history: chatHistory });
@@ -204,7 +204,7 @@ router.get("/receiptText", async (req, res) => {
   try {
     let { text } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001" });
 
     const prompt = `
       You are an API endpoint that processes receipt data. 
