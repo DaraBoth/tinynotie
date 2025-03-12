@@ -1295,32 +1295,30 @@ const getChat = async function ({
   onSuccess = function () {},
   onError = function () {},
 }) {
-  const sql = ` select id, chat_id, chat_history from json_data where chat_id = $1 ; `;
+  const sql = `SELECT id, chat_id, chat_history FROM json_data WHERE chat_id = $1;`;
   const response = {
     isError: false,
     results: [],
     reason: "",
   };
   const values = [chat_id];
-  runQuery({ sql, values })
-    .then((res) => {
-      response.isError = false;
-      if (res && res?.rowCount) {
-        if (res.rowCount >= 1) {
-          const his = res.rows[0].chat_history;
-          response.results = his.chat;
-          onSuccess(response);
-        } else {
-          response.results = [];
-          onSuccess(response);
-        }
+  try {
+    const res = await runQuery({ sql, values });
+    if (res && res.rowCount) {
+      if (res.rowCount >= 1) {
+        const his = res.rows[0].chat_history;
+        response.results = his.chat;
+      } else {
+        response.results = defaultChatHistory;
+        await saveChat({ chat_id, chat_history: defaultChatHistory });
       }
-    })
-    .catch((err) => {
-      response.isError = true;
-      response.reason = err;
-      onError(response);
-    });
+    }
+    onSuccess(response);
+  } catch (err) {
+    response.isError = true;
+    response.reason = err;
+    onError(response);
+  }
 };
 
 const handleMessage = async function (messageObj) {
