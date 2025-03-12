@@ -1264,23 +1264,28 @@ const runQuery = async ({ sql, values }) => {
 };
 
 const saveChat = async ({ chat_id, chat_history, user_id = null }) => {
-  
-  if(user_id != null && user_id.length >= 20) user_id = user_id.slice(0, 19);
+  if (user_id != null && user_id.length >= 20) user_id = user_id.slice(0, 19);
 
-  const sql = `
+  const sqlSelect = `SELECT chat_history FROM json_data WHERE chat_id = $1;`;
+  const sqlInsert = `
     INSERT INTO json_data (chat_id, chat_history, user_id)
     VALUES ($1, $2, $3)
     ON CONFLICT (chat_id)
     DO UPDATE SET
-      chat_history = EXCLUDED.chat_history;
+      chat_history = json_data.chat_history || EXCLUDED.chat_history;
   `;
   const values = [chat_id, { chat: chat_history }, user_id];
 
   try {
-    await runQuery({ sql, values });
+    const result = await pool.query(sqlSelect, [chat_id]);
+    if (result.rows.length > 0) {
+      const existingHistory = result.rows[0].chat_history.chat;
+      chat_history = existingHistory.concat(chat_history);
+      values[1] = { chat: chat_history };
+    }
+    await runQuery({ sql: sqlInsert, values });
     return { isError: false, reason: "" };
   } catch (error) {
-    // console.error(error);
     return { isError: true, reason: error.message };
   }
 };
