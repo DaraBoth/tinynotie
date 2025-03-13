@@ -23,6 +23,16 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
           backgroundColor: colors.background,
           border: `2px solid ${colors.primary[600]}`,
           padding: 2,
+          color: theme.palette.text.primary, // Use theme text color
+          fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, Merriweather, sans-serif', // Use specified fonts
+          "& .MuiListItem-root": {
+            backgroundColor: isDark ? colors.grey[800] : colors.grey[100], // Adjust background color for light mode
+            color: isDark ? colors.primary[100] : colors.blueAccent[900],
+            "&:hover": {
+              backgroundColor: isDark ? colors.grey[700] : colors.grey[200],
+              color: isDark ? colors.primary[100] : colors.primary[900], // Ensure text color is visible on hover
+            }
+          },
         }}
       >
         <PaginatedList rows={rows} columns={columns} rowsPerPage={rowsPerPage} />
@@ -36,23 +46,26 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
       sx={{
         overflowX: "auto",
         width: "100%",
+        backgroundColor: colors.background, // Match box background color
+        border: `2px solid ${colors.primary[600]}`, // Match box border color
+        fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, Merriweather, sans-serif', // Use specified fonts
         "& .MuiDataGrid-root": {
-          border: `2px solid ${colors.primary[600]}`,
-          backgroundColor: colors.background,
+          backgroundColor: colors.background, // Match box background color
         },
-        "& .MuiDataGrid-columnHeaders": {
-          backgroundColor: colors.primary[600],
-          color: colors.grey[100],
+        "& .MuiDataGrid-columnHeaders": { // This is the header row
+          backgroundColor: isDark ? colors.grey[800] : colors.primary[600], // Match box background color
+          color: isDark ? colors.primary[100] : colors.blueAccent[900], // Ensure text color is visible in light mode
         },
         "& .MuiDataGrid-footerContainer": {
-          borderTop: `2px solid ${colors.primary[600]}`,
-          backgroundColor: colors.background,
+          borderTop: `2px solid ${colors.primary[600]}`, // Match box border color
+          backgroundColor: colors.background, // Match box background color
         },
         "& .MuiDataGrid-row": {
-          backgroundColor: isDark ? colors.grey[800] : colors.grey[200],
-          color: isDark ? colors.grey[100] : colors.grey[900],
+          backgroundColor: isDark ? colors.grey[800] : colors.grey[100], // Adjust background color for light mode
+          color: isDark ? colors.primary[100] : colors.blueAccent[900],
           "&:hover": {
-            backgroundColor: isDark ? colors.grey[700] : colors.grey[300],
+            backgroundColor: isDark ? colors.grey[700] : colors.grey[200],
+            color: isDark ? colors.primary[100] : colors.blueAccent[300], // Ensure text color is visible on hover
           }
         },
         "& .MuiDataGrid-toolbarContainer .MuiButton-text": {

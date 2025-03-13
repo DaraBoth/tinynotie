@@ -401,6 +401,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                     height: "45px",
                     boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
                     transition: "background-color 0.3s ease",
+                    color: colors.primary[900], // Text color for submit button
                     "&:hover": {
                       backgroundColor: colors.primary[700], // Adjust hover color for submit button
                     },

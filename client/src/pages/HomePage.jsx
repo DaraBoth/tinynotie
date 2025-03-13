@@ -70,20 +70,16 @@ function GroupCard({ item, onDelete, onClick }) {
       onClick={() => onClick(item)}
     >
       <Typography variant="h6" fontWeight="bold" color={colors.primary[100]}>
-        Title: {item.grp_name}
+        {item.grp_name}
       </Typography>
       <Typography variant="body2" color={colors.grey[300]}>
-        Currency:{" "}
         <span style={{ color: colors.primary[300] }}>
           {currencyObject[item.currency]}
         </span>
       </Typography>
       <Typography variant="body2" color={colors.grey[400]}>
-        <span style={{ color: colors.primary[600] }}>
-          {moment(item.create_date).format("YYYY-MM-DD hh:mm:ss (dd)")}
-        </span>
-        <span style={{ color: colors.primary[300] }}>
-          {" ~ " + formatTimeDifference(item.create_date)}
+        <span title={moment(item.create_date).format("YYYY-MM-DD hh:mm:ss (dd)")} style={{ color: colors.primary[300] }}>
+          {formatTimeDifference(item.create_date)}
         </span>
       </Typography>
       {item.isAdmin && (

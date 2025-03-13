@@ -26,13 +26,16 @@ import {
   usePostAddMultipleTripsMutation,
   useReceiptTextMutation,
 } from "../api/api";
+import { tokens } from "../theme";
+import { useTheme } from "@mui/material/styles";
 
-const StickyIconButton = styled(IconButton)({
+const StickyIconButton = styled(IconButton)(({ theme }) => ({
   position: "absolute",
   top: 5,
   right: 5,
   zIndex: 1,
-});
+  color: theme.palette.mode === 'dark' ? tokens(theme.palette.mode).primary[100] : tokens(theme.palette.mode).primary[900],
+}));
 
 const ReceiptScanner = ({
   triggerMember,
@@ -41,6 +44,8 @@ const ReceiptScanner = ({
   trips,
   group_id,
 }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
   const cameraInputRef = useRef(null);
   const uploadInputRef = useRef(null);
@@ -56,7 +61,7 @@ const ReceiptScanner = ({
   const [errorMessages, setErrorMessages] = useState([]); // For failed trip submissions
 
   const Item = styled(Paper)(({ theme }) => ({
-    backgroundColor: "#fff",
+    backgroundColor: theme.palette.mode === 'dark' ? colors.grey[800] : colors.grey[100],
     ...theme.typography.body2,
     padding: theme.spacing(1),
     textAlign: "center",
@@ -260,6 +265,7 @@ const ReceiptScanner = ({
               top: 0,
               right: "calc(100% / 2 - 20px)",
               zIndex: 1,
+              color: colors.primary[600],
             }}
           >
             {!accordionExpanded ? <ExpandMoreIcon /> : <ExpandLessIcon />}
@@ -281,7 +287,7 @@ const ReceiptScanner = ({
                 <StickyIconButton color="primary" onClick={handleCameraClick}>
                   <PhotoCameraIcon />
                 </StickyIconButton>
-                <Typography variant="h6">Camera</Typography>
+                <Typography variant="h6" sx={{ color: colors.primary[600] }}>Camera</Typography>
               </Item>
 
               <Item>
@@ -296,13 +302,13 @@ const ReceiptScanner = ({
                       alignItems: "center",
                     }}
                   >
-                    <Typography variant="body2">{imageStatus}</Typography>
+                    <Typography variant="body2" sx={{ color: colors.primary[600] }}>{imageStatus}</Typography>
                     <IconButton color="error" onClick={handleRemoveImage}>
                       <CloseIcon />
                     </IconButton>
                   </Box>
                 ) : (
-                  <Typography variant="h6">Upload</Typography>
+                  <Typography variant="h6" sx={{ color: colors.primary[600] }}>Upload</Typography>
                 )}
               </Item>
 
@@ -343,6 +349,8 @@ const ReceiptScanner = ({
           padding: "10px",
           borderRadius: "4px",
           minHeight: "100px",
+          backgroundColor: colors.background,
+          border: `2px solid ${colors.primary[600]}`,
         }}
       >
         {isProcessing && (
@@ -356,6 +364,31 @@ const ReceiptScanner = ({
             <DataGrid
               sx={{
                 minHeight: "63vh",
+                "& .MuiDataGrid-columnHeaders": {
+                  backgroundColor: theme.palette.mode === 'dark' ? colors.grey[900] : colors.primary[600],
+                  color: theme.palette.mode === 'dark' ? colors.primary[100] : colors.grey[100],
+                },
+                "& .MuiDataGrid-row": {
+                  backgroundColor: theme.palette.mode === 'dark' ? colors.grey[800] : colors.grey[200],
+                  color: theme.palette.mode === 'dark' ? colors.primary[100] : colors.primary[900],
+                  "&:hover": {
+                    backgroundColor: theme.palette.mode === 'dark' ? colors.grey[700] : colors.grey[300],
+                  }
+                },
+                "& .MuiDataGrid-footerContainer": {
+                  borderTop: `2px solid ${colors.primary[600]}`,
+                  backgroundColor: colors.background,
+                },
+                "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+                  color: `${colors.primary[600]} !important`,
+                },
+                "& .MuiDataGrid-overlay": {
+                  backgroundColor: colors.primary[300],
+                  opacity: 0.9,
+                },
+                "& .MuiCircularProgress-root": {
+                  color: colors.blueAccent[900],
+                },
               }}
               rows={tableData}
               columns={[

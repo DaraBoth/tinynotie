@@ -280,7 +280,8 @@ export default function Login({ setUser, setSecret }) {
                   fontWeight: "bold",
                   fontSize: "18px",
                   borderRadius: "10px",
-                  backgroundColor: colors.primary[500], // Primary button color
+                  color: colors.primary[900], // Text color
+                  backgroundColor: colors.primary[600], // Primary button color
                   "&:hover": {
                     backgroundColor: colors.primary[700], // Hover color
                   },
@@ -325,6 +326,7 @@ export default function Login({ setUser, setSecret }) {
                     padding: 0,
                     minHeight: "auto",
                     fontSize: "14px",
+                    border: "none",
                   }}
                 >
                   {isRegister ? "Login" : "Register"}

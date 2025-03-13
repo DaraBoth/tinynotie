@@ -150,6 +150,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
     userSelect: "none",
     background: isDragging ? colors.primary[500] : colors.primary[500],
     cursor: isDragging ? "all-scroll" : "pointer",
+    color: colors.primary[900], // Use theme text color
     ...draggableStyle,
   });
 
@@ -342,6 +343,8 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
                                     marginLeft: "0px", // Ensure text is close to the icon
+                                    
+                                    color: theme.palette.text.primary, // Use theme text color
                                   }}
                                 />
                               </ListItem>
@@ -437,6 +440,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   marginLeft: "0px", // Ensure text is close to the icon
+                                  color: theme.palette.text.primary, // Use theme text color
                                 }}
                               />
                             </ListItem>

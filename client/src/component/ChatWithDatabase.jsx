@@ -94,6 +94,8 @@ const FloatingChat = ({ userId }) => {
           sx: {
             borderRadius: isMobile ? 0 : 1, // Remove border-radius on mobile for full-screen effect
             height: isMobile ? "100%" : "auto", // Full height on mobile
+            backgroundColor: colors.grey[900], // Background color for the dialog
+            color: colors.primary[100], // Text color for the dialog
           },
         }}
       >
@@ -120,11 +122,11 @@ const FloatingChat = ({ userId }) => {
                 disableFocusRipple
                 disableTouchRipple
                 sx={{
-                  color: colors.primary[100],
+                  color: colors.primary[900],
                   marginRight: 1,
                   "&:hover": {
                     backgroundColor: "transparent", // No hover background
-                    color: colors.primary[100], // No hover color change
+                    color: colors.primary[900], // No hover color change
                   },
                 }}
               >
@@ -133,7 +135,7 @@ const FloatingChat = ({ userId }) => {
             </Tooltip>
             <Typography
               variant="h6"
-              sx={{ fontWeight: 600, color: colors.primary[100] }}
+              sx={{ fontWeight: 900, color: colors.primary[900] }}
             >
               Chat with AI
             </Typography>
@@ -144,11 +146,11 @@ const FloatingChat = ({ userId }) => {
                 disableFocusRipple
                 disableTouchRipple
                 sx={{
-                  color: colors.primary[100],
+                  color: colors.primary[900],
                   marginRight: 1,
                   "&:hover": {
                     backgroundColor: "transparent", // No hover background
-                    color: colors.primary[100], // No hover color change
+                    color: colors.primary[900], // No hover color change
                   },
                 }}
               >
