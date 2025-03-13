@@ -1064,6 +1064,28 @@ router.put("/updateUserInfo", authenticateToken, async (req, res) => {
   }
 });
 
+router.get("/getUserProfile", authenticateToken, async (req, res) => {
+  const { _id: user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
+
+  try {
+    const sql = `
+      SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_chat_id
+      FROM user_infm
+      WHERE id = $1;
+    `;
+    const result = await pool.query(sql, [user_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "User not found." });
+    }
+
+    res.json({ status: true, data: result.rows[0] });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ status: false, error: error.message });
+  }
+});
+
 // External API: Get Post List
 router.get("/post/list", authenticateToken, async (req, res) => {
   const { companyId, projectId, categoryId, status, size, sort } = req.query;
