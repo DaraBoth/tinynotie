@@ -82,6 +82,12 @@
             "sizes": "1200x790",
             "type": "image/png",
             "form_factor": "wide"
+        },
+        {
+            "src": "https://vongpichdaraboth.com/screenshots/4_dt.jpg",
+            "sizes": "1200x790",
+            "type": "image/png",
+            "form_factor": "wide"
         }
     ]
 }
