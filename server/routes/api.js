@@ -1029,6 +1029,41 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
   }
 });
 
+// Update User Information
+router.put("/updateUserInfo", authenticateToken, async (req, res) => {
+  const { _id: user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
+  const fields = req.body;
+
+  // Whitelist of allowed fields to update
+  const allowedFields = ["phone_number", "email", "first_name", "last_name","profile_url", "device_id"];
+
+  // Filter out any fields that are not in the allowed list
+  const updateFields = Object.keys(fields).filter(key => allowedFields.includes(key));
+
+  if (updateFields.length === 0) {
+    return res.status(400).json({ status: false, message: "No valid fields to update." });
+  }
+
+  try {
+    // Build the SET clause dynamically
+    const setClause = updateFields.map((key, index) => `${key} = $${index + 1}`).join(", ");
+    const values = updateFields.map(key => fields[key]);
+
+    const sql = `
+      UPDATE user_infm
+      SET ${setClause}
+      WHERE id = $${values.length + 1};
+    `;
+    values.push(user_id);
+
+    await pool.query(sql, values);
+    res.json({ status: true, message: "User information updated successfully." });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ status: false, error: error.message });
+  }
+});
+
 // External API: Get Post List
 router.get("/post/list", authenticateToken, async (req, res) => {
   const { companyId, projectId, categoryId, status, size, sort } = req.query;
