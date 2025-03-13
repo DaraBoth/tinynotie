@@ -79,6 +79,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
         flexGrow={1}
         sx={{
           color: colors.grey[100], // Ensure title is visible in both themes
+          fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, Merriweather, sans-serif', // Use specified fonts
         }}
       >
         {groupInfo?.grp_name ?? groupInfo?.group_name}

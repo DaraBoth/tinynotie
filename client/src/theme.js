@@ -144,7 +144,7 @@ export const themeSettings = (mode) => {
       },
     },
     typography: {
-      fontFamily: "Source Sans Pro, sans-serif",
+      fontFamily: "Courier New, monospace",
       body1: {
         color: mode === "dark" ? colors.grey[100] : colors.grey[900], // Adjust body text color
       },
