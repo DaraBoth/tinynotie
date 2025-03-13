@@ -204,6 +204,13 @@ export const api = createApi({
         params: param, // Passing the message as a query parameter
       }),
     }),
+    updateUserInfo: build.mutation({
+      query: (payload) => ({
+        url: "api/updateUserInfo",
+        method: "PUT",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -233,4 +240,5 @@ export const {
   useTranslateMessageMutation,
   useReceiptTextMutation,
   usePostAddMultipleTripsMutation,
+  useUpdateUserInfoMutation,
 } = api;

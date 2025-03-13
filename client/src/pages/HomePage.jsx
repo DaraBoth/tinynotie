@@ -29,6 +29,7 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import GroupIcon from "@mui/icons-material/Group";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SettingsIcon from "@mui/icons-material/Settings";
 import DeleteIcon from "@mui/icons-material/Delete";
 import WarningIcon from "@mui/icons-material/Warning";
 import { rspWidth } from "../responsive";
@@ -40,6 +41,7 @@ import FloatingChat from "../component/ChatWithDatabase";
 import sleepingmeow from "../assets/sleepingmeow.json";
 import background1 from "../assets/background1.json";
 import Lottie from "lottie-react";
+import ProfileSettings from "../component/ProfileSettings"; // Import the new component
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
@@ -130,6 +132,7 @@ export default function Home({
   const widthItem = rspWidth("calc(100%/2)", "100%", "260px");
   const gridColItem = rspWidth("repeat(4,1fr)", "repeat(1,1fr)", "auto");
   const fontSize = rspWidth("normal", "18px", "16px");
+  const [openProfileSettings, setOpenProfileSettings] = useState(false); // State to control profile settings dialog
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
@@ -199,6 +202,14 @@ export default function Home({
     setOpenDeleteDialog(true);
   };
 
+  const handleOpenProfileSettings = () => {
+    setOpenProfileSettings(true);
+  };
+
+  const handleCloseProfileSettings = () => {
+    setOpenProfileSettings(false);
+  };
+
   return (
     <Box
       sx={{
@@ -265,9 +276,14 @@ export default function Home({
             )}
           </Typography>
 
-          <IconButton onClick={handleLogout} aria-label="logout">
-            <LogoutIcon sx={{ fill: colors.redAccent[500] }} />
-          </IconButton>
+          <Box>
+            <IconButton onClick={handleOpenProfileSettings} aria-label="settings">
+              <SettingsIcon sx={{ fill: colors.primary[500] }} />
+            </IconButton>
+            <IconButton onClick={handleLogout} aria-label="logout">
+              <LogoutIcon sx={{ fill: colors.redAccent[500] }} />
+            </IconButton>
+          </Box>
         </Box>
       </Paper>
       {isNonMobile ? (
@@ -575,6 +591,12 @@ export default function Home({
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      <ProfileSettings
+        open={openProfileSettings}
+        onClose={handleCloseProfileSettings}
+        user={user}
+      />
     </Box>
   );
 }
