@@ -20,7 +20,7 @@ import { tokens } from "../theme";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 
-const FloatingChat = ({ userId }) => {
+const FloatingChat = ({ userId, scrollDirection }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [suggestedMessage, setSuggestedMessage] = useState(""); // New state for suggested message
@@ -72,7 +72,8 @@ const FloatingChat = ({ userId }) => {
         sx={{
           position: "fixed",
           bottom: "85px",
-          right: "16px",
+          right: scrollDirection === "down" ? "-80px" : "16px", // Move out of view when scrolling down
+          transition: "right 0.3s ease-in-out", // Smooth transition
           backgroundColor: colors.primary[500],
           "&:hover": {
             backgroundColor: colors.primary[700],

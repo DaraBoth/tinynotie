@@ -546,12 +546,7 @@ export default function Home({
 
         <FloatingChat
           userId={user}
-          sx={{
-            backgroundColor: colors.primary[500],
-            "&:hover": {
-              backgroundColor: colors.primary[700],
-            },
-          }}
+          scrollDirection={scrollDirection} // Pass scrollDirection to FloatingChat
         />
       </Box>
 
