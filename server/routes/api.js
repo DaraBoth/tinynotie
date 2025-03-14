@@ -3,12 +3,18 @@ import express from "express";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import { authenticateToken } from "./middleware/auth.js"; // Assuming you have a middleware for JWT
+import { put } from "@vercel/blob";
+import multer from "multer";
+import path from "path";
 
 const router = express.Router();
 const Pool = pg.Pool;
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
 });
+
+// Configure multer for handling file uploads
+const upload = multer();
 
 // Helper function to format dates
 function format(date) {
@@ -1086,19 +1092,16 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
   }
 });
 
-router.post("/uploadImage", authenticateToken, async (req, res) => {
-  const { image } = req.body; // Expecting base64-encoded image string in the request body
-
-  if (!image) {
-    return res.status(400).json({ status: false, message: "Image is required." });
-  }
-
+router.post("/uploadImage", authenticateToken, upload.single("image"), async (req, res) => {
   try {
-    // Calculate the size of the base64-encoded image
-    const imageSizeInBytes = (image.length * 3) / 4 - (image.endsWith("==") ? 2 : image.endsWith("=") ? 1 : 0);
-    const imageSizeInMB = imageSizeInBytes / (1024 * 1024);
+    if (!req.file) {
+      return res.status(400).json({ status: false, message: "Image file is required." });
+    }
 
-    // Check if the image size exceeds 32 MB
+    const { originalname, mimetype, buffer } = req.file;
+
+    // Ensure file size is within limits (32MB)
+    const imageSizeInMB = buffer.length / (1024 * 1024);
     if (imageSizeInMB > 32) {
       return res.status(413).json({
         status: false,
@@ -1106,41 +1109,30 @@ router.post("/uploadImage", authenticateToken, async (req, res) => {
       });
     }
 
-    const apiKey = "fced9d0e1fbd474c40b93fa708d3d7ac";
-    const url = `https://api.imgbb.com/1/upload?key=${apiKey}`;
+    // Generate timestamp-based unique filename
+    const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "").slice(0, 14); // YYYYMMDDHHMMSS
+    const extension = path.extname(originalname); // Get file extension
+    const basename = path.basename(originalname, extension); // Get filename without extension
+    const uniqueFilename = `${basename}_${timestamp}${extension}`;
 
-    const formData = new URLSearchParams();
-    formData.append("image", image);
-
-    const response = await axios.post(url, formData, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    // Upload image to Vercel Blob
+    const { url } = await put(uniqueFilename, buffer, {
+      contentType: mimetype,
+      access: "public",
     });
 
-    if (response.data.success) {
-      const { url, display_url, delete_url } = response.data.data;
-      res.json({
-        status: true,
-        message: "Image uploaded successfully.",
-        data: { url, display_url, delete_url },
-      });
-    } else {
-      res.status(500).json({ status: false, message: "Failed to upload image." });
-    }
+    return res.json({
+      status: true,
+      message: "Image uploaded successfully.",
+      data: { url, uniqueFilename },
+    });
   } catch (error) {
-    if (error.response && error.response.status === 413) {
-      // Handle 413 Payload Too Large error from ImgBB
-      res.status(413).json({
-        status: false,
-        message: "Image is too large. Please upload a smaller image.",
-      });
-    } else {
-      console.error("Error uploading image:", error);
-      res.status(500).json({
-        status: false,
-        message: "An error occurred while uploading the image.",
-        error: error.message,
-      });
-    }
+    console.error("Error uploading image:", error);
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred while uploading the image.",
+      error: error.message,
+    });
   }
 });
 

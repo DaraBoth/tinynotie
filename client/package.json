@@ -46,7 +46,8 @@
     "scss": "^0.2.4",
     "sjcl": "^1.0.8",
     "tesseract.js": "^5.1.1",
-    "yup": "^1.1.1"
+    "yup": "^1.1.1",
+    "browser-image-compression": "^1.0.17"
   },
   "devDependencies": {
     "@types/react": "^18.0.28",

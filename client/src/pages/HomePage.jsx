@@ -24,10 +24,8 @@ import {
 import { useDeleteGroupMutation, useGetGroupMutation } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
-import DescriptionIcon from "@mui/icons-material/Description";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
-import GroupIcon from "@mui/icons-material/Group";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -133,6 +131,7 @@ export default function Home({
   const gridColItem = rspWidth("repeat(4,1fr)", "repeat(1,1fr)", "auto");
   const fontSize = rspWidth("normal", "18px", "16px");
   const [openProfileSettings, setOpenProfileSettings] = useState(false); // State to control profile settings dialog
+  const [profileViewMode, setProfileViewMode] = useState(false); // State to control view/edit mode
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
@@ -202,7 +201,8 @@ export default function Home({
     setOpenDeleteDialog(true);
   };
 
-  const handleOpenProfileSettings = () => {
+  const handleOpenProfileSettings = (viewMode = false) => {
+    setProfileViewMode(viewMode);
     setOpenProfileSettings(true);
   };
 
@@ -277,8 +277,18 @@ export default function Home({
           </Typography>
 
           <Box>
-            <IconButton onClick={handleOpenProfileSettings} aria-label="settings">
-              <SettingsIcon sx={{ fill: colors.primary[500] }} />
+            <IconButton onClick={handleOpenProfileSettings} aria-label="profile">
+              <img
+                src={user?.profile_url || "https://tinynotie.vercel.app/icons/maskable_icon_x512.png"} // Use user's profile picture or default
+                alt="Profile"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: `2px solid ${colors.primary[500]}`,
+                }}
+              />
             </IconButton>
             <IconButton onClick={handleLogout} aria-label="logout">
               <LogoutIcon sx={{ fill: colors.redAccent[500] }} />
@@ -596,6 +606,7 @@ export default function Home({
         open={openProfileSettings}
         onClose={handleCloseProfileSettings}
         user={user}
+        viewMode={profileViewMode} // Pass view/edit mode
       />
     </Box>
   );

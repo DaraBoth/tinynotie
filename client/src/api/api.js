@@ -211,6 +211,19 @@ export const api = createApi({
         body: payload,
       }),
     }),
+    getUserProfile: build.query({
+      query: () => ({
+        url: "api/getUserProfile",
+        method: "GET",
+      }),
+    }),
+    uploadImage: build.mutation({
+      query: (imageBase64) => ({
+        url: "api/uploadImage", // Use the new backend endpoint
+        method: "POST",
+        body: { image: imageBase64 }, // Send the image as a JSON payload
+      }),
+    }),
   }),
 });
 
@@ -241,4 +254,6 @@ export const {
   useReceiptTextMutation,
   usePostAddMultipleTripsMutation,
   useUpdateUserInfoMutation,
+  useLazyGetUserProfileQuery, // Export the new hook
+  useUploadImageMutation, // Export the updated hook
 } = api;
