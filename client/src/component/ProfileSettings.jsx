@@ -14,6 +14,8 @@ import {
 } from "@mui/material";
 import { useUpdateUserInfoMutation, useUploadImageMutation, useLazyGetUserProfileQuery } from "../api/api"; // Import the uploadImage mutation and the query for fetching user profile
 import imageCompression from "browser-image-compression"; // Import the image compression library
+import defaultProfileImage from "../../public/default_profile.jpg"; // Import the default profile image
+import ImageCropper from "./ImageCropper"; // Import the ImageCropper component
 
 const MAX_IMAGE_SIZE_MB = 32; // Maximum allowed image size in MB for compression
 
@@ -28,6 +30,8 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
   const [imageFile, setImageFile] = useState(null); // Store the selected image file
   const [cachedProfile, setCachedProfile] = useState(null); // Cache for user profile
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
 
   useEffect(() => {
     if (open && !cachedProfile) {
@@ -50,38 +54,23 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    console.log(file);
     if (file) {
-      if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-        // Compress the image if it exceeds the size limit
-        try {
-          const options = {
-            maxSizeMB: MAX_IMAGE_SIZE_MB, // Maximum size in MB
-            maxWidthOrHeight: 1920, // Resize the image to a maximum width or height
-            useWebWorker: true, // Use a web worker for better performance
-          };
-          const compressedFile = await imageCompression(file, options);
-          setImageFile(compressedFile); // Store the compressed file
-          const reader = new FileReader();
-          reader.onload = () => {
-            setProfilePreview(reader.result); // Show preview of the compressed image
-          };
-          reader.readAsDataURL(compressedFile);
-        } catch (error) {
-          setSnackbarMessage("Error compressing image. Please try again.");
-          setSnackbarSuccess(false);
-          setOpenSnackbar(true);
-          return;
-        }
-      } else {
-        setImageFile(file); // Store the selected file
-        const reader = new FileReader();
-        reader.onload = () => {
-          setProfilePreview(reader.result); // Show preview of the selected image
-        };
-        reader.readAsDataURL(file);
-      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageToCrop(reader.result); // Set the image to crop
+        setCropperOpen(true); // Open the cropper dialog
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedFile) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfilePreview(reader.result); // Set the cropped image preview
+    };
+    reader.readAsDataURL(croppedFile);
+    setImageFile(croppedFile); // Store the cropped File object
   };
 
   const handleSubmit = async () => {
@@ -92,7 +81,7 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
       if (imageFile) {
         try {
           const formData = new FormData();
-          formData.append("image", imageFile); // Append the file with the key "image"
+          formData.append("image", imageFile); // Append the File object
 
           const response = await uploadImage(formData).unwrap(); // Use the mutation to upload the image
 
@@ -142,163 +131,171 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
   };
 
   return (
-    <Dialog open={open} onClose={() => onClose(null)}>
-      <DialogTitle>Profile Settings</DialogTitle>
-      <DialogContent>
-        {isFetching && !cachedProfile ? (
-          <Skeleton variant="circular" width={100} height={100} sx={{ marginBottom: 2 }} />
-        ) : (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              marginBottom: 2,
-              position: "relative",
-            }}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              id="profile-upload"
-              onChange={handleFileChange}
-            />
-            <label htmlFor="profile-upload" style={{ position: "relative", cursor: "pointer" }}>
-              <img
-                src={profilePreview || "https://tinynotie.vercel.app/icons/maskable_icon_x512.png"}
-                alt="Profile Preview"
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  marginBottom: 10,
-                  position: "relative",
-                }}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: 100,
-                  height: 100,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "rgba(0, 0, 0, 0.6)",
-                  color: "white",
-                  fontSize: "10px",
-                  fontWeight: "bold",
-                  textAlign: "center",
-                  borderRadius: "50%",
-                  opacity: 0,
-                  transition: "opacity 0.3s",
-                  "&:hover": {
-                    opacity: 1,
-                  },
-                }}
-              >
-                upload image
-              </Box>
-            </label>
-            <Typography
-              variant="body2"
+    <>
+      <Dialog open={open} onClose={() => onClose(null)}>
+        <DialogTitle>Profile Settings</DialogTitle>
+        <DialogContent>
+          {isFetching && !cachedProfile ? (
+            <Skeleton variant="circular" width={100} height={100} sx={{ marginBottom: 2 }} />
+          ) : (
+            <Box
               sx={{
-                color: "white",
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                padding: "4px 8px",
-                borderRadius: "12px",
-                fontWeight: "bold",
-                marginTop: 1,
-                fontSize: "12px",
-                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                marginBottom: 2,
+                position: "relative",
               }}
             >
-              @{user}
-            </Typography>
-          </Box>
-        )}
-        <TextField
-          margin="dense"
-          name="phone_number"
-          label="Phone Number"
-          type="text"
-          fullWidth
-          variant="standard"
-          value={formData.phone_number || ""}
-          onChange={handleChange}
-        />
-        <TextField
-          margin="dense"
-          name="first_name"
-          label="First Name"
-          type="text"
-          fullWidth
-          variant="standard"
-          value={formData.first_name || ""}
-          onChange={handleChange}
-        />
-        <TextField
-          margin="dense"
-          name="last_name"
-          label="Last Name"
-          type="text"
-          fullWidth
-          variant="standard"
-          value={formData.last_name || ""}
-          onChange={handleChange}
-        />
-        <TextField
-          margin="dense"
-          name="email"
-          label="Email"
-          type="email"
-          fullWidth
-          variant="standard"
-          value={formData.email || ""}
-          onChange={handleChange}
-        />
-        <Typography
-          variant="caption"
-          sx={{
-            display: "block",
-            textAlign: "center",
-            marginTop: 2,
-            color: "gray",
-            fontStyle: "italic",
-          }}
-        >
-          Version: 0.2
-        </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="primary">
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          color="primary"
-          disabled={isLoading || isUploading} // Disable save button while saving or uploading
-        >
-          Save
-        </Button>
-      </DialogActions>
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
-      >
-        <Alert
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                id="profile-upload"
+                onChange={handleFileChange}
+              />
+              <label htmlFor="profile-upload" style={{ position: "relative", cursor: "pointer" }}>
+                <img
+                  src={profilePreview || defaultProfileImage} // Use the provided default image
+                  alt="Profile Preview"
+                  style={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    marginBottom: 10,
+                    position: "relative",
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: 100,
+                    height: 100,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "rgba(0, 0, 0, 0.6)",
+                    color: "white",
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    borderRadius: "50%",
+                    opacity: 0,
+                    transition: "opacity 0.3s",
+                    "&:hover": {
+                      opacity: 1,
+                    },
+                  }}
+                >
+                  upload image
+                </Box>
+              </label>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "white",
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  padding: "4px 8px",
+                  borderRadius: "12px",
+                  fontWeight: "bold",
+                  marginTop: 1,
+                  fontSize: "12px",
+                  textAlign: "center",
+                }}
+              >
+                @{user}
+              </Typography>
+            </Box>
+          )}
+          <TextField
+            margin="dense"
+            name="phone_number"
+            label="Phone Number"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={formData.phone_number || ""}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            name="first_name"
+            label="First Name"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={formData.first_name || ""}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            name="last_name"
+            label="Last Name"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={formData.last_name || ""}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            name="email"
+            label="Email"
+            type="email"
+            fullWidth
+            variant="standard"
+            value={formData.email || ""}
+            onChange={handleChange}
+          />
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              textAlign: "center",
+              marginTop: 2,
+              color: "gray",
+              fontStyle: "italic",
+            }}
+          >
+            Version: 0.2
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            color="primary"
+            disabled={isLoading || isUploading} // Disable save button while saving or uploading
+          >
+            Save
+          </Button>
+        </DialogActions>
+        <Snackbar
+          open={openSnackbar}
+          autoHideDuration={3000}
           onClose={handleCloseSnackbar}
-          severity={snackbarSuccess ? "success" : "error"}
-          sx={{ width: "100%" }}
         >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </Dialog>
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbarSuccess ? "success" : "error"}
+            sx={{ width: "100%" }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </Dialog>
+      <ImageCropper
+        open={cropperOpen}
+        imageSrc={imageToCrop}
+        onClose={() => setCropperOpen(false)}
+        onCropComplete={handleCropComplete} // Pass the updated handler
+      />
+    </>
   );
 };
 

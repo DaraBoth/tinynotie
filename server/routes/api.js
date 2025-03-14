@@ -14,7 +14,7 @@ const pool = new Pool({
 });
 
 // Configure multer for handling file uploads
-const upload = multer();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Helper function to format dates
 function format(date) {
@@ -1099,8 +1099,9 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
     }
 
     const { originalname, mimetype, buffer } = req.file;
+    const { _id: user_id } = req.user;
 
-    // Ensure file size is within limits (32MB)
+    // Ensure file size is within limits (50MB)
     const imageSizeInMB = buffer.length / (1024 * 1024);
     if (imageSizeInMB > 50) {
       return res.status(413).json({
@@ -1109,23 +1110,26 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
       });
     }
 
-    // Generate timestamp-based unique filename
+    // Generate a timestamp-based unique filename
     const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "").slice(0, 14); // YYYYMMDDHHMMSS
-    const extension = path.extname(originalname); // Get file extension
-    const basename = path.basename(originalname, extension); // Get filename without extension
+    const extension = path.extname(originalname); // File extension
+    const basename = path.basename(originalname, extension); // Filename without extension
     const uniqueFilename = `${basename}_${timestamp}${extension}`;
 
-    // Upload image to Vercel Blob
-    const { url } = await put(uniqueFilename, buffer, {
+    // Define the storage path for the user
+    const filePath = `uploads/${user_id}/${uniqueFilename}`;
+
+    // Upload the image to Vercel Blob
+    const { url } = await put(filePath, buffer, {
       contentType: mimetype,
       access: "public",
-      token: process.env.BLOB_READ_WRITE_TOKEN, // Use the token
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 
     return res.json({
       status: true,
       message: "Image uploaded successfully.",
-      data: { url, uniqueFilename },
+      data: { url, uniqueFilename, path: filePath },
     });
   } catch (error) {
     console.error("Error uploading image:", error);

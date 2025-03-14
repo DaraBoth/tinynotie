@@ -40,6 +40,7 @@ import sleepingmeow from "../assets/sleepingmeow.json";
 import background1 from "../assets/background1.json";
 import Lottie from "lottie-react";
 import ProfileSettings from "../component/ProfileSettings"; // Import the new component
+import defaultProfileImage from "../../public/default_profile.jpg"; // Import the default profile image
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
@@ -284,7 +285,7 @@ export default function Home({
               <img
                 src={
                   profileData?.profile_url ||
-                  "https://tinynotie.vercel.app/icons/maskable_icon_x512.png"
+                  defaultProfileImage
                 } // Use shared profile data
                 alt="Profile"
                 style={{
