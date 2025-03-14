@@ -1112,23 +1112,15 @@ router.post("/uploadImage", authenticateToken, async (req, res) => {
         data: { url, display_url, delete_url },
       });
     } else {
-      res.status(500).json({ status: false, message: "Failed to upload image." });
+      res.json({response})
     }
   } catch (error) {
-    if (error.response && error.response.status === 413) {
-      // Handle 413 Payload Too Large error
-      res.status(413).json({
-        status: false,
-        message: "Image is too large. Please upload a smaller image.",
-      });
-    } else {
-      console.error("Error uploading image:", error);
-      res.status(500).json({
-        status: false,
-        message: "An error occurred while uploading the image.",
-        error: error.message,
-      });
-    }
+    console.error("Error uploading image:", error);
+    res.status(500).json({
+      status: false,
+      message: "An error occurred while uploading the image.",
+      error: error.message,
+    });
   }
 });
 
