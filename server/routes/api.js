@@ -1086,6 +1086,40 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
   }
 });
 
+router.post("/uploadImage", authenticateToken, async (req, res) => {
+  const { image } = req.body; // Expecting base64-encoded image string in the request body
+
+  if (!image) {
+    return res.status(400).json({ status: false, message: "Image is required." });
+  }
+
+  try {
+    const apiKey = "fced9d0e1fbd474c40b93fa708d3d7ac";
+    const url = `https://api.imgbb.com/1/upload?expiration=600&key=${apiKey}`;
+
+    const formData = new URLSearchParams();
+    formData.append("image", image);
+
+    const response = await axios.post(url, formData, {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+
+    if (response.data.success) {
+      const { url, display_url, delete_url } = response.data.data;
+      res.json({
+        status: true,
+        message: "Image uploaded successfully.",
+        data: { url, display_url, delete_url },
+      });
+    } else {
+      res.status(500).json({ status: false, message: "Failed to upload image." });
+    }
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    res.status(500).json({ status: false, error: error.message });
+  }
+});
+
 // External API: Get Post List
 router.get("/post/list", authenticateToken, async (req, res) => {
   const { companyId, projectId, categoryId, status, size, sort } = req.query;
