@@ -1119,6 +1119,7 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
     const { url } = await put(uniqueFilename, buffer, {
       contentType: mimetype,
       access: "public",
+      token: process.env.BLOB_READ_WRITE_TOKEN, // Use the token
     });
 
     return res.json({
