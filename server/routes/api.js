@@ -1095,7 +1095,7 @@ router.post("/uploadImage", authenticateToken, async (req, res) => {
 
   try {
     const apiKey = "fced9d0e1fbd474c40b93fa708d3d7ac";
-    const url = `https://api.imgbb.com/1/upload?expiration=600&key=${apiKey}`;
+    const url = `https://api.imgbb.com/1/upload?key=${apiKey}`;
 
     const formData = new URLSearchParams();
     formData.append("image", image);
@@ -1115,8 +1115,20 @@ router.post("/uploadImage", authenticateToken, async (req, res) => {
       res.status(500).json({ status: false, message: "Failed to upload image." });
     }
   } catch (error) {
-    console.error("Error uploading image:", error);
-    res.status(500).json({ status: false, error: error.message });
+    if (error.response && error.response.status === 413) {
+      // Handle 413 Payload Too Large error
+      res.status(413).json({
+        status: false,
+        message: "Image is too large. Please upload a smaller image.",
+      });
+    } else {
+      console.error("Error uploading image:", error);
+      res.status(500).json({
+        status: false,
+        message: "An error occurred while uploading the image.",
+        error: error.message,
+      });
+    }
   }
 });
 
