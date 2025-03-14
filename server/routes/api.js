@@ -1094,6 +1094,18 @@ router.post("/uploadImage", authenticateToken, async (req, res) => {
   }
 
   try {
+    // Calculate the size of the base64-encoded image
+    const imageSizeInBytes = (image.length * 3) / 4 - (image.endsWith("==") ? 2 : image.endsWith("=") ? 1 : 0);
+    const imageSizeInMB = imageSizeInBytes / (1024 * 1024);
+
+    // Check if the image size exceeds 32 MB
+    if (imageSizeInMB > 32) {
+      return res.status(413).json({
+        status: false,
+        message: "Image is too large. Please upload an image smaller than 32 MB.",
+      });
+    }
+
     const apiKey = "fced9d0e1fbd474c40b93fa708d3d7ac";
     const url = `https://api.imgbb.com/1/upload?key=${apiKey}`;
 
@@ -1112,16 +1124,23 @@ router.post("/uploadImage", authenticateToken, async (req, res) => {
         data: { url, display_url, delete_url },
       });
     } else {
-      console.log(response);
-      res.json({response})
+      res.status(500).json({ status: false, message: "Failed to upload image." });
     }
   } catch (error) {
-    console.error("Error uploading image:", error);
-    res.status(500).json({
-      status: false,
-      message: "An error occurred while uploading the image.",
-      error: error.message,
-    });
+    if (error.response && error.response.status === 413) {
+      // Handle 413 Payload Too Large error from ImgBB
+      res.status(413).json({
+        status: false,
+        message: "Image is too large. Please upload a smaller image.",
+      });
+    } else {
+      console.error("Error uploading image:", error);
+      res.status(500).json({
+        status: false,
+        message: "An error occurred while uploading the image.",
+        error: error.message,
+      });
+    }
   }
 });
 
