@@ -518,33 +518,42 @@ export default function Home({
         )}
       </Box>
 
-      <Fab
-        color="primary"
-        aria-label="add"
-        onClick={handleCreateGroup}
+      {/* Floating Buttons Container */}
+      <Box
         sx={{
           position: "fixed",
           bottom: "16px",
           right: scrollDirection === "down" ? "-80px" : "16px", // Move out of view when scrolling down
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
           transition: "right 0.3s ease-in-out", // Smooth transition
-          backgroundColor: colors.primary[500],
-          "&:hover": {
-            backgroundColor: colors.primary[700],
-          },
         }}
       >
-        <AddIcon />
-      </Fab>
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={handleCreateGroup}
+          sx={{
+            backgroundColor: colors.primary[500],
+            "&:hover": {
+              backgroundColor: colors.primary[700],
+            },
+          }}
+        >
+          <AddIcon />
+        </Fab>
 
-      <FloatingChat
-        userId={user}
-        sx={{
-          position: "fixed",
-          bottom: "80px",
-          right: scrollDirection === "down" ? "-80px" : "16px", // Move out of view when scrolling down
-          transition: "right 0.3s ease-in-out", // Smooth transition
-        }}
-      />
+        <FloatingChat
+          userId={user}
+          sx={{
+            backgroundColor: colors.primary[500],
+            "&:hover": {
+              backgroundColor: colors.primary[700],
+            },
+          }}
+        />
+      </Box>
 
       <Dialog
         open={openDeleteDialog}
