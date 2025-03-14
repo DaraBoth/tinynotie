@@ -21,7 +21,7 @@ import {
   Tabs,
   Tab,
 } from "@mui/material";
-import { useDeleteGroupMutation, useGetGroupMutation } from "../api/api";
+import { useDeleteGroupMutation, useGetGroupMutation, useLazyGetUserProfileQuery } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
@@ -74,12 +74,12 @@ function GroupCard({ item, onDelete, onClick }) {
       </Typography>
       <Typography variant="body2" color={colors.grey[300]}>
         <span style={{ color: colors.primary[300] }}>
-          {currencyObject[item.currency]}
+          {`Currency ${currencyObject[item.currency]}`}
         </span>
       </Typography>
       <Typography variant="body2" color={colors.grey[400]}>
         <span title={moment(item.create_date).format("YYYY-MM-DD hh:mm:ss (dd)")} style={{ color: colors.primary[300] }}>
-          {formatTimeDifference(item.create_date)}
+          {`Since ${formatTimeDifference(item.create_date)}`}
         </span>
       </Typography>
       {item.isAdmin && (
@@ -132,15 +132,18 @@ export default function Home({
   const fontSize = rspWidth("normal", "18px", "16px");
   const [openProfileSettings, setOpenProfileSettings] = useState(false); // State to control profile settings dialog
   const [profileViewMode, setProfileViewMode] = useState(false); // State to control view/edit mode
+  const [getUserProfile, { data: userProfile }] = useLazyGetUserProfileQuery(); // Lazy query for user profile
+  const [profileData, setProfileData] = useState(null); // Shared state for profile data
+  const [scrollDirection, setScrollDirection] = useState("up"); // Track scroll direction
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
   };
-
+  
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
   };
-
+  
   useEffect(() => {
     triggerUser({ user, user_id: secret });
   }, [triggerUser, user, secret]);
@@ -151,6 +154,35 @@ export default function Home({
       setLoading(false);
     }
   }, [resultUser.data]);
+
+  useEffect(() => {
+    if (user && !profileData) {
+      getUserProfile(); // Fetch user profile only if not already loaded
+    }
+  }, [user, getUserProfile, profileData]);
+
+  useEffect(() => {
+    if (userProfile?.status) {
+      setProfileData(userProfile.data); // Set shared profile data
+    }
+  }, [userProfile]);
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY + 10) {
+        setScrollDirection("down"); // User scrolled down
+      } else if (currentScrollY < lastScrollY - 10) {
+        setScrollDirection("up"); // User scrolled up
+      }
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleLogout = () => {
     setUser(false);
@@ -206,8 +238,11 @@ export default function Home({
     setOpenProfileSettings(true);
   };
 
-  const handleCloseProfileSettings = () => {
+  const handleCloseProfileSettings = (updatedProfile) => {
     setOpenProfileSettings(false);
+    if (updatedProfile) {
+      setProfileData(updatedProfile); // Update shared profile data
+    }
   };
 
   return (
@@ -224,7 +259,6 @@ export default function Home({
         sx={{
           padding: "20px",
           marginBottom: isNonMobile ? "20px" : "0px",
-          // borderRadius: "0px 0px 0px 50px",
           borderRadius: "0px",
           backgroundColor: colors.grey[800],
         }}
@@ -233,30 +267,8 @@ export default function Home({
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          marginBottom="20px"
           position={"relative"}
         >
-          <Lottie
-            animationData={sleepingmeow}
-            loop={true}
-            style={
-              isNonMobile
-                ? {
-                    position: "absolute",
-                    top: "-42px",
-                    right: "50%",
-                    width: 200,
-                    height: 200,
-                  }
-                : {
-                    position: "absolute",
-                    top: "-49px",
-                    right: "100px",
-                    width: 200,
-                    height: 200,
-                  }
-            } // Adjust size as needed
-          />
           <Typography
             component="span"
             variant="h4"
@@ -264,22 +276,16 @@ export default function Home({
             fontSize={fontSize}
             fontWeight="bold"
           >
-            Welcome to TinyNotie, <br />
-            {user && (
-              <>
-                Hello{" "}
-                <span style={{ color: colors.primary[300], fontWeight: "700" }}>
-                  {user}
-                </span>
-                !
-              </>
-            )}
+            TinyNotie
           </Typography>
 
           <Box>
             <IconButton onClick={handleOpenProfileSettings} aria-label="profile">
               <img
-                src={user?.profile_url || "https://tinynotie.vercel.app/icons/maskable_icon_x512.png"} // Use user's profile picture or default
+                src={
+                  profileData?.profile_url ||
+                  "https://tinynotie.vercel.app/icons/maskable_icon_x512.png"
+                } // Use shared profile data
                 alt="Profile"
                 style={{
                   width: 40,
@@ -296,6 +302,7 @@ export default function Home({
           </Box>
         </Box>
       </Paper>
+
       {isNonMobile ? (
         <Box
           sx={{
@@ -517,7 +524,8 @@ export default function Home({
         sx={{
           position: "fixed",
           bottom: "16px",
-          right: "16px",
+          right: scrollDirection === "down" ? "-80px" : "16px", // Move out of view when scrolling down
+          transition: "right 0.3s ease-in-out", // Smooth transition
           backgroundColor: colors.primary[500],
           "&:hover": {
             backgroundColor: colors.primary[700],
@@ -527,7 +535,15 @@ export default function Home({
         <AddIcon />
       </Fab>
 
-      <FloatingChat userId={user} />
+      <FloatingChat
+        userId={user}
+        sx={{
+          position: "fixed",
+          bottom: "80px",
+          right: scrollDirection === "down" ? "-80px" : "16px", // Move out of view when scrolling down
+          transition: "right 0.3s ease-in-out", // Smooth transition
+        }}
+      />
 
       <Dialog
         open={openDeleteDialog}
@@ -606,6 +622,8 @@ export default function Home({
         open={openProfileSettings}
         onClose={handleCloseProfileSettings}
         user={user}
+        profileData={profileData} // Pass shared profile data
+        setProfileData={setProfileData} // Allow updating shared profile data
         viewMode={profileViewMode} // Pass view/edit mode
       />
     </Box>

@@ -218,10 +218,10 @@ export const api = createApi({
       }),
     }),
     uploadImage: build.mutation({
-      query: (imageBase64) => ({
+      query: (formData) => ({
         url: "api/uploadImage", // Use the new backend endpoint
         method: "POST",
-        body: { image: imageBase64 }, // Send the image as a JSON payload
+        body: formData, // Send the FormData object
       }),
     }),
   }),
