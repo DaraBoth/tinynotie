@@ -1100,6 +1100,12 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
 
     const { originalname, mimetype, buffer } = req.file;
     const { _id: user_id } = req.user;
+    const sql = `
+      SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_chat_id
+      FROM user_infm
+      WHERE id = $1;
+    `;
+    const result = await pool.query(sql, [user_id]);
 
     // Ensure file size is within limits (50MB)
     const imageSizeInMB = buffer.length / (1024 * 1024);
@@ -1117,7 +1123,7 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
     const uniqueFilename = `${basename}_${timestamp}${extension}`;
 
     // Define the storage path for the user
-    const filePath = `uploads/${user_id}/${uniqueFilename}`;
+    const filePath = `uploads/${result.rows[0].usernm}/${uniqueFilename}`;
 
     // Upload the image to Vercel Blob
     const { url } = await put(filePath, buffer, {

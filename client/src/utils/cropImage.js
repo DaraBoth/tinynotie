@@ -1,4 +1,4 @@
-export default function getCroppedImg(imageSrc, crop) {
+export default function getCroppedImg(imageSrc, crop, originalFileName = "image") {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.src = imageSrc;
@@ -26,7 +26,10 @@ export default function getCroppedImg(imageSrc, crop) {
           reject(new Error("Canvas is empty"));
           return;
         }
-        const file = new File([blob], "croppedImage.jpg", { type: "image/jpeg" }); // Return the File object
+        const fileExtension = originalFileName.split(".").pop() || "jpg"; // Extract file extension
+        const fileNameWithoutExtension = originalFileName.replace(/\.[^/.]+$/, ""); // Remove extension
+        const croppedFileName = `${fileNameWithoutExtension}_cropped.${fileExtension}`; // Append "_cropped"
+        const file = new File([blob], croppedFileName, { type: `image/${fileExtension}` }); // Use original name with "_cropped"
         resolve(file);
       }, "image/jpeg");
     };
