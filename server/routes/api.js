@@ -1112,6 +1112,7 @@ router.post("/uploadImage", authenticateToken, async (req, res) => {
         data: { url, display_url, delete_url },
       });
     } else {
+      console.log(response);
       res.json({response})
     }
   } catch (error) {
