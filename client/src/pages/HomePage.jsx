@@ -124,6 +124,7 @@ export default function Home({
   const [snackbarSuccess, setSnackbarSuccess] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
+  const [noteToDeleteName, setNoteToDeleteName] = useState(""); // Add state for group name
   const navigate = useNavigate();
   const [tabIndex, setTabIndex] = useState(0);
   const isMobile = useMediaQuery("(max-width:600px)");
@@ -229,8 +230,9 @@ export default function Home({
     setOpenSnackbar(true);
   };
 
-  const confirmDeleteNote = (noteId) => {
+  const confirmDeleteNote = (noteId, noteName) => {
     setNoteToDelete(noteId);
+    setNoteToDeleteName(noteName); // Set the group name
     setOpenDeleteDialog(true);
   };
 
@@ -511,7 +513,7 @@ export default function Home({
               <GroupCard
                 key={item.id}
                 item={item}
-                onDelete={confirmDeleteNote}
+                onDelete={(id) => confirmDeleteNote(id, item.grp_name)} // Pass group name to confirmDeleteNote
                 onClick={handleGroupClick}
               />
             ))
@@ -574,8 +576,7 @@ export default function Home({
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" color={colors.primary[300]}>
-            Are you sure you want to delete this note? This action cannot be
-            undone.
+            Are you sure you want to delete the <strong>{noteToDeleteName}</strong> note? <br />This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
