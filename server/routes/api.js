@@ -1102,10 +1102,10 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
 
     // Ensure file size is within limits (32MB)
     const imageSizeInMB = buffer.length / (1024 * 1024);
-    if (imageSizeInMB > 32) {
+    if (imageSizeInMB > 50) {
       return res.status(413).json({
         status: false,
-        message: "Image is too large. Please upload an image smaller than 32 MB.",
+        message: "Image is too large. Please upload an image smaller than 50 MB.",
       });
     }
 
