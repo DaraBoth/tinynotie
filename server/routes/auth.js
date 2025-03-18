@@ -12,7 +12,44 @@ const pool = new Pool({
 // Secret key for JWT (use a strong secret key in production)
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// User login
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: User login
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               usernm:
+ *                 type: string
+ *               passwd:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 usernm:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *                 _id:
+ *                   type: integer
+ *       401:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/login", async (req, res) => {
   const { usernm, passwd } = req.body;
   try {
@@ -41,7 +78,44 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// User registration
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: User registration
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               usernm:
+ *                 type: string
+ *               passwd:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Registration successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *                 _id:
+ *                   type: integer
+ *       409:
+ *         description: Username already exists
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/register", async (req, res) => {
   const { usernm, passwd } = req.body;
   try {

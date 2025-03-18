@@ -33,7 +33,47 @@ const handleError = (error, res) => {
   res.status(500).json({ error: error.message });
 };
 
-// Test DB Connection
+/**
+ * @swagger
+ * /api/test_db_online:
+ *   get:
+ *     summary: Test database connection
+ *     tags: [Database]
+ *     parameters:
+ *       - in: query
+ *         name: user
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: host
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: database
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: password
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: port
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: sql
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: isDaraboth
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: Database connection successful
+ *       500:
+ *         description: Database connection failed
+ */
 router.get("/test_db_online", async (req, res) => {
   const { user, host, database, password, port, sql, isDaraboth } = req.query;
   let testPool;
@@ -71,7 +111,40 @@ router.get("/test_db_online", async (req, res) => {
   }
 });
 
-// List All Users
+/**
+ * @swagger
+ * /api/listUsers:
+ *   get:
+ *     summary: List all users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       usernm:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       profile_url:
+ *                         type: string
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/listUsers", authenticateToken, async (req, res) => {
   try {
     const sql = `
@@ -87,7 +160,60 @@ router.get("/listUsers", authenticateToken, async (req, res) => {
   }
 });
 
-// Filter Members by Specific Field or Search Across All Fields
+/**
+ * @swagger
+ * /api/userSearch:
+ *   get:
+ *     summary: Search users by specific fields
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: filterBy
+ *         schema:
+ *           type: string
+ *         description: Field to filter by (ID, NAME, EMAIL, PHONE, PROFILE, ALL)
+ *       - in: query
+ *         name: searchWords
+ *         schema:
+ *           type: string
+ *         description: Search keywords
+ *       - in: query
+ *         name: excludeIds
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: integer
+ *         description: IDs to exclude from the search
+ *     responses:
+ *       200:
+ *         description: Search results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       usernm:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       phone_number:
+ *                         type: string
+ *                       profile_url:
+ *                         type: string
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/userSearch", authenticateToken, async (req, res) => {
   const { filterBy, searchWords, excludeIds } = req.query;
   const { _id: user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
@@ -173,7 +299,54 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
   }
 });
 
-// Get Group by User ID
+/**
+ * @swagger
+ * /api/getGroupByUserId:
+ *   get:
+ *     summary: Get groups by user ID
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: List of groups
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       grp_name:
+ *                         type: string
+ *                       status:
+ *                         type: integer
+ *                       currency:
+ *                         type: string
+ *                       admin_id:
+ *                         type: integer
+ *                       create_date:
+ *                         type: string
+ *                         format: date
+ *                       isAdmin:
+ *                         type: boolean
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   const { user_id } = req.query;
   try {
@@ -195,6 +368,59 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/getUserChatLists:
+ *   get:
+ *     summary: Get all users with a device_id excluding the current user
+ *     tags: [Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users with device_id
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       usernm:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       profile_url:
+ *                         type: string
+ *                       device_id:
+ *                         type: string
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/getUserChatLists", authenticateToken, async (req, res) => {
+  try {
+    const { _id: user_id } = req.user;
+    const sql = `
+      SELECT *
+      FROM user_infm
+      WHERE device_id IS NOT NULL
+      AND id <> ${user_id}
+      ORDER BY usernm ASC;
+    `;
+    const result = await pool.query(sql);
+    res.json({ status: true, data: result.rows });
+  } catch (error) {
+    handleError(error, res);
   }
 });
 
@@ -1261,6 +1487,59 @@ router.delete("/chatMessage/:id", authenticateToken, async (req, res) => {
     const sql = `DELETE FROM chat_message WHERE id = $1;`;
     await pool.query(sql, [id]);
     res.json({ status: true, message: "Chat message deleted successfully." });
+  } catch (error) {
+    handleError(error, res);
+  }
+});
+
+/**
+ * @swagger
+ * /api/getUserChatLists:
+ *   get:
+ *     summary: Get all users with a device_id excluding the current user
+ *     tags: [Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users with device_id
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       usernm:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       profile_url:
+ *                         type: string
+ *                       device_id:
+ *                         type: string
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/getUserChatLists", authenticateToken, async (req, res) => {
+  try {
+    const { _id: user_id } = req.user;
+    const sql = `
+      SELECT *
+      FROM user_infm
+      WHERE device_id IS NOT NULL
+      AND id <> ${user_id}
+      ORDER BY usernm ASC;
+    `;
+    const result = await pool.query(sql);
+    res.json({ status: true, data: result.rows });
   } catch (error) {
     handleError(error, res);
   }

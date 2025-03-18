@@ -40,6 +40,8 @@
     "redis": "^4.7.0",
     "serverless-http": "^3.2.0",
     "sqlite3": "^5.1.7",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "telegraf": "^4.16.3",
     "web-push": "^3.6.7"
   },
