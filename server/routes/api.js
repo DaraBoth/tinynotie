@@ -1349,7 +1349,7 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
     const uniqueFilename = `${basename}_${timestamp}${extension}`;
 
     // Define the storage path for the user
-    const filePath = `profiles/${result.rows[0].usernm}/${uniqueFilename}`;
+    const filePath = `profile/${result.rows[0].usernm}/${uniqueFilename}`;
 
     // Upload the image to Vercel Blob
     const { url } = await put(filePath, buffer, {
