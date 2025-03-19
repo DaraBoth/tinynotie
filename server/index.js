@@ -58,11 +58,15 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ["./routes/*.js"], // Path to the API docs
+  apis: ["./routes/*.js"], // Ensure this path is correct and accessible
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Serve Swagger UI assets correctly
+app.use("/api-docs", swaggerUi.serve, (req, res) => {
+  res.send(swaggerUi.generateHTML(swaggerDocs));
+});
 
 /**
  * @swagger

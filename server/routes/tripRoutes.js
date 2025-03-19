@@ -36,6 +36,136 @@ const router = express.Router();
  *         description: Internal server error
  */
 
+/**
+ * @swagger
+ * /trips/addMultipleTripsByGroupId:
+ *   post:
+ *     summary: Add multiple trips by group ID
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               trips:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     trp_name:
+ *                       type: string
+ *                     spend:
+ *                       type: number
+ *                     mem_id:
+ *                       type: integer
+ *                     description:
+ *                       type: string
+ *                     group_id:
+ *                       type: integer
+ *     responses:
+ *       200:
+ *         description: Trips added successfully
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /trips/editTripByGroupId:
+ *   post:
+ *     summary: Edit trip by group ID
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               trp_name:
+ *                 type: string
+ *               spend:
+ *                 type: number
+ *               group_id:
+ *                 type: integer
+ *               type:
+ *                 type: string
+ *               update_dttm:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Trip edited successfully
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /trips/getAllTrip:
+ *   get:
+ *     summary: Get all trips
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all trips
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /trips/getTripByGroupId:
+ *   get:
+ *     summary: Get trips by group ID
+ *     tags: [Trips]
+ *     parameters:
+ *       - in: query
+ *         name: group_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Group ID
+ *     responses:
+ *       200:
+ *         description: List of trips for the group
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /trips/deleteTripById:
+ *   delete:
+ *     summary: Delete trip by ID
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               trip_id:
+ *                 type: integer
+ *               group_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Trip deleted successfully
+ *       500:
+ *         description: Internal server error
+ */
+
 // Add trip by group ID
 router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
   const { trp_name, spend, mem_id, description, group_id, update_dttm } =

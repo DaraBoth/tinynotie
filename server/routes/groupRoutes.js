@@ -145,6 +145,36 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /groups/updateGroupVisibility:
+ *   post:
+ *     summary: Update group visibility
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               group_id:
+ *                 type: integer
+ *               visibility:
+ *                 type: string
+ *               allowed_users:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *     responses:
+ *       200:
+ *         description: Group visibility updated successfully
+ *       500:
+ *         description: Internal server error
+ */
+
 // Update group visibility
 router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
   const { group_id, visibility, allowed_users } = req.body; // allowed_users is an array of user IDs
@@ -207,6 +237,30 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
     res.json({ status: false, error: error.message });
   }
 });
+
+/**
+ * @swagger
+ * /groups/deleteGroupById:
+ *   delete:
+ *     summary: Delete group by ID
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               group_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Group deleted successfully
+ *       500:
+ *         description: Internal server error
+ */
 
 // Delete group by ID
 router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
@@ -288,6 +342,31 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
     client.release();
   }
 });
+
+/**
+ * @swagger
+ * /groups/getGroupDetail:
+ *   get:
+ *     summary: Get group details
+ *     tags: [Groups]
+ *     parameters:
+ *       - in: query
+ *         name: group_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Group ID
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Group details retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
 
 // Get group details
 router.get("/getGroupDetail", async (req, res) => {
