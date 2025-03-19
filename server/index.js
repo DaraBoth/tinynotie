@@ -5,7 +5,6 @@ import helmet from "helmet"
 import morgan from "morgan"
 import bodyParser from "body-parser"
 import authRoutes from "./routes/auth.js"
-import noteRoutes from "./routes/note.js"
 import apiRoutes from "./routes/api.js"
 import openAiRoutes from "./routes/openai.js";
 import telegrambotRoutes from "./routes/telegrambot.js";
@@ -39,6 +38,24 @@ const swaggerOptions = {
         url: "http://localhost:9000",
         description: "Development server",
       },
+      {
+        url: "https://tinynotie-api.vercel.app/",
+        description: "Production server",
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
     ],
   },
   apis: ["./routes/*.js"], // Path to the API docs
@@ -47,8 +64,38 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *   schemas:
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         status:
+ *           type: boolean
+ *         message:
+ *           type: string
+ *         error:
+ *           type: string
+ * paths:
+ *   /api-docs:
+ *     get:
+ *       summary: Swagger API documentation
+ *       tags: [Documentation]
+ *       responses:
+ *         200:
+ *           description: Swagger UI served successfully
+ *         500:
+ *           description: Internal server error
+ */
+
 /* ROUTES */
-app.use("/note", noteRoutes);
+// app.use("/note", noteRoutes);
 app.use("/openai", openAiRoutes);
 app.use("/api", apiRoutes);
 app.use("/auth", authRoutes);

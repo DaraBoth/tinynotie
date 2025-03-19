@@ -45,10 +45,19 @@ const JWT_SECRET = process.env.JWT_SECRET;
  *                   type: string
  *                 _id:
  *                   type: integer
+ *         headers:
+ *           Authorization:
+ *             description: Bearer token for authentication
+ *             schema:
+ *               type: string
+ *               example: Bearer <JWT_TOKEN>
  *       401:
  *         description: Invalid credentials
  *       500:
  *         description: Internal server error
+ *     description: |
+ *       After logging in, copy the `token` from the response and click the "Authorize" button in the Swagger UI.
+ *       Paste the token in the "Value" field as `Bearer <JWT_TOKEN>` to authenticate subsequent requests.
  */
 router.post("/login", async (req, res) => {
   const { usernm, passwd } = req.body;
