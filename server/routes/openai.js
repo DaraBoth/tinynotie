@@ -11,7 +11,7 @@ import pg from "pg";
 import { Telegraf } from "telegraf";
 import webPush from "web-push";
 const Pool = pg.Pool;
-import { authenticateToken } from "./middleware/auth.js"; // Assuming you have a middleware for JWT
+import { authenticateToken } from "../middleware/auth.js"; // Corrected path
 import { stat } from "fs";
 
 const vapidKeys = {

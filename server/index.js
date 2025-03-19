@@ -79,14 +79,10 @@ app.get(
   swaggerUi.setup(swaggerDocs, {
     customCssUrl:
       "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css",
-    swaggerOptions: {
-      urls: [
-        {
-          url: "https://petstore.swagger.io/v2/swagger.json",
-          name: "Spec1"
-        }
-      ]
-    }
+    customJs:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui-bundle.js",
+    customJsStandalonePreset:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui-standalone-preset.js",
   })
 );
 
