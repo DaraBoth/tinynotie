@@ -11,6 +11,8 @@ import telegrambotRoutes from "./routes/telegrambot.js";
 import daraboth from "./routes/daraboth.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 
@@ -24,6 +26,10 @@ app.use(bodyParser.json({ limit: "50mb" })); // Increase limit
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" })); 
 app.use(cors());
  
+// Resolve the absolute path for Swagger API docs
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Swagger configuration
 const swaggerOptions = {
   swaggerDefinition: {
@@ -58,15 +64,13 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ["./routes/*.js"], // Ensure this path is correct and accessible
+  apis: [path.join(__dirname, "routes", "*.js")], // Use absolute path
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
 // Serve Swagger UI assets correctly
-app.use("/api-docs", swaggerUi.serve, (req, res) => {
-  res.send(swaggerUi.generateHTML(swaggerDocs));
-});
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 /**
  * @swagger
