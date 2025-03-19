@@ -13,6 +13,9 @@ import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const { version } = require("./package.json");
 
 const app = express();
 
@@ -32,11 +35,11 @@ const __dirname = path.dirname(__filename);
 
 // Swagger configuration
 const swaggerOptions = {
-  swaggerDefinition: {
+  definition: {
     openapi: "3.0.0",
     info: {
       title: "TinyNotie API",
-      version: "1.0.0",
+      version,
       description: "API documentation for TinyNotie",
     },
     servers: [
@@ -69,8 +72,15 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
-// Serve Swagger UI assets correctly
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+// Serve Swagger UI with custom CSS for Vercel compatibility
+app.use("/api-docs", swaggerUi.serve);
+app.get(
+  "/api-docs",
+  swaggerUi.setup(swaggerDocs, {
+    customCssUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css",
+  })
+);
 
 /**
  * @swagger
