@@ -12,7 +12,7 @@ const upload = multer({ storage }); // Initialize multer with memory storage
 
 /**
  * @swagger
- * /users/listUsers:
+ * /api/listUsers:
  *   get:
  *     summary: List all users
  *     tags: [Users]
@@ -61,7 +61,7 @@ router.get("/listUsers", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
- * /users/userSearch:
+ * /api/userSearch:
  *   get:
  *     summary: Search users by specific fields
  *     tags: [Users]
@@ -200,7 +200,7 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
- * /users/updateUserInfo:
+ * /api/updateUserInfo:
  *   put:
  *     summary: Update user information
  *     tags: [Users]
@@ -269,7 +269,7 @@ router.put("/updateUserInfo", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
- * /users/getUserProfile:
+ * /api/getUserProfile:
  *   get:
  *     summary: Get user profile
  *     tags: [Users]
@@ -333,7 +333,7 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
- * /users/uploadImage:
+ * /api/uploadImage:
  *   post:
  *     summary: Upload user profile image
  *     tags: [Users]

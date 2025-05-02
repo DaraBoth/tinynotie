@@ -168,8 +168,7 @@ const router = express.Router();
 
 // Add trip by group ID
 router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
-  const { trp_name, spend, mem_id, description, group_id, update_dttm } =
-    req.body;
+  const { trp_name, spend, mem_id, description, group_id, update_dttm, payer_id = null } = req.body;
   let create_date = req.body?.create_date || format(new Date());
   try {
     const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
@@ -177,8 +176,8 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
 
     if (results.rows.length === 0) {
       const sql2 = `
-        INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date , update_dttm)
-        VALUES ($1, $2, $3, $4, $5, $6 , $7);`;
+        INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
       await pool.query(sql2, [
         trp_name,
         spend,
@@ -187,6 +186,7 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
         group_id,
         create_date,
         update_dttm,
+        payer_id,
       ]);
       res.send({ status: true, message: "Add trip success!" });
     } else {
@@ -201,71 +201,69 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
 });
 
 // Add multiple trips by group ID
-router.post(
-  "/addMultipleTripsByGroupId",
-  authenticateToken,
-  async (req, res) => {
-    const { trips } = req.body; // trips should be an array of trip objects
+router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) => {
+  const { trips } = req.body; // trips should be an array of trip objects
 
-    // Validate that 'trips' is an array
-    if (!Array.isArray(trips) || trips.length === 0) {
-      return res.status(400).json({
-        status: false,
-        message: "Trips must be an array of trip objects.",
-      });
-    }
+  // Validate that 'trips' is an array
+  if (!Array.isArray(trips) || trips.length === 0) {
+    return res.status(400).json({
+      status: false,
+      message: "Trips must be an array of trip objects.",
+    });
+  }
 
-    try {
-      const insertTripPromises = trips.map(async (trip) => {
-        const {
+  try {
+    const insertTripPromises = trips.map(async (trip) => {
+      const {
+        trp_name,
+        spend,
+        mem_id,
+        description,
+        group_id,
+        create_date,
+        update_dttm,
+        payer_id = null,
+      } = trip;
+      const createDate = create_date || format(new Date());
+
+      // Check if the trip already exists
+      const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
+      const results = await pool.query(sql, [group_id, trp_name]);
+
+      if (results.rows.length === 0) {
+        // If the trip doesn't exist, insert a new one
+        const sql2 = `
+        INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
+        await pool.query(sql2, [
           trp_name,
           spend,
           mem_id,
           description,
           group_id,
-          create_date,
+          createDate,
           update_dttm,
-        } = trip;
-        const createDate = create_date || format(new Date());
+          payer_id,
+        ]);
+        return {
+          status: true,
+          trp_name,
+          message: `Trip ${trp_name} added successfully.`,
+        };
+      } else {
+        return { status: false, message: `Trip ${trp_name} already exists!` };
+      }
+    });
 
-        // Check if the trip already exists
-        const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
-        const results = await pool.query(sql, [group_id, trp_name]);
+    // Execute all the insert queries in parallel
+    const results = await Promise.all(insertTripPromises);
 
-        if (results.rows.length === 0) {
-          // If the trip doesn't exist, insert a new one
-          const sql2 = `
-          INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date, update_dttm)
-          VALUES ($1, $2, $3, $4, $5, $6, $7);`;
-          await pool.query(sql2, [
-            trp_name,
-            spend,
-            mem_id,
-            description,
-            group_id,
-            createDate,
-            update_dttm,
-          ]);
-          return {
-            status: true,
-            trp_name,
-            message: `Trip ${trp_name} added successfully.`,
-          };
-        } else {
-          return { status: false, message: `Trip ${trp_name} already exists!` };
-        }
-      });
-
-      // Execute all the insert queries in parallel
-      const results = await Promise.all(insertTripPromises);
-
-      res.send({ status: true, results });
-    } catch (error) {
-      console.error("Error adding multiple trips:", error);
-      res.status(500).json({ error: error.message });
-    }
+    res.send({ status: true, results });
+  } catch (error) {
+    console.error("Error adding multiple trips:", error);
+    res.status(500).json({ error: error.message });
   }
-);
+});
 
 // Edit trip by group ID
 router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
