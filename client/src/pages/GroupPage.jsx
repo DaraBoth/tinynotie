@@ -163,6 +163,26 @@ export default function Group({ user, secret, setGroupInfo }) {
         },
       },
       {
+        field: "payer_id",
+        headerName: "Paid By",
+        headerAlign: "center",
+        align: "center",
+        width: 100,
+        renderCell: (params) => {
+          const payerId = params.value;
+          if (!payerId) {
+            return <span>-</span>;
+          }
+
+          const payer = member.find(m => m.id === Number(payerId));
+          return (
+            <Tooltip title={payer ? `Paid by ${payer.mem_name}` : "Unknown payer"}>
+              <span>{payer ? payer.mem_name : "Unknown"}</span>
+            </Tooltip>
+          );
+        },
+      },
+      {
         field: "mem_id",
         headerName: "Members",
         headerAlign: "center",

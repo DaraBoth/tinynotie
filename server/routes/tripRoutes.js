@@ -267,7 +267,7 @@ router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) =>
 
 // Edit trip by group ID
 router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
-  const { trp_name, spend, group_id, type, update_dttm } = req.body;
+  const { trp_name, spend, group_id, type, update_dttm, payer_id } = req.body;
 
   try {
     // Fetch the current spend value for the trip
@@ -306,9 +306,9 @@ router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
       });
     }
 
-    // Update the spend value in the database
-    const sql2 = `UPDATE trp_infm SET spend = $1 , update_dttm = $2 WHERE id = $3;`;
-    await pool.query(sql2, [newSpend, update_dttm, results.rows[0].id]);
+    // Update the spend value and payer_id in the database
+    const sql2 = `UPDATE trp_infm SET spend = $1, update_dttm = $2, payer_id = $3 WHERE id = $4;`;
+    await pool.query(sql2, [newSpend, update_dttm, payer_id, results.rows[0].id]);
 
     res.send({ status: true, message: `Edit ${trp_name} success!` });
   } catch (error) {

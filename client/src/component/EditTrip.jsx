@@ -46,6 +46,7 @@ export default function EditTrip({
   const [alertType, setAlertType] = React.useState("success");
   const [selectedChip, setSelectedChip] = React.useState(null);
   const [customAmount, setCustomAmount] = React.useState("");
+  const [selectedPayerId, setSelectedPayerId] = React.useState("");
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -57,6 +58,7 @@ export default function EditTrip({
     });
     setValue("");
     setMoney("");
+    setSelectedPayerId("");
     toggleOpen(false);
   };
 
@@ -77,6 +79,7 @@ export default function EditTrip({
         group_id,
         update_dttm: moment().format("YYYY-MM-DD HH:mm:ss"),
         type,
+        payer_id: selectedPayerId,
       })
         .then((response) => {
           if (response?.data?.status) {
@@ -195,6 +198,7 @@ export default function EditTrip({
             } else {
               setValue(newValue);
               setMoney(newValue.spend);
+              setSelectedPayerId(newValue.payer_id || "");
               setSelectedChip(currencySuggestions[currencyType][0]);
             }
           }}
@@ -341,6 +345,65 @@ export default function EditTrip({
           />
         </Box>
 
+        {value && (
+          <FormControl variant="standard" fullWidth sx={{ mt: 2 }}>
+            <InputLabel
+              color="primary"
+              sx={{
+                color: colors.primary[500],
+              }}
+            >
+              Who paid?
+            </InputLabel>
+            <Select
+              value={selectedPayerId}
+              onChange={(e) => setSelectedPayerId(e.target.value)}
+              color="primary"
+              sx={{
+                "& .MuiSelect-select": {
+                  color: colors.primary[600],
+                },
+                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[400],
+                },
+                "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[500],
+                },
+                "& .MuiSelect-icon": {
+                  color: colors.primary[500],
+                },
+              }}
+            >
+              <MenuItem value="" sx={{ color: colors.primary[600] }}>
+                <em>None</em>
+              </MenuItem>
+              {member?.map((item) => (
+                <MenuItem
+                  key={item.id}
+                  value={item.id}
+                  sx={{
+                    color: colors.primary[600],
+                    "&:hover": {
+                      backgroundColor: colors.primary[400],
+                      color: "#fff",
+                    },
+                    "&.Mui-selected": {
+                      backgroundColor: colors.primary[400],
+                      color: "#fff",
+                      "&:hover": {
+                        backgroundColor: colors.primary[500],
+                        color: "#fff",
+                      },
+                    },
+                  }}
+                >
+                  {item.mem_name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+
         <Box display="flex" justifyContent="space-between" sx={{ mt: 2 }}>
           <Button
             onClick={() => handleTransaction("UPDATE")}
@@ -469,9 +532,6 @@ export default function EditTrip({
                   },
                 }}
               >
-                <MenuItem value="" sx={{ color: colors.primary[600] }}>
-                  <em>None</em>
-                </MenuItem>
                 {member?.map((item) => (
                   <MenuItem
                     key={item.id}
