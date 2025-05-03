@@ -13,6 +13,10 @@ import {
   Chip,
   IconButton,
   useTheme,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SaveIcon from "@mui/icons-material/Save";
@@ -49,6 +53,7 @@ export default function EditTrip({
     setDialogValue({
       trp_name: "",
       spended: "",
+      payer_id: "",
     });
     setValue("");
     setMoney("");
@@ -58,6 +63,7 @@ export default function EditTrip({
   const [dialogValue, setDialogValue] = React.useState({
     trp_name: "",
     spended: "",
+    payer_id: "",
   });
 
   const handleTransaction = (type) => {
@@ -104,6 +110,7 @@ export default function EditTrip({
       create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
       update_dttm: moment().format("YYYY-MM-DD HH:mm:ss"),
       type: "ADD",
+      payer_id: dialogValue.payer_id,
     })
       .then((response) => {
         if (response?.data?.status) {
@@ -120,6 +127,7 @@ export default function EditTrip({
           ...dialogValue,
           trp_name: "",
           spended: "",
+          payer_id: "",
         });
         handleClose();
         setLoading(false);
@@ -169,7 +177,7 @@ export default function EditTrip({
       >
         <Autocomplete
           value={value}
-          onChange={(event, newValue) => {
+          onChange={(_, newValue) => {
             if (typeof newValue === "string") {
               setTimeout(() => {
                 toggleOpen(true);
@@ -428,6 +436,67 @@ export default function EditTrip({
                 },
               }}
             />
+            <FormControl variant="standard" fullWidth sx={{ mt: 2 }}>
+              <InputLabel
+                color="secondary"
+                sx={{
+                  color: colors.primary[500],
+                }}
+              >
+                Who paid?
+              </InputLabel>
+              <Select
+                value={dialogValue.payer_id}
+                onChange={(e) =>
+                  setDialogValue({
+                    ...dialogValue,
+                    payer_id: e.target.value,
+                  })
+                }
+                color="secondary"
+                sx={{
+                  "& .MuiSelect-select": {
+                    color: colors.primary[600],
+                  },
+                  "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                    borderColor: colors.primary[400],
+                  },
+                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: colors.primary[500],
+                  },
+                  "& .MuiSelect-icon": {
+                    color: colors.primary[500],
+                  },
+                }}
+              >
+                <MenuItem value="" sx={{ color: colors.primary[600] }}>
+                  <em>None</em>
+                </MenuItem>
+                {member?.map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    value={item.id}
+                    sx={{
+                      color: colors.primary[600],
+                      "&:hover": {
+                        backgroundColor: colors.primary[400],
+                        color: "#fff",
+                      },
+                      "&.Mui-selected": {
+                        backgroundColor: colors.primary[400],
+                        color: "#fff",
+                        "&:hover": {
+                          backgroundColor: colors.primary[500],
+                          color: "#fff",
+                        },
+                      },
+                    }}
+                  >
+                    {item.mem_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </DialogContent>
           <DialogActions sx={{ display: "flex", flexDirection: "row" }}>
             <Button

@@ -32,13 +32,13 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   try {
     const sql = `
       SELECT g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date,
-             CASE 
+             CASE
                WHEN g.admin_id = $1::int THEN TRUE
                ELSE FALSE
              END AS "isAdmin"
       FROM grp_infm g
       LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $1::int
-      WHERE g.visibility = 'public' 
+      WHERE g.visibility = 'public'
          OR g.admin_id = $1::int
          OR gu.user_id IS NOT NULL
       ORDER BY g.id ASC;
@@ -200,8 +200,8 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
 
     // Update the group's visibility
     const updateVisibilitySql = `
-      UPDATE grp_infm 
-      SET visibility = $2 
+      UPDATE grp_infm
+      SET visibility = $2
       WHERE id = $1::int;
     `;
     await pool.query(updateVisibilitySql, [group_id, visibility]);
@@ -216,7 +216,7 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
 
       // Add new allowed users
       const insertUserSql = `
-        INSERT INTO grp_users (group_id, user_id) 
+        INSERT INTO grp_users (group_id, user_id)
         VALUES ($1::int, $2::int);
       `;
 
@@ -382,16 +382,16 @@ router.get("/getGroupDetail", async (req, res) => {
     if (userIdInt) {
       // If user_id is provided and is a valid integer, include it in the query and parameters
       groupCheckSql = `
-        SELECT 
-          g.id, 
-          g.grp_name, 
-          g.currency, 
+        SELECT
+          g.id,
+          g.grp_name,
+          g.currency,
           g.visibility,
-          CASE 
+          CASE
             WHEN g.admin_id = $2 THEN TRUE  -- Check if user is admin
             ELSE FALSE
           END AS "isAdmin",
-          CASE 
+          CASE
             WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
             WHEN (g.admin_id = $2 OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
             ELSE FALSE
@@ -404,13 +404,13 @@ router.get("/getGroupDetail", async (req, res) => {
     } else {
       // If user_id is not provided, exclude user-specific checks
       groupCheckSql = `
-        SELECT 
-          g.id, 
-          g.grp_name, 
-          g.currency, 
+        SELECT
+          g.id,
+          g.grp_name,
+          g.currency,
           g.visibility,
           FALSE AS "isAdmin",  -- No user_id provided, so not admin
-          CASE 
+          CASE
             WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
             ELSE FALSE
           END AS "isAuthorized"
@@ -446,6 +446,78 @@ router.get("/getGroupDetail", async (req, res) => {
   } catch (error) {
     console.error("error", error);
     res.json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /groups/getMemberByGroupId:
+ *   get:
+ *     summary: Get members by group ID
+ *     tags: [Groups]
+ *     parameters:
+ *       - in: query
+ *         name: group_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Group ID
+ *     responses:
+ *       200:
+ *         description: List of members in the group
+ *       404:
+ *         description: Group not found
+ *       500:
+ *         description: Internal server error
+ */
+
+// Get members by group ID
+router.get("/getMemberByGroupId", async (req, res) => {
+  const { group_id } = req.query;
+
+  try {
+    // Check if the group exists
+    const groupCheckSql = `SELECT visibility FROM grp_infm WHERE id = $1;`;
+    const groupCheckResult = await pool.query(groupCheckSql, [group_id]);
+
+    if (groupCheckResult.rows.length === 0) {
+      // Group not found
+      return res
+        .status(404)
+        .send({ status: false, message: "Group not found" });
+    }
+
+    const { visibility } = groupCheckResult.rows[0];
+
+    if (visibility === "private") {
+      // If the group is private, authenticate the user
+      authenticateToken(req, res, async () => {
+        try {
+          // Fetch members for the authenticated user
+          const sql = `SELECT * FROM member_infm WHERE group_id = $1 ORDER BY id;`;
+          const results = await pool.query(sql, [group_id]);
+
+          res.send({
+            status: true,
+            data: results.rows.length > 0 ? results.rows : [],
+          });
+        } catch (error) {
+          handleError(error, res);
+        }
+      });
+    } else {
+      // If the group is public, fetch members without authentication
+      const sql = `SELECT * FROM member_infm WHERE group_id = $1 ORDER BY id;`;
+      const results = await pool.query(sql, [group_id]);
+
+      res.send({
+        status: true,
+        data: results.rows.length > 0 ? results.rows : [],
+      });
+    }
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ status: false, error: error.message });
   }
 });
 
