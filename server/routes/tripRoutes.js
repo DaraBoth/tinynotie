@@ -381,6 +381,73 @@ router.get("/getTripByGroupId", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /trips/editTripMem:
+ *   post:
+ *     summary: Edit trip members
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               trp_id:
+ *                 type: integer
+ *                 description: ID of the trip to edit
+ *               group_id:
+ *                 type: integer
+ *                 description: ID of the group the trip belongs to
+ *               trp_name:
+ *                 type: string
+ *                 description: Name of the trip (for response message)
+ *               mem_id:
+ *                 type: string
+ *                 description: JSON string of member IDs
+ *     responses:
+ *       200:
+ *         description: Trip members updated successfully
+ *       500:
+ *         description: Internal server error
+ */
+// Edit trip members
+router.post("/editTripMem", authenticateToken, async (req, res) => {
+  const { trp_id, group_id, trp_name, mem_id } = req.body;
+
+  try {
+    // Check if the trip exists
+    const checkTripSql = `SELECT id FROM trp_infm WHERE id = $1 AND group_id = $2;`;
+    const checkTripResult = await pool.query(checkTripSql, [trp_id, group_id]);
+
+    if (checkTripResult.rows.length === 0) {
+      return res.json({
+        status: false,
+        message: `Trip with ID ${trp_id} not found in group ${group_id}!`,
+      });
+    }
+
+    // Update the trip's members
+    const updateSql = `UPDATE trp_infm SET mem_id = $1, update_dttm = $2 WHERE id = $3;`;
+    await pool.query(updateSql, [mem_id, new Date().toISOString(), trp_id]);
+
+    res.send({
+      status: true,
+      message: `Members for trip "${trp_name}" updated successfully!`
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({
+      status: false,
+      message: "An error occurred while updating trip members",
+      error: error.message,
+    });
+  }
+});
+
 // Delete trip by ID
 router.delete("/deleteTripById", authenticateToken, async (req, res) => {
   const { trip_id, group_id } = req.body;
