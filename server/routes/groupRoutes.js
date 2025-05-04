@@ -757,4 +757,77 @@ router.get("/getMemberByGroupId", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /groups/getGroupVisibility:
+ *   get:
+ *     summary: Get group visibility settings
+ *     tags: [Groups]
+ *     parameters:
+ *       - in: query
+ *         name: group_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Group ID
+ *     responses:
+ *       200:
+ *         description: Group visibility settings retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
+  const { group_id } = req.query;
+  const { _id: user_id } = req.user;
+
+  try {
+    // First, check if the group exists and get its visibility
+    const groupCheckSql = `
+      SELECT
+        g.id,
+        g.visibility,
+        g.admin_id,
+        CASE WHEN g.admin_id = $2 THEN TRUE ELSE FALSE END AS is_admin
+      FROM grp_infm g
+      WHERE g.id = $1;
+    `;
+    const groupCheckResult = await pool.query(groupCheckSql, [group_id, user_id]);
+
+    if (groupCheckResult.rows.length === 0) {
+      return res.json({
+        status: false,
+        message: "Group not found"
+      });
+    }
+
+    const groupData = groupCheckResult.rows[0];
+
+    // Get the list of allowed users if the group is private
+    let allowedUsers = [];
+    if (groupData.visibility === 'private') {
+      const allowedUsersSql = `
+        SELECT u.id, u.username, u.email, u.profile_image
+        FROM users u
+        JOIN grp_users gu ON u.id = gu.user_id
+        WHERE gu.group_id = $1;
+      `;
+      const allowedUsersResult = await pool.query(allowedUsersSql, [group_id]);
+      allowedUsers = allowedUsersResult.rows;
+    }
+
+    res.json({
+      status: true,
+      data: {
+        group_id: groupData.id,
+        visibility: groupData.visibility,
+        is_admin: groupData.is_admin,
+        allowed_users: allowedUsers
+      }
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.json({ status: false, error: error.message });
+  }
+});
+
 export default router;
