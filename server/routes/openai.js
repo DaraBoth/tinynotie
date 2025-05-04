@@ -1097,10 +1097,6 @@ const handleMessage = async function (messageObj) {
 
 };
 
-// This function has been moved to excelUtils.js
-
-// These functions have been moved to excelUtils.js
-
 async function ErrorReport(messageObj, errorMessage) {
   return await darabothSendMessage(messageObj, errorMessage);
 }
@@ -1142,10 +1138,6 @@ const defaultChatHistory = [
     ],
   },
 ];
-
-// This section has been moved to utility modules
-
-// This function has been moved to aiUtils.js
 
 router.get("/getWeatherNotification", async (_, res) => {
   const payload = {

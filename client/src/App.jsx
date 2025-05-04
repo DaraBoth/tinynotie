@@ -19,6 +19,7 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import TranslatePage from "./pages/TranslatePage";
 import useServiceWorker from "./component/useServiceWorker";
 import NotFoundPage from "./pages/NotFoundPage";
+import RegisterGuide from "./pages/RegisterGuide";
 import Lottie from "lottie-react";
 import moon from "./assets/moon.json";
 import sun from "./assets/sun.json";
@@ -119,6 +120,7 @@ function App() {
               }
             />
             <Route path="/translate" element={<TranslatePage />} />
+            <Route path="/register-guide" element={<RegisterGuide />} />
             <Route path="/*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>

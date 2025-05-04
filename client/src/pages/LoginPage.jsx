@@ -18,6 +18,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Person4RoundedIcon from "@mui/icons-material/Person4Rounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import TelegramIcon from "@mui/icons-material/Telegram";
 import { tokens } from "../theme";
 import { Alert } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -100,14 +101,15 @@ export default function Login({ setUser, setSecret }) {
     <Box
       sx={{
         width: "100%",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
-        padding: 3,
-        background: colors.primary[900], // Using the darkest shade of primary color for background
+        alignItems: "center", // Center vertically on all screen sizes
+        padding: { xs: 2, sm: 3 },
+        background: colors.primary[900],
         backgroundSize: "cover",
         backgroundPosition: "center",
+        overflowY: "auto",
       }}
     >
       {/* <MeowFootprint /> */}
@@ -122,24 +124,33 @@ export default function Login({ setUser, setSecret }) {
           <form onSubmit={handleSubmit}>
             <Box
               sx={{
-                maxWidth: "500px",
+                width: "100%",
+                maxWidth: "400px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 2,
-                padding: 4,
-                borderRadius: "12px",
-                backgroundColor: colors.grey[900], // Dark grey background for the form
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)", // Slightly stronger shadow for contrast
+                gap: 1.5,
+                padding: { xs: 2.5, sm: 3.5 },
+                borderRadius: "16px",
+                backgroundColor: colors.primary[800], // Adjusted to match the image
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)",
+                transition: "all 0.3s ease",
+                position: "relative",
+                zIndex: 1,
               }}
             >
               <Typography
-                variant="h4"
-                color={colors.primary[500]}
+                variant="h5"
+                color={colors.blueAccent[300]}
                 textAlign="center"
-                fontWeight="bold"
+                fontWeight="medium"
+                sx={{
+                  fontSize: { xs: "1.4rem", sm: "1.6rem" },
+                  mb: 2,
+                  letterSpacing: "0.5px",
+                }}
               >
                 {isRegister ? "Register" : "Login"} to{" "}
-                <span style={{ color: colors.primary[300] }}>TinyNotie</span>
+                <span style={{ color: "#fff" }}>TinyNotie</span>
               </Typography>
               <TextField
                 fullWidth
@@ -151,45 +162,94 @@ export default function Login({ setUser, setSecret }) {
                 name="username"
                 error={Boolean(touched.username && errors.username)}
                 helperText={touched.username && errors.username}
+                InputLabelProps={{
+                  shrink: true,
+                  sx: {
+                    position: 'absolute',
+                    top: '-6px',
+                    left: '-5px',
+                    backgroundColor: 'transparent',
+                    fontSize: '0.8rem',
+                    paddingLeft: 0,
+                    paddingRight: 0,
+                    color: colors.blueAccent[300],
+                    '&:before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      bottom: 0,
+                      width: '100%',
+                      borderBottom: `1px solid ${colors.blueAccent[400]}`,
+                      zIndex: -1,
+                    },
+                  }
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
                       <Person4RoundedIcon
-                        style={{ color: colors.primary[300] }}
+                        style={{ color: colors.blueAccent[300] }}
                       />
                     </InputAdornment>
                   ),
                   style: {
-                    color: colors.primary[100], // Ensure the text color adapts to the theme
+                    color: colors.grey[100], // Ensure the text color adapts to the theme
+                    paddingLeft: '8px', // Add some padding to match the image
                   },
                 }}
                 sx={{
-                  fontSize: "18px",
                   "& .MuiOutlinedInput-root": {
+                    height: { xs: "48px", sm: "52px" },
+                    fontSize: { xs: "0.9rem", sm: "0.95rem" },
+                    borderRadius: "8px",
+                    backgroundColor: "rgba(30, 31, 48, 0.7)",
                     "& fieldset": {
-                      borderColor: colors.primary[500], // Border color matching primary
+                      borderColor: colors.blueAccent[400],
+                      borderWidth: "1px",
+                      borderTopWidth: "0px", // Remove top border to match the image
+                      borderTopLeftRadius: 0,
+                      borderTopRightRadius: 0,
                     },
                     "&:hover fieldset": {
-                      borderColor: colors.primary[300], // Hover border color
+                      borderColor: colors.blueAccent[300],
                     },
                     "&.Mui-focused fieldset": {
-                      borderColor: colors.primary[100], // Focused border color
+                      borderColor: colors.blueAccent[200],
+                      borderWidth: "1px",
+                      borderTopWidth: "0px", // Keep top border removed when focused
+                    },
+                    "& input": {
+                      color: colors.grey[100],
+                      paddingTop: "12px", // Adjust padding to match the image
                     },
                   },
                   "& .MuiInputLabel-root": {
-                    color: colors.primary[500], // Label color
+                    color: colors.blueAccent[300],
+                    fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                    transform: "translate(14px, -6px) scale(1)",
+                    "&.Mui-focused, &.MuiFormLabel-filled": {
+                      transform: "translate(14px, -6px) scale(1)",
+                      color: colors.blueAccent[300],
+                    },
+                  },
+                  "& .MuiInputAdornment-root": {
+                    marginRight: "4px",
+                    marginLeft: "-4px", // Adjust the left margin to match the image
+                    "& .MuiSvgIcon-root": {
+                      color: colors.blueAccent[300],
+                      fontSize: "1.2rem", // Adjust icon size to match the image
+                    },
                   },
                   "& input:-webkit-autofill": {
-                    WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
-                    WebkitTextFillColor: `${colors.primary[100]} !important`,
-                    transition:
-                      "background-color 5000s ease-in-out 0s !important",
+                    WebkitBoxShadow: `0 0 0 1000px rgba(30, 31, 48, 0.7) inset !important`,
+                    WebkitTextFillColor: `${colors.grey[100]} !important`,
+                    transition: "background-color 5000s ease-in-out 0s !important",
                   },
-                  "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus":
-                    {
-                      WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
-                      WebkitTextFillColor: `${colors.primary[100]} !important`,
-                    },
+                  "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus": {
+                    WebkitBoxShadow: `0 0 0 1000px rgba(30, 31, 48, 0.7) inset !important`,
+                    WebkitTextFillColor: `${colors.grey[100]} !important`,
+                  },
+                  marginBottom: 1,
                 }}
               />
 
@@ -203,11 +263,33 @@ export default function Login({ setUser, setSecret }) {
                 name="password"
                 error={Boolean(touched.password && errors.password)}
                 helperText={touched.password && errors.password}
+                InputLabelProps={{
+                  shrink: true,
+                  sx: {
+                    position: 'absolute',
+                    top: '-6px',
+                    left: '-5px',
+                    backgroundColor: 'transparent',
+                    fontSize: '0.8rem',
+                    paddingLeft: 0,
+                    paddingRight: 0,
+                    color: colors.blueAccent[300],
+                    '&:before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      bottom: 0,
+                      width: '100%',
+                      borderBottom: `1px solid ${colors.blueAccent[400]}`,
+                      zIndex: -1,
+                    },
+                  }
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
                       <LockOutlinedIcon
-                        style={{ color: colors.primary[300] }}
+                        style={{ color: colors.blueAccent[300] }}
                       />
                     </InputAdornment>
                   ),
@@ -229,43 +311,70 @@ export default function Login({ setUser, setSecret }) {
                          />
                         ) : (
                           <VisibilityOff
-                            style={{ color: colors.primary[300] }}
+                            style={{ color: colors.blueAccent[300] }}
                           />
                         )}
                       </IconButton>
                     </InputAdornment>
                   ),
                   style: {
-                    color: colors.primary[100], // Ensure the text color adapts to the theme
+                    color: colors.grey[100], // Ensure the text color adapts to the theme
+                    paddingLeft: '8px', // Add some padding to match the image
                   },
                 }}
                 sx={{
-                  fontSize: "18px",
                   "& .MuiOutlinedInput-root": {
+                    height: { xs: "48px", sm: "52px" },
+                    fontSize: { xs: "0.9rem", sm: "0.95rem" },
+                    borderRadius: "8px",
+                    backgroundColor: "rgba(30, 31, 48, 0.7)",
                     "& fieldset": {
-                      borderColor: colors.primary[500],
+                      borderColor: colors.blueAccent[400],
+                      borderWidth: "1px",
+                      borderTopWidth: "0px", // Remove top border to match the image
+                      borderTopLeftRadius: 0,
+                      borderTopRightRadius: 0,
                     },
                     "&:hover fieldset": {
-                      borderColor: colors.primary[300],
+                      borderColor: colors.blueAccent[300],
                     },
                     "&.Mui-focused fieldset": {
-                      borderColor: colors.primary[100],
+                      borderColor: colors.blueAccent[200],
+                      borderWidth: "1px",
+                      borderTopWidth: "0px", // Keep top border removed when focused
+                    },
+                    "& input": {
+                      color: colors.grey[100],
+                      paddingTop: "12px", // Adjust padding to match the image
                     },
                   },
                   "& .MuiInputLabel-root": {
-                    color: colors.primary[500],
+                    color: colors.blueAccent[300],
+                    fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                    transform: "translate(14px, -6px) scale(1)",
+                    "&.Mui-focused, &.MuiFormLabel-filled": {
+                      transform: "translate(14px, -6px) scale(1)",
+                      color: colors.blueAccent[300],
+                    },
+                  },
+                  "& .MuiInputAdornment-root": {
+                    marginRight: "4px",
+                    marginLeft: "-4px", // Adjust the left margin to match the image
+                    "& .MuiSvgIcon-root": {
+                      color: colors.blueAccent[300],
+                      fontSize: "1.2rem", // Adjust icon size to match the image
+                    },
                   },
                   "& input:-webkit-autofill": {
-                    WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
-                    WebkitTextFillColor: `${colors.primary[100]} !important`,
-                    transition:
-                      "background-color 5000s ease-in-out 0s !important",
+                    WebkitBoxShadow: `0 0 0 1000px rgba(30, 31, 48, 0.7) inset !important`,
+                    WebkitTextFillColor: `${colors.grey[100]} !important`,
+                    transition: "background-color 5000s ease-in-out 0s !important",
                   },
-                  "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus":
-                    {
-                      WebkitBoxShadow: `0 0 0 1000px ${colors.grey[900]} inset !important`,
-                      WebkitTextFillColor: `${colors.primary[100]} !important`,
-                    },
+                  "& input:-webkit-autofill:hover, & input:-webkit-autofill:focus": {
+                    WebkitBoxShadow: `0 0 0 1000px rgba(30, 31, 48, 0.7) inset !important`,
+                    WebkitTextFillColor: `${colors.grey[100]} !important`,
+                  },
+                  marginBottom: 1,
                 }}
               />
 
@@ -276,18 +385,27 @@ export default function Login({ setUser, setSecret }) {
                 fullWidth
                 sx={{
                   mt: 2,
-                  height: "50px",
-                  fontWeight: "bold",
-                  fontSize: "18px",
-                  borderRadius: "10px",
-                  color: colors.primary[900], // Text color
-                  backgroundColor: colors.primary[600], // Primary button color
+                  height: { xs: "46px", sm: "50px" },
+                  fontWeight: "medium",
+                  fontSize: { xs: "0.95rem", sm: "1rem" },
+                  borderRadius: "8px",
+                  color: "#fff",
+                  backgroundColor: colors.blueAccent[500],
+                  boxShadow: "none",
+                  textTransform: "none",
+                  letterSpacing: "0.5px",
                   "&:hover": {
-                    backgroundColor: colors.primary[700], // Hover color
+                    backgroundColor: colors.blueAccent[600],
+                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+                  },
+                  "&:active": {
+                    transform: "translateY(1px)",
+                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
                   },
                   "&:disabled": {
-                    backgroundColor: colors.grey[500], // Disabled color
+                    backgroundColor: colors.grey[500],
                   },
+                  transition: "all 0.2s ease",
                 }}
                 disabled={loading}
                 endIcon={
@@ -296,8 +414,8 @@ export default function Login({ setUser, setSecret }) {
                       animationData={goingggg}
                       loop={true}
                       style={{
-                        width: 90,
-                        height: 90,
+                        width: 70,
+                        height: 70,
                         mixBlendMode: "multiply",
                       }}
                     />
@@ -306,32 +424,97 @@ export default function Login({ setUser, setSecret }) {
               >
                 {!loading && (isRegister ? "Register" : "Login")}
               </Button>
-              {/* <Box display="flex" justifyContent="center" mt={2}>
-                <Typography variant="body2" color={colors.grey[600]}>
-                  {isRegister
-                    ? "Already have an account?"
-                    : "Don't have an account?"}
-                </Typography>
-                <Button
-                  disableRipple
-                  onClick={() => setIsRegister(!isRegister)}
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                mt={3}
+                sx={{
+                  border: `1px dashed ${theme.palette.mode === "dark" ? colors.blueAccent[400] : colors.primary[300]}`, // Blue border for better visibility
+                  borderRadius: '12px',
+                  backgroundColor: theme.palette.mode === "dark" ? "rgba(30, 31, 48, 0.8)" : colors.grey[100], // Darker background to match login inputs
+                  boxShadow: theme.palette.mode === "dark" ? "0 4px 12px rgba(0, 0, 0, 0.3)" : "0 4px 12px rgba(0, 0, 0, 0.05)",
+                  padding: { xs: "16px", sm: "20px" },
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                <Typography
+                  variant="body1"
                   sx={{
-                    ml: 1,
-                    textTransform: "none",
-                    textDecoration: "underline",
-                    color: colors.primary[300], // Link color
-                    "&:hover": {
-                      backgroundColor: "transparent",
-                    },
-                    padding: 0,
-                    minHeight: "auto",
-                    fontSize: "14px",
-                    border: "none",
+                    color: theme.palette.mode === "dark" ? colors.blueAccent[200] : colors.primary[500], // Brighter blue for better visibility
+                    textAlign: "center",
+                    fontWeight: "bold",
+                    mb: 1, // Slightly more margin
+                    fontSize: { xs: "0.95rem", sm: "1rem" },
+                    fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, sans-serif',
+                    textShadow: "0px 0px 1px rgba(0, 0, 0, 0.3)", // Subtle text shadow for better contrast
                   }}
                 >
-                  {isRegister ? "Login" : "Register"}
+                  Don't have an account?
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: theme.palette.mode === "dark" ? colors.grey[200] : colors.grey[700], // Much lighter color for better visibility
+                    textAlign: "center",
+                    mb: 0.5,
+                    fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                    lineHeight: 1.4,
+                    opacity: 1, // Full opacity for better visibility
+                    fontWeight: 400, // Slightly bolder for better visibility
+                    padding: "4px 8px", // Add padding
+                    backgroundColor: "rgba(255, 255, 255, 0.05)", // Subtle background for better contrast
+                    borderRadius: "4px", // Rounded corners
+                    border: `1px solid ${theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"}`, // Subtle border
+                  }}
+                >
+                  Create a secure account using your Telegram username
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: theme.palette.mode === "dark" ? colors.greenAccent[200] : colors.greenAccent[600], // Brighter green for better visibility
+                    textAlign: "center",
+                    mb: 1.5,
+                    fontSize: { xs: "0.8rem", sm: "0.85rem" },
+                    fontStyle: "italic",
+                    lineHeight: 1.3,
+                    fontWeight: 500, // Bolder for better visibility
+                    textShadow: "0px 0px 1px rgba(0, 0, 0, 0.3)", // Subtle text shadow for better contrast
+                  }}
+                >
+                  Quick registration - takes less than 30 seconds!
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate("/register-guide")}
+                  startIcon={<TelegramIcon sx={{ fontSize: { xs: "1rem", sm: "1.1rem" } }} />}
+                  sx={{
+                    textTransform: "none",
+                    color: theme.palette.mode === "dark" ? colors.blueAccent[300] : colors.primary[500],
+                    borderColor: theme.palette.mode === "dark" ? colors.blueAccent[400] : colors.primary[300],
+                    backgroundColor: "transparent",
+                    "&:hover": {
+                      backgroundColor: "rgba(82, 118, 255, 0.08)",
+                      borderColor: theme.palette.mode === "dark" ? colors.blueAccent[300] : colors.primary[400],
+                      color: theme.palette.mode === "dark" ? colors.blueAccent[200] : colors.primary[600],
+                    },
+                    "&:active": {
+                      transform: "translateY(1px)",
+                    },
+                    padding: { xs: "6px 12px", sm: "8px 16px" },
+                    fontSize: { xs: "0.85rem", sm: "0.9rem" },
+                    fontWeight: "medium",
+                    borderRadius: "8px",
+                    height: { xs: "36px", sm: "40px" },
+                    transition: "all 0.2s ease",
+                    width: "100%",
+                  }}
+                >
+                  Register via Telegram Bot
                 </Button>
-              </Box> */}
+              </Box>
             </Box>
           </form>
         )}

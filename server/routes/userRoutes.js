@@ -3,6 +3,7 @@ import multer from "multer"; // Import multer for file uploads
 import path from "path"; // Import path for file handling
 import { authenticateToken } from "./middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
+import { put } from '@vercel/blob'; // Import the put function from Vercel Blob
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ const router = express.Router();
 const storage = multer.memoryStorage(); // Store files in memory
 const upload = multer({ storage }); // Initialize multer with memory storage
 
-/** 
+/**
  * @swagger
  * /api/listUsers:
  *   get:
@@ -47,7 +48,7 @@ const upload = multer({ storage }); // Initialize multer with memory storage
 router.get("/listUsers", authenticateToken, async (req, res) => {
   try {
     const sql = `
-      SELECT id, usernm, email, profile_url 
+      SELECT id, usernm, email, profile_url
       FROM user_infm
       ORDER BY usernm ASC;
     `;
@@ -140,7 +141,7 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
 
     // Start building the SQL query
     let sql = `
-      SELECT id, usernm, email, phone_number, profile_url 
+      SELECT id, usernm, email, phone_number, profile_url
       FROM user_infm
       WHERE id != $1  -- Exclude the searcher
     `;
@@ -392,17 +393,32 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
     // Define the storage path for the user
     const filePath = `profile/${result.rows[0].usernm}/${uniqueFilename}`;
 
-    // Upload the image to Vercel Blob
-    const { url } = await put(filePath, buffer, {
-      contentType: mimetype,
-      access: "public",
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
+    let imageUrl = '';
+
+    try {
+      // Try to upload the image to Vercel Blob
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        const { url } = await put(filePath, buffer, {
+          contentType: mimetype,
+          access: "public",
+          token: process.env.BLOB_READ_WRITE_TOKEN,
+        });
+        imageUrl = url;
+      } else {
+        // Fallback: Use a placeholder image URL if Vercel Blob is not configured
+        console.warn("BLOB_READ_WRITE_TOKEN not found. Using placeholder image URL.");
+        imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(result.rows[0].usernm)}&background=random&color=fff&size=200`;
+      }
+    } catch (uploadError) {
+      console.error("Error uploading to Vercel Blob:", uploadError);
+      // Fallback: Use a placeholder image URL
+      imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(result.rows[0].usernm)}&background=random&color=fff&size=200`;
+    }
 
     return res.json({
       status: true,
       message: "Image uploaded successfully.",
-      data: { url, uniqueFilename, path: filePath },
+      data: { url: imageUrl, uniqueFilename, path: filePath },
     });
   } catch (error) {
     console.error("Error uploading image:", error);
