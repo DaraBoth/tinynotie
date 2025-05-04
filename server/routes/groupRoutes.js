@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticateToken } from "./middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
-import { format } from "date-fns";
+import moment from "moment";
 
 const router = express.Router();
 
@@ -94,7 +94,7 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   } = req.body;
   let create_date;
   if (!req.body.create_date) {
-    create_date = format(new Date());
+    create_date = moment().format("YYYY-MM-DD HH:mm:ss");
   } else {
     create_date = req.body.create_date;
   }

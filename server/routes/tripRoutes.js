@@ -1,6 +1,7 @@
 import express from "express";
 import { authenticateToken } from "./middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
+import moment from "moment";
 
 const router = express.Router();
 
@@ -169,7 +170,7 @@ const router = express.Router();
 // Add trip by group ID
 router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
   const { trp_name, spend, mem_id, description, group_id, update_dttm, payer_id = null } = req.body;
-  let create_date = req.body?.create_date || format(new Date());
+  let create_date = req.body?.create_date || moment().format("YYYY-MM-DD HH:mm:ss");
   try {
     const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
     const results = await pool.query(sql, [group_id, trp_name]);
@@ -224,7 +225,7 @@ router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) =>
         update_dttm,
         payer_id = null,
       } = trip;
-      const createDate = create_date || format(new Date());
+      const createDate = create_date || moment().format("YYYY-MM-DD HH:mm:ss");
 
       // Check if the trip already exists
       const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
