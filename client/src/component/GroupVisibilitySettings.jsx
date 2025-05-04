@@ -51,16 +51,44 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   const [isSearching, setIsSearching] = useState(false); // Add loading state for search
 
   useEffect(() => {
-    if (open) {
-      setLoading(true);
-      triggerGetVisibility({ group_id: groupId }).then((response) => {
-        if (response.data?.status) {
-          setVisibility(response.data.data.visibility);
-          setAllowedUsers(response.data.data.allowed_users || []);
+    let isMounted = true;
+
+    const fetchVisibility = async () => {
+      if (!open || !groupId) return;
+
+      try {
+        setLoading(true);
+        const response = await triggerGetVisibility({ group_id: groupId });
+
+        if (isMounted) {
+          if (response.data?.status) {
+            setVisibility(response.data.data.visibility || "private");
+            setAllowedUsers(response.data.data.allowed_users || []);
+          } else {
+            // Handle error response
+            setSnackbarMessage(response.data?.message || "Failed to load group visibility settings");
+            setSnackbarSuccess(false);
+          }
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error fetching visibility:", error);
+          setSnackbarMessage("Error loading settings. Please try again.");
+          setSnackbarSuccess(false);
+        }
+      } finally {
+        if (isMounted) {
           setLoading(false);
         }
-      });
-    }
+      }
+    };
+
+    fetchVisibility();
+
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
   }, [open, groupId, triggerGetVisibility]);
 
   const handleVisibilityToggle = (event) => {
@@ -73,18 +101,37 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   };
 
   const handleSearch = async () => {
-    setIsSearching(true); // Start loading
-    const response = await triggerUserSearch({
-      searchWords: searchQuery,
-      filterBy: "ALL",
-    });
-    if (response.data?.status) {
-      const filteredResults = response.data.data.filter(
-        (user) => !allowedUsers.some((u) => u.id === user.id)
-      );
-      setAvailableUsers(filteredResults);
+    if (!searchQuery.trim()) {
+      setAvailableUsers([]);
+      return;
     }
-    setIsSearching(false); // Stop loading
+
+    try {
+      setIsSearching(true); // Start loading
+      const response = await triggerUserSearch({
+        searchWords: searchQuery,
+        filterBy: "ALL",
+      });
+
+      if (response.data?.status) {
+        // Filter out users that are already in the allowed list
+        const filteredResults = response.data.data.filter(
+          (user) => !allowedUsers.some((u) => u.id === user.id)
+        );
+        setAvailableUsers(filteredResults);
+      } else {
+        setSnackbarMessage(response.data?.message || "Search failed");
+        setSnackbarSuccess(false);
+        setAvailableUsers([]);
+      }
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setSnackbarMessage("Error searching users. Please try again.");
+      setSnackbarSuccess(false);
+      setAvailableUsers([]);
+    } finally {
+      setIsSearching(false); // Stop loading
+    }
   };
 
   const handleDragEnd = (result) => {
@@ -117,19 +164,31 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   };
 
   const handleSave = async () => {
-    setLoading(true);
-    const response = await triggerUpdateVisibility({
-      group_id: groupId,
-      visibility,
-      allowed_users:
-        visibility === "private" ? allowedUsers.map((user) => user.id) : [],
-    }).unwrap();
+    try {
+      setLoading(true);
 
-    setSnackbarMessage(response.message || "Error updating group visibility.");
-    setSnackbarSuccess(response.status);
-    setLoading(false);
-    setHasUnsavedChanges(false);
-    onClose();
+      // Prepare the allowed users list only if visibility is private
+      const allowedUserIds = visibility === "private"
+        ? allowedUsers.map((user) => user.id)
+        : [];
+
+      const response = await triggerUpdateVisibility({
+        group_id: groupId,
+        visibility,
+        allowed_users: allowedUserIds,
+      }).unwrap();
+
+      setSnackbarMessage(response.message || "Group visibility updated successfully.");
+      setSnackbarSuccess(response.status);
+      setHasUnsavedChanges(false);
+      onClose();
+    } catch (error) {
+      console.error("Error updating visibility:", error);
+      setSnackbarMessage(error.data?.message || "Error updating group visibility. Please try again.");
+      setSnackbarSuccess(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -146,42 +205,67 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
     onClose();
   };
 
-  const getItemStyle = (isDragging, draggableStyle) => ({
+  // Memoize styles to prevent recalculations during renders
+  const itemStyle = React.useMemo(() => ({
     userSelect: "none",
-    background: isDragging ? colors.primary[500] : colors.primary[500],
-    cursor: isDragging ? "all-scroll" : "pointer",
-    color: colors.primary[900], // Use theme text color
+    background: colors.primary[500],
+    cursor: "pointer",
+    color: colors.primary[900],
+  }), [colors]);
+
+  const draggingItemStyle = React.useMemo(() => ({
+    ...itemStyle,
+    background: colors.primary[400],
+    cursor: "all-scroll",
+  }), [colors, itemStyle]);
+
+  const listStyle = React.useMemo(() => ({
+    background: colors.background,
+    color: colors.primary[900],
+    minHeight: 200,
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+    padding: 8,
+  }), [colors]);
+
+  const draggingOverListStyle = React.useMemo(() => ({
+    ...listStyle,
+    background: colors.primary[200],
+    cursor: "all-scroll",
+  }), [colors, listStyle]);
+
+  // Simplified style getters that use memoized objects
+  const getItemStyle = (isDragging, draggableStyle) => ({
+    ...(isDragging ? draggingItemStyle : itemStyle),
     ...draggableStyle,
   });
 
-  const getListStyle = (isDraggingOver) => ({
-    background: isDraggingOver ? colors.primary[200] : colors.background,
-    color: isDraggingOver ? colors.primary[900] : colors.primary[900],
-    cursor: "all-scroll",
-  });
+  const getListStyle = (isDraggingOver) =>
+    isDraggingOver ? draggingOverListStyle : listStyle;
 
   return (
     <Box sx={{ position: "relative", zIndex: 0 }}>
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        {/* Loading overlay with reduced opacity and simplified rendering */}
         {loading && (
           <Box
             sx={{
-              position: "absolute", // Change to fixed for full-screen overlay
+              position: "absolute",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? colors.primary[900]
-                  : colors.primary[100],
-              zIndex: 1300, // Ensure it's above the dialog
+              backgroundColor: theme.palette.mode === "dark"
+                ? "rgba(0, 0, 0, 0.7)"
+                : "rgba(255, 255, 255, 0.7)",
+              zIndex: 1300,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              backdropFilter: "blur(2px)",
             }}
           >
-            <CircularProgress />
+            <CircularProgress size={40} thickness={4} />
           </Box>
         )}
         <DialogTitle>
@@ -343,7 +427,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
                                     marginLeft: "0px", // Ensure text is close to the icon
-                                    
+
                                     color: theme.palette.text.primary, // Use theme text color
                                   }}
                                 />

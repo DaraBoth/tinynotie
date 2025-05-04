@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import {
   Box,
   IconButton,
@@ -17,7 +17,7 @@ import { tokens } from "../theme";
 import { rspWidth } from "../responsive";
 import GroupVisibilitySettings from "../component/GroupVisibilitySettings";
 
-const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
+const Topbar = memo(({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
@@ -25,23 +25,35 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleMenuClick = (event) => {
+  // Use useCallback to memoize event handlers
+  const handleMenuClick = useCallback((event) => {
     setAnchorEl(event.currentTarget);
-  };
+  }, []);
 
-  const handleMenuClose = () => {
+  const handleMenuClose = useCallback(() => {
     setAnchorEl(null);
-  };
+  }, []);
 
-  const handleSettingsOpen = () => {
+  const handleSettingsOpen = useCallback(() => {
     setSettingsOpen(true);
     handleMenuClose(); // Close the menu when opening the settings dialog
-  };
+  }, [handleMenuClose]);
 
-  const handleSettingsClose = () => {
+  const handleSettingsClose = useCallback(() => {
     setSettingsOpen(false);
-  };
+  }, []);
+
+  const handleBackClick = useCallback(() => {
+    try {
+      setGroupInfo(null);
+      navigate("/");
+    } catch (err) {
+      console.error("Navigation error:", err);
+      setError("Failed to navigate back. Please try again.");
+    }
+  }, [navigate, setGroupInfo]);
 
   return (
     <Box
@@ -56,10 +68,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
     >
       {/* Back Button */}
       <IconButton
-        onClick={() => {
-          setGroupInfo(null);
-          navigate("/");
-        }}
+        onClick={handleBackClick}
         sx={{
           color: colors.grey[100], // Better visibility in both themes
           "&:hover": {
@@ -69,6 +78,26 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
       >
         <ArrowBackIosNewIcon />
       </IconButton>
+
+      {/* Error message if navigation fails */}
+      {error && (
+        <Typography
+          variant="caption"
+          color="error"
+          sx={{
+            position: 'absolute',
+            top: '50px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            zIndex: 1000
+          }}
+        >
+          {error}
+        </Typography>
+      )}
 
       {/* Title */}
       <Typography
@@ -82,7 +111,7 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
           fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, Merriweather, sans-serif', // Use specified fonts
         }}
       >
-        {groupInfo?.grp_name ?? groupInfo?.group_name}
+        {groupInfo?.grp_name ?? groupInfo?.group_name ?? "Group"}
       </Typography>
 
       {/* Menu Button */}
@@ -116,14 +145,16 @@ const Topbar = ({ groupInfo, setGroupInfo, onShareClick, onScannerClick }) => {
       </Menu>
 
       {/* Group Visibility Settings Dialog */}
-      <GroupVisibilitySettings
-        groupId={groupInfo?.id}
-        currentVisibility={groupInfo?.visibility}
-        open={settingsOpen}
-        onClose={handleSettingsClose}
-      />
+      {settingsOpen && groupInfo?.id && (
+        <GroupVisibilitySettings
+          groupId={groupInfo.id}
+          currentVisibility={groupInfo?.visibility}
+          open={settingsOpen}
+          onClose={handleSettingsClose}
+        />
+      )}
     </Box>
   );
-};
+});
 
 export default Topbar;
