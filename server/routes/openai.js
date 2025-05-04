@@ -832,7 +832,7 @@ const handleMessage = async function (messageObj) {
     } else if(command.startsWith("getweather")) {
       const weatherText = await getWeather();
       return darabothSendMessage(messageObj, weatherText);
-    } else if(is2002Group || isDaraboth) {
+    } else if(is2002Group) {
       const khDate = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩", "១០", "១១", "១២"];
       const memID = {
         "l3oth":"Both",
@@ -971,7 +971,7 @@ const handleMessage = async function (messageObj) {
             await runQuery({ sql, values: [hashedPassword, username] });
             return darabothSendMessage(
               messageObj,
-              `Don't let others know your password. \n Your password is now set to ${newPassword}`
+              `Don't let others know your password. \n Your password is now set to ${newPassword} \n Link to app: https://tinynotie.vercel.app/`
             );
           } catch (error) {
             console.error("Error executing query:", error);
