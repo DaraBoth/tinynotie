@@ -227,7 +227,7 @@ export default function EditMember({
               color="primary"
               {...params}
               variant="standard"
-              label="Edit Member"
+              label="Edit Member or add new member"
               InputProps={{
                 ...params.InputProps,
                 style: {

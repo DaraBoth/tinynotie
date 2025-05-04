@@ -3,7 +3,14 @@
     "builds": [
         {
             "src": "./index.js",
-            "use": "@vercel/node"
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": [
+                    "routes/**",
+                    "utils/**"
+                ],
+                "maxLambdaSize": "50mb"
+            }
         }
     ],
     "routes": [
@@ -17,5 +24,7 @@
             "path": "/openai/b2bAlert",
             "schedule": "1 9 * * 5"
         }
-    ]
+    ],
+    "installCommand": "npm install --no-package-lock",
+    "buildCommand": "npm run vercel-build"
 }
