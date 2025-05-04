@@ -1,19 +1,21 @@
 import axios from "axios";
 import dotenv from "dotenv";
 import express from "express";
-// import { openai } from "../index.js";
 import bcrypt from "bcrypt";
-import emailjs from "@emailjs/nodejs";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import moment from "moment";
 import { Configuration, OpenAIApi } from "openai";
-import pg from "pg";
-import { Telegraf } from "telegraf";
 import webPush from "web-push";
-const Pool = pg.Pool;
-import { authenticateToken } from "../middleware/auth.js"; // Corrected path
-import { stat } from "fs";
+import moment from "moment";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { authenticateToken } from "../middleware/auth.js";
 
+// Import utility modules
+import { pool, runQuery, saveChat, getChat, templateSaveChat } from "../utils/dbUtils.js";
+import { createTelegramBotClient, detectAndExtractPermission, getDateInSeoulTime, formatTelegramResponseKhmer, getGuideLineCommand } from "../utils/telegramUtils.js";
+import { callAI, AI_Database, getWeather, getTranslate, getKoreanWords, getCleaningProm } from "../utils/aiUtils.js";
+import { sendNotification, sendBatchNotification, sendEmail } from "../utils/notificationUtils.js";
+import { handleInsertIntoExcel, callInsertIntoExcel, callRollBackExcel, getCleaningData, excel2002Url } from "../utils/excelUtils.js";
+
+// Configure web push notifications
 const vapidKeys = {
   publicKey:
     "BGfjmqSQgx7J6HXnvhxAGSOJ2h5W7mwrWYN8Cqa0Nql5nkoyyhlc49v_x-dIckFRm0rIeAgNxgfAfekqCwX8TNo",
@@ -26,78 +28,120 @@ webPush.setVapidDetails(
   vapidKeys.privateKey
 );
 
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-});
-
-const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbyBE2iov4vm_iT4Pm9cC0p3VUj1QeT5GhWeJnISJMfVQlhkTPB-acz1uT25HcTEpGzUrw/exec"
-const rollBackExcelEndpoint = "https://script.google.com/macros/s/AKfycbzV8t07t8WJ_kYkWy1m-5V83SWv68PGeCPO5P7B_PctMG4BxmXODKRkqrKaSY9sQSB_og/exec"
-const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kpirWFjnZiMXESWXPUgVYR1TboFv1MO70U/edit?pli=1&gid=1527944601#gid=1527944601"
-
-// const pool = new Pool({
-//   user: "kjjelxjh",
-//   host: "chunee.db.elephantsql.com",
-//   database: "kjjelxjh",
-//   password: "lfrM5dzzIODpETfrSmRskIGZ-W8kAeg-",
-//   port: 5432,
-// });
-
 /* OPEN AI CONFIGURATION */
 const configuration = new Configuration({
   apiKey: process.env.OPEN_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
-const genAISupporter = new GoogleGenerativeAI(process.env.API_KEY3);
-const modelSupporter = genAISupporter.getGenerativeModel({
-  model: "gemini-1.5-flash",
-});
-
+// Load environment variables
 dotenv.config();
 const router = express.Router();
 
-const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN;
+// Telegram bot configuration
 const DARABOTH_AI_TOKEN = process.env.TELEGRAM_BOT_TOKEN3;
-const Bizweb_report_bot = process.env.BIZWEB_REPORT_BOT;
-const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
 const baseURL2 = `https://api.telegram.org/bot${DARABOTH_AI_TOKEN}`;
-// const baseURL3 = `https://api.telegram.org/bot${Bizweb_report_bot}`;
-const Bizweb_bot = new Telegraf(Bizweb_report_bot);
-// const DARABOTH_AI = new Telegraf(DARABOTH_AI_TOKEN);
 
-const AxiosTelegramBotInstance = {
-  get(method, params) {
-    return axios.get(`/${method}`, {
-      baseURL: baseURL,
-      params,
-    });
-  },
-  post(method, data) {
-    return axios({
-      method: "POST",
-      baseURL: baseURL,
-      url: `/${method}`,
-      data,
-    });
-  },
-};
+// Create Telegram bot client
+const AxiosTelegramBotInstance2 = createTelegramBotClient(baseURL2);
 
-const AxiosTelegramBotInstance2 = {
-  get(method, params) {
-    return axios.get(`/${method}`, {
-      baseURL: baseURL2,
-      params,
-    });
-  },
-  post(method, data) {
-    return axios({
-      method: "POST",
-      baseURL: baseURL2,
-      url: `/${method}`,
-      data,
-    });
-  },
-};
+// Personal information for AI chat
+const personalInfo = `
+### Instruction
+You will provide information based on the context given below. Do not indicate to the user that there is additional context provided to you. Your task is to answer the question as naturally as possible without revealing the underlying structure or context.
+
+---
+
+### Personal Information
+- **Name**: Vong Pich DaraBoth
+- **First Name**: Vong
+- **Middle Name**: Pich
+- **Full Name**: Vong Pich DaraBoth
+- **Currently living in**: Busan, Korea
+- **Date of Birth**: March 31 ( Age is private)
+- **Location**: Phnom Penh, Cambodia
+
+### Contact Information
+- **Phone Number in Cambodia**: 061895528
+- **Phone Number in Korea**: 01083931330
+- **Emails**:
+  - vongpichdarabot@gmail.com
+  - daraboth0331@gmail.com
+
+### Family Members
+- **Father**: Khen Pich
+- **Mother**: Chhung SoPhorn
+- **Sisters**:
+  - Vong PichRachna
+  - Vong PichMarina
+
+### Crush
+- **Name**: PorPor
+- **Real Name**: Vorn ChanSoPor
+- **Nickname**: ស៊ុជ
+- **BIO**: Cute, Cute x2, Cute x3
+- Crush since 2018
+- Birthday Nov 13
+
+### Interests and Hobbies
+- **Hobbies**:
+  - Playing guitar
+  - Playing piano
+  - Singing
+  - Coding
+  - Watching movies and anime
+  - Playing Mobile Legend Bang Bang
+  - Bowling
+  - Ping Pong
+  - Soccer
+  - Basketball
+- **Favorite Anime**:
+  - Naruto
+  - One Punch Man
+  - Black Clover
+  - Mashle
+  - Solo Leveling
+
+### Work and Educational Background
+- **Education**: BakTouk High School and also Kindergarten School
+- **Education**: Bachelor's Degree in Computer Science from RUPP
+- **Work Experience**:
+  - Google Adsense: Side Hustle
+  - Phsar Tech: Angular Developer
+  - ACC Premium Wraps: Content Creator
+  - Manker Light Cambodia: Content Creator
+  - Korea Software HRD Center: Trainee
+  - KOSIGN: Software Engineer (Present)
+
+### Projects
+- **Developed Website Projects**:
+  - Service and Shop (Angular)
+  - KSHRD-Registration (React, Spring Boot)
+  - TinyNotie (React, Express.js)
+
+### Favorites
+- **Songs to Sing**:
+  - Khmer songs
+  - English songs
+  - Tena's songs
+- **Favorite Colors**: Pink, Black, Dark Blue
+
+### Love Life
+- **Relationship status**:
+  - single
+- **Current Feeling**:
+  - Slanh ke mnek eng
+
+### Real Daraboth
+- Telegram ID
+  - @l3oth
+  (give them if they want to contact me)
+
+### Notes
+- **Current Date**: ${new Date()}
+- **Questions**: Should pertain to DaraBoth. If unsure, kindly ask for questions related to DaraBoth.
+- **Contact**: For inquiries about specific individuals, direct them to contact DaraBoth directly.
+---`;
 
 router.get("/text", async (req, res) => {
   try {
@@ -121,7 +165,7 @@ router.get("/text", async (req, res) => {
         4. **Daily Motivational Story**: Create a story about someone overcoming challenges in their tech career.
 
         ### Example ###
-        1. **Programming**: 
+        1. **Programming**:
           Python continues to evolve with new libraries like FastAPI for web development and Pydantic for data validation. These tools are making it easier for developers to build robust applications quickly.
 
         2. **Computer Science**:
@@ -139,7 +183,7 @@ router.get("/text", async (req, res) => {
     }
 
     const result = await model.generateContent(`${text}`);
-    const response = await result.response;
+    const response = result.response;
     console.log({ text });
     console.log({ res: response.text() });
     // res.status(200).json({ text: response.text() });
@@ -154,7 +198,7 @@ router.get("/text", async (req, res) => {
 
 router.post("/text", async (req, res) => {
   try {
-    const { text, activeChatId, chatId } = req.body;
+    const { text, chatId } = req.body;
     let chatHistory = [];
 
     if (chatId) {
@@ -177,7 +221,7 @@ router.post("/text", async (req, res) => {
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(`${text}`);
-    const response = await result.response;
+    const response = result.response;
     saveChat({ chat_id: chatId, chat_history: chatHistory });
 
     res.status(200).json({ text: response.text() });
@@ -207,9 +251,9 @@ router.get("/receiptText", async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
-      You are an API endpoint that processes receipt data. 
-      Based on the text extracted from the receipt, you must respond only in proper JSON format using the structure below. 
-      The key "data" should contain an array of objects where each object represents an **item** from the receipt, along with its price and additional metadata. 
+      You are an API endpoint that processes receipt data.
+      Based on the text extracted from the receipt, you must respond only in proper JSON format using the structure below.
+      The key "data" should contain an array of objects where each object represents an **item** from the receipt, along with its price and additional metadata.
       Use the following format:
 
       {
@@ -243,7 +287,7 @@ router.get("/receiptText", async (req, res) => {
     `;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = result.response;
     console.log({ text });
     console.log({ res: response.text() });
     res.status(200).json({ text: response.text() });
@@ -275,7 +319,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
   Complex Queries: Generate SQL that can handle multifaceted user requests, such as combining information from multiple tables, performing calculations, and using advanced SQL features like CTEs or window functions.
   Dynamic Handling: If a single SQL query is insufficient, break the task into multiple SQL statements or use functions to encapsulate complex logic.
   Currency Handling: Although PostgreSQL does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
-  
+
   Authorization Checks: Use the user_infm table to verify if the user has the required permissions. For example, if a user requests data for a group, ensure they are the admin or have the necessary permissions to access that group's data. If the usernm (username) provided does not match the admin of the requested group, do not allow access.
 
   Handling Insert Operations: When generating SQL that involves an INSERT operation, ensure the response 'sqlType' is set to "INSERT". Include a clear responseMessage that indicates whether the insertion was successful or if there was an error (e.g., "Record inserted successfully" or "You do not have permission to insert records in this table").
@@ -286,7 +330,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
   usernm: '${userAskID}'  -- This username should be used to filter data related to the user in the relevant tables.
 
   Database Schema and Usage Guide:
-  
+
   Table Name: user_infm
   Purpose: This table stores user-related information and is primarily used for authentication, user management, and authorization checks.
   Columns:
@@ -316,7 +360,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
 
   Important Notes:
   - **Use Case**: This table is used to define group attributes and the admin who manages the group. It is related to high-level group information.
-  - **Do Not Use for**: Tracking individual user payments or membership details. 
+  - **Do Not Use for**: Tracking individual user payments or membership details.
 
   Table Name: trp_infm
   Purpose: This table stores information about trips associated with groups. It is used to manage trip-related data, including expenses and member participation.
@@ -364,7 +408,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
   SQL Compatibility: Verify that the SQL syntax is compatible with PostgreSQL.
   Syntax Check: Ensure that each SQL statement in the solution has correct syntax and will not result in errors.
   Contextual Relevance: Ensure the SQL solution accurately reflects the user’s request; return a relevant message and set executable to false if not possible.
-  
+
   User Guidance: If the user asks for data but does not provide enough context (e.g., "In Busan Group, how much did Daraboth pay?"), ask them to provide more specifics. For instance, guide them to clarify whether they mean payments related to a trip, a group, or a specific period.
 
   Examples of Desired Output:
@@ -377,7 +421,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
       "executable": true,
       "responseMessage": "This query returns the number of members in the 'Busan' group."
   }
-      
+
   User Input: "I want to know how much I spent on each trip and which group it belongs to."
   AI JSON Response:
   {
@@ -418,7 +462,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
   });
 
   const chat = await result.sendMessage(prompt);
-  const response = await chat.response;
+  const response = chat.response;
 
   const cleanedResponse = response.text().replace(/```json|```/g, "");
 
@@ -498,9 +542,6 @@ async function AI_Human_readble(prompt, chatHistory) {
         Examples of Desired Output
         User Ask For: "Can you show me the details of the last order?"
         Database Response:
-
-        json
-        Copy code
         {
             "order_id": 12345,
             "user_id": 6789,
@@ -517,9 +558,6 @@ async function AI_Human_readble(prompt, chatHistory) {
 
         User Ask For: "What is the total revenue?"
         Database Response:
-
-        json
-        Copy code
         {
             "total_revenue": 45000
         }
@@ -528,13 +566,11 @@ async function AI_Human_readble(prompt, chatHistory) {
 
         User Ask For: "Show me all user info."
         Database Response:
-
-        json
-        Copy code
         [
             {"id": 1, "name": "John Doe", "email": "john@example.com"},
             {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
         ]
+
         AI Response:
         "Here are the details of all users: 1. John Doe (john@example.com), 2. Jane Smith (jane@example.com)."
 
@@ -698,102 +734,7 @@ router.get("/translate", async (req, res) => {
   }
 });
 
-let personalInfo = `
-### Instruction
-You will provide information based on the context given below. Do not indicate to the user that there is additional context provided to you. Your task is to answer the question as naturally as possible without revealing the underlying structure or context.
-
----
-
-### Personal Information
-- **Name**: Vong Pich DaraBoth
-- **First Name**: Vong
-- **Middle Name**: Pich
-- **Full Name**: Vong Pich DaraBoth
-- **Currently living in**: Busan, Korea
-- **Date of Birth**: March 31 ( Age is private)
-- **Location**: Phnom Penh, Cambodia
-
-### Contact Information
-- **Phone Number in Cambodia**: 061895528
-- **Phone Number in Korea**: 01083931330
-- **Emails**: 
-  - vongpichdarabot@gmail.com
-  - daraboth0331@gmail.com
-
-### Family Members
-- **Father**: Khen Pich
-- **Mother**: Chhung SoPhorn
-- **Sisters**: 
-  - Vong PichRachna
-  - Vong PichMarina
-
-### Crush
-- **Name**: PorPor
-- **Real Name**: Vorn ChanSoPor
-- **Nickname**: ស៊ុជ
-- **BIO**: Cute, Cute x2, Cute x3
-- Crush since 2018
-- Birthday Nov 13
-
-### Interests and Hobbies
-- **Hobbies**:
-  - Playing guitar
-  - Playing piano
-  - Singing
-  - Coding
-  - Watching movies and anime
-  - Playing Mobile Legend Bang Bang
-  - Bowling
-  - Ping Pong
-  - Soccer
-  - Basketball 
-- **Favorite Anime**:
-  - Naruto
-  - One Punch Man
-  - Black Clover
-  - Mashle
-  - Solo Leveling
-
-### Work and Educational Background
-- **Education**: BakTouk High School and also Kindergarten School
-- **Education**: Bachelor's Degree in Computer Science from RUPP
-- **Work Experience**:
-  - Google Adsense: Side Hustle 
-  - Phsar Tech: Angular Developer 
-  - ACC Premium Wraps: Content Creator 
-  - Manker Light Cambodia: Content Creator 
-  - Korea Software HRD Center: Trainee 
-  - KOSIGN: Software Engineer (Present)
-
-### Projects
-- **Developed Website Projects**:
-  - Service and Shop (Angular)
-  - KSHRD-Registration (React, Spring Boot)
-  - TinyNotie (React, Express.js)
-
-### Favorites
-- **Songs to Sing**:
-  - Khmer songs
-  - English songs
-  - Tena's songs
-- **Favorite Colors**: Pink, Black, Dark Blue
-
-### Love Life
-- **Relationship status**:
-  - single
-- **Current Feeling**:
-  - Slanh ke mnek eng
-
-### Real Daraboth
-- Telegram ID
-  - @l3oth
-  (give them if they want to contact me)
-
-### Notes
-- **Current Date**: ${new Date()}
-- **Questions**: Should pertain to DaraBoth. If unsure, kindly ask for questions related to DaraBoth.
-- **Contact**: For inquiries about specific individuals, direct them to contact DaraBoth directly.
----`;
+// personalInfo is already defined at the top of the file
 
 const friendInfo = `
 ### Friends
@@ -828,51 +769,13 @@ BIO [Nothing more common than unsuccessful people with talent.]
 Location: [Phnom Penh]
 `;
 
-const defaultChatHistory = [
-  {
-    role: "user",
-    parts: [{ text: personalInfo }],
-  },
-  {
-    role: "model",
-    parts: [{ text: "Great to meet you. I will remember you my boss." }],
-  },
-  {
-    role: "user",
-    parts: [{ text: friendInfo }],
-  },
-  {
-    role: "model",
-    parts: [
-      { text: "Wow is that your friends? I will remember them too my boss." },
-    ],
-  },
-  {
-    role: "user",
-    parts: [
-      {
-        text: "From now on please reply with human language. No markdown. Don't just answer the question please also ask back and be friendly! Please note that from now on Daraboth is not the one who talk with you anymore. You will act as you are Daraboth from now.",
-      },
-    ],
-  },
-  {
-    role: "model",
-    parts: [
-      {
-        text: "Yes boss. I will not reply markdown or any script or code. I will reply just human text. From now on I am Daraboth. AKA [Bros smos ler lok]",
-      },
-    ],
-  },
-];
-
 router.post("/ask", async (req, res) => {
   try {
-    let { text, activeChatId, chatHistory } = req.body;
+    let { text, chatHistory } = req.body;
     const response = await callAI(text, chatHistory);
     console.log("response: ", response);
     sendEmail(text, response.text());
     res.status(200).json({ text: response.text() });
-    // }
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ error: error.message });
@@ -898,13 +801,9 @@ router.post("/darabothlistening", async (req, res) => {
 // Endpoint to handle b2bAlert requests
 router.post("/b2bAlert", async (req, res) => {
   try {
-    // Get the current UTC date and time
-    const now = new Date();
-
-    // Adjust the time to Cambodia time (UTC+7)
-    const cambodiaTime = new Date(now.getTime() + 7 * 60 * 60 * 1000); // Adding 7 hours in milliseconds
-
-    // Check if it's Friday in Cambodia time
+    // Time-based restrictions are commented out for now
+    // const now = new Date();
+    // const cambodiaTime = new Date(now.getTime() + 7 * 60 * 60 * 1000); // Adding 7 hours in milliseconds
     // if (cambodiaTime.getDay() !== 5) { // 5 represents Friday
     //   return res.send("Request not allowed. This endpoint can only be accessed on Fridays in Cambodia time.");
     // }
@@ -947,7 +846,7 @@ router.post("/b2bAlert", async (req, res) => {
 });
 
 router.post("/sendMessageViaBot", async (req, res) => {
-  let { telegramObjectRecord } = req.body; // telegramObjectRecord = [ { chatId: 123456, message: "Hello" } ] 
+  let { telegramObjectRecord } = req.body; // telegramObjectRecord = [ { chatId: 123456, message: "Hello" } ]
   let response = [];
   console.log("resquest: ",telegramObjectRecord);
   console.log("type = ",typeof telegramObjectRecord);
@@ -994,7 +893,7 @@ router.post("/cleaningAlert", async (req, res) => {
   }
 });
 
-router.post("/getKoreanWords", async (req, res) => {
+router.post("/getKoreanWords", async (_, res) => {
   try {
     const chatIds = [485397124]; // Array of chat IDs to send messages to
 
@@ -1040,7 +939,7 @@ async function getKoreanWords(messageObj) {
   const prompt = `
   You are a Korean language tutor.
 
-  Each day, introduce me to 2 new Korean words that are especially useful for everyday life, work currently living in Busan, Korea. Choose words that go beyond basic beginner level, focusing on vocabulary that would be helpful both in daily activities and professional situations in Korea. 
+  Each day, introduce me to 2 new Korean words that are especially useful for everyday life, work currently living in Busan, Korea. Choose words that go beyond basic beginner level, focusing on vocabulary that would be helpful both in daily activities and professional situations in Korea.
 
   1. Select one **object** word that might be relevant or commonly encountered.
   2. Select one **verb** that is useful in work, social, or daily settings.
@@ -1080,7 +979,7 @@ async function getKoreanWords(messageObj) {
   });
 
   const chat = await result.sendMessage(prompt);
-  const response = await chat.response;
+  const response = chat.response;
   console.log("response text : " + response.text());
 
   templateSaveChat({
@@ -1099,16 +998,16 @@ async function getCleaningProm(data, msg) {
   const prompt = `
       This data is about cleaning schedule in a house.
       And it's a trigger when there is change updated in excel.
-      The number is refer to their step one after another. 
+      The number is refer to their step one after another.
       The number if it meet the last index it will go back to the first person.
       THe memberName is the house member's name.
       Look to the array in each object the "isTurnToClean" key is there turn to clean.
       So answer to the question depend on the user want.
       Today date = ${moment().format("YYYY-MM-DD HH:mm:ss (dd) Z")} // format YYYY-MM-DD HH:mm:ss (dd) Z
-      
+
       Here is the data in JSON :
       ${JSON.stringify(data)}
-      
+
       Here is the user request:
       ${msg}
 
@@ -1158,7 +1057,7 @@ async function getTranslate(str) {
       `;
 
   const result = await model.generateContent(prompt);
-  const response = await result.response;
+  const response = result.response;
   console.log("response text : " + response.text());
 
   return response.text();
@@ -1179,26 +1078,7 @@ async function getCleaningData() {
   }
 }
 
-// B2B_BatchMonitorBot
-//
-async function sendBatchMonitorEmail(message) {
-  const response = await emailjs.send(
-    process.env.BATCH_SERVICE_ID,
-    process.env.BATCH_TEMPLATE_ID,
-    {
-      from_name: "Batch Monitor",
-      to_name: "Admin B2B",
-      message: message,
-      reply_to: "b2bbatchmonitor@gmail.com",
-      current_date: moment().format("YYYY-MM-DD HH:mm:ss"),
-    },
-    {
-      publicKey: process.env.BATCH_PUBLIC_KEY,
-      privateKey: process.env.BATCH_PRIVATE_KEY, // optional, highly recommended for security reasons
-    }
-  );
-  return response;
-}
+// This function has been moved to notificationUtils.js
 
 async function sendEmail(question, answer) {
   emailjs
@@ -1229,96 +1109,17 @@ async function sendEmail(question, answer) {
     );
 }
 
-const sendMessage = function (messageObj, messageText) {
-  return AxiosTelegramBotInstance.get("sendMessage", {
-    chat_id: messageObj.chat.id || "",
-    text: messageText,
-  });
-};
-
+/**
+ * Send a message using the Daraboth Telegram bot
+ * @param {Object} messageObj - The message object
+ * @param {string} messageText - The message text
+ * @returns {Promise} - A promise that resolves with the response
+ */
 const darabothSendMessage = function (messageObj, messageText) {
   return AxiosTelegramBotInstance2.get("sendMessage", {
     chat_id: messageObj.chat.id || "",
     text: messageText,
   });
-};
-
-const runQuery = async ({ sql, values }) => {
-  console.log({ sql });
-  return new Promise((resolve, reject) => {
-    try {
-      pool.query(sql, values, (error, results) => {
-        if (error) {
-          console.log(error);
-          reject(error);
-        } else {
-          console.log("sql was a success");
-          resolve(results);
-        }
-      });
-    } catch (error) {
-      console.error("Error executing query:", error);
-      reject(error);
-    }
-  });
-};
-
-const saveChat = async ({ chat_id, chat_history, user_id = null }) => {
-  if (user_id != null && user_id.length >= 20) user_id = user_id.slice(0, 19);
-
-  const sqlSelect = `SELECT chat_history FROM json_data WHERE chat_id = $1;`;
-  const sqlInsert = `
-    INSERT INTO json_data (chat_id, chat_history, user_id)
-    VALUES ($1, $2, $3)
-    ON CONFLICT (chat_id)
-    DO UPDATE SET
-      chat_history = json_data.chat_history || EXCLUDED.chat_history;
-  `;
-  const values = [chat_id, { chat: chat_history }, user_id];
-
-  try {
-    const result = await pool.query(sqlSelect, [chat_id]);
-    if (result.rows.length > 0) {
-      const existingHistory = result.rows[0].chat_history.chat;
-      chat_history = existingHistory.concat(chat_history);
-      values[1] = { chat: chat_history };
-    }
-    await runQuery({ sql: sqlInsert, values });
-    return { isError: false, reason: "" };
-  } catch (error) {
-    return { isError: true, reason: error.message };
-  }
-};
-
-const getChat = async function ({
-  chat_id,
-  onSuccess = function () {},
-  onError = function () {},
-}) {
-  const sql = `SELECT id, chat_id, chat_history FROM json_data WHERE chat_id = $1;`;
-  const response = {
-    isError: false,
-    results: [],
-    reason: "",
-  };
-  const values = [chat_id];
-  try {
-    const res = await runQuery({ sql, values });
-    if (res && res.rowCount) {
-      if (res.rowCount >= 1) {
-        const his = res.rows[0].chat_history;
-        response.results = his.chat;
-      } else {
-        response.results = defaultChatHistory;
-        await saveChat({ chat_id, chat_history: defaultChatHistory });
-      }
-    }
-    onSuccess(response);
-  } catch (err) {
-    response.isError = true;
-    response.reason = err;
-    onError(response);
-  }
 };
 
 const handleMessage = async function (messageObj) {
@@ -1369,7 +1170,7 @@ const handleMessage = async function (messageObj) {
         }
         const response = await callInsertIntoExcel(requestJsonData);
         const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
-        return darabothSendMessage(messageObj, telegramResponse);	
+        return darabothSendMessage(messageObj, telegramResponse);
       } else if(command.startsWith("buystuff")) {
         const requestJson = await handleInsertIntoExcel({ messageObj, messageText: command.replace("buystuff", "") });
         try {
@@ -1377,7 +1178,7 @@ const handleMessage = async function (messageObj) {
           if(requestJsonData){
             const response = await callInsertIntoExcel(requestJsonData);
             const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
-            return darabothSendMessage(messageObj, telegramResponse);	
+            return darabothSendMessage(messageObj, telegramResponse);
           }
         }catch(e) {
           console.log(e);
@@ -1480,7 +1281,6 @@ const handleMessage = async function (messageObj) {
               "Password must be at least 6 characters long."
             );
           }
-          const oldPassword = rows[0].passwd;
           sql = `UPDATE user_infm set passwd = $1 where usernm = $2;`;
           const hashedPassword = await bcrypt.hash(newPassword, 10);
           try {
@@ -1544,7 +1344,7 @@ const handleMessage = async function (messageObj) {
           "Hey hi, I don't know that command.🤷‍♂️ \n Ask him to make -> @l3oth"
         );
       }
-    } 
+    }
   }else  {
     let ismention = false;
     const condition1 = chatType == "private";
@@ -1613,307 +1413,63 @@ const handleMessage = async function (messageObj) {
 
 };
 
-async function handleInsertIntoExcel({ messageObj, messageText }) {
- // Initialize the AI with your API key
- const genAI = new GoogleGenerativeAI(process.env.API_KEY3);
- const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// This function has been moved to excelUtils.js
 
- const today = moment(getDateInSeoulTime()).format("YYYY-MM-DD");
-
- const prompt = `
- Generate a structured JSON response based on the following human text input. 
- Extract key details like date, withdrawal amount, location, item purchased, and the buyer. 
- If the date is not mentioned, use the current date. 
- Ensure the 'withdrawal', 'notes' (item bought), and 'other' (buyer) fields are mandatory. 
- The location is optional but default it to 'Main Branch' if not specified.
- 
- Sample Text:
- "On January 5th, John bought shoes for 100 dollars from Branch A."
- Sample Text:
- "On January 5th, John bought shoes for 100 dollars from Branch A."
-
- Expected JSON Output:
- {
-  "operatingDate": "${today}",
-  "withdrawal": 100,
-  "deposit": 0,
-  "operatingLocation": "Branch A",
-  "notes": "Buy Shoes",
-  "other": "John"
-}
-
-Sample Text Without Date and Location:
-"Sarah bought a laptop for 800 dollars."
-
-Expected JSON Output:
-{
-  "operatingDate": "${today}",
-  "withdrawal": 800,
-  "deposit": 0,
-  "operatingLocation": "",
-  "notes": "Buy Laptop",
-  "other": "Sarah"
-}
-
-Notes on Behavior:
-- Current date = ${today}
-- If the date is missing ➝ Use the current date ${today}
-- If the location is missing ➝ Use the ""
-- Ensure every output includes "withdrawal", "notes", and "other".
-- "deposit" defaults to 0 unless explicitly stated.
-
-
-Here is the text to analyze:
-${messageText}
- `
-
- // Generate content using the AI
- const result = await model.generateContent(prompt);
- const aiMessage = result.response.text();
- console.log({aiMessage});
- return aiMessage;
-}
-
-async function callInsertIntoExcel(objectParams) {
-  const resquest = await axios.post(insertExcelEndpoint, objectParams);
-  return resquest.data;
-}
-
-async function callRollBackExcel() {
-  try {
-    const response = await axios.get(rollBackExcelEndpoint);
-    console.log(response.data); // The rollback response
-    return response.data;
-  } catch (error) {
-    console.error("Rollback failed:", error);
-  }
-}
+// These functions have been moved to excelUtils.js
 
 async function ErrorReport(messageObj, errorMessage) {
   return await darabothSendMessage(messageObj, errorMessage);
 }
 
-async function templateSaveChat({ Chat_ID, user_id = null, chatHistory, messageText, responseText }) {
-  if (Array.isArray(chatHistory)) {
-    chatHistory.push({ role: "user", parts: [{ text: messageText }] });
-    chatHistory.push({ role: "model", parts: [{ text: responseText }]});
-  }
-  return await saveChat({ chat_id: Chat_ID, chat_history: chatHistory, user_id});
-}
-
-async function callAI(text, chatHistory) {
-  let genAI = null, model = null;
-  try {
-    genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-    });
-    console.log("Try 1");
-  }catch(e){
-    console.log(e);
-    console.log("Try 2");
-    try {
-      genAI = new GoogleGenerativeAI(process.env.API_KEY3);
-      model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-      });
-    }catch(e){
-      console.log(e);
-      console.log("Try 3");
-      genAI = new GoogleGenerativeAI(process.env.API_KEY);
-      model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-      });
-    }
-  }
-  if (!chatHistory) {
-    chatHistory = defaultChatHistory;
-  } else {
-    if (Array.isArray(chatHistory)) {
-      for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
-        chatHistory.unshift(defaultChatHistory[i]);
-      }
-    }
-  }
-
-  const result = model.startChat({
-    history: chatHistory,
-    generationConfig: {
-      maxOutputTokens: 250,
-    },
-  });
-
-  const chat = await result.sendMessage(text);
-  return chat.response;
-}
-
-// Endpoint to send a notification
-const sendNotification = (subscription, data, req, res) => {
-  console.log(subscription);
-  webPush
-    .sendNotification(subscription, JSON.stringify(data))
-    .then((response) => {
-      console.log("Notification sent successfully", response);
-      res.json({
-        status: true,
-        message: "Notification sent successfully",
-        response,
-      });
-    })
-    .catch((error) => {
-      console.error("Error sending notification", error);
-      res.send({
-        status: false,
-        message: "Error sending notification",
-        error,
-      });
-    });
-};
-
-// Batch notification function
-const sendBatchNotification = async (payload) => {
-  console.log({ payload });
-  try {
-    // Query to fetch all subscriptions
-    const query = `
-      SELECT endpoint, keys, expiration_time 
-      FROM subscriptions;
-    `;
-    const client = await pool.connect();
-    const result = await client.query(query);
-
-    if (!result.rows || result.rows.length === 0) {
-      return {
-        status: false,
-        message: "No subscriptions found to send notifications.",
-      };
-    }
-
-    // Map subscription data into the format required by webPush
-    const subscriptions = result.rows.map((row) => ({
-      endpoint: row.endpoint,
-      keys: row.keys, // Ensure keys are parsed as JSON
-    }));
-
-    // Send notifications to all subscriptions
-    const notificationPromises = subscriptions.map((subscription) =>
-      webPush.sendNotification(subscription, JSON.stringify(payload))
-    );
-
-    // Wait for all notifications to resolve
-    const results = await Promise.allSettled(notificationPromises);
-
-    const successful = results.filter(
-      (result) => result.status === "fulfilled"
-    );
-    const failed = results.filter((result) => result.status === "rejected");
-
-    return {
-      status: true,
-      message: "Batch notifications processed.",
-      summary: {
-        total: subscriptions.length,
-        successful: successful.length,
-        failed: failed.length,
+// Default chat history for AI conversations
+const defaultChatHistory = [
+  {
+    role: "user",
+    parts: [{ text: personalInfo }],
+  },
+  {
+    role: "model",
+    parts: [{ text: "Great to meet you. I will remember you my boss." }],
+  },
+  {
+    role: "user",
+    parts: [{ text: friendInfo }],
+  },
+  {
+    role: "model",
+    parts: [
+      { text: "Wow is that your friends? I will remember them too my boss." },
+    ],
+  },
+  {
+    role: "user",
+    parts: [
+      {
+        text: "From now on please reply with human language. No markdown. Don't just answer the question please also ask back and be friendly! Please note that from now on Daraboth is not the one who talk with you anymore. You will act as you are Daraboth from now.",
       },
-    };
-  } catch (error) {
-    console.error("Error sending batch notifications", error);
-    return {
-      status: false,
-      message: "Error sending batch notifications",
-      error,
-    };
-  }
-};
+    ],
+  },
+  {
+    role: "model",
+    parts: [
+      {
+        text: "Yes boss. I will not reply markdown or any script or code. I will reply just human text. From now on I am Daraboth. AKA [Bros smos ler lok]",
+      },
+    ],
+  },
+];
 
-async function getWeather() {
-  try {
-    // Fetch real-time weather data using an API (e.g., OpenWeatherMap)
-    const weatherApiKey = process.env.WEATHER_API_KEY; // Store your API key in the environment variables
-    if (!weatherApiKey) {
-      throw new Error(
-        "Weather API Key is undefined. Check your environment variables."
-      );
-    }
+// This section has been moved to utility modules
 
-    const location = "Busan, South Korea"; // Default location
-    const weatherApiUrl = `https://api.openweathermap.org/data/2.5/weather?q=Busan&units=metric&appid=${weatherApiKey}`;
+// This function has been moved to aiUtils.js
 
-    // Make the API call
-    const weatherResponse = await axios.get(weatherApiUrl);
-    const weatherData = weatherResponse.data;
-
-    // Determine the greeting based on the current time in Seoul (KST)
-    const timezone = "Asia/Seoul";
-    const currentTime = new Date().toLocaleString("en-US", {
-      timeZone: timezone,
-    });
-
-    // Extract relevant data
-    const temp = weatherData.main.temp; // Current temperature
-    const tempMin = weatherData.main.temp_min; // Min temperature
-    const tempMax = weatherData.main.temp_max; // Max temperature
-    const feelsLike = weatherData.main.feels_like; // Max temperature
-    const weatherCondition = weatherData.weather[0].description; // Weather description
-    const date = new Date(currentTime); // Today's date
-
-    const hour = new Date(currentTime).getHours();
-
-    let greeting;
-    if (hour >= 5 && hour < 12) {
-      greeting = "Good morning! ☀️";
-    } else if (hour >= 12 && hour < 17) {
-      greeting = "Good afternoon! 🌤️";
-    } else if (hour >= 17 && hour < 21) {
-      greeting = "Good evening! 🌆";
-    } else {
-      greeting = "Good night! 🌙";
-    }
-
-    // Construct the prompt with real-time data
-    const prompt = `
-      Instruction:
-      You are a virtual assistant tasked with generating a short and concise daily weather forecast notification.
-      The notification should include:
-
-      - Greeting: ${greeting}.
-      - Date: ${date}.
-      - Location: ${location}.
-      - Weather Overview: ${weatherCondition}.
-      - Temperature: High of ${tempMax}°C, low of ${tempMin}°C. Current temperature is ${temp}°C. Feels like ${feelsLike}°C.
-
-      Context:
-      The user's timezone is ${timezone}. Adjust your language to fit their local time.
-
-      Notification Style:
-      Keep the message as short as possible while remaining informative.
-      Example: "${greeting} Today in ${location}: ${weatherCondition}, ${tempMax}°C/${tempMin}°C.Feels like ${feelsLike}°C. Have a great day!"
-      Use emojis sparingly to keep it engaging and friendly.
-    `;
-
-    // Initialize the AI with your API key
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    // Generate content using the AI
-    const result = await model.generateContent(prompt);
-    const aiMessage = result.response.text(); // AI-generated weather notification
-
-    return aiMessage;
-  } catch (error) {
-    console.error("Error in getWeather function:", error);
-    return `Error: Unable to fetch weather data or generate notification. Please try again later.`;
-  }
-}
-
-router.get("/getWeatherNotification", async (req, res) => {
+router.get("/getWeatherNotification", async (_, res) => {
   const payload = {
     title: "Weather Update",
     body: await getWeather(),
   };
   try {
-    res.send(await sendBatchNotification(JSON.stringify(payload)));
+    res.send(await sendBatchNotification(payload));
     console.log("Notification sent successfully:", payload);
   } catch (notificationError) {
     console.error("Error sending notification:", notificationError);
@@ -2001,19 +1557,19 @@ router.get("/translateforhouyly", async (req, res) => {
     const { query } = req;
     if (query) {
       const str = query.message;
-      const action = query.action || "translate";  
-      const targetLang = query.targetLang || "English";  
-      const context = query.context || "general";  
-      const level = query.level || "basic";  
+      const action = query.action || "translate";
+      const targetLang = query.targetLang || "English";
+      const context = query.context || "general";
+      const level = query.level || "basic";
 
       console.log(`Request: ${str} | Action: ${action} | Target: ${targetLang} | Context: ${context}`);
 
       const resText = await getTranslateOrExplain(str, action, targetLang, context, level);
-      
-      res.status(200).json({ 
-        input: str, 
-        translatedTo: targetLang, 
-        output: resText 
+
+      res.status(200).json({
+        input: str,
+        translatedTo: targetLang,
+        output: resText
       });
     }
   } catch (error) {
@@ -2022,31 +1578,32 @@ router.get("/translateforhouyly", async (req, res) => {
   }
 });
 
+// This function has been moved to aiUtils.js
 async function getTranslateOrExplain(str, action, targetLang, context, level) {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-  const prompt = `
-    Instruction
-    ${action === "translate" 
-      ? `Translate the following text into ${targetLang}.  
-         Automatically detect the input language and translate it accurately.  
-         If the text cannot be translated, return "Translation not available."  
-         If already in ${targetLang}, return the same text.`
-      : `Explain the meaning of the word or phrase in English.  
-         Provide a ${level} explanation focusing on ${context}.`}
-
-    Examples:
-    - "Hola, ¿cómo estás?" to English -> "Hello, how are you?"  
-    - "ありがとう" to English -> "Thank you."  
-
-    Text to ${action === "translate" ? "Translate" : "Explain"}  
-    [${str}]
-  `;
-
   try {
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `
+      Instruction
+      ${action === "translate"
+        ? `Translate the following text into ${targetLang}.
+           Automatically detect the input language and translate it accurately.
+           If the text cannot be translated, return "Translation not available."
+           If already in ${targetLang}, return the same text.`
+        : `Explain the meaning of the word or phrase in English.
+           Provide a ${level} explanation focusing on ${context}.`}
+
+      Examples:
+      - "Hola, ¿cómo estás?" to English -> "Hello, how are you?"
+      - "ありがとう" to English -> "Thank you."
+
+      Text to ${action === "translate" ? "Translate" : "Explain"}
+      [${str}]
+    `;
+
     const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = result.response;
     const output = response.text();
 
     // Fallback if the response is empty
@@ -2070,7 +1627,7 @@ router.get("/listTranslations", authenticateToken, async (req, res) => {
     const userId = req.user._id;  // Get user_id from the authenticated session
 
     const sql = `
-      SELECT id, input_text, output_text, target_language, action_type, created_at 
+      SELECT id, input_text, output_text, target_language, action_type, created_at
       FROM translations
       WHERE (input_text ILIKE $1 OR output_text ILIKE $1)
       AND user_id = $2
@@ -2080,11 +1637,11 @@ router.get("/listTranslations", authenticateToken, async (req, res) => {
 
     const results = await pool.query(sql, [`%${search}%`, userId, limit, offset]);
 
-    res.json({ 
-      status: true, 
-      page, 
+    res.json({
+      status: true,
+      page,
       total: results.rowCount,
-      data: results.rows 
+      data: results.rows
     });
   } catch (error) {
     console.error("Error listing translations:", error.message);
@@ -2109,9 +1666,9 @@ router.post("/saveTranslation", authenticateToken, async (req, res) => {
     const values = [input, output, targetLang, action, userId];
 
     const result = await pool.query(sql, values);
-    res.status(201).json({ 
-      message: "Translation saved.", 
-      data: result.rows[0] 
+    res.status(201).json({
+      message: "Translation saved.",
+      data: result.rows[0]
     });
   } catch (error) {
     console.error("Error saving translation:", error.message);
@@ -2133,14 +1690,14 @@ router.delete("/deleteTranslation/:id", authenticateToken, async (req, res) => {
     const result = await pool.query(sql, [translationId, userId]);
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ 
-        error: "Translation not found or you don't have permission to delete it." 
+      return res.status(404).json({
+        error: "Translation not found or you don't have permission to delete it."
       });
     }
 
-    res.json({ 
-      message: "Translation deleted successfully.", 
-      deletedTranslation: result.rows[0] 
+    res.json({
+      message: "Translation deleted successfully.",
+      deletedTranslation: result.rows[0]
     });
   } catch (error) {
     console.error("Error deleting translation:", error.message);
@@ -2169,9 +1726,9 @@ router.post("/subscribe", async (req, res) => {
       // Device ID exists, update the push data only
       const updateSubscriptionQuery = `
         UPDATE subscriptions
-        SET endpoint = $1, 
-            expiration_time = $2, 
-            keys = $3, 
+        SET endpoint = $1,
+            expiration_time = $2,
+            keys = $3,
             user_agent = $4,
             updated_at = CURRENT_TIMESTAMP
         WHERE device_id = $5;
@@ -2237,100 +1794,6 @@ router.post("/subscribe", async (req, res) => {
   }
 });
 
-function getDateInSeoulTime () {
-  // Determine the greeting based on the current time in Seoul (KST)
-  const timezone = "Asia/Seoul";
-  const currentTime = new Date().toLocaleString("en-US", {
-    timeZone: timezone,
-  });
-  return currentTime;
-}
-
-function detectAndExtractPermission(message) {
-  const permissionRegex = /\b(permission to|ask permission for|I would like to ask permission for|asking permission to)\b.*?(leave|late|go outside)/i;
-  return permissionRegex.test(message);
-}
-
-function getGuideLineCommand() {
-  const guideMessage = `
-📋 *Command Guide:*
-
-1️⃣ *donetopup*  
-💳 Save 10000원 for this month.  
-- Usage:  
-\`/donetopup\`  
-
-2️⃣ *buystuff*  
-🛒 Record an expense with details.  
-- Usage:  
-\`/buystuff <description (Buyer, Stuff, Date, Location, Cost)>\`  
-- Example:  
-\`/buystuff បថបានទិញ​ អំបិល ១​កញ្ចប់​​ នៅ King Mart អស់ 3500원, 2024-05-01.\`  
-
-3️⃣ *rollback*  
-🔄 Undo the last entry (only if added *today*).  
-- Usage:  
-\`/rollback\`  
-
-4️⃣ *whoclean*  
-🧹 Get the cleaning schedule.  
-- Usage:  
-\`/whoclean\`  
-
-5️⃣ *excel2002*  
-📊 Get the link to the Excel file.  
-- Usage:  
-\`/excel2002\`  
-
-6️⃣ *guideline*  
-📖 Display this command guide.  
-- Usage:  
-\`/guideline\`  
-
-⚠️ *Notes:*  
-- For older mistakes, manual fixes are needed.  
-- The bot will confirm success or failure after each command.  
-`;
-  return guideMessage;
-}
-
-function formatTelegramResponseKhmer(apiResponse, telegramData) {
-  const data = apiResponse.data.insertedRow;
-  const username = telegramData.from.username;
-
-  let message = `👋 សួស្ដី @${username} !\n\n`;
-
-  // Handle messages based on transaction type
-  if (data.withdrawal && data.withdrawal > 0) {
-    // Withdrawal (Spend) Message
-    message += `✅ ការចំណាយជោគជ័យ!\n`;
-    message += `📅 កាលបរិច្ឆេទ: ${data.operatingDate}\n`;
-    message += `💸 ចំនួនដែលបានដក: ${data.withdrawal}원\n`;
-    if (data.operatingLocation) {
-      message += `🏦 ទីតាំងប្រតិបត្តិការ: ${data.operatingLocation}\n`;
-    } else {
-      message += `🏦 ទីតាំងប្រតិបត្តិការ: មិនបានបញ្ជាក់\n`;
-    }
-    if (data.notes) {
-      message += `🛒 ឥវ៉ាន់ដែលបានទិញ: ${data.notes}\n`;
-    }
-    if (data.other) {
-      message += `🙋‍♂️ អ្នកទិញ: ${data.other}\n`;
-    }
-    message += `💵 សមតុល្យ: ${apiResponse.data.oldTotalAmount}원 -> ${apiResponse.data.newTotalAmount}원\n`;
-    message += `📣 បងៗ, សូមជួយពិនិត្យ និងធ្វើការបង្វិលប្រាក់វិញ!\n`;
-    message += `Please react ✅ after send or recieved.\n`;
-  } else if (data.deposit && data.deposit > 0) {
-    // Deposit (Top-Up) Message
-    message += `✅ ការដាក់ប្រាក់ជោគជ័យ!\n`;
-    message += `💰 ចំនួនដាក់បញ្ចូល: ${data.deposit}원\n`;
-    message += `💵 សមតុល្យ: ${apiResponse.data.oldTotalAmount}원 -> ${apiResponse.data.newTotalAmount}원\n`;
-    message += `📢 Please react ✅ after recieved.\n`;
-  } else {
-    // Default message for no transaction
-    message += `⚠️ មិនមានការដកឬដាក់ប្រាក់ឡើយ!\n`;
-  }
-  return message;
-}
+// These functions have been moved to utility modules
 
 export default router;

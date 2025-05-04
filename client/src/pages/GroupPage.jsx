@@ -268,13 +268,13 @@ export default function Group({ user, secret, setGroupInfo }) {
       />
       <Box
         sx={{
-          padding: "20px",
+          padding: "12px",
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <Grid container spacing={2} sx={{ flexGrow: 1 }}>
+        <Grid container spacing={1} sx={{ flexGrow: 1 }}>
           {/* Members Section */}
           <Grid item xs={12} md={8}>
             <Card
@@ -293,6 +293,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
+                  padding: "12px",
                 }}
               >
                 <Box
@@ -301,17 +302,17 @@ export default function Group({ user, secret, setGroupInfo }) {
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 2,
+                    marginBottom: 1,
                   }}
                 >
-                  <Box sx={{ display: "flex", flexDirection: "row" }}>
+                  <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
                     <StickyNote2Icon
-                      sx={{ marginRight: 1, color: colors.primary[500] }}
+                      sx={{ marginRight: 0.5, color: colors.primary[500], fontSize: "1rem" }}
                     />
                     <Typography
-                      variant="h6"
+                      variant="subtitle1"
                       color={colors.primary[600]}
-                      gutterBottom
+                      sx={{ margin: 0, fontSize: "0.9rem", fontWeight: "bold" }}
                     >
                       Note Member Contributions
                     </Typography>
@@ -322,15 +323,17 @@ export default function Group({ user, secret, setGroupInfo }) {
                         prevMode === "table" ? "list" : "table"
                       )
                     }
+                    size="small"
+                    sx={{ padding: "4px" }}
                   >
                     {memberViewMode === "table" ? (
-                      <ListViewIcon />
+                      <ListViewIcon fontSize="small" />
                     ) : (
-                      <TableViewIcon />
+                      <TableViewIcon fontSize="small" />
                     )}
                   </IconButton>
                 </Box>
-                <Divider sx={{ marginBottom: 2 }} />
+                <Divider sx={{ marginBottom: 1 }} />
                 <TableComponent
                   rows={newData || []}
                   columns={columns || []}
@@ -369,6 +372,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
+                  padding: "12px",
                 }}
               >
                 <Box
@@ -377,17 +381,17 @@ export default function Group({ user, secret, setGroupInfo }) {
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 2,
+                    marginBottom: 1,
                   }}
                 >
-                  <Box sx={{ display: "flex", flexDirection: "row" }}>
+                  <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
                     <StickyNote2Icon
-                      sx={{ marginRight: 1, color: colors.primary[500] }}
+                      sx={{ marginRight: 0.5, color: colors.primary[500], fontSize: "1rem" }}
                     />
                     <Typography
-                      variant="h6"
+                      variant="subtitle1"
                       color={colors.primary[500]}
-                      gutterBottom
+                      sx={{ margin: 0, fontSize: "0.9rem", fontWeight: "bold" }}
                     >
                       Recent Trips
                     </Typography>
@@ -398,15 +402,17 @@ export default function Group({ user, secret, setGroupInfo }) {
                         prevMode === "table" ? "list" : "table"
                       )
                     }
+                    size="small"
+                    sx={{ padding: "4px" }}
                   >
                     {tripViewMode === "table" ? (
-                      <ListViewIcon />
+                      <ListViewIcon fontSize="small" />
                     ) : (
-                      <TableViewIcon />
+                      <TableViewIcon fontSize="small" />
                     )}
                   </IconButton>
                 </Box>
-                <Divider sx={{ marginBottom: 2 }} />
+                <Divider sx={{ marginBottom: 1 }} />
                 <TableComponent
                   rows={trip || []}
                   columns={tripColumns || []}
@@ -425,8 +431,8 @@ export default function Group({ user, secret, setGroupInfo }) {
             <Card
               sx={{
                 flexGrow: 1,
-                minHeight: { xs: "250px", md: "30%" },
-                marginTop: "10px",
+                minHeight: { xs: "200px", md: "25%" },
+                marginTop: "8px",
                 backgroundColor: colors.background,
               }}
             >
@@ -435,6 +441,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
+                  padding: "12px",
                 }}
               >
                 <TotalSpendTable
@@ -593,12 +600,12 @@ const TotalSpendTable = ({ info, isLoading }) => {
     <TableComponent
       rows={rows}
       columns={columns}
-      height="250px"
+      height="180px"
       hideFooter={true}
       isLoading={isLoading}
       addToolBar={false}
       sx={{
-        minHeight: "250px",
+        minHeight: "180px",
         backgroundColor: "rgba(0, 123, 255, 0.1)",
       }}
       viewMode="list"

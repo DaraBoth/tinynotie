@@ -40,7 +40,10 @@ function PaginatedList({ rows, columns, rowsPerPage = 5, isLoading = false }) {
         <List>
           {currentRows.map((row, index) => (
             <React.Fragment key={row.id}>
-              <ListItem alignItems="flex-start" sx={{ backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.background.paper }}>
+              <ListItem alignItems="flex-start" sx={{
+                backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.background.paper,
+                padding: "6px 8px"
+              }}>
                 <Box sx={{ width: '100%' }}>
                   {columns.map((col) => {
                     let value = row[col.field];
@@ -51,11 +54,11 @@ function PaginatedList({ rows, columns, rowsPerPage = 5, isLoading = false }) {
                       value = col.renderCell({ value });
                     }
                     return (
-                      <Box key={col.field} sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
-                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 'bold' }}>
+                      <Box key={col.field} sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 0.5 }}>
+                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>
                           {col.headerName}:
                         </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: theme.palette.primary.main, fontSize: '0.75rem' }}>
                           {value}
                         </Typography>
                       </Box>
@@ -69,28 +72,40 @@ function PaginatedList({ rows, columns, rowsPerPage = 5, isLoading = false }) {
         </List>
       )}
       {rows.length > rowsPerPage && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          position: 'sticky', 
-          bottom: 0, 
-          backgroundColor: isDark ? theme.palette.grey[900] : 'white', 
-          padding: 1,
-          boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.1)'
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          position: 'sticky',
+          bottom: 0,
+          backgroundColor: isDark ? theme.palette.grey[900] : 'white',
+          padding: "4px 8px",
+          boxShadow: '0px -2px 6px rgba(0, 0, 0, 0.1)',
+          fontSize: "0.75rem"
         }}>
-          <IconButton onClick={handlePrevPage} disabled={page === 0}>
-            <ArrowBackIcon />
+          <IconButton onClick={handlePrevPage} disabled={page === 0} size="small" sx={{ padding: "4px" }}>
+            <ArrowBackIcon fontSize="small" />
           </IconButton>
-          <Select value={page} onChange={handlePageChange}>
+          <Select
+            value={page}
+            onChange={handlePageChange}
+            size="small"
+            sx={{
+              fontSize: "0.75rem",
+              height: "28px",
+              '.MuiSelect-select': {
+                padding: "4px 8px"
+              }
+            }}
+          >
             {Array.from({ length: Math.ceil(rows.length / rowsPerPage) }, (_, index) => (
-              <MenuItem key={index} value={index}>
+              <MenuItem key={index} value={index} sx={{ fontSize: "0.75rem", minHeight: "auto" }}>
                 Page {index + 1}
               </MenuItem>
             ))}
           </Select>
-          <IconButton onClick={handleNextPage} disabled={page >= Math.ceil(rows.length / rowsPerPage) - 1}>
-            <ArrowForwardIcon />
+          <IconButton onClick={handleNextPage} disabled={page >= Math.ceil(rows.length / rowsPerPage) - 1} size="small" sx={{ padding: "4px" }}>
+            <ArrowForwardIcon fontSize="small" />
           </IconButton>
         </Box>
       )}

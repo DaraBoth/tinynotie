@@ -306,7 +306,7 @@ export default function Login({ setUser, setSecret }) {
               >
                 {!loading && (isRegister ? "Register" : "Login")}
               </Button>
-              <Box display="flex" justifyContent="center" mt={2}>
+              {/* <Box display="flex" justifyContent="center" mt={2}>
                 <Typography variant="body2" color={colors.grey[600]}>
                   {isRegister
                     ? "Already have an account?"
@@ -331,7 +331,7 @@ export default function Login({ setUser, setSecret }) {
                 >
                   {isRegister ? "Login" : "Register"}
                 </Button>
-              </Box>
+              </Box> */}
             </Box>
           </form>
         )}

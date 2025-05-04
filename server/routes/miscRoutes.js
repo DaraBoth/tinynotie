@@ -1,6 +1,10 @@
 import express from "express";
-import { authenticateToken } from "./middleware/auth.js";
-import { pool, handleError } from "../utils/db.js";
+import pg from "pg";
+import axios from "axios";
+import { authenticateToken } from "../middleware/auth.js";
+import { handleError } from "../utils/db.js";
+
+const { Pool } = pg;
 
 const router = express.Router();
 
