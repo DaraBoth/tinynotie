@@ -1,9 +1,17 @@
 {
-    "routes": [
+    "version": 2,
+    "builds": [
         {
-            "src": "/[^.]+",
-            "dest": "/",
-            "status": 200
+            "src": "package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist",
+                "installCommand": "npm run clean-install"
+            }
         }
+    ],
+    "routes": [
+        { "handle": "filesystem" },
+        { "src": "/[^.]+", "dest": "/", "status": 200 }
     ]
 }
