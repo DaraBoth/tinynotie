@@ -63,7 +63,7 @@ router.post("/login", async (req, res) => {
   const { usernm, passwd } = req.body;
   try {
     const sql = `SELECT id, passwd FROM user_infm WHERE usernm = $1;`;
-    const values = [usernm.toLowerCase()];
+    const values = [usernm];
     
     const { rows } = await pool.query(sql, values);
     if (rows.length > 0) {
