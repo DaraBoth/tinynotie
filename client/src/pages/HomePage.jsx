@@ -54,31 +54,44 @@ function GroupCard({ item, onDelete, onClick }) {
 
   return (
     <Paper
-      elevation={3}
+      elevation={2}
       sx={{
         cursor: "pointer",
-        padding: "15px",
-        borderRadius: "12px",
+        padding: { xs: "10px", md: "12px" },
+        borderRadius: "10px",
         border: `1px solid ${colors.primary[700]}`,
         transition: "transform 0.2s, box-shadow 0.2s",
         "&:hover": {
-          transform: "scale(1.05)",
-          boxShadow: `0 4px 20px ${colors.primary[900]}33`,
+          transform: "scale(1.03)",
+          boxShadow: `0 2px 10px ${colors.primary[900]}33`,
         },
         position: "relative",
         backgroundColor: colors.grey[800],
       }}
       onClick={() => onClick(item)}
     >
-      <Typography variant="h6" fontWeight="bold" color={colors.primary[100]}>
+      <Typography
+        variant="subtitle1"
+        fontWeight="bold"
+        color={colors.primary[100]}
+        sx={{ fontSize: { xs: "0.9rem", md: "1rem" }, mb: 0.5 }}
+      >
         {item.grp_name}
       </Typography>
-      <Typography variant="body2" color={colors.grey[300]}>
+      <Typography
+        variant="body2"
+        color={colors.grey[300]}
+        sx={{ fontSize: { xs: "0.75rem", md: "0.8rem" }, mb: 0.25 }}
+      >
         <span style={{ color: colors.primary[300] }}>
           {`Currency ${currencyObject[item.currency]}`}
         </span>
       </Typography>
-      <Typography variant="body2" color={colors.grey[400]}>
+      <Typography
+        variant="body2"
+        color={colors.grey[400]}
+        sx={{ fontSize: { xs: "0.75rem", md: "0.8rem" } }}
+      >
         <span title={moment(item.create_date).format("YYYY-MM-DD hh:mm:ss (dd)")} style={{ color: colors.primary[300] }}>
           {`Since ${formatTimeDifference(item.create_date)}`}
         </span>
@@ -92,12 +105,14 @@ function GroupCard({ item, onDelete, onClick }) {
           }}
           sx={{
             position: "absolute",
-            top: 5,
-            right: 5,
+            top: 2,
+            right: 2,
             color: colors.redAccent[500],
+            padding: "4px",
           }}
+          size="small"
         >
-          <DeleteIcon />
+          <DeleteIcon fontSize="small" />
         </IconButton>
       )}
     </Paper>
@@ -141,11 +156,11 @@ export default function Home({
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
   };
-  
+
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
   };
-  
+
   useEffect(() => {
     triggerUser({ user, user_id: secret });
   }, [triggerUser, user, secret]);
@@ -258,10 +273,10 @@ export default function Home({
       }}
     >
       <Paper
-        elevation={3}
+        elevation={2}
         sx={{
-          padding: "20px",
-          marginBottom: isNonMobile ? "20px" : "0px",
+          padding: { xs: "12px", md: "16px" },
+          marginBottom: isNonMobile ? "16px" : "0px",
           borderRadius: "0px",
           backgroundColor: colors.grey[800],
         }}
@@ -274,16 +289,22 @@ export default function Home({
         >
           <Typography
             component="span"
-            variant="h4"
+            variant="h5"
             color={colors.primary[100]}
-            fontSize={fontSize}
-            fontWeight="bold"
+            sx={{
+              fontSize: { xs: "1.1rem", md: "1.3rem" },
+              fontWeight: "bold"
+            }}
           >
             TinyNotie
           </Typography>
 
           <Box>
-            <IconButton onClick={handleOpenProfileSettings} aria-label="profile">
+            <IconButton
+              onClick={handleOpenProfileSettings}
+              aria-label="profile"
+              sx={{ padding: { xs: "6px", md: "8px" } }}
+            >
               <img
                 src={
                   profileData?.profile_url ||
@@ -291,16 +312,25 @@ export default function Home({
                 } // Use shared profile data
                 alt="Profile"
                 style={{
-                  width: 40,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   borderRadius: "50%",
                   objectFit: "cover",
                   border: `2px solid ${colors.primary[500]}`,
                 }}
               />
             </IconButton>
-            <IconButton onClick={handleLogout} aria-label="logout">
-              <LogoutIcon sx={{ fill: colors.redAccent[500] }} />
+            <IconButton
+              onClick={handleLogout}
+              aria-label="logout"
+              sx={{ padding: { xs: "6px", md: "8px" } }}
+            >
+              <LogoutIcon
+                sx={{
+                  fill: colors.redAccent[500],
+                  fontSize: { xs: "1.2rem", md: "1.4rem" }
+                }}
+              />
             </IconButton>
           </Box>
         </Box>
@@ -310,18 +340,18 @@ export default function Home({
         <Box
           sx={{
             position: "fixed",
-            bottom: "16px",
+            bottom: "12px",
             left: "50%",
             transform: "translateX(-50%)", // Center it horizontally
             zIndex: 1300, // Above other elements
           }}
         >
           <Paper
-            elevation={6} // Slight elevation for a floating effect
+            elevation={3} // Slight elevation for a floating effect
             sx={{
               display: "flex",
-              padding: "8px 16px",
-              borderRadius: "24px", // Rounded corners like a dock
+              padding: "6px 12px",
+              borderRadius: "20px", // Rounded corners like a dock
               backgroundColor: colors.grey[900], // Background color
               position:"relative",
               overflow:"hidden",
@@ -332,26 +362,29 @@ export default function Home({
               loop={true}
               style={{
                 position:"absolute",
-                width: 200,
+                width: 180,
                 top:"-70px",
                 right:"70px",
-                height: 200,
-                mixBlendMode:"overlay"
+                height: 180,
+                mixBlendMode:"overlay",
+                opacity: 0.8
               }}
             />
             <Button
               onClick={() => handleTabChange(null, 0)}
               color={tabIndex === 0 ? "primary" : "inherit"}
               disableRipple
-              startIcon={<DescriptionOutlinedIcon />}
+              startIcon={<DescriptionOutlinedIcon sx={{ fontSize: "1.1rem" }} />}
               sx={{
                 textTransform: "none",
-                mx: 1,
+                mx: 0.5,
+                fontSize: "0.85rem",
                 color:
                   tabIndex === 0 ? colors.primary[500] : colors.primary[100],
                 ".MuiButtonBase-root:hover": {
                   backgroundColor: "none",
                 },
+                padding: "4px 8px",
               }}
             >
               My Notes
@@ -360,12 +393,14 @@ export default function Home({
               disableRipple
               onClick={() => handleTabChange(null, 1)}
               color={tabIndex === 1 ? "primary" : "inherit"}
-              startIcon={<PeopleAltOutlinedIcon />}
+              startIcon={<PeopleAltOutlinedIcon sx={{ fontSize: "1.1rem" }} />}
               sx={{
                 textTransform: "none",
-                mx: 1,
+                mx: 0.5,
+                fontSize: "0.85rem",
                 color:
                   tabIndex === 1 ? colors.primary[500] : colors.primary[100],
+                padding: "4px 8px",
               }}
             >
               From Others
@@ -379,19 +414,21 @@ export default function Home({
             justifyContent: "center",
             alignItems: "center",
             width: "100%",
-            marginBottom: "16px",
+            marginBottom: "10px",
             backgroundColor: colors.grey[800],
           }}
         >
           <Button
             onClick={() => handleTabChange(null, 0)}
             color={tabIndex === 0 ? "primary" : "inherit"}
-            startIcon={<DescriptionOutlinedIcon />}
+            startIcon={<DescriptionOutlinedIcon sx={{ fontSize: "1rem" }} />}
             sx={{
               textTransform: "none",
               width: "50%", // Full width for mobile view
               borderRadius: "0", // No border radius
               color: tabIndex === 0 ? colors.primary[500] : colors.primary[100],
+              fontSize: "0.8rem",
+              padding: "6px 0",
             }}
             disableRipple
           >
@@ -401,12 +438,14 @@ export default function Home({
             disableRipple
             onClick={() => handleTabChange(null, 1)}
             color={tabIndex === 1 ? "primary" : "inherit"}
-            startIcon={<PeopleAltOutlinedIcon />}
+            startIcon={<PeopleAltOutlinedIcon sx={{ fontSize: "1rem" }} />}
             sx={{
               textTransform: "none",
               width: "50%", // Full width for mobile view
               borderRadius: "0", // No border radius
               color: tabIndex === 1 ? colors.primary[500] : colors.primary[100],
+              fontSize: "0.8rem",
+              padding: "6px 0",
             }}
           >
             From Others
@@ -425,8 +464,8 @@ export default function Home({
               ? "1fr" // Make it take full width when no data
               : gridColItem,
           gridAutoFlow: "dense",
-          gap: "20px",
-          margin: "20px",
+          gap: { xs: "12px", md: "16px" },
+          margin: { xs: "10px", md: "16px" },
           marginTop: "0px",
         }}
       >
@@ -436,71 +475,88 @@ export default function Home({
               key={index}
               variant="rectangular"
               width={"100%"}
-              height={"100px"}
-              sx={{ borderRadius: "12px", backgroundColor: colors.grey[700] }}
+              height={"80px"}
+              sx={{ borderRadius: "10px", backgroundColor: colors.grey[700] }}
             />
           ))
         ) : tabIndex === 0 && data.every((item) => !item.isAdmin) ? (
           // No notes created by the user
           <Paper
-            elevation={3}
+            elevation={2}
             sx={{
               width: "100%", // Ensure it takes the full width
-              height: "60vh", // Adjust height for better view
+              height: { xs: "50vh", md: "60vh" }, // Adjust height for better view
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
               flexDirection: "column",
-              padding: "20px",
+              padding: { xs: "16px", md: "20px" },
               textAlign: "center",
-              borderRadius: "12px",
+              borderRadius: "10px",
               border: `1px solid ${colors.primary[700]}`,
               backgroundColor: colors.grey[800],
             }}
           >
-            <Typography variant="h6" color={colors.primary[100]}>
+            <Typography
+              variant="subtitle1"
+              color={colors.primary[100]}
+              sx={{ fontSize: { xs: "0.9rem", md: "1rem" }, fontWeight: "bold" }}
+            >
               No notes found!
             </Typography>
-            <Typography variant="body1" color={colors.primary[200]}>
+            <Typography
+              variant="body2"
+              color={colors.primary[200]}
+              sx={{ fontSize: { xs: "0.8rem", md: "0.9rem" }, mt: 1 }}
+            >
               Click the button below to create your first note.
             </Typography>
             <Fab
               color="primary"
               aria-label="add"
+              size="small"
               onClick={handleCreateGroup}
               sx={{
-                marginTop: "20px",
+                marginTop: "16px",
                 backgroundColor: colors.primary[500],
                 "&:hover": {
                   backgroundColor: colors.primary[700],
                 },
               }}
             >
-              <AddIcon />
+              <AddIcon fontSize="small" />
             </Fab>
           </Paper>
         ) : tabIndex === 1 && data.every((item) => item.isAdmin) ? (
           // No shared notes from other users
           <Paper
-            elevation={3}
+            elevation={2}
             sx={{
               width: "100%",
-              height: "50vh",
+              height: { xs: "40vh", md: "50vh" },
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
               flexDirection: "column",
-              padding: "20px",
+              padding: { xs: "16px", md: "20px" },
               textAlign: "center",
-              borderRadius: "12px",
+              borderRadius: "10px",
               backgroundColor: "transparent",
               boxShadow: "none",
             }}
           >
-            <Typography variant="h6" color={colors.primary[100]}>
+            <Typography
+              variant="subtitle1"
+              color={colors.primary[100]}
+              sx={{ fontSize: { xs: "0.9rem", md: "1rem" }, fontWeight: "bold" }}
+            >
               No shared notes found!
             </Typography>
-            <Typography variant="body1" color={colors.primary[200]}>
+            <Typography
+              variant="body2"
+              color={colors.primary[200]}
+              sx={{ fontSize: { xs: "0.8rem", md: "0.9rem" }, mt: 1 }}
+            >
               Ask your friends to share their notes with you.
             </Typography>
           </Paper>
@@ -524,26 +580,29 @@ export default function Home({
       <Box
         sx={{
           position: "fixed",
-          bottom: "16px",
-          right: scrollDirection === "down" ? "-80px" : "16px", // Move out of view when scrolling down
+          bottom: "12px",
+          right: scrollDirection === "down" ? "-80px" : "12px", // Move out of view when scrolling down
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          gap: "12px",
           transition: "right 0.3s ease-in-out", // Smooth transition
         }}
       >
         <Fab
           color="primary"
           aria-label="add"
+          size="small"
           onClick={handleCreateGroup}
           sx={{
             backgroundColor: colors.primary[500],
             "&:hover": {
               backgroundColor: colors.primary[700],
             },
+            width: "40px",
+            height: "40px",
           }}
         >
-          <AddIcon />
+          <AddIcon fontSize="small" />
         </Fab>
 
         <FloatingChat
@@ -560,32 +619,45 @@ export default function Home({
         PaperProps={{
           sx: {
             backgroundColor: colors.grey[900],
-            borderRadius: "12px",
-            padding: "20px",
+            borderRadius: "10px",
+            padding: { xs: "12px", md: "16px" },
             color: colors.primary[100],
           },
         }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ padding: { xs: "8px 12px", md: "12px 16px" } }}>
           <Stack direction="row" alignItems="center" spacing={1}>
-            <WarningIcon sx={{ color: colors.redAccent[500] }} />
-            <Typography variant="h6" sx={{ color: colors.primary[500] }}>
+            <WarningIcon sx={{ color: colors.redAccent[500], fontSize: { xs: "1.2rem", md: "1.4rem" } }} />
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: colors.primary[500],
+                fontSize: { xs: "0.9rem", md: "1rem" },
+                fontWeight: "bold"
+              }}
+            >
               Confirm Delete
             </Typography>
           </Stack>
         </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" color={colors.primary[300]}>
+        <DialogContent sx={{ padding: { xs: "8px 12px", md: "12px 16px" } }}>
+          <Typography
+            variant="body2"
+            color={colors.primary[300]}
+            sx={{ fontSize: { xs: "0.8rem", md: "0.9rem" } }}
+          >
             Are you sure you want to delete the <strong>{noteToDeleteName}</strong> note? <br />This action cannot be undone.
           </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ padding: { xs: "8px 12px", md: "12px 16px" } }}>
           <Button
             onClick={() => setOpenDeleteDialog(false)}
             sx={{
               color: colors.primary[500],
               textTransform: "none",
               fontWeight: "bold",
+              fontSize: { xs: "0.75rem", md: "0.85rem" },
+              padding: { xs: "4px 8px", md: "6px 12px" },
             }}
           >
             Cancel
@@ -594,7 +666,7 @@ export default function Home({
             onClick={() => handleDeleteNote(noteToDelete)}
             color="secondary"
             disabled={deleting}
-            startIcon={deleting && <CircularProgress size="1rem" />}
+            startIcon={deleting && <CircularProgress size="0.9rem" />}
             sx={{
               backgroundColor: colors.redAccent[500],
               color: colors.grey[100],
@@ -603,6 +675,8 @@ export default function Home({
               },
               textTransform: "none",
               fontWeight: "bold",
+              fontSize: { xs: "0.75rem", md: "0.85rem" },
+              padding: { xs: "4px 8px", md: "6px 12px" },
             }}
           >
             Delete
@@ -614,11 +688,24 @@ export default function Home({
         autoHideDuration={3000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        sx={{
+          '& .MuiPaper-root': {
+            borderRadius: '6px',
+            fontSize: { xs: "0.75rem", md: "0.85rem" }
+          }
+        }}
       >
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbarSuccess ? "success" : "error"}
-          sx={{ width: "100%" }}
+          sx={{
+            width: "100%",
+            padding: { xs: "4px 8px", md: "6px 12px" },
+            '& .MuiAlert-icon': {
+              fontSize: { xs: "1.1rem", md: "1.2rem" },
+              marginRight: { xs: "6px", md: "8px" }
+            }
+          }}
         >
           {snackbarMessage}
         </Alert>

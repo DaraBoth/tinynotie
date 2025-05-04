@@ -59,7 +59,7 @@ const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
           if (redirectToNewGroup) {
             router.push(`/group/${data.id}`);
           } else {
-            router.back();            
+            router.back();
           }
         },
       }
@@ -84,6 +84,7 @@ const CreateGroupForm = ({ members: data }: { members: MemberResponse }) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="$">US Dollar</SelectItem>
+            <SelectItem value="A$">Australian Dollar</SelectItem>
             <SelectItem value="W">Korean Won</SelectItem>
             <SelectItem value="R">Khmer Riel</SelectItem>
           </SelectContent>

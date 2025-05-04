@@ -146,6 +146,7 @@ export default function EditTrip({
 
   const currencySuggestions = {
     $: [5, 10, 20, 50, 100],
+    "A$": [5, 10, 20, 50, 100],
     W: [1000, 5000, 10000, 50000, 100000],
     R: [2000, 5000, 10000, 20000, 50000],
   };

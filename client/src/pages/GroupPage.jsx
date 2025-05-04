@@ -268,7 +268,7 @@ export default function Group({ user, secret, setGroupInfo }) {
       />
       <Box
         sx={{
-          padding: "12px",
+          padding: { xs: "8px", md: "10px" },
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
@@ -282,9 +282,9 @@ export default function Group({ user, secret, setGroupInfo }) {
                 height: "100%",
                 backgroundColor: colors.background,
                 borderRadius: "8px",
-                boxShadow: `0px 4px 10px ${theme.palette.mode === "light"
+                boxShadow: `0px 2px 8px ${theme.palette.mode === "light"
                   ? "rgba(0, 0, 0, 0.1)"
-                  : "rgba(0, 0, 0, 0.5)"
+                  : "rgba(0, 0, 0, 0.4)"
                   }`,
               }}
             >
@@ -293,7 +293,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  padding: "12px",
+                  padding: { xs: "8px", md: "10px" },
                 }}
               >
                 <Box
@@ -302,7 +302,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 1,
+                    marginBottom: 0.5,
                   }}
                 >
                   <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
@@ -333,11 +333,11 @@ export default function Group({ user, secret, setGroupInfo }) {
                     )}
                   </IconButton>
                 </Box>
-                <Divider sx={{ marginBottom: 1 }} />
+                <Divider sx={{ marginBottom: 0.5 }} />
                 <TableComponent
                   rows={newData || []}
                   columns={columns || []}
-                  height={{ xs: "650px", md: "100%" }}
+                  height={{ xs: "auto", md: "100%" }}
                   isLoading={!resultTrip.isSuccess || !resultMember.isSuccess}
                   sx={{ flexGrow: 1 }}
                   rowsPerPage={5}
@@ -356,15 +356,21 @@ export default function Group({ user, secret, setGroupInfo }) {
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
-              minHeight: "calc(100vh - 150px)",
+              minHeight: { xs: "auto", md: "calc(100vh - 150px)" },
+              marginTop: { xs: 1, md: 0 },
             }}
           >
             {/* Recent Trips Card */}
             <Card
               sx={{
                 flexGrow: 1,
-                minHeight: { xs: "50vh", md: "68%" },
+                minHeight: { xs: "auto", md: "68%" },
                 backgroundColor: colors.background,
+                boxShadow: `0px 2px 8px ${theme.palette.mode === "light"
+                  ? "rgba(0, 0, 0, 0.1)"
+                  : "rgba(0, 0, 0, 0.4)"
+                  }`,
+                borderRadius: "8px",
               }}
             >
               <CardContent
@@ -372,7 +378,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
-                  padding: "12px",
+                  padding: { xs: "8px", md: "10px" },
                 }}
               >
                 <Box
@@ -381,7 +387,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 1,
+                    marginBottom: 0.5,
                   }}
                 >
                   <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
@@ -412,11 +418,11 @@ export default function Group({ user, secret, setGroupInfo }) {
                     )}
                   </IconButton>
                 </Box>
-                <Divider sx={{ marginBottom: 1 }} />
+                <Divider sx={{ marginBottom: 0.5 }} />
                 <TableComponent
                   rows={trip || []}
                   columns={tripColumns || []}
-                  height="100%"
+                  height={{ xs: "auto", md: "100%" }}
                   isLoading={!resultTrip.isSuccess || !resultMember.isSuccess}
                   sx={{
                     flexGrow: 1,
@@ -431,9 +437,14 @@ export default function Group({ user, secret, setGroupInfo }) {
             <Card
               sx={{
                 flexGrow: 1,
-                minHeight: { xs: "200px", md: "25%" },
+                minHeight: { xs: "auto", md: "25%" },
                 marginTop: "8px",
                 backgroundColor: colors.background,
+                boxShadow: `0px 2px 8px ${theme.palette.mode === "light"
+                  ? "rgba(0, 0, 0, 0.1)"
+                  : "rgba(0, 0, 0, 0.4)"
+                  }`,
+                borderRadius: "8px",
               }}
             >
               <CardContent
@@ -441,7 +452,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
-                  padding: "12px",
+                  padding: { xs: "8px", md: "10px" },
                 }}
               >
                 <TotalSpendTable

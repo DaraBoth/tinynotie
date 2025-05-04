@@ -17,7 +17,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Snackbar,
 } from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";
@@ -26,14 +25,10 @@ import { useGetAllMemberMutation, usePostAddGroupMutation } from "../api/api";
 import moment from "moment";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
-import cooking from "../assets/cooking.json";
 import CustomSnackbar from "../component/CustomSnackbar";
-import Lottie from "lottie-react";
 
 export default function CreateGroup({ secret, setGroupInfo }) {
-  const [showUndoSnackbar, setShowUndoSnackbar] = useState(false);
-  const [undoCountdown, setUndoCountdown] = useState(5); // Countdown in seconds
-  const [abortController, setAbortController] = useState(null);
+  // State for snackbar and dialog
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
@@ -60,57 +55,49 @@ export default function CreateGroup({ secret, setGroupInfo }) {
     }
   }, [resultMember.data]);
 
-  const handleFormSubmit = debounce(async (values) => {
+  const handleFormSubmit = async (values) => {
     const { grp_name } = values;
     if (grp_name && currency && newMember.length > 0) {
-      const controller = new AbortController(); // Create AbortController
-      setAbortController(controller);
-      setShowUndoSnackbar(true); // Show undo Snackbar
-      setUndoCountdown(5); // Start countdown from 5 seconds
-
-      const countdownInterval = setInterval(() => {
-        setUndoCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(countdownInterval);
-            setShowUndoSnackbar(false); // Hide Snackbar when countdown ends
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
       try {
-        await triggerCreateGroup(
-          {
-            user_id: secret,
-            grp_name,
-            currency,
-            status: 1,
-            create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
-            member: JSON.stringify(newMember),
-          },
-          { signal: controller.signal }
-        ).unwrap();
-
-        setShowSnackbar({
-          open: true,
-          message: "Note created successfully!",
-          severity: "success",
+        // Create the group without using AbortController
+        const response = await triggerCreateGroup({
+          user_id: secret,
+          grp_name,
+          currency,
+          status: 1,
+          create_date: moment().format("YYYY-MM-DD HH:mm:ss"),
+          member: JSON.stringify(newMember),
         });
-        setTimeout(() => navigate("/"), 2000);
-      } catch (error) {
-        if (error.name === "AbortError") {
-          console.log("Request aborted");
-        } else {
+
+        if (response.data && response.data.status) {
           setShowSnackbar({
             open: true,
-            message: "Something went wrong. Please try again.",
+            message: "Note created successfully!",
+            severity: "success",
+          });
+
+          // Use a shorter timeout to navigate
+          setTimeout(() => {
+            navigate("/");
+          }, 1000);
+        } else {
+          // Handle API error response
+          setShowSnackbar({
+            open: true,
+            message: response.data?.message || "Failed to create note. Please try again.",
             severity: "error",
           });
         }
+      } catch (error) {
+        console.error("Error creating group:", error);
+        setShowSnackbar({
+          open: true,
+          message: "Something went wrong. Please try again.",
+          severity: "error",
+        });
       }
     }
-  }, 500);
+  };
 
   const handleCancelClick = (values) => {
     // Check if any input is filled or any members are added
@@ -126,12 +113,12 @@ export default function CreateGroup({ secret, setGroupInfo }) {
     navigate("/");
   };
 
-  const handleUndo = () => {
-    if (abortController) {
-      abortController.abort(); // Abort the request
-      setAbortController(null); // Reset controller
-    }
-    setShowUndoSnackbar(false); // Hide the Snackbar
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setShowSnackbar({
+      ...showSnackbar,
+      open: false
+    });
   };
 
   return (
@@ -179,27 +166,17 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                     position: "absolute",
                     width: "100%",
                     height: "100%",
-                    marginLeft: "-32px",
-                    marginTop: "-32px",
-                    backgroundColor: "blanchedalmond",
+                    left: 0,
+                    top: 0,
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
                     borderRadius: "12px",
                     zIndex: "200",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    mixBlendMode: "screen",
-                    transition: "ease-in",
                   }}
                 >
-                  <Lottie
-                    animationData={cooking}
-                    loop={true}
-                    style={{
-                      width: 500,
-                      height: 500,
-                      mixBlendMode: "multiply",
-                    }}
-                  />
+                  <CircularProgress color="primary" size={60} />
                 </Box>
               )}
               <Typography
@@ -279,6 +256,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                   }}
                 >
                   <MenuItem value="$">US Dollar</MenuItem>
+                  <MenuItem value="A$">Australian Dollar</MenuItem>
                   <MenuItem value="W">Korean Won</MenuItem>
                   <MenuItem value="R">Khmer Reil</MenuItem>
                 </Select>
@@ -302,7 +280,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                   ))
                 }
                 value={values.members} // Set value from Formik
-                onChange={(event, newValue) => {
+                onChange={(_, newValue) => {
                   setNewMember(newValue);
                   handleChange({
                     target: { name: "members", value: newValue },
@@ -451,16 +429,12 @@ export default function CreateGroup({ secret, setGroupInfo }) {
         </DialogActions>
       </Dialog>
 
-      {/* Centralized Snackbar */}
-      <Snackbar
-        open={showUndoSnackbar}
-        autoHideDuration={5000}
-        message={`Creating... Click "Undo" within ${undoCountdown} seconds to cancel.`}
-        action={
-          <Button color="secondary" size="small" onClick={handleUndo}>
-            Undo
-          </Button>
-        }
+      {/* Success/Error Snackbar */}
+      <CustomSnackbar
+        open={showSnackbar.open}
+        message={showSnackbar.message}
+        severity={showSnackbar.severity}
+        onClose={handleSnackbarClose}
       />
     </Box>
   );
@@ -479,12 +453,4 @@ const initialValues = {
   members: [],
 };
 
-function debounce(func, timeout = 300) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      func.apply(this, args);
-    }, timeout);
-  };
-}
+// End of file

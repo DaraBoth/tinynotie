@@ -42,7 +42,8 @@ function PaginatedList({ rows, columns, rowsPerPage = 5, isLoading = false }) {
             <React.Fragment key={row.id}>
               <ListItem alignItems="flex-start" sx={{
                 backgroundColor: isDark ? theme.palette.grey[800] : theme.palette.background.paper,
-                padding: "6px 8px"
+                padding: "4px 6px",
+                marginBottom: "2px"
               }}>
                 <Box sx={{ width: '100%' }}>
                   {columns.map((col) => {
@@ -54,11 +55,11 @@ function PaginatedList({ rows, columns, rowsPerPage = 5, isLoading = false }) {
                       value = col.renderCell({ value });
                     }
                     return (
-                      <Box key={col.field} sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 0.5 }}>
-                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}>
+                      <Box key={col.field} sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 0.25 }}>
+                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}>
                           {col.headerName}:
                         </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: theme.palette.primary.main, fontSize: '0.75rem' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: theme.palette.primary.main, fontSize: '0.7rem' }}>
                           {value}
                         </Typography>
                       </Box>
@@ -79,9 +80,9 @@ function PaginatedList({ rows, columns, rowsPerPage = 5, isLoading = false }) {
           position: 'sticky',
           bottom: 0,
           backgroundColor: isDark ? theme.palette.grey[900] : 'white',
-          padding: "4px 8px",
-          boxShadow: '0px -2px 6px rgba(0, 0, 0, 0.1)',
-          fontSize: "0.75rem"
+          padding: "2px 6px",
+          boxShadow: '0px -1px 4px rgba(0, 0, 0, 0.1)',
+          fontSize: "0.7rem"
         }}>
           <IconButton onClick={handlePrevPage} disabled={page === 0} size="small" sx={{ padding: "4px" }}>
             <ArrowBackIcon fontSize="small" />
@@ -91,15 +92,15 @@ function PaginatedList({ rows, columns, rowsPerPage = 5, isLoading = false }) {
             onChange={handlePageChange}
             size="small"
             sx={{
-              fontSize: "0.75rem",
-              height: "28px",
+              fontSize: "0.7rem",
+              height: "24px",
               '.MuiSelect-select': {
-                padding: "4px 8px"
+                padding: "2px 6px"
               }
             }}
           >
             {Array.from({ length: Math.ceil(rows.length / rowsPerPage) }, (_, index) => (
-              <MenuItem key={index} value={index} sx={{ fontSize: "0.75rem", minHeight: "auto" }}>
+              <MenuItem key={index} value={index} sx={{ fontSize: "0.7rem", minHeight: "auto", padding: "2px 6px" }}>
                 Page {index + 1}
               </MenuItem>
             ))}
