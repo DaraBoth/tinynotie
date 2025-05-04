@@ -951,8 +951,8 @@ const handleMessage = async function (messageObj) {
         let values = [telegram_chat_id];
         let { rows } = await pool.query(sql, values);
         if (rows.length > 0) {
-          let newPassword = messageText.replace("/password", "").trim();
-          newPassword = messageText.replace("/Password", "")
+          let newPassword = messageText.replace("/password", "");
+          newPassword = newPassword.replace("/Password", "").trim()
           if (newPassword.length === 0) {
             return darabothSendMessage(
               messageObj,
