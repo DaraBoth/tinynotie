@@ -8,9 +8,13 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { api } from "@/api/api";
 import { QueryClientProvider } from 'react-query';
 import queryClient from './api/queryClient';
+import authReducer from './store/authSlice';
 
 export const store = configureStore({
-  reducer: { [api.reducerPath]: api.reducer },
+  reducer: {
+    [api.reducerPath]: api.reducer,
+    auth: authReducer
+  },
   middleware: (getDefault) => getDefault().concat(api.middleware),
 });
 setupListeners(store.dispatch);

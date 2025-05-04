@@ -18,6 +18,7 @@ import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import TranslatePage from "./pages/TranslatePage";
 import useServiceWorker from "./component/useServiceWorker";
+import TokenExpirationHandler from "./component/TokenExpirationHandler";
 import NotFoundPage from "./pages/NotFoundPage";
 import RegisterGuide from "./pages/RegisterGuide";
 import Lottie from "lottie-react";
@@ -68,6 +69,7 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <TokenExpirationHandler />
         <ColorMode theme={theme} colorMode={colorMode} colors={colors} />
         <BrowserRouter>
           <Routes>

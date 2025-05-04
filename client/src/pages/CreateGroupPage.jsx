@@ -256,7 +256,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                   }}
                 >
                   <MenuItem value="$">US Dollar</MenuItem>
-                  <MenuItem value="A$">Australian Dollar</MenuItem>
+                  <MenuItem value="AUD">Australian Dollar</MenuItem>
                   <MenuItem value="W">Korean Won</MenuItem>
                   <MenuItem value="R">Khmer Reil</MenuItem>
                 </Select>

@@ -50,6 +50,7 @@ function GroupCard({ item, onDelete, onClick }) {
     W: "Korean Won",
     $: "US Dollar",
     R: "Khmer Reil",
+    AUD: "Australian Dollar",
   };
 
   return (

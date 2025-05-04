@@ -806,8 +806,8 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
     let allowedUsers = [];
     if (groupData.visibility === 'private') {
       const allowedUsersSql = `
-        SELECT u.id, u.username, u.email, u.profile_image
-        FROM users u
+        SELECT u.id, u.usernm, u.email, u.profile_url
+        FROM user_infm u
         JOIN grp_users gu ON u.id = gu.user_id
         WHERE gu.group_id = $1;
       `;

@@ -3,8 +3,9 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Function to get the JWT token from sessionStorage
 const getToken = () => sessionStorage.getItem("token");
 
-export const api = createApi({
-  baseQuery: fetchBaseQuery({
+// Create a custom base query with error handling
+const baseQueryWithErrorHandling = async (args, api, extraOptions) => {
+  const baseQuery = fetchBaseQuery({
     baseUrl: import.meta.env.VITE_BASE_URL,
     prepareHeaders: (headers) => {
       // Get the token from sessionStorage
@@ -17,7 +18,36 @@ export const api = createApi({
 
       return headers;
     },
-  }),
+  });
+
+  // Execute the query
+  const result = await baseQuery(args, api, extraOptions);
+
+  // Check if we got an error response
+  if (result.error) {
+    // Check for token expiration (401 Unauthorized)
+    if (result.error.status === 401) {
+      // Clear the token
+      sessionStorage.removeItem("token");
+
+      // Dispatch a custom action to notify the app about token expiration
+      api.dispatch({ type: 'auth/tokenExpired' });
+
+      // Return a modified error with a custom message
+      return {
+        error: {
+          ...result.error,
+          message: "Your session has expired. Please log in again."
+        }
+      };
+    }
+  }
+
+  return result;
+};
+
+export const api = createApi({
+  baseQuery: baseQueryWithErrorHandling,
   reducerPath: "main",
   tagTypes: [],
   endpoints: (build) => ({
