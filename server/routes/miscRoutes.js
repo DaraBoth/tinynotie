@@ -5,6 +5,9 @@ import { authenticateToken } from "../middleware/auth.js";
 import { handleError } from "../utils/db.js";
 
 const { Pool } = pg;
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+});
 
 const router = express.Router();
 
@@ -76,7 +79,7 @@ router.get("/test_db_online", async (req, res) => {
 
   let client;
   try {
-    client = await testPool.connect();
+    client = await pool.connect();
     const results = await client.query(sql);
     res.send({ results });
   } catch (error) {
@@ -86,7 +89,6 @@ router.get("/test_db_online", async (req, res) => {
     if (client) {
       client.release();
     }
-    testPool.end();
   }
 });
 

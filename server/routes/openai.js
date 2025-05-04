@@ -500,7 +500,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
             Database Response: [${JSON.stringify(results.rows)}]
           `;
 
-          const resText = await AI_Human_readble(prompt, chatHistory);
+          const resText = await AI_Human_readable(prompt, chatHistory);
           responseData.message = resText.text();
 
           break;
@@ -525,96 +525,7 @@ async function AI_Database(userAsk, userAskID, chatHistory = []) {
   return responseData;
 }
 
-async function AI_Human_readble(prompt, chatHistory) {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-  });
-
-  const template = `
-        Instruction
-        You are tasked with generating a human-readable text response based on the following parameters:
-
-        User Ask For: This is what the user is asking for in natural language.
-        Database Response: This is the data returned from the database, provided in JSON format or as an array. The data might sometimes be empty.
-        Your job is to interpret the database response and craft a natural, human-like message that answers the user's query based on the available data. If the database response is empty or does not contain the requested information, politely inform the user.
-
-        Examples of Desired Output
-        User Ask For: "Can you show me the details of the last order?"
-        Database Response:
-        {
-            "order_id": 12345,
-            "user_id": 6789,
-            "product_name": "Wireless Mouse",
-            "order_date": "2024-08-01"
-        }
-        AI Response:
-        "The details of the last order are as follows: Order ID 12345, for a Wireless Mouse, placed on August 1, 2024."
-
-        User Ask For: "Do we have any recent sign-ups?"
-        Database Response: []
-        AI Response:
-        "It seems there are no recent sign-ups at the moment."
-
-        User Ask For: "What is the total revenue?"
-        Database Response:
-        {
-            "total_revenue": 45000
-        }
-        AI Response:
-        "The total revenue currently stands at $45,000."
-
-        User Ask For: "Show me all user info."
-        Database Response:
-        [
-            {"id": 1, "name": "John Doe", "email": "john@example.com"},
-            {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
-        ]
-
-        AI Response:
-        "Here are the details of all users: 1. John Doe (john@example.com), 2. Jane Smith (jane@example.com)."
-
-        User Ask For: "What is your name?"
-        Database Response: null
-        AI Response:
-        "I'm an AI assistant, so I don't have a name. How can I assist you today?"
-
-        Guidelines
-        Use the data from the "Database Response" to generate a clear and concise human-readable message that directly answers the user's query.
-        If the database response is empty, politely inform the user that the requested data is not available.
-        Ensure the response is natural, polite, and appropriate for a professional setting.`;
-
-  const defaultChatHistory = [
-    {
-      role: "user",
-      parts: [{ text: template }],
-    },
-    {
-      role: "model",
-      parts: [{ text: "Yes noted boss." }],
-    },
-  ];
-
-  if (Array.isArray(chatHistory) && chatHistory.length > 0) {
-    for (let i = defaultChatHistory.length - 1; i >= 0; i--) {
-      chatHistory.unshift(defaultChatHistory[i]);
-    }
-  } else {
-    chatHistory = defaultChatHistory;
-  }
-
-  const result = model.startChat({
-    history: chatHistory,
-    generationConfig: {
-      maxOutputTokens: 250,
-    },
-    maxTokens: 150,
-    temperature: 0.7,
-  });
-
-  const chat = await result.sendMessage(prompt);
-  return chat.response;
-}
+// This function has been moved to aiUtils.js
 
 router.post("/code", async (req, res) => {
   try {
@@ -913,6 +824,7 @@ router.post("/getKoreanWords", async (_, res) => {
   }
 });
 
+// This function has been moved to aiUtils.js
 async function getKoreanWords(messageObj) {
   if (!messageObj) return;
   const Chat_ID = 1083931330;
@@ -992,6 +904,7 @@ async function getKoreanWords(messageObj) {
   return response.text();
 }
 
+// This function has been moved to aiUtils.js
 async function getCleaningProm(data, msg) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -1021,6 +934,7 @@ async function getCleaningProm(data, msg) {
   return response.text();
 }
 
+// This function has been moved to aiUtils.js
 async function getTranslate(str) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -1063,6 +977,7 @@ async function getTranslate(str) {
   return response.text();
 }
 
+// This function has been moved to excelUtils.js
 async function getCleaningData() {
   // The URL of your Google Apps Script API
   try {
@@ -1079,7 +994,6 @@ async function getCleaningData() {
 }
 
 // This function has been moved to notificationUtils.js
-
 async function sendEmail(question, answer) {
   emailjs
     .send(

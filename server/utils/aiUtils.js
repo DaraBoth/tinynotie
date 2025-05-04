@@ -3,76 +3,7 @@ import moment from "moment";
 import axios from "axios";
 
 /**
- * Call the AI model with a message and chat history
- * @param {string} text - The message to send to the AI
- * @param {Array} chatHistory - The chat history
- * @param {Array} defaultChatHistory - The default chat history to use if none is provided
- * @returns {Promise} - A promise that resolves with the AI response
- */
-export const callAI = async (text, chatHistory, defaultChatHistory = []) => {
-  let genAI = null, model = null;
-  
-  // Try different API keys in case one fails
-  try {
-    genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-    });
-    console.log("Using API_KEY2");
-  } catch(e) {
-    console.log(e);
-    try {
-      genAI = new GoogleGenerativeAI(process.env.API_KEY3);
-      model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-      });
-      console.log("Using API_KEY3");
-    } catch(e) {
-      console.log(e);
-      genAI = new GoogleGenerativeAI(process.env.API_KEY);
-      model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-      });
-      console.log("Using API_KEY");
-    }
-  }
-  
-  // Initialize chat history if not provided
-  if (!chatHistory || !Array.isArray(chatHistory) || chatHistory.length === 0) {
-    chatHistory = [...defaultChatHistory];
-  } else {
-    // Prepend default chat history to the provided chat history
-    // Make a deep copy to avoid modifying the original
-    const combinedHistory = [...defaultChatHistory];
-    
-    // Add the user's chat history after the default history
-    for (const message of chatHistory) {
-      if (!defaultChatHistory.some(m => 
-        m.role === message.role && 
-        m.parts[0]?.text === message.parts[0]?.text
-      )) {
-        combinedHistory.push(message);
-      }
-    }
-    
-    chatHistory = combinedHistory;
-  }
-
-  // Start a chat with the AI
-  const result = model.startChat({
-    history: chatHistory,
-    generationConfig: {
-      maxOutputTokens: 250,
-    },
-  });
-
-  // Send the message and get the response
-  const chat = await result.sendMessage(text);
-  return chat.response;
-};
-
-/**
- * Get a human-readable response from the AI based on database results
+ * Human-readable response from AI based on database results
  * @param {string} prompt - The prompt to send to the AI
  * @param {Array} chatHistory - The chat history
  * @returns {Promise} - A promise that resolves with the AI response
@@ -169,6 +100,77 @@ export const AI_Human_readable = async (prompt, chatHistory = []) => {
 };
 
 /**
+ * Call the AI model with a message and chat history
+ * @param {string} text - The message to send to the AI
+ * @param {Array} chatHistory - The chat history
+ * @param {Array} defaultChatHistory - The default chat history to use if none is provided
+ * @returns {Promise} - A promise that resolves with the AI response
+ */
+export const callAI = async (text, chatHistory, defaultChatHistory = []) => {
+  let genAI = null, model = null;
+
+  // Try different API keys in case one fails
+  try {
+    genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+    });
+    console.log("Using API_KEY2");
+  } catch(e) {
+    console.log(e);
+    try {
+      genAI = new GoogleGenerativeAI(process.env.API_KEY3);
+      model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+      });
+      console.log("Using API_KEY3");
+    } catch(e) {
+      console.log(e);
+      genAI = new GoogleGenerativeAI(process.env.API_KEY);
+      model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+      });
+      console.log("Using API_KEY");
+    }
+  }
+
+  // Initialize chat history if not provided
+  if (!chatHistory || !Array.isArray(chatHistory) || chatHistory.length === 0) {
+    chatHistory = [...defaultChatHistory];
+  } else {
+    // Prepend default chat history to the provided chat history
+    // Make a deep copy to avoid modifying the original
+    const combinedHistory = [...defaultChatHistory];
+
+    // Add the user's chat history after the default history
+    for (const message of chatHistory) {
+      if (!defaultChatHistory.some(m =>
+        m.role === message.role &&
+        m.parts[0]?.text === message.parts[0]?.text
+      )) {
+        combinedHistory.push(message);
+      }
+    }
+
+    chatHistory = combinedHistory;
+  }
+
+  // Start a chat with the AI
+  const result = model.startChat({
+    history: chatHistory,
+    generationConfig: {
+      maxOutputTokens: 250,
+    },
+  });
+
+  // Send the message and get the response
+  const chat = await result.sendMessage(text);
+  return chat.response;
+};
+
+
+
+/**
  * Query the AI for database operations
  * @param {string} userAsk - The user's question
  * @param {string} userAskID - The user's ID
@@ -197,7 +199,7 @@ export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
   Complex Queries: Generate SQL that can handle multifaceted user requests, such as combining information from multiple tables, performing calculations, and using advanced SQL features like CTEs or window functions.
   Dynamic Handling: If a single SQL query is insufficient, break the task into multiple SQL statements or use functions to encapsulate complex logic.
   Currency Handling: Although PostgreSQL does not have a native currency type, ensure that the SQL solution correctly handles currency codes as text and numeric values as appropriate.
-  
+
   Authorization Checks: Use the user_infm table to verify if the user has the required permissions. For example, if a user requests data for a group, ensure they are the admin or have the necessary permissions to access that group's data. If the usernm (username) provided does not match the admin of the requested group, do not allow access.
 
   Handling Insert Operations: When generating SQL that involves an INSERT operation, ensure the response 'sqlType' is set to "INSERT". Include a clear responseMessage that indicates whether the insertion was successful or if there was an error (e.g., "Record inserted successfully" or "You do not have permission to insert records in this table").
@@ -208,7 +210,7 @@ export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
   usernm: '${userAskID}'  -- This username should be used to filter data related to the user in the relevant tables.
 
   Database Schema and Usage Guide:
-  
+
   Table Name: user_infm
   Purpose: This table stores user-related information and is primarily used for authentication, user management, and authorization checks.
   Columns:
@@ -238,7 +240,7 @@ export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
 
   Important Notes:
   - **Use Case**: This table is used to define group attributes and the admin who manages the group. It is related to high-level group information.
-  - **Do Not Use for**: Tracking individual user payments or membership details. 
+  - **Do Not Use for**: Tracking individual user payments or membership details.
 
   Table Name: trp_infm
   Purpose: This table stores information about trips associated with groups. It is used to manage trip-related data, including expenses and member participation.
@@ -286,7 +288,7 @@ export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
   SQL Compatibility: Verify that the SQL syntax is compatible with PostgreSQL.
   Syntax Check: Ensure that each SQL statement in the solution has correct syntax and will not result in errors.
   Contextual Relevance: Ensure the SQL solution accurately reflects the user's request; return a relevant message and set executable to false if not possible.
-  
+
   User Guidance: If the user asks for data but does not provide enough context (e.g., "In Busan Group, how much did Daraboth pay?"), ask them to provide more specifics. For instance, guide them to clarify whether they mean payments related to a trip, a group, or a specific period.
 
   Examples of Desired Output:
@@ -299,7 +301,7 @@ export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
       "executable": true,
       "responseMessage": "This query returns the number of members in the 'Busan' group."
   }
-      
+
   User Input: "I want to know how much I spent on each trip and which group it belongs to."
   AI JSON Response:
   {
@@ -340,7 +342,7 @@ export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
   });
 
   const chat = await result.sendMessage(prompt);
-  const response = await chat.response;
+  const response = chat.response;
 
   const cleanedResponse = response.text().replace(/```json|```/g, "");
 
@@ -358,6 +360,68 @@ export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
       data: [],
       message: "",
     };
+
+    if (jsonData["executable"] == true || jsonData["executable"] == "true") {
+      // validate first
+      if (sqlQuery.includes('"')) sqlQuery = sqlQuery.replace('"', '"');
+      if (sqlQuery.includes(" n")) sqlQuery = sqlQuery.replace(" n", " ");
+      if (sqlQuery.includes("\n")) sqlQuery = sqlQuery.replace("\n", " ");
+      if (Array.isArray(jsonData.sqlType)) jsonData.sqlType = jsonData.sqlType[0];
+
+      try {
+        // Import pool from dbUtils
+        const { pool } = await import('./dbUtils.js');
+        const results = await pool.query(sqlQuery);
+
+        switch (jsonData.sqlType) {
+          case "MORE":
+          case "SELECT":
+            responseData.data = results.rows;
+
+            const promptForHumanReadable = `
+              User Ask For: [${userAsk}]
+              Database Response: [${JSON.stringify(results.rows)}]
+            `;
+
+            const humanReadableResponse = await AI_Human_readable(
+              promptForHumanReadable,
+              chatHistory
+            );
+            responseData.message = humanReadableResponse.text();
+            responseData.status = "success";
+            break;
+          case "INSERT":
+            responseData.data = results.rows;
+            responseData.message = jsonData.responseMessage;
+            responseData.status = "success";
+            break;
+          case "UPDATE":
+            responseData.data = results.rows;
+            responseData.message = jsonData.responseMessage;
+            responseData.status = "success";
+            break;
+          case "DELETE":
+            responseData.data = results.rows;
+            responseData.message = jsonData.responseMessage;
+            responseData.status = "success";
+            break;
+          default:
+            responseData.data = results.rows;
+            responseData.message = jsonData.responseMessage;
+            responseData.status = "success";
+            break;
+        }
+      } catch (error) {
+        console.error("Error executing SQL query:", error);
+        responseData.executeStatus = false;
+        responseData.status = "error";
+        responseData.message = `Error executing SQL query: ${error.message}`;
+      }
+    } else {
+      responseData.executeStatus = false;
+      responseData.status = "error";
+      responseData.message = jsonData.responseMessage;
+    }
 
     return responseData;
   } catch (error) {
@@ -497,7 +561,7 @@ export const getTranslate = async (str) => {
   `;
 
   const result = await model.generateContent(prompt);
-  const response = await result.response;
+  const response = result.response;
   console.log("response text : " + response.text());
 
   return response.text();
@@ -517,7 +581,7 @@ export const getKoreanWords = async (messageObj, defaultChatHistory = []) => {
   // Get chat history from database
   try {
     const { getChat, templateSaveChat } = await import('./dbUtils.js');
-    
+
     await new Promise((resolve) => {
       getChat({
         chat_id: Chat_ID,
@@ -544,7 +608,7 @@ export const getKoreanWords = async (messageObj, defaultChatHistory = []) => {
     const prompt = `
     You are a Korean language tutor.
 
-    Each day, introduce me to 2 new Korean words that are especially useful for everyday life, work currently living in Busan, Korea. Choose words that go beyond basic beginner level, focusing on vocabulary that would be helpful both in daily activities and professional situations in Korea. 
+    Each day, introduce me to 2 new Korean words that are especially useful for everyday life, work currently living in Busan, Korea. Choose words that go beyond basic beginner level, focusing on vocabulary that would be helpful both in daily activities and professional situations in Korea.
 
     1. Select one **object** word that might be relevant or commonly encountered.
     2. Select one **verb** that is useful in work, social, or daily settings.
@@ -583,7 +647,7 @@ export const getKoreanWords = async (messageObj, defaultChatHistory = []) => {
     });
 
     const chat = await result.sendMessage(prompt);
-    const response = await chat.response;
+    const response = chat.response;
     console.log("response text : " + response.text());
 
     // Save the chat
@@ -613,16 +677,16 @@ export const getCleaningProm = async (data, msg) => {
   const prompt = `
     This data is about cleaning schedule in a house.
     And it's a trigger when there is change updated in excel.
-    The number is refer to their step one after another. 
+    The number is refer to their step one after another.
     The number if it meet the last index it will go back to the first person.
     THe memberName is the house member's name.
     Look to the array in each object the "isTurnToClean" key is there turn to clean.
     So answer to the question depend on the user want.
     Today date = ${moment().format("YYYY-MM-DD HH:mm:ss (dd) Z")} // format YYYY-MM-DD HH:mm:ss (dd) Z
-    
+
     Here is the data in JSON :
     ${JSON.stringify(data)}
-    
+
     Here is the user request:
     ${msg}
 
