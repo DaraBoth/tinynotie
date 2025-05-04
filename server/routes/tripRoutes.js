@@ -436,7 +436,7 @@ router.post("/editTripMem", authenticateToken, async (req, res) => {
 
     // Update the trip's members and payer
     const updateSql = `UPDATE trp_infm SET mem_id = $1, update_dttm = $2, payer_id = $3 WHERE id = $4;`;
-    await pool.query(updateSql, [mem_id, new Date().toISOString(), payer_id || null, trp_id]);
+    await pool.query(updateSql, [mem_id, moment().format("YYYY-MM-DD HH:mm:ss"), payer_id || null, trp_id]);
 
     res.send({
       status: true,
