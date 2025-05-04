@@ -322,9 +322,9 @@ router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
 });
 
 // Get all trips
-router.get("/getAllTrip", authenticateToken, async (req, res) => {
+router.get("/getAllTrip", authenticateToken, async (_, res) => {
   try {
-    const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date FROM trp_infm;`;
+    const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date, payer_id FROM trp_infm;`;
     const results = await pool.query(sql);
     res.send({ status: true, data: results.rows });
   } catch (error) {
@@ -355,7 +355,7 @@ router.get("/getTripByGroupId", async (req, res) => {
       authenticateToken(req, res, async () => {
         try {
           // Fetch trips for the authenticated user
-          const sql = `SELECT * FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
+          const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
           const results = await pool.query(sql, [group_id]);
 
           res.send({
@@ -368,7 +368,7 @@ router.get("/getTripByGroupId", async (req, res) => {
       });
     } else {
       // If the group is public, fetch trips without authentication
-      const sql = `SELECT * FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
+      const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
       const results = await pool.query(sql, [group_id]);
 
       res.send({
@@ -385,7 +385,7 @@ router.get("/getTripByGroupId", async (req, res) => {
  * @swagger
  * /trips/editTripMem:
  *   post:
- *     summary: Edit trip members
+ *     summary: Edit trip members and payer
  *     tags: [Trips]
  *     security:
  *       - bearerAuth: []
@@ -408,6 +408,9 @@ router.get("/getTripByGroupId", async (req, res) => {
  *               mem_id:
  *                 type: string
  *                 description: JSON string of member IDs
+ *               payer_id:
+ *                 type: string
+ *                 description: ID of the member who paid for the trip
  *     responses:
  *       200:
  *         description: Trip members updated successfully
@@ -416,7 +419,7 @@ router.get("/getTripByGroupId", async (req, res) => {
  */
 // Edit trip members
 router.post("/editTripMem", authenticateToken, async (req, res) => {
-  const { trp_id, group_id, trp_name, mem_id } = req.body;
+  const { trp_id, group_id, trp_name, mem_id, payer_id } = req.body;
 
   try {
     // Check if the trip exists
@@ -430,9 +433,9 @@ router.post("/editTripMem", authenticateToken, async (req, res) => {
       });
     }
 
-    // Update the trip's members
-    const updateSql = `UPDATE trp_infm SET mem_id = $1, update_dttm = $2 WHERE id = $3;`;
-    await pool.query(updateSql, [mem_id, new Date().toISOString(), trp_id]);
+    // Update the trip's members and payer
+    const updateSql = `UPDATE trp_infm SET mem_id = $1, update_dttm = $2, payer_id = $3 WHERE id = $4;`;
+    await pool.query(updateSql, [mem_id, new Date().toISOString(), payer_id || null, trp_id]);
 
     res.send({
       status: true,

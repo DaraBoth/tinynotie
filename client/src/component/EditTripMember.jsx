@@ -31,6 +31,7 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
     memberID: [],
     isCheckedMember: [],
     isDisable: true,
+    selectedPayerId: "",
   });
 
   // Alert state
@@ -44,6 +45,8 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
     const memberID = getMemberID(member, memberName);
     const isCheckedMember = getMemberCheck(memberName, member);
     const trpIDtoEdit = getTripID(trpNametoEdit, trip);
+    const selectedTrip = trip.find(t => t.trp_name === trpNametoEdit);
+    const selectedPayerId = selectedTrip?.payer_id || "";
 
     setState((prevState) => ({
       ...prevState,
@@ -52,6 +55,7 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
       memberID,
       isCheckedMember,
       trpIDtoEdit,
+      selectedPayerId,
       isDisable: false,
     }));
   };
@@ -70,12 +74,22 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
     }));
   };
 
+  const handlePayerChange = (event) => {
+    const selectedPayerId = event.target.value;
+
+    setState((prevState) => ({
+      ...prevState,
+      selectedPayerId,
+    }));
+  };
+
   const handleEdit = () => {
     triggerEditTripMem({
       trp_id: state.trpIDtoEdit,
       group_id,
       trp_name: state.trpNametoEdit,
       mem_id: JSON.stringify(state.memberID),
+      payer_id: state.selectedPayerId,
     })
       .then((response) => {
         if (response?.data?.status) {
@@ -101,6 +115,7 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
           memberID: [],
           isCheckedMember: [],
           isDisable: true,
+          selectedPayerId: "",
         });
       });
   };
@@ -167,6 +182,26 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
               <MenuItem key={item.id} value={item.mem_name}>
                 <Checkbox checked={state.isCheckedMember[index]} />
                 <ListItemText primary={item.mem_name} />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl variant="standard" disabled={state.isDisable}>
+          <InputLabel color="primary">Who paid?</InputLabel>
+          <Select
+            value={state.selectedPayerId}
+            onChange={handlePayerChange}
+            label="Who paid?"
+            color="primary"
+            sx={{ minWidth: isNonMobile ? "300px" : "100%" }}
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {member.map((item) => (
+              <MenuItem key={item.id} value={item.id.toString()}>
+                {item.mem_name}
               </MenuItem>
             ))}
           </Select>

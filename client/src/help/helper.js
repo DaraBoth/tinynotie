@@ -10,39 +10,80 @@ export function calculateMoney(allMembers, trips, currencyType) {
     totalRemain = 0,
     totalUnPaid = 0,
     totalSpend = 0;
+
+  // First, calculate how much each member has paid for trips
+  const memberPayments = {};
+  allMembers.forEach(member => {
+    memberPayments[member.id] = 0;
+  });
+
+  // Add payments made by members as payers
+  trips.forEach(trip => {
+    const payerId = trip.payer_id ? Number(trip.payer_id) : null;
+    if (payerId) {
+      memberPayments[payerId] = (memberPayments[payerId] || 0) + Number(trip.spend);
+    }
+  });
+
   newData = allMembers.map((member, id) => {
-    let luyForTrip = 0;
-    let paid = member.paid;
-    let luySol = paid;
+    let luyForTrip = 0; // How much this member owes for all trips they participated in
+    let paidForTrips = memberPayments[member.id] || 0; // How much this member paid as a payer
+    let paid = member.paid; // How much this member has paid to the group (from member_infm table)
+    let totalPaidAmount = paid + paidForTrips; // Total amount paid (direct payments + trip payments)
+    let luySol = totalPaidAmount; // Initial balance
+
     trips.forEach((trip) => {
-      let { mem_id, spend } = trip;
+      let { mem_id, spend, payer_id } = trip;
       try {
         mem_id = JSON.parse(mem_id);
-      }catch(e){
-        console.log("mem_id already array")
+      } catch(e) {
+        console.log("mem_id already array");
       }
+
       let osMnek = 0;
       const joinedMemCount = getMemberID(allMembers, mem_id);
+
+      // Calculate this member's share of the trip expense
       mem_id.forEach((joined) => {
         if (member.id == Number(joined)) {
-          osMnek = currency(spend).divide(joinedMemCount);
-          luyForTrip += spend / joinedMemCount;
-          luySol = member.paid - luyForTrip;
+          // This member participated in the trip
+          const memberShare = currency(spend).divide(joinedMemCount).value;
+          osMnek = memberShare;
+          luyForTrip += memberShare;
+
+          // Adjust balance based on whether this member was the payer
+          if (member.id == Number(payer_id)) {
+            // If this member paid for the trip, they only owe their share
+            // The payment itself is already accounted for in paidForTrips
+          } else {
+            // If someone else paid, this member owes their share
+            luySol = totalPaidAmount - luyForTrip;
+          }
         }
       });
+
+      // Store the amount this member owes for this specific trip
       kitLuy[trip.trp_name] = formatMoney(osMnek, 1, currencyType);
     });
+
     let unPaid = 0;
-    totalPaid += paid;
-    totalRemain += luySol > 0 ? luySol : unPaid;
-    totalUnPaid += luySol > 0 ? unPaid : luySol;
+    if (luySol < 0) {
+      // If balance is negative, this member owes money
+      unPaid = Math.abs(luySol);
+      luySol = 0;
+    }
+
+    totalPaid += totalPaidAmount;
+    totalRemain += luySol;
+    totalUnPaid += unPaid;
+
     return {
       id: id + 1,
       name: member.mem_name,
-      paid: currency(paid, { symbol: currencyType }).format(),
+      paid: currency(totalPaidAmount, { symbol: currencyType }).format(),
       ...kitLuy,
-      remain: formatMoney(luySol > 0 ? luySol : unPaid, 2, currencyType),
-      unpaid: formatMoney(luySol > 0 ? unPaid : luySol, 2, currencyType),
+      remain: formatMoney(luySol, 2, currencyType),
+      unpaid: formatMoney(unPaid, 2, currencyType),
     };
   });
   totalMember = newData.length;
@@ -174,6 +215,6 @@ export const decodeBase64ToObject = (base64Data) => {
     const jsonString = new TextDecoder().decode(utf8Bytes);
     return JSON.parse(jsonString);
   } catch (error) {
-    return { isError: true }; 
+    return { isError: true };
   }
 };
