@@ -1,6 +1,7 @@
 import express from "express";
 import { authenticateToken } from "./middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
+import { format } from "date-fns";
 
 const router = express.Router();
 
@@ -25,8 +26,6 @@ const router = express.Router();
  *       500:
  *         description: Internal server error
  */
-
-// Get groups by user ID
 router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
   const { user_id } = req.query;
   try {
@@ -84,8 +83,6 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-
-// Add group by user ID
 router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
   const {
     user_id,
@@ -174,8 +171,6 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-
-// Update group visibility
 router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
   const { group_id, visibility, allowed_users } = req.body; // allowed_users is an array of user IDs
   const { _id: user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
@@ -451,6 +446,249 @@ router.get("/getGroupDetail", async (req, res) => {
 
 /**
  * @swagger
+ * /groups/addMemberByGroupId:
+ *   post:
+ *     summary: Add a member to a group
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               mem_name:
+ *                 type: string
+ *                 description: Name of the member
+ *               paid:
+ *                 type: number
+ *                 description: Amount paid by the member
+ *               group_id:
+ *                 type: integer
+ *                 description: ID of the group
+ *     responses:
+ *       200:
+ *         description: Member added successfully
+ *       500:
+ *         description: Internal server error
+ */
+// Add member by group ID
+router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
+  const { mem_name, paid, group_id } = req.body;
+
+  try {
+    // Check if the member already exists in the group
+    const checkSql = `SELECT id FROM member_infm WHERE mem_name = $1 AND group_id = $2;`;
+    const checkResult = await pool.query(checkSql, [mem_name, group_id]);
+
+    if (checkResult.rows.length > 0) {
+      return res.json({
+        status: false,
+        message: `Member ${mem_name} already exists in this group!`
+      });
+    }
+
+    // Insert the new member
+    const insertSql = `
+      INSERT INTO member_infm (mem_name, paid, group_id)
+      VALUES ($1, $2, $3)
+      RETURNING id;
+    `;
+    const result = await pool.query(insertSql, [mem_name, paid || 0, group_id]);
+
+    res.json({
+      status: true,
+      message: "Member added successfully",
+      data: { id: result.rows[0].id }
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /groups/editMemberByMemberId:
+ *   post:
+ *     summary: Edit a member's information
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: ID of the member to edit
+ *               paid:
+ *                 type: number
+ *                 description: New amount paid by the member
+ *               group_id:
+ *                 type: integer
+ *                 description: ID of the group
+ *               type:
+ *                 type: string
+ *                 description: Type of edit (ADD, REDUCE, UPDATE)
+ *     responses:
+ *       200:
+ *         description: Member updated successfully
+ *       500:
+ *         description: Internal server error
+ */
+// Edit member by member ID
+router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
+  const { user_id, paid, group_id, type } = req.body;
+
+  try {
+    // Fetch the current paid value for the member
+    const sql = `SELECT id, paid, mem_name FROM member_infm WHERE id = $1 AND group_id = $2;`;
+    const results = await pool.query(sql, [user_id, group_id]);
+
+    if (results.rows.length === 0) {
+      return res.json({
+        status: false,
+        message: "Member not found in this group!"
+      });
+    }
+
+    const currentPaid = results.rows[0].paid;
+    const memberName = results.rows[0].mem_name;
+    let newPaid;
+
+    // Determine the new paid value based on the type
+    if (type === "ADD") {
+      newPaid = currentPaid + paid;
+    } else if (type === "REDUCE") {
+      newPaid = currentPaid - paid;
+
+      // Ensure the new paid value is not below zero
+      if (newPaid < 0) {
+        return res.json({
+          status: false,
+          message: "Cannot reduce paid amount below 0"
+        });
+      }
+    } else if (type === "UPDATE") {
+      newPaid = paid;
+    } else {
+      return res.json({
+        status: false,
+        message: "Invalid type specified. Use 'ADD', 'REDUCE', or 'UPDATE'."
+      });
+    }
+
+    // Update the paid value in the database
+    const updateSql = `UPDATE member_infm SET paid = $1 WHERE id = $2;`;
+    await pool.query(updateSql, [newPaid, user_id]);
+
+    res.json({
+      status: true,
+      message: `${memberName}'s payment updated successfully!`
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /groups/getAllMember:
+ *   get:
+ *     summary: Get all members across all groups
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all members
+ *       500:
+ *         description: Internal server error
+ */
+// Get all members
+router.get("/getAllMember", authenticateToken, async (_, res) => {
+  try {
+    const sql = `
+      SELECT m.id, m.mem_name, m.paid, m.group_id, g.grp_name
+      FROM member_infm m
+      JOIN grp_infm g ON m.group_id = g.id
+      ORDER BY m.id;
+    `;
+    const results = await pool.query(sql);
+
+    res.json({
+      status: true,
+      data: results.rows
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /groups/members/{id}:
+ *   delete:
+ *     summary: Delete a member by ID
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Member ID
+ *     responses:
+ *       200:
+ *         description: Member deleted successfully
+ *       500:
+ *         description: Internal server error
+ */
+router.delete("/members/:id", authenticateToken, async (req, res) => {
+  const memberId = req.params.id;
+
+  try {
+    // Get member info before deletion for the response message
+    const getMemberSql = `SELECT mem_name, group_id FROM member_infm WHERE id = $1;`;
+    const memberResult = await pool.query(getMemberSql, [memberId]);
+
+    if (memberResult.rows.length === 0) {
+      return res.json({
+        status: false,
+        message: "Member not found"
+      });
+    }
+
+    const { mem_name, group_id } = memberResult.rows[0];
+
+    // Delete the member
+    const deleteSql = `DELETE FROM member_infm WHERE id = $1;`;
+    await pool.query(deleteSql, [memberId]);
+
+    res.json({
+      status: true,
+      message: `Member ${mem_name} deleted successfully`,
+      data: { group_id }
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+
+/**
+ * @swagger
  * /groups/getMemberByGroupId:
  *   get:
  *     summary: Get members by group ID
@@ -470,8 +708,6 @@ router.get("/getGroupDetail", async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-
-// Get members by group ID
 router.get("/getMemberByGroupId", async (req, res) => {
   const { group_id } = req.query;
 
