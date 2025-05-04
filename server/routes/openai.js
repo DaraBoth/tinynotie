@@ -971,7 +971,7 @@ const handleMessage = async function (messageObj) {
             await runQuery({ sql, values: [hashedPassword, username] });
             return darabothSendMessage(
               messageObj,
-              `Don't let others know your password. \n Your password is now set to ${newPassword}`
+              `Don't let others know your password. \n Your password is now set to ${newPassword} \n Link to app: https://tinynotie.vercel.app/`
             );
           } catch (error) {
             console.error("Error executing query:", error);
