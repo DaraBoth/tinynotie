@@ -64,7 +64,7 @@ function App() {
       sessionStorage.removeItem("secret");
     }
   }, [user, secret, isAuth]);
-
+ 
   return (
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
