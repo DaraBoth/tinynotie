@@ -23,6 +23,7 @@ import { tokens } from "../theme";
 import { Alert } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import MeowFootprint from "../component/MeowFootprint";
+import SpaceSky from "../component/SpaceSky";
 import Lottie from "lottie-react";
 import goingggg from "../assets/goingggg.json";
 import openeye from "../assets/openeye.json";
@@ -106,12 +107,15 @@ export default function Login({ setUser, setSecret }) {
         justifyContent: "center",
         alignItems: "center", // Center vertically on all screen sizes
         padding: { xs: 2, sm: 3 },
-        background: colors.primary[900],
+        background: "transparent",
         backgroundSize: "cover",
         backgroundPosition: "center",
         overflowY: "auto",
+        position: "relative",
       }}
     >
+      {/* Add the 3D Space Sky background */}
+      <SpaceSky />
       {/* <MeowFootprint /> */}
       <Formik
         onSubmit={handleFormSubmit}

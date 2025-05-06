@@ -21,6 +21,7 @@ import {
   Tabs,
   Tab,
 } from "@mui/material";
+import SpaceSky from "../component/SpaceSky";
 import { useDeleteGroupMutation, useGetGroupMutation, useLazyGetUserProfileQuery } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
@@ -55,19 +56,21 @@ function GroupCard({ item, onDelete, onClick }) {
 
   return (
     <Paper
-      elevation={2}
+      elevation={3}
       sx={{
         cursor: "pointer",
         padding: { xs: "10px", md: "12px" },
         borderRadius: "10px",
-        border: `1px solid ${colors.primary[700]}`,
-        transition: "transform 0.2s, box-shadow 0.2s",
+        border: `1px solid ${colors.primary[700]}88`,
+        transition: "transform 0.3s, box-shadow 0.3s",
         "&:hover": {
-          transform: "scale(1.03)",
-          boxShadow: `0 2px 10px ${colors.primary[900]}33`,
+          transform: "scale(1.03) translateZ(5px)",
+          boxShadow: `0 5px 15px ${colors.primary[500]}55`,
         },
         position: "relative",
-        backgroundColor: colors.grey[800],
+        backgroundColor: `${colors.grey[800]}cc`,
+        backdropFilter: "blur(8px)",
+        zIndex: 1,
       }}
       onClick={() => onClick(item)}
     >
@@ -270,16 +273,22 @@ export default function Home({
         width: "100%",
         minHeight: "100vh",
         height: "100%",
-        backgroundColor: colors.primary[900],
+        position: "relative",
+        backgroundColor: "transparent", // Changed to transparent to show the space background
       }}
     >
+      {/* Add the 3D Space Sky background */}
+      <SpaceSky />
       <Paper
-        elevation={2}
+        elevation={3}
         sx={{
           padding: { xs: "12px", md: "16px" },
           marginBottom: isNonMobile ? "16px" : "0px",
           borderRadius: "0px",
-          backgroundColor: colors.grey[800],
+          backgroundColor: `${colors.grey[800]}dd`, // Added transparency
+          backdropFilter: "blur(5px)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <Box
@@ -348,14 +357,17 @@ export default function Home({
           }}
         >
           <Paper
-            elevation={3} // Slight elevation for a floating effect
+            elevation={4} // Increased elevation for a floating effect
             sx={{
               display: "flex",
               padding: "6px 12px",
               borderRadius: "20px", // Rounded corners like a dock
-              backgroundColor: colors.grey[900], // Background color
-              position:"relative",
-              overflow:"hidden",
+              backgroundColor: `${colors.grey[900]}cc`, // Semi-transparent background
+              backdropFilter: "blur(10px)",
+              position: "relative",
+              overflow: "hidden",
+              border: `1px solid ${colors.primary[700]}44`,
+              boxShadow: `0 5px 15px ${colors.primary[900]}88`,
             }}
           >
             <Lottie
@@ -416,7 +428,10 @@ export default function Home({
             alignItems: "center",
             width: "100%",
             marginBottom: "10px",
-            backgroundColor: colors.grey[800],
+            backgroundColor: `${colors.grey[800]}dd`,
+            backdropFilter: "blur(5px)",
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <Button
@@ -598,9 +613,13 @@ export default function Home({
             backgroundColor: colors.primary[500],
             "&:hover": {
               backgroundColor: colors.primary[700],
+              transform: "scale(1.1) translateZ(5px)",
+              boxShadow: `0 5px 15px ${colors.primary[500]}88`,
             },
             width: "40px",
             height: "40px",
+            transition: "transform 0.3s, box-shadow 0.3s, background-color 0.3s",
+            boxShadow: `0 3px 10px ${colors.primary[900]}66`,
           }}
         >
           <AddIcon fontSize="small" />
@@ -619,10 +638,13 @@ export default function Home({
         TransitionProps={{ direction: "up" }}
         PaperProps={{
           sx: {
-            backgroundColor: colors.grey[900],
+            backgroundColor: `${colors.grey[900]}ee`,
+            backdropFilter: "blur(10px)",
             borderRadius: "10px",
             padding: { xs: "12px", md: "16px" },
             color: colors.primary[100],
+            border: `1px solid ${colors.primary[700]}44`,
+            boxShadow: `0 10px 25px ${colors.primary[900]}aa`,
           },
         }}
       >

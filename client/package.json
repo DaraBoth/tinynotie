@@ -28,6 +28,7 @@
     "currency.js": "^2.0.4",
     "date-fns": "^3.6.0",
     "formik": "^2.2.9",
+    "framer-motion": "^12.10.0",
     "lottie-react": "^2.4.0",
     "material-ui-popup-state": "^5.0.8",
     "mdast-util-to-markdown": "^2.1.2",

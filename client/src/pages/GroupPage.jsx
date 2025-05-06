@@ -28,6 +28,7 @@ import TableComponent from "../component/TableComponent";
 import CustomDialog from "../component/CustomDialog";
 import LoadingPage from "../component/Loading";
 import UnauthorizedPage from "../component/Unauthorized";
+import SpaceSky from "../component/SpaceSky";
 import { tokens } from "../theme";
 import {
   useGetGroupDetailsMutation,
@@ -252,13 +253,16 @@ export default function Group({ user, secret, setGroupInfo }) {
   return (
     <Box
       sx={{
-        backgroundColor: colors.primary[900],
+        backgroundColor: "transparent",
         minHeight: "100vh",
         height: "auto",
         display: "flex",
         flexDirection: "column",
+        position: "relative",
       }}
     >
+      {/* Add the 3D Space Sky background */}
+      <SpaceSky />
       <Topbar
         user={user}
         groupInfo={groupInfoState}
