@@ -28,7 +28,7 @@ import TableComponent from "../component/TableComponent";
 import CustomDialog from "../component/CustomDialog";
 import LoadingPage from "../component/Loading";
 import UnauthorizedPage from "../component/Unauthorized";
-import SpaceSky from "../component/SpaceSky";
+import SpaceSkyNew from "../component/SpaceSkyNew";
 import { tokens } from "../theme";
 import {
   useGetGroupDetailsMutation,
@@ -262,7 +262,7 @@ export default function Group({ user, secret, setGroupInfo }) {
       }}
     >
       {/* Add the 3D Space Sky background */}
-      <SpaceSky />
+      <SpaceSkyNew />
       <Topbar
         user={user}
         groupInfo={groupInfoState}

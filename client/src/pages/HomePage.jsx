@@ -21,7 +21,7 @@ import {
   Tabs,
   Tab,
 } from "@mui/material";
-import SpaceSky from "../component/SpaceSky";
+import SpaceSkyNew from "../component/SpaceSkyNew";
 import { useDeleteGroupMutation, useGetGroupMutation, useLazyGetUserProfileQuery } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
@@ -278,7 +278,7 @@ export default function Home({
       }}
     >
       {/* Add the 3D Space Sky background */}
-      <SpaceSky />
+      <SpaceSkyNew />
       <Paper
         elevation={3}
         sx={{
