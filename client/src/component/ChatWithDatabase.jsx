@@ -68,19 +68,22 @@ const FloatingChat = ({ userId, scrollDirection }) => {
       <Fab
         color="primary"
         aria-label="chat"
+        size="small"
         onClick={handleOpen}
         sx={{
-          position: "fixed",
-          bottom: "85px",
-          right: scrollDirection === "down" ? "-80px" : "16px", // Move out of view when scrolling down
-          transition: "right 0.3s ease-in-out", // Smooth transition
           backgroundColor: colors.primary[500],
           "&:hover": {
             backgroundColor: colors.primary[700],
+            transform: "scale(1.1) translateZ(5px)",
+            boxShadow: `0 5px 15px ${colors.primary[500]}88`,
           },
+          width: "40px",
+          height: "40px",
+          transition: "transform 0.3s, box-shadow 0.3s, background-color 0.3s",
+          boxShadow: `0 3px 10px ${colors.primary[900]}66`,
         }}
       >
-        <ChatBubbleOutlineIcon />
+        <ChatBubbleOutlineIcon fontSize="small" />
       </Fab>
 
       <Dialog
