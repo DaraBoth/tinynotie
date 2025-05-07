@@ -175,6 +175,20 @@ export const themeSettings = (mode) => {
           },
         },
       },
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            minWidth: "450px",
+            margin: "16px",
+            borderRadius: "16px",
+          },
+          container: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+        },
+      },
       MuiFab: {
         styleOverrides: {
           root: {

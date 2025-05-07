@@ -15,13 +15,17 @@ import {
   Select,
   MenuItem,
   useTheme,
+  alpha,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ShareIcon from "@mui/icons-material/Share";
+import CloseIcon from "@mui/icons-material/Close";
 import CustomAlert from "./CustomAlert";
 import { tokens } from "../theme";
 import currency from "currency.js";
+import { motion } from "framer-motion";
 
 export default function ShareModal({
   open,
@@ -204,25 +208,134 @@ export default function ShareModal({
       maxWidth="sm"
       fullWidth
       PaperProps={{
+        component: motion.div,
+        initial: { opacity: 0, y: 20, scale: 0.95 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 20, scale: 0.95 },
+        transition: { duration: 0.3 },
         sx: {
-          backgroundColor: colors.background,
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(20, 23, 39, 0.9)'
+            : 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: "blur(10px)",
+          borderRadius: "16px",
+          padding: { xs: "16px", md: "20px" },
+          color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(0, 0, 0, 0.08)'}`,
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 10px 25px rgba(0, 0, 0, 0.5)'
+            : '0 10px 25px rgba(0, 0, 0, 0.1)',
+          overflow: "hidden",
         },
       }}
     >
+      {/* Subtle gradient overlay for depth */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "60px",
+          background: theme.palette.mode === 'dark'
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+
       <DialogTitle
         sx={{
-          fontWeight: "bold",
-          fontSize: "18px",
-          color: colors.primary[500],
+          padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(0, 0, 0, 0.08)'}`,
+          marginBottom: 2,
         }}
       >
-        Share Invoice
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(0, 123, 255, 0.15)'
+                : 'rgba(0, 123, 255, 0.1)',
+              borderRadius: "12px",
+              padding: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 1.5
+            }}
+          >
+            <ShareIcon
+              sx={{
+                color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                fontSize: { xs: "1.2rem", md: "1.3rem" }
+              }}
+            />
+          </Box>
+          <Typography
+            variant="h6"
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+              fontSize: { xs: "1.1rem", md: "1.2rem" },
+              fontWeight: 600,
+              letterSpacing: "-0.01em"
+            }}
+          >
+            Share Invoice
+          </Typography>
+        </Box>
+
+        <IconButton
+          onClick={onClose}
+          size="small"
+          component={motion.button}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          sx={{
+            color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+            backgroundColor: theme.palette.mode === 'dark'
+              ? alpha(colors.grey[800], 0.5)
+              : alpha(colors.grey[200], 0.5),
+            borderRadius: "8px",
+            padding: "6px",
+            '&:hover': {
+              backgroundColor: theme.palette.mode === 'dark'
+                ? alpha(colors.grey[700], 0.7)
+                : alpha(colors.grey[300], 0.7),
+            }
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
       </DialogTitle>
-      <DialogContent>
+      <DialogContent
+        sx={{
+          padding: { xs: "16px 0", md: "20px 0" },
+          position: "relative",
+          zIndex: 1,
+          color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+          fontSize: { xs: "0.9rem", md: "1rem" },
+        }}
+      >
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography
             variant="body1"
-            sx={{ fontWeight: "bold", mb: 1, color: colors.primary[500] }}
+            sx={{
+              fontWeight: 600,
+              mb: 1,
+              color: theme.palette.mode === 'dark' ? colors.grey[200] : colors.grey[800],
+              fontSize: { xs: "0.9rem", md: "1rem" },
+            }}
           >
             Select Trips to Share:
           </Typography>
@@ -233,7 +346,7 @@ export default function ShareModal({
           onChange={handleTripChange}
           color="primary"
           renderValue={(selected) => (
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.8 }}>
               {selected.map((tripId) => {
                 const trip = selectedTrips.find((trip) => trip.id === tripId);
                 return (
@@ -242,10 +355,14 @@ export default function ShareModal({
                     label={trip?.trp_name || tripId}
                     variant="outlined"
                     sx={{
-                      backgroundColor: colors.primary[500],
+                      backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 500 : 600],
                       color: "#fff",
+                      borderRadius: "8px",
+                      fontWeight: 500,
+                      fontSize: "0.8rem",
                       "& .MuiChip-label": {
                         color: "#fff",
+                        padding: "4px 8px",
                       },
                     }}
                   />
@@ -254,18 +371,44 @@ export default function ShareModal({
             </Box>
           )}
           sx={{
+            borderRadius: "10px",
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.15)'
+                : 'rgba(0, 0, 0, 0.15)',
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.25)'
+                : 'rgba(0, 0, 0, 0.25)',
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+            },
             "& .MuiSelect-select": {
-              color: colors.primary[600],
-            },
-            "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-              borderColor: colors.primary[400],
-            },
-            "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-              borderColor: colors.primary[500],
+              color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+              padding: "12px 14px",
             },
             "& .MuiSelect-icon": {
-              color: colors.primary[500],
+              color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
             },
+          }}
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.9)'
+                  : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: "blur(10px)",
+                borderRadius: "10px",
+                border: `1px solid ${theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)'}`,
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 8px 16px rgba(0, 0, 0, 0.4)'
+                  : '0 8px 16px rgba(0, 0, 0, 0.1)',
+              }
+            }
           }}
           fullWidth
         >
@@ -274,19 +417,24 @@ export default function ShareModal({
               key={trip.id}
               value={trip.id}
               sx={{
-                backgroundColor: selectedTripIds.includes(trip.id)
-                  ? colors.primary[500]
-                  : "inherit",
-                color: selectedTripIds.includes(trip.id)
-                  ? "#fff"
-                  : colors.primary[600],
-                "&.Mui-selected": {
-                  backgroundColor: colors.primary[400],
-                  color: "#fff",
-                  "&:hover": {
-                    backgroundColor: colors.primary[500],
-                    color: "#fff",
-                  },
+                color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                borderRadius: "6px",
+                margin: "4px",
+                '&:hover': {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.05)',
+                },
+                '&.Mui-selected': {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? alpha(colors.primary[600], 0.2)
+                    : alpha(colors.primary[600], 0.1),
+                  color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                  '&:hover': {
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? alpha(colors.primary[600], 0.3)
+                      : alpha(colors.primary[600], 0.2),
+                  }
                 },
               }}
             >
@@ -295,7 +443,16 @@ export default function ShareModal({
           ))}
         </Select>
 
-        <Box display="flex" alignItems="center" justifyContent="space-between" mt={2}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: "flex-start",
+            gap: 2,
+            mt: 3,
+            mb: 2
+          }}
+        >
           <TextField
             label="Bank Name"
             value={bankName}
@@ -303,15 +460,27 @@ export default function ShareModal({
             fullWidth
             variant="outlined"
             sx={{
-              mr: 1,
+              "& .MuiInputLabel-root": {
+                color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+              },
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.15)'
+                    : 'rgba(0, 0, 0, 0.15)',
+                  borderRadius: "10px",
+                },
+                "&:hover fieldset": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.25)'
+                    : 'rgba(0, 0, 0, 0.25)',
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                },
+              },
               "& .MuiInputBase-input": {
-                color: colors.primary[600],
-              },
-              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[400],
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[500],
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
               },
             }}
           />
@@ -322,56 +491,107 @@ export default function ShareModal({
             fullWidth
             variant="outlined"
             sx={{
+              "& .MuiInputLabel-root": {
+                color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+              },
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.15)'
+                    : 'rgba(0, 0, 0, 0.15)',
+                  borderRadius: "10px",
+                },
+                "&:hover fieldset": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.25)'
+                    : 'rgba(0, 0, 0, 0.25)',
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                },
+              },
               "& .MuiInputBase-input": {
-                color: colors.primary[600],
-              },
-              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[400],
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[500],
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
               },
             }}
           />
         </Box>
 
         <Box
-          display="flex"
-          width={"100%"}
-          justifyContent="center"
-          sx={{ marginY: 2 }}
+          sx={{
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginY: 2,
+            position: "relative",
+            zIndex: 1,
+          }}
         >
-          <Box
-            display="flex"
-            width={"100%"}
-            flexDirection={"row"}
-            alignItems="center"
-            justifyContent="space-between"
+          <ToggleButtonGroup
+            value={selectedLanguage}
+            exclusive
+            onChange={handleLanguageChange}
+            size="small"
+            sx={{
+              '& .MuiToggleButtonGroup-grouped': {
+                border: `1px solid ${theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.15)'
+                  : 'rgba(0, 0, 0, 0.15)'}`,
+                '&.Mui-selected': {
+                  backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 500 : 600],
+                  color: '#fff',
+                  '&:hover': {
+                    backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 600 : 700],
+                  }
+                },
+                '&:not(:first-of-type)': {
+                  borderRadius: '8px',
+                  marginLeft: '4px',
+                },
+                '&:first-of-type': {
+                  borderRadius: '8px',
+                },
+                color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                fontWeight: 500,
+                padding: '4px 12px',
+              }
+            }}
           >
-            <ToggleButtonGroup
-              value={selectedLanguage}
-              exclusive
-              onChange={handleLanguageChange}
-              sx={{ marginRight: 2 }}
-              size="small"
-            >
-              <ToggleButton value="EN" sx={{ color: colors.primary[500] }}>
-                EN
-              </ToggleButton>
-              <ToggleButton value="KR" sx={{ color: colors.primary[500] }}>
-                KR
-              </ToggleButton>
-              <ToggleButton value="KH" sx={{ color: colors.primary[500] }}>
-                KH
-              </ToggleButton>
-            </ToggleButtonGroup>
-            <IconButton
-              onClick={handleEditToggle}
-              color={isEditing ? "secondary" : "info"}
-            >
-              {isEditing ? <SaveIcon /> : <EditIcon />}
-            </IconButton>
-          </Box>
+            <ToggleButton value="EN">
+              EN
+            </ToggleButton>
+            <ToggleButton value="KR">
+              KR
+            </ToggleButton>
+            <ToggleButton value="KH">
+              KH
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          <IconButton
+            onClick={handleEditToggle}
+            component={motion.button}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            sx={{
+              color: isEditing
+                ? colors.greenAccent[theme.palette.mode === 'dark' ? 400 : 600]
+                : colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+              backgroundColor: theme.palette.mode === 'dark'
+                ? alpha(isEditing ? colors.greenAccent[800] : colors.primary[800], 0.2)
+                : alpha(isEditing ? colors.greenAccent[200] : colors.primary[200], 0.2),
+              borderRadius: "8px",
+              padding: "8px",
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(isEditing ? colors.greenAccent[800] : colors.primary[800], 0.3)
+                  : alpha(isEditing ? colors.greenAccent[200] : colors.primary[200], 0.3),
+              }
+            }}
+          >
+            {isEditing ? <SaveIcon /> : <EditIcon />}
+          </IconButton>
         </Box>
 
         {isEditing ? (
@@ -381,39 +601,126 @@ export default function ShareModal({
             multiline
             rows={15}
             fullWidth
+            variant="outlined"
             sx={{
               mt: 2,
+              "& .MuiInputLabel-root": {
+                color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+              },
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.15)'
+                    : 'rgba(0, 0, 0, 0.15)',
+                  borderRadius: "10px",
+                },
+                "&:hover fieldset": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.25)'
+                    : 'rgba(0, 0, 0, 0.25)',
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                },
+              },
               "& .MuiInputBase-input": {
-                color: colors.primary[600],
-              },
-              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[400],
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[500],
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                fontFamily: 'monospace',
               },
             }}
           />
         ) : (
-          <Typography
-            variant="body2"
-            sx={{ whiteSpace: "pre-line", mb: 2, color: colors.primary[600] }}
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              borderRadius: "10px",
+              backgroundColor: theme.palette.mode === 'dark'
+                ? alpha(colors.primary[900], 0.4)
+                : alpha(colors.primary[100], 0.4),
+              border: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.08)'}`,
+              maxHeight: "300px",
+              overflowY: "auto",
+            }}
           >
-            {invoiceText}
-          </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                whiteSpace: "pre-line",
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                fontFamily: 'monospace',
+                fontSize: "0.85rem",
+                lineHeight: 1.6,
+              }}
+            >
+              {invoiceText}
+            </Typography>
+          </Box>
         )}
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions
+        sx={{
+          padding: { xs: "16px 0 0 0", md: "20px 0 0 0" },
+          position: "relative",
+          zIndex: 1,
+          borderTop: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(0, 0, 0, 0.08)'}`,
+          marginTop: 2,
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 2
+        }}
+      >
         <Button
           onClick={handleCopyToClipboard}
           variant="outlined"
-          color="secondary"
+          component={motion.button}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           startIcon={<ContentCopyIcon />}
+          sx={{
+            color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+            borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+            textTransform: "none",
+            fontWeight: "500",
+            fontSize: { xs: "0.8rem", md: "0.9rem" },
+            padding: { xs: "6px 16px", md: "8px 20px" },
+            borderRadius: "8px",
+            '&:hover': {
+              borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+            }
+          }}
         >
           Copy to Clipboard
         </Button>
-        <Button onClick={onClose} variant="outlined" color="secondary">
+
+        <Button
+          onClick={onClose}
+          variant="contained"
+          component={motion.button}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          sx={{
+            backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 500 : 600],
+            color: "#fff",
+            "&:hover": {
+              backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 600 : 700],
+            },
+            textTransform: "none",
+            fontWeight: "500",
+            fontSize: { xs: "0.8rem", md: "0.9rem" },
+            padding: { xs: "6px 16px", md: "8px 20px" },
+            borderRadius: "8px",
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 4px 10px rgba(0, 123, 255, 0.2)'
+              : '0 4px 10px rgba(0, 123, 255, 0.15)',
+          }}
+        >
           Close
         </Button>
       </DialogActions>

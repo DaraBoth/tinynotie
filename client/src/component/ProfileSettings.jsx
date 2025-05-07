@@ -11,15 +11,19 @@ import {
   Box,
   Skeleton,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { useUpdateUserInfoMutation, useUploadImageMutation, useLazyGetUserProfileQuery } from "../api/api"; // Import the uploadImage mutation and the query for fetching user profile
 import imageCompression from "browser-image-compression"; // Import the image compression library
 import defaultProfileImage from "../../public/default_profile.jpg"; // Import the default profile image
 import ImageCropper from "./ImageCropper"; // Import the ImageCropper component
+import { tokens } from "../theme";
 
 const MAX_IMAGE_SIZE_MB = 32; // Maximum allowed image size in MB for compression
 
 const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const [formData, setFormData] = useState({});
   const [profilePreview, setProfilePreview] = useState(""); // For previewing uploaded image
   const [getUserProfile, { data: fetchedProfile, isFetching }] = useLazyGetUserProfileQuery(); // Lazy query for user profile
@@ -132,18 +136,74 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
 
   return (
     <>
-      <Dialog open={open} onClose={() => onClose(null)}>
-        <DialogTitle>Profile Settings</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={open}
+        onClose={() => onClose(null)}
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(20, 23, 39, 0.9)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '16px',
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 8px 32px rgba(0, 0, 0, 0.4)'
+              : '0 8px 32px rgba(0, 0, 0, 0.1)',
+            border: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.1)'
+              : 'rgba(0, 0, 0, 0.05)'}`,
+            overflow: 'hidden',
+            maxWidth: '450px',
+            width: '100%',
+            margin: { xs: '16px', md: 'auto' },
+            position: 'relative',
+            '&:before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(40, 43, 59, 0.2) 0%, rgba(20, 23, 39, 0.2) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 240, 240, 0.2) 100%)',
+              zIndex: -1,
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          textAlign: 'center',
+          fontSize: { xs: '1.2rem', md: '1.5rem' },
+          fontWeight: 600,
+          color: theme.palette.mode === 'dark' ? '#fff' : '#333',
+          pt: 3,
+          pb: 2,
+          borderBottom: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(0, 0, 0, 0.08)'}`,
+        }}>
+          Profile Settings
+        </DialogTitle>
+        <DialogContent sx={{
+          p: { xs: 2, md: 3 },
+          mt: 1
+        }}>
           {isFetching && !cachedProfile ? (
-            <Skeleton variant="circular" width={100} height={100} sx={{ marginBottom: 2 }} />
+            <Skeleton variant="circular" width={100} height={100} sx={{
+              marginBottom: 2,
+              margin: '0 auto',
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.1)'
+                : 'rgba(0, 0, 0, 0.1)',
+            }} />
           ) : (
             <Box
               sx={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                marginBottom: 2,
+                marginBottom: 3,
                 position: "relative",
               }}
             >
@@ -155,23 +215,39 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
                 onChange={handleFileChange}
               />
               <label htmlFor="profile-upload" style={{ position: "relative", cursor: "pointer" }}>
-                <img
-                  src={profilePreview || defaultProfileImage} // Use the provided default image
-                  alt="Profile Preview"
-                  style={{
-                    width: 100,
-                    height: 100,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    marginBottom: 10,
-                    position: "relative",
-                  }}
-                />
+                <Box sx={{
+                  width: 110,
+                  height: 110,
+                  borderRadius: "50%",
+                  padding: '5px',
+                  background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(145deg, rgba(66, 66, 255, 0.5), rgba(120, 100, 255, 0.5))'
+                    : 'linear-gradient(145deg, rgba(100, 100, 255, 0.3), rgba(150, 130, 255, 0.3))',
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 4px 20px rgba(0, 0, 0, 0.4)'
+                    : '0 4px 20px rgba(0, 0, 0, 0.1)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 2,
+                }}>
+                  <img
+                    src={profilePreview || defaultProfileImage}
+                    alt="Profile Preview"
+                    style={{
+                      width: 100,
+                      height: 100,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      position: "relative",
+                    }}
+                  />
+                </Box>
                 <Box
                   sx={{
                     position: "absolute",
-                    top: 0,
-                    left: 0,
+                    top: 5,
+                    left: 5,
                     width: 100,
                     height: 100,
                     display: "flex",
@@ -196,14 +272,22 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
               <Typography
                 variant="body2"
                 sx={{
-                  color: "white",
-                  backgroundColor: "rgba(0, 0, 0, 0.7)",
-                  padding: "4px 8px",
+                  color: theme.palette.mode === 'dark' ? '#fff' : '#333',
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(66, 66, 255, 0.2)'
+                    : 'rgba(100, 100, 255, 0.1)',
+                  padding: "4px 12px",
                   borderRadius: "12px",
                   fontWeight: "bold",
                   marginTop: 1,
                   fontSize: "12px",
                   textAlign: "center",
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 2px 8px rgba(0, 0, 0, 0.2)'
+                    : '0 2px 8px rgba(0, 0, 0, 0.05)',
+                  border: `1px solid ${theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.05)'}`,
                 }}
               >
                 @{user}
@@ -219,6 +303,25 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
             variant="standard"
             value={formData.phone_number || ""}
             onChange={handleChange}
+            sx={{
+              mb: 2,
+              "& .MuiInputBase-input": {
+                color: theme.palette.mode === 'dark' ? '#fff' : '#333',
+              },
+              "& .MuiInputLabel-root": {
+                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+              },
+              "& .MuiInput-underline:before": {
+                borderBottomColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'rgba(0, 0, 0, 0.1)',
+              },
+              "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                borderBottomColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.2)'
+                  : 'rgba(0, 0, 0, 0.2)',
+              },
+            }}
           />
           <TextField
             margin="dense"
@@ -229,6 +332,25 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
             variant="standard"
             value={formData.first_name || ""}
             onChange={handleChange}
+            sx={{
+              mb: 2,
+              "& .MuiInputBase-input": {
+                color: theme.palette.mode === 'dark' ? '#fff' : '#333',
+              },
+              "& .MuiInputLabel-root": {
+                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+              },
+              "& .MuiInput-underline:before": {
+                borderBottomColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'rgba(0, 0, 0, 0.1)',
+              },
+              "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                borderBottomColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.2)'
+                  : 'rgba(0, 0, 0, 0.2)',
+              },
+            }}
           />
           <TextField
             margin="dense"
@@ -239,6 +361,25 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
             variant="standard"
             value={formData.last_name || ""}
             onChange={handleChange}
+            sx={{
+              mb: 2,
+              "& .MuiInputBase-input": {
+                color: theme.palette.mode === 'dark' ? '#fff' : '#333',
+              },
+              "& .MuiInputLabel-root": {
+                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+              },
+              "& .MuiInput-underline:before": {
+                borderBottomColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'rgba(0, 0, 0, 0.1)',
+              },
+              "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                borderBottomColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.2)'
+                  : 'rgba(0, 0, 0, 0.2)',
+              },
+            }}
           />
           <TextField
             margin="dense"
@@ -249,6 +390,25 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
             variant="standard"
             value={formData.email || ""}
             onChange={handleChange}
+            sx={{
+              mb: 2,
+              "& .MuiInputBase-input": {
+                color: theme.palette.mode === 'dark' ? '#fff' : '#333',
+              },
+              "& .MuiInputLabel-root": {
+                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+              },
+              "& .MuiInput-underline:before": {
+                borderBottomColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'rgba(0, 0, 0, 0.1)',
+              },
+              "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                borderBottomColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.2)'
+                  : 'rgba(0, 0, 0, 0.2)',
+              },
+            }}
           />
           <Typography
             variant="caption"
@@ -256,23 +416,69 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
               display: "block",
               textAlign: "center",
               marginTop: 2,
-              color: "gray",
+              color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
               fontStyle: "italic",
             }}
           >
             Version: 0.2
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} color="primary">
+        <DialogActions sx={{
+          padding: { xs: "16px 24px 24px", md: "20px 24px 24px" },
+          position: "relative",
+          zIndex: 1,
+          borderTop: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(0, 0, 0, 0.08)'}`,
+          marginTop: 2,
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 1
+        }}>
+          <Button
+            onClick={onClose}
+            sx={{
+              color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+              borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+              textTransform: "none",
+              fontWeight: "500",
+              fontSize: { xs: "0.8rem", md: "0.9rem" },
+              padding: { xs: "6px 16px", md: "8px 20px" },
+              borderRadius: "8px",
+              '&:hover': {
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+              }
+            }}
+            variant="outlined"
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            color="primary"
-            disabled={isLoading || isUploading} // Disable save button while saving or uploading
+            disabled={isLoading || isUploading}
+            variant="contained"
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(66, 66, 255, 0.8)' : 'rgba(66, 66, 255, 0.9)',
+              color: "#fff",
+              textTransform: "none",
+              fontWeight: "500",
+              fontSize: { xs: "0.8rem", md: "0.9rem" },
+              padding: { xs: "6px 16px", md: "8px 20px" },
+              borderRadius: "8px",
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 4px 10px rgba(0, 0, 0, 0.3)'
+                : '0 4px 10px rgba(0, 123, 255, 0.2)',
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(66, 66, 255, 0.9)' : 'rgba(66, 66, 255, 1)',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(66, 66, 255, 0.3)' : 'rgba(66, 66, 255, 0.4)',
+                color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+              }
+            }}
           >
-            Save
+            {isLoading || isUploading ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
         <Snackbar
@@ -283,7 +489,16 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
           <Alert
             onClose={handleCloseSnackbar}
             severity={snackbarSuccess ? "success" : "error"}
-            sx={{ width: "100%" }}
+            sx={{
+              width: "100%",
+              backdropFilter: 'blur(10px)',
+              backgroundColor: snackbarSuccess
+                ? (theme.palette.mode === 'dark' ? 'rgba(46, 125, 50, 0.9)' : 'rgba(46, 125, 50, 0.9)')
+                : (theme.palette.mode === 'dark' ? 'rgba(211, 47, 47, 0.9)' : 'rgba(211, 47, 47, 0.9)'),
+              color: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+            }}
           >
             {snackbarMessage}
           </Alert>
@@ -293,7 +508,7 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
         open={cropperOpen}
         imageSrc={imageToCrop}
         onClose={() => setCropperOpen(false)}
-        onCropComplete={handleCropComplete} // Pass the updated handler
+        onCropComplete={handleCropComplete}
       />
     </>
   );

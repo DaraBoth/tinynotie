@@ -243,220 +243,495 @@ const ReceiptScanner = ({
     setTableData(updatedTableData);
   };
 
-  const handleAccordionChange = (event, isExpanded) => {
-    setAccordionExpanded(isExpanded);
+  const handleAccordionChange = () => {
+    setAccordionExpanded(prevState => !prevState);
   };
 
   return (
-    <Box>
-      <Accordion
-        sx={{ background: "transparent", boxShadow: "none" }}
-        expanded={accordionExpanded}
-        onChange={handleAccordionChange}
+    <Box sx={{ width: "100%" }}>
+      <Box
+        sx={{
+          background: theme.palette.mode === 'dark'
+            ? 'rgba(20, 23, 39, 0.4)'
+            : 'rgba(255, 255, 255, 0.4)',
+          borderRadius: "12px",
+          padding: "16px",
+          marginBottom: "16px",
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(0, 0, 0, 0.08)'}`,
+        }}
       >
-        <AccordionSummary
-          aria-controls="panel1a-content"
-          id="panel1a-header"
-          sx={{ padding: 0, minHeight: 0 }}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "12px",
+          }}
         >
-          <IconButton
+          <Typography
+            variant="subtitle1"
             sx={{
-              position: "absolute",
-              top: 0,
-              right: "calc(100% / 2 - 20px)",
-              zIndex: 1,
-              color: colors.primary[600],
+              fontWeight: 600,
+              color: theme.palette.mode === 'dark' ? colors.grey[200] : colors.grey[800],
+            }}
+          >
+            Upload Receipt Image
+          </Typography>
+
+          <IconButton
+            onClick={handleAccordionChange}
+            size="small"
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(0, 0, 0, 0.05)',
+              borderRadius: "8px",
+              padding: "6px",
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'rgba(0, 0, 0, 0.1)',
+              }
             }}
           >
             {!accordionExpanded ? <ExpandMoreIcon /> : <ExpandLessIcon />}
           </IconButton>
-        </AccordionSummary>
+        </Box>
 
-        <AccordionDetails>
-          {showCameraAndUpload && (
+        {accordionExpanded && showCameraAndUpload && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: isNonMobile ? "row" : "column",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "16px",
+              marginTop: "8px",
+            }}
+          >
             <Box
               sx={{
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.6)'
+                  : 'rgba(255, 255, 255, 0.6)',
+                backdropFilter: "blur(4px)",
+                borderRadius: "10px",
+                padding: "16px",
                 display: "flex",
-                flexDirection: isNonMobile ? "row" : "column",
-                justifyContent: "space-between",
+                flexDirection: "column",
                 alignItems: "center",
-                gap: "10px",
+                justifyContent: "center",
+                width: isNonMobile ? "48%" : "100%",
+                border: `1px solid ${theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)'}`,
+                transition: "all 0.2s ease",
+                cursor: isNonMobile ? "default" : "pointer",
+                '&:hover': {
+                  transform: "translateY(-2px)",
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 6px 12px rgba(0, 0, 0, 0.3)'
+                    : '0 6px 12px rgba(0, 0, 0, 0.1)',
+                },
               }}
+              onClick={handleCameraClick}
             >
-              <Item>
-                <StickyIconButton color="primary" onClick={handleCameraClick}>
-                  <PhotoCameraIcon />
-                </StickyIconButton>
-                <Typography variant="h6" sx={{ color: colors.primary[600] }}>Camera</Typography>
-              </Item>
+              <Box
+                sx={{
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(0, 123, 255, 0.15)'
+                    : 'rgba(0, 123, 255, 0.1)',
+                  borderRadius: "50%",
+                  padding: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "8px",
+                }}
+              >
+                <PhotoCameraIcon
+                  sx={{
+                    color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                    fontSize: "1.5rem"
+                  }}
+                />
+              </Box>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: theme.palette.mode === 'dark' ? colors.grey[200] : colors.grey[800],
+                  fontWeight: 500,
+                }}
+              >
+                Camera
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+                  textAlign: "center",
+                  marginTop: "4px",
+                }}
+              >
+                {isNonMobile ? "Not available on desktop" : "Take a photo of your receipt"}
+              </Typography>
+            </Box>
 
-              <Item>
-                <StickyIconButton color="primary" onClick={handleUploadClick}>
-                  <UploadIcon />
-                </StickyIconButton>
-                {imageStatus ? (
-                  <Box
+            <Box
+              sx={{
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.6)'
+                  : 'rgba(255, 255, 255, 0.6)',
+                backdropFilter: "blur(4px)",
+                borderRadius: "10px",
+                padding: "16px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                width: isNonMobile ? "48%" : "100%",
+                border: `1px solid ${theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)'}`,
+                transition: "all 0.2s ease",
+                cursor: "pointer",
+                '&:hover': {
+                  transform: "translateY(-2px)",
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 6px 12px rgba(0, 0, 0, 0.3)'
+                    : '0 6px 12px rgba(0, 0, 0, 0.1)',
+                },
+              }}
+              onClick={handleUploadClick}
+            >
+              <Box
+                sx={{
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(0, 123, 255, 0.15)'
+                    : 'rgba(0, 123, 255, 0.1)',
+                  borderRadius: "50%",
+                  padding: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "8px",
+                }}
+              >
+                <UploadIcon
+                  sx={{
+                    color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                    fontSize: "1.5rem"
+                  }}
+                />
+              </Box>
+              {imageStatus ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <Typography
+                    variant="body2"
                     sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
+                      color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                      fontWeight: 500,
+                      textAlign: "center",
                     }}
                   >
-                    <Typography variant="body2" sx={{ color: colors.primary[600] }}>{imageStatus}</Typography>
-                    <IconButton color="error" onClick={handleRemoveImage}>
-                      <CloseIcon />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Typography variant="h6" sx={{ color: colors.primary[600] }}>Upload</Typography>
-                )}
-              </Item>
-
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                style={{ display: "none" }}
-                onChange={handleFileChange}
-              />
-              <input
-                ref={uploadInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={handleFileChange}
-              />
+                    {imageStatus}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                    startIcon={<CloseIcon />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveImage();
+                    }}
+                    sx={{
+                      marginTop: "4px",
+                      textTransform: "none",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </Box>
+              ) : (
+                <>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: theme.palette.mode === 'dark' ? colors.grey[200] : colors.grey[800],
+                      fontWeight: 500,
+                    }}
+                  >
+                    Upload
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+                      textAlign: "center",
+                      marginTop: "4px",
+                    }}
+                  >
+                    Select a receipt image from your device
+                  </Typography>
+                </>
+              )}
             </Box>
-          )}
-        </AccordionDetails>
-      </Accordion>
+
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+            <input
+              ref={uploadInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+          </Box>
+        )}
+      </Box>
 
       {validationError && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert
+          severity="error"
+          sx={{
+            mb: 2,
+            borderRadius: "10px",
+            '& .MuiAlert-icon': {
+              color: theme.palette.mode === 'dark' ? colors.redAccent[400] : colors.redAccent[600],
+            }
+          }}
+        >
           {validationError}
         </Alert>
       )}
 
       {errorMessages.length > 0 && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert
+          severity="error"
+          sx={{
+            mb: 2,
+            borderRadius: "10px",
+            '& .MuiAlert-icon': {
+              color: theme.palette.mode === 'dark' ? colors.redAccent[400] : colors.redAccent[600],
+            }
+          }}
+        >
           {errorMessages.join(". ")}
         </Alert>
       )}
 
-      <Box
-        sx={{
-          padding: "10px",
-          borderRadius: "4px",
-          minHeight: "100px",
-          backgroundColor: colors.background,
-          border: `2px solid ${colors.primary[600]}`,
-        }}
-      >
-        {isProcessing && (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            {isProcessing}
-          </Alert>
-        )}
+      {isProcessing && (
+        <Alert
+          severity="info"
+          sx={{
+            mb: 2,
+            borderRadius: "10px",
+            '& .MuiAlert-icon': {
+              color: theme.palette.mode === 'dark' ? colors.blueAccent[400] : colors.blueAccent[600],
+            }
+          }}
+        >
+          {isProcessing}
+        </Alert>
+      )}
 
-        {tableData.length > 0 && (
-          <Box sx={{ height: 400, width: "100%", marginTop: "20px" }}>
-            <DataGrid
+      {tableData.length > 0 && (
+        <Box
+          sx={{
+            background: theme.palette.mode === 'dark'
+              ? 'rgba(20, 23, 39, 0.4)'
+              : 'rgba(255, 255, 255, 0.4)',
+            borderRadius: "12px",
+            padding: "16px",
+            border: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            height: "auto",
+            width: "100%",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <Typography
+              variant="subtitle1"
               sx={{
-                minHeight: "63vh",
-                "& .MuiDataGrid-columnHeaders": {
-                  backgroundColor: theme.palette.mode === 'dark' ? colors.grey[900] : colors.primary[600],
-                  color: theme.palette.mode === 'dark' ? colors.primary[100] : colors.grey[100],
-                },
-                "& .MuiDataGrid-row": {
-                  backgroundColor: theme.palette.mode === 'dark' ? colors.grey[800] : colors.grey[200],
-                  color: theme.palette.mode === 'dark' ? colors.primary[100] : colors.primary[900],
-                  "&:hover": {
-                    backgroundColor: theme.palette.mode === 'dark' ? colors.grey[700] : colors.grey[300],
-                  }
-                },
-                "& .MuiDataGrid-footerContainer": {
-                  borderTop: `2px solid ${colors.primary[600]}`,
-                  backgroundColor: colors.background,
-                },
-                "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-                  color: `${colors.primary[600]} !important`,
-                },
-                "& .MuiDataGrid-overlay": {
-                  backgroundColor: colors.primary[300],
-                  opacity: 0.9,
-                },
-                "& .MuiCircularProgress-root": {
-                  color: colors.blueAccent[900],
-                },
-              }}
-              rows={tableData}
-              columns={[
-                {
-                  field: "trp_name",
-                  headerName: "Name",
-                  width: 200,
-                  editable: true,
-                },
-                {
-                  field: "spend",
-                  headerName: "Spend",
-                  width: 150,
-                  editable: true,
-                },
-                {
-                  field: "create_date",
-                  headerName: "Create Date",
-                  width: 150,
-                  editable: true,
-                },
-                {
-                  field: "actions", // Column for removing a row
-                  headerName: "Actions",
-                  width: 100,
-                  renderCell: (params) => (
-                    <IconButton
-                      onClick={() => handleRemoveRow(params.row.id)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  ),
-                },
-              ]}
-              processRowUpdate={handleProcessRowUpdate}
-              disableSelectionOnClick
-              experimentalFeatures={{ newEditingApi: true }}
-              pageSize={8}
-              rowsPerPageOptions={[8]}
-            />
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "10px",
+                fontWeight: 600,
+                color: theme.palette.mode === 'dark' ? colors.grey[200] : colors.grey[800],
               }}
             >
+              Extracted Items
+            </Typography>
+
+            <Box sx={{ display: "flex", gap: 1 }}>
               <Button
-                variant="contained"
-                color="primary"
+                variant="outlined"
+                size="small"
                 onClick={handleAddRow}
-                sx={{ marginRight: "10px" }}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "8px",
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                  borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+                  '&:hover': {
+                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
+                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                  }
+                }}
               >
                 Add Row
               </Button>
               <Button
                 variant="contained"
-                color="secondary"
+                size="small"
                 onClick={handleConfirm}
                 disabled={isProcessing != null}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "8px",
+                  backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 500 : 600],
+                  color: "#fff",
+                  "&:hover": {
+                    backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 600 : 700],
+                  },
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 4px 10px rgba(0, 123, 255, 0.2)'
+                    : '0 4px 10px rgba(0, 123, 255, 0.15)',
+                }}
               >
                 Confirm
               </Button>
             </Box>
           </Box>
-        )}
-      </Box>
+
+          <DataGrid
+            sx={{
+              height: { xs: "50vh", md: "40vh" },
+              border: "none",
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.6)'
+                  : 'rgba(240, 240, 240, 0.6)',
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                borderRadius: "8px",
+                '& .MuiDataGrid-columnHeaderTitle': {
+                  fontWeight: 600,
+                },
+              },
+              "& .MuiDataGrid-virtualScroller": {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.3)'
+                  : 'rgba(255, 255, 255, 0.3)',
+              },
+              "& .MuiDataGrid-row": {
+                borderRadius: "8px",
+                marginTop: "4px",
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.6)'
+                  : 'rgba(255, 255, 255, 0.6)',
+                "&:hover": {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(30, 33, 49, 0.8)'
+                    : 'rgba(245, 245, 245, 0.8)',
+                }
+              },
+              "& .MuiDataGrid-cell": {
+                borderBottom: "none",
+              },
+              "& .MuiDataGrid-footerContainer": {
+                borderTop: "none",
+                backgroundColor: "transparent",
+              },
+              "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+                color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              },
+              "& .MuiDataGrid-overlay": {
+                backgroundColor: "transparent",
+              },
+              "& .MuiCircularProgress-root": {
+                color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+              },
+            }}
+            rows={tableData}
+            columns={[
+              {
+                field: "trp_name",
+                headerName: "Name",
+                flex: 1,
+                minWidth: 150,
+                editable: true,
+              },
+              {
+                field: "spend",
+                headerName: "Spend",
+                flex: 0.7,
+                minWidth: 100,
+                editable: true,
+              },
+              {
+                field: "create_date",
+                headerName: "Date",
+                flex: 0.8,
+                minWidth: 120,
+                editable: true,
+              },
+              {
+                field: "actions",
+                headerName: "Actions",
+                flex: 0.5,
+                minWidth: 80,
+                renderCell: (params) => (
+                  <IconButton
+                    onClick={() => handleRemoveRow(params.row.id)}
+                    size="small"
+                    sx={{
+                      color: theme.palette.mode === 'dark' ? colors.redAccent[400] : colors.redAccent[600],
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255, 82, 82, 0.1)'
+                          : 'rgba(255, 82, 82, 0.05)',
+                      }
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                ),
+              },
+            ]}
+            processRowUpdate={handleProcessRowUpdate}
+            disableSelectionOnClick
+            experimentalFeatures={{ newEditingApi: true }}
+            pageSize={8}
+            rowsPerPageOptions={[8]}
+            disableColumnMenu
+          />
+        </Box>
+      )}
     </Box>
   );
 };

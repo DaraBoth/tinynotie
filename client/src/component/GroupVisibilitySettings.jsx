@@ -21,10 +21,13 @@ import {
   DialogContentText,
   useTheme,
   Skeleton,
+  alpha,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import PersonIcon from "@mui/icons-material/Person";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import WarningIcon from "@mui/icons-material/Warning";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import {
   useUpdateGroupVisibilityMutation,
@@ -32,6 +35,7 @@ import {
   useUserSearchMutation,
 } from "../api/api";
 import { tokens } from "../theme";
+import { motion } from "framer-motion";
 
 export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   const theme = useTheme();
@@ -245,7 +249,35 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
 
   return (
     <Box sx={{ position: "relative", zIndex: 0 }}>
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          component: motion.div,
+          initial: { opacity: 0, y: 20, scale: 0.95 },
+          animate: { opacity: 1, y: 0, scale: 1 },
+          exit: { opacity: 0, y: 20, scale: 0.95 },
+          transition: { duration: 0.3 },
+          sx: {
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(20, 23, 39, 0.9)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: "blur(10px)",
+            borderRadius: "16px",
+            padding: { xs: "16px", md: "20px" },
+            color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+            border: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 10px 25px rgba(0, 0, 0, 0.5)'
+              : '0 10px 25px rgba(0, 0, 0, 0.1)',
+            overflow: "hidden",
+          },
+        }}
+      >
         {/* Loading overlay with reduced opacity and simplified rendering */}
         {loading && (
           <Box
@@ -256,39 +288,111 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               right: 0,
               bottom: 0,
               backgroundColor: theme.palette.mode === "dark"
-                ? "rgba(0, 0, 0, 0.7)"
+                ? "rgba(20, 23, 39, 0.7)"
                 : "rgba(255, 255, 255, 0.7)",
               zIndex: 1300,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backdropFilter: "blur(2px)",
+              backdropFilter: "blur(8px)",
+              borderRadius: "16px",
             }}
           >
-            <CircularProgress size={40} thickness={4} />
-          </Box>
-        )}
-        <DialogTitle>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              justifyContent: { xs: "center", md: "space-between" },
-              alignItems: { xs: "flex-start", md: "flex-start" },
-            }}
-          >
-            <Typography>Update Group Visibility</Typography>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={visibility === "public"}
-                  onChange={handleVisibilityToggle}
-                />
-              }
-              label={visibility === "private" ? "Private" : "Public"}
-              sx={{ mt: { xs: 2, md: 0 } }}
+            <CircularProgress
+              size={40}
+              thickness={4}
+              sx={{
+                color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600]
+              }}
             />
           </Box>
+        )}
+
+        {/* Subtle gradient overlay for depth */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "60px",
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+              : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+
+        <DialogTitle
+          sx={{
+            padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+            position: "relative",
+            zIndex: 1,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderBottom: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            marginBottom: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box
+              sx={{
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(0, 123, 255, 0.15)'
+                  : 'rgba(0, 123, 255, 0.1)',
+                borderRadius: "12px",
+                padding: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 1.5
+              }}
+            >
+              <VisibilityIcon
+                sx={{
+                  color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                  fontSize: { xs: "1.2rem", md: "1.3rem" }
+                }}
+              />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                fontSize: { xs: "1.1rem", md: "1.2rem" },
+                fontWeight: 600,
+                letterSpacing: "-0.01em"
+              }}
+            >
+              Group Visibility Settings
+            </Typography>
+          </Box>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={visibility === "public"}
+                onChange={handleVisibilityToggle}
+                color="primary"
+              />
+            }
+            label={
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                }}
+              >
+                {visibility === "private" ? "Private" : "Public"}
+              </Typography>
+            }
+            sx={{ mt: { xs: 2, md: 0 } }}
+          />
         </DialogTitle>
 
         <DialogContent>
@@ -572,16 +676,69 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
           </Box>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleClose} color="primary">
+        <DialogActions
+          sx={{
+            padding: { xs: "16px 0 0 0", md: "20px 0 0 0" },
+            position: "relative",
+            zIndex: 1,
+            borderTop: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            marginTop: 2,
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 2
+          }}
+        >
+          <Button
+            onClick={handleClose}
+            variant="outlined"
+            component={motion.button}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            disabled={loading}
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+              textTransform: "none",
+              fontWeight: "500",
+              fontSize: { xs: "0.8rem", md: "0.9rem" },
+              padding: { xs: "6px 16px", md: "8px 20px" },
+              borderRadius: "8px",
+              '&:hover': {
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+              }
+            }}
+          >
             Cancel
           </Button>
+
           <Button
             onClick={handleSave}
-            color="primary"
+            variant="contained"
+            component={motion.button}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             disabled={loading || !hasUnsavedChanges}
+            startIcon={loading && <CircularProgress size="1rem" color="inherit" />}
+            sx={{
+              backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 500 : 600],
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 600 : 700],
+              },
+              textTransform: "none",
+              fontWeight: "500",
+              fontSize: { xs: "0.8rem", md: "0.9rem" },
+              padding: { xs: "6px 16px", md: "8px 20px" },
+              borderRadius: "8px",
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 4px 10px rgba(0, 123, 255, 0.2)'
+                : '0 4px 10px rgba(0, 123, 255, 0.15)',
+            }}
           >
-            {loading ? <CircularProgress size="1rem" /> : "Save"}
+            {loading ? "Saving..." : "Save Changes"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -600,23 +757,174 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
         </Alert>
       </Snackbar>
 
-      <Dialog open={showConfirmationDialog}>
-        <DialogTitle>Unsaved Changes</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            You have unsaved changes. Are you sure you want to close without
-            saving?
-          </DialogContentText>
+      <Dialog
+        open={showConfirmationDialog}
+        PaperProps={{
+          component: motion.div,
+          initial: { opacity: 0, y: 20, scale: 0.95 },
+          animate: { opacity: 1, y: 0, scale: 1 },
+          exit: { opacity: 0, y: 20, scale: 0.95 },
+          transition: { duration: 0.3 },
+          sx: {
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(20, 23, 39, 0.9)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: "blur(10px)",
+            borderRadius: "16px",
+            padding: { xs: "16px", md: "20px" },
+            color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+            border: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 10px 25px rgba(0, 0, 0, 0.5)'
+              : '0 10px 25px rgba(0, 0, 0, 0.1)',
+            overflow: "hidden",
+          },
+        }}
+      >
+        {/* Subtle gradient overlay for depth */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "40px",
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+              : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+
+        <DialogTitle
+          sx={{
+            padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+            position: "relative",
+            zIndex: 1,
+            display: "flex",
+            alignItems: "center",
+            borderBottom: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            marginBottom: 2,
+          }}
+        >
+          <Box
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(255, 59, 59, 0.15)'
+                : 'rgba(255, 59, 59, 0.1)',
+              borderRadius: "12px",
+              padding: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 1.5
+            }}
+          >
+            <WarningIcon
+              sx={{
+                color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
+                fontSize: { xs: "1.2rem", md: "1.3rem" }
+              }}
+            />
+          </Box>
+          <Typography
+            variant="h6"
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+              fontSize: { xs: "1.1rem", md: "1.2rem" },
+              fontWeight: 600,
+              letterSpacing: "-0.01em"
+            }}
+          >
+            Unsaved Changes
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent
+          sx={{
+            padding: { xs: "16px 0", md: "20px 0" },
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          <Typography
+            variant="body1"
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              fontSize: { xs: "0.9rem", md: "1rem" },
+              lineHeight: 1.5,
+            }}
+          >
+            You have unsaved changes. Are you sure you want to close without saving?
+          </Typography>
         </DialogContent>
-        <DialogActions>
+
+        <DialogActions
+          sx={{
+            padding: { xs: "16px 0 0 0", md: "20px 0 0 0" },
+            position: "relative",
+            zIndex: 1,
+            borderTop: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            marginTop: 2,
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 2
+          }}
+        >
           <Button
             onClick={() => setShowConfirmationDialog(false)}
-            color="primary"
+            variant="outlined"
+            component={motion.button}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+              textTransform: "none",
+              fontWeight: "500",
+              fontSize: { xs: "0.8rem", md: "0.9rem" },
+              padding: { xs: "6px 16px", md: "8px 20px" },
+              borderRadius: "8px",
+              '&:hover': {
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+              }
+            }}
           >
-            No
+            No, Keep Editing
           </Button>
-          <Button onClick={confirmClose} color="primary" autoFocus>
-            Yes
+
+          <Button
+            onClick={confirmClose}
+            variant="contained"
+            component={motion.button}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            autoFocus
+            sx={{
+              backgroundColor: colors.redAccent[theme.palette.mode === 'dark' ? 500 : 600],
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: colors.redAccent[theme.palette.mode === 'dark' ? 600 : 700],
+              },
+              textTransform: "none",
+              fontWeight: "500",
+              fontSize: { xs: "0.8rem", md: "0.9rem" },
+              padding: { xs: "6px 16px", md: "8px 20px" },
+              borderRadius: "8px",
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 4px 10px rgba(255, 59, 59, 0.2)'
+                : '0 4px 10px rgba(255, 59, 59, 0.15)',
+            }}
+          >
+            Yes, Discard Changes
           </Button>
         </DialogActions>
       </Dialog>

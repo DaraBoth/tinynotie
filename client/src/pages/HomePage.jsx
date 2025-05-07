@@ -17,31 +17,27 @@ import {
   Skeleton,
   CircularProgress,
   Slide,
-  Stack,
-  Tabs,
-  Tab,
 } from "@mui/material";
+import { motion } from "framer-motion";
 import SpaceSkyNew from "../component/SpaceSkyNew";
 import { useDeleteGroupMutation, useGetGroupMutation, useLazyGetUserProfileQuery } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
-import LogoutIcon from "@mui/icons-material/Logout";
-import SettingsIcon from "@mui/icons-material/Settings";
 import DeleteIcon from "@mui/icons-material/Delete";
 import WarningIcon from "@mui/icons-material/Warning";
+import CheckIcon from "@mui/icons-material/Check";
 import { rspWidth } from "../responsive";
 import { tokens } from "../theme";
 import { encodeObjectToBase64 } from "../help/helper";
 import { formatTimeDifference } from "../help/time";
 import moment from "moment";
 import FloatingChat from "../component/ChatWithDatabase";
-import sleepingmeow from "../assets/sleepingmeow.json";
-import background1 from "../assets/background1.json";
-import Lottie from "lottie-react";
-import ProfileSettings from "../component/ProfileSettings"; // Import the new component
-import defaultProfileImage from "../../public/default_profile.jpg"; // Import the default profile image
+import ProfileSettings from "../component/ProfileSettings";
+import defaultProfileImage from "../../public/default_profile.jpg";
+import HomeTopbar from "../global/HomeTopbar";
+import { Stack } from "@mui/system";
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
@@ -56,52 +52,96 @@ function GroupCard({ item, onDelete, onClick }) {
 
   return (
     <Paper
-      elevation={3}
+      component={motion.div}
+      whileHover={{ y: -4 }}
+      elevation={0}
       sx={{
         cursor: "pointer",
-        padding: { xs: "10px", md: "12px" },
-        borderRadius: "10px",
-        border: `1px solid ${colors.primary[700]}88`,
-        transition: "transform 0.3s, box-shadow 0.3s",
+        padding: { xs: "16px", md: "18px" },
+        borderRadius: "16px",
+        border: `1px solid ${theme.palette.mode === 'dark'
+          ? 'rgba(255, 255, 255, 0.08)'
+          : 'rgba(0, 0, 0, 0.08)'}`,
+        transition: "all 0.3s ease",
         "&:hover": {
-          transform: "scale(1.03) translateZ(5px)",
-          boxShadow: `0 5px 15px ${colors.primary[500]}55`,
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 8px 20px rgba(0, 0, 0, 0.4)'
+            : '0 8px 20px rgba(0, 0, 0, 0.1)',
         },
         position: "relative",
-        backgroundColor: `${colors.grey[800]}cc`,
+        backgroundColor: theme.palette.mode === 'dark'
+          ? 'rgba(20, 23, 39, 0.6)'
+          : 'rgba(255, 255, 255, 0.6)',
         backdropFilter: "blur(8px)",
         zIndex: 1,
+        overflow: "hidden",
       }}
       onClick={() => onClick(item)}
     >
-      <Typography
-        variant="subtitle1"
-        fontWeight="bold"
-        color={colors.primary[100]}
-        sx={{ fontSize: { xs: "0.9rem", md: "1rem" }, mb: 0.5 }}
-      >
-        {item.grp_name}
-      </Typography>
-      <Typography
-        variant="body2"
-        color={colors.grey[300]}
-        sx={{ fontSize: { xs: "0.75rem", md: "0.8rem" }, mb: 0.25 }}
-      >
-        <span style={{ color: colors.primary[300] }}>
-          {`Currency ${currencyObject[item.currency]}`}
-        </span>
-      </Typography>
-      <Typography
-        variant="body2"
-        color={colors.grey[400]}
-        sx={{ fontSize: { xs: "0.75rem", md: "0.8rem" } }}
-      >
-        <span title={moment(item.create_date).format("YYYY-MM-DD hh:mm:ss (dd)")} style={{ color: colors.primary[300] }}>
-          {`Since ${formatTimeDifference(item.create_date)}`}
-        </span>
-      </Typography>
+      {/* Subtle gradient overlay for depth */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "60px",
+          background: theme.palette.mode === 'dark'
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+          zIndex: 0,
+        }}
+      />
+
+      <Box sx={{ position: "relative", zIndex: 1 }}>
+        <Typography
+          variant="subtitle1"
+          fontWeight="600"
+          color={theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800]}
+          sx={{
+            fontSize: { xs: "0.95rem", md: "1.05rem" },
+            mb: 1,
+            letterSpacing: "-0.01em"
+          }}
+        >
+          {item.grp_name}
+        </Typography>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: { xs: "0.75rem", md: "0.8rem" },
+              color: theme.palette.mode === 'dark' ? colors.primary[300] : colors.primary[600],
+              display: "flex",
+              alignItems: "center",
+              gap: "4px"
+            }}
+          >
+            {`${currencyObject[item.currency]}`}
+          </Typography>
+
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: { xs: "0.75rem", md: "0.8rem" },
+              color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+              display: "flex",
+              alignItems: "center",
+              gap: "4px"
+            }}
+            title={moment(item.create_date).format("YYYY-MM-DD hh:mm:ss (dd)")}
+          >
+            {`Created ${formatTimeDifference(item.create_date)}`}
+          </Typography>
+        </Box>
+      </Box>
+
       {item.isAdmin && (
         <IconButton
+          component={motion.button}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           aria-label="delete"
           onClick={(e) => {
             e.stopPropagation();
@@ -109,10 +149,19 @@ function GroupCard({ item, onDelete, onClick }) {
           }}
           sx={{
             position: "absolute",
-            top: 2,
-            right: 2,
+            top: 8,
+            right: 8,
             color: colors.redAccent[500],
-            padding: "4px",
+            padding: "6px",
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(0, 0, 0, 0.2)'
+              : 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: "blur(4px)",
+            '&:hover': {
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(255, 0, 0, 0.1)'
+                : 'rgba(255, 0, 0, 0.05)',
+            }
           }}
           size="small"
         >
@@ -134,7 +183,7 @@ export default function Home({
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [triggerUser, resultUser] = useGetGroupMutation();
-  const [triggerDeleteGroup, resultGroup] = useDeleteGroupMutation();
+  const [triggerDeleteGroup] = useDeleteGroupMutation();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -146,18 +195,15 @@ export default function Home({
   const [noteToDeleteName, setNoteToDeleteName] = useState(""); // Add state for group name
   const navigate = useNavigate();
   const [tabIndex, setTabIndex] = useState(0);
-  const isMobile = useMediaQuery("(max-width:600px)");
   const isNonMobile = useMediaQuery("(min-width:600px)");
-  const widthItem = rspWidth("calc(100%/2)", "100%", "260px");
   const gridColItem = rspWidth("repeat(4,1fr)", "repeat(1,1fr)", "auto");
-  const fontSize = rspWidth("normal", "18px", "16px");
   const [openProfileSettings, setOpenProfileSettings] = useState(false); // State to control profile settings dialog
   const [profileViewMode, setProfileViewMode] = useState(false); // State to control view/edit mode
   const [getUserProfile, { data: userProfile }] = useLazyGetUserProfileQuery(); // Lazy query for user profile
   const [profileData, setProfileData] = useState(null); // Shared state for profile data
   const [scrollDirection, setScrollDirection] = useState("up"); // Track scroll direction
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (_, newValue) => {
     setTabIndex(newValue);
   };
 
@@ -279,195 +325,126 @@ export default function Home({
     >
       {/* Add the 3D Space Sky background */}
       <SpaceSkyNew />
-      <Paper
-        elevation={3}
+
+      {/* Use the imported HomeTopbar component */}
+      <HomeTopbar
+        title="TinyNotie"
+        onLogout={handleLogout}
+        onProfileClick={handleOpenProfileSettings}
+        profileImage={profileData?.profile_url || defaultProfileImage}
+        scrollDirection={scrollDirection}
+      />
+
+      {/* Tab navigation - modern design for both mobile and desktop */}
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
         sx={{
-          padding: { xs: "12px", md: "16px" },
-          marginBottom: isNonMobile ? "16px" : "0px",
-          borderRadius: "0px",
-          backgroundColor: `${colors.grey[800]}dd`, // Added transparency
-          backdropFilter: "blur(5px)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100%",
+          marginBottom: "16px",
           position: "relative",
-          zIndex: 1,
+          zIndex: 2,
         }}
       >
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          position={"relative"}
-        >
-          <Typography
-            component="span"
-            variant="h5"
-            color={colors.primary[100]}
-            sx={{
-              fontSize: { xs: "1.1rem", md: "1.3rem" },
-              fontWeight: "bold"
-            }}
-          >
-            TinyNotie
-          </Typography>
-
-          <Box>
-            <IconButton
-              onClick={handleOpenProfileSettings}
-              aria-label="profile"
-              sx={{ padding: { xs: "6px", md: "8px" } }}
-            >
-              <img
-                src={
-                  profileData?.profile_url ||
-                  defaultProfileImage
-                } // Use shared profile data
-                alt="Profile"
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  border: `2px solid ${colors.primary[500]}`,
-                }}
-              />
-            </IconButton>
-            <IconButton
-              onClick={handleLogout}
-              aria-label="logout"
-              sx={{ padding: { xs: "6px", md: "8px" } }}
-            >
-              <LogoutIcon
-                sx={{
-                  fill: colors.redAccent[500],
-                  fontSize: { xs: "1.2rem", md: "1.4rem" }
-                }}
-              />
-            </IconButton>
-          </Box>
-        </Box>
-      </Paper>
-
-      {isNonMobile ? (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: "12px",
-            left: "50%",
-            transform: "translateX(-50%)", // Center it horizontally
-            zIndex: 1300, // Above other elements
-          }}
-        >
-          <Paper
-            elevation={4} // Increased elevation for a floating effect
-            sx={{
-              display: "flex",
-              padding: "6px 12px",
-              borderRadius: "20px", // Rounded corners like a dock
-              backgroundColor: `${colors.grey[900]}cc`, // Semi-transparent background
-              backdropFilter: "blur(10px)",
-              position: "relative",
-              overflow: "hidden",
-              border: `1px solid ${colors.primary[700]}44`,
-              boxShadow: `0 5px 15px ${colors.primary[900]}88`,
-            }}
-          >
-            <Lottie
-              animationData={background1}
-              loop={true}
-              style={{
-                position:"absolute",
-                width: 180,
-                top:"-70px",
-                right:"70px",
-                height: 180,
-                mixBlendMode:"overlay",
-                opacity: 0.8
-              }}
-            />
-            <Button
-              onClick={() => handleTabChange(null, 0)}
-              color={tabIndex === 0 ? "primary" : "inherit"}
-              disableRipple
-              startIcon={<DescriptionOutlinedIcon sx={{ fontSize: "1.1rem" }} />}
-              sx={{
-                textTransform: "none",
-                mx: 0.5,
-                fontSize: "0.85rem",
-                color:
-                  tabIndex === 0 ? colors.primary[500] : colors.primary[100],
-                ".MuiButtonBase-root:hover": {
-                  backgroundColor: "none",
-                },
-                padding: "4px 8px",
-              }}
-            >
-              My Notes
-            </Button>
-            <Button
-              disableRipple
-              onClick={() => handleTabChange(null, 1)}
-              color={tabIndex === 1 ? "primary" : "inherit"}
-              startIcon={<PeopleAltOutlinedIcon sx={{ fontSize: "1.1rem" }} />}
-              sx={{
-                textTransform: "none",
-                mx: 0.5,
-                fontSize: "0.85rem",
-                color:
-                  tabIndex === 1 ? colors.primary[500] : colors.primary[100],
-                padding: "4px 8px",
-              }}
-            >
-              From Others
-            </Button>
-          </Paper>
-        </Box>
-      ) : (
-        <Box
+        <Paper
+          elevation={0}
           sx={{
             display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            width: "100%",
-            marginBottom: "10px",
-            backgroundColor: `${colors.grey[800]}dd`,
-            backdropFilter: "blur(5px)",
-            position: "relative",
-            zIndex: 1,
+            width: isNonMobile ? "auto" : "100%",
+            padding: isNonMobile ? "4px" : "0px",
+            borderRadius: isNonMobile ? "16px" : "0px",
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(20, 23, 39, 0.6)'
+              : 'rgba(255, 255, 255, 0.6)',
+            backdropFilter: "blur(8px)",
+            overflow: "hidden",
+            border: isNonMobile ? `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}` : "none",
           }}
         >
           <Button
             onClick={() => handleTabChange(null, 0)}
-            color={tabIndex === 0 ? "primary" : "inherit"}
-            startIcon={<DescriptionOutlinedIcon sx={{ fontSize: "1rem" }} />}
+            disableRipple
+            startIcon={<DescriptionOutlinedIcon sx={{ fontSize: isNonMobile ? "1.1rem" : "1rem" }} />}
             sx={{
               textTransform: "none",
-              width: "50%", // Full width for mobile view
-              borderRadius: "0", // No border radius
-              color: tabIndex === 0 ? colors.primary[500] : colors.primary[100],
-              fontSize: "0.8rem",
-              padding: "6px 0",
+              width: isNonMobile ? "auto" : "50%",
+              borderRadius: isNonMobile ? "12px" : "0px",
+              backgroundColor: tabIndex === 0
+                ? theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.05)'
+                : 'transparent',
+              color: tabIndex === 0
+                ? theme.palette.mode === 'dark'
+                  ? colors.primary[300]
+                  : colors.primary[600]
+                : theme.palette.mode === 'dark'
+                  ? colors.grey[300]
+                  : colors.grey[700],
+              fontSize: { xs: "0.8rem", sm: "0.85rem" },
+              padding: isNonMobile ? "8px 16px" : "10px 0",
+              transition: "all 0.2s ease",
+              fontWeight: tabIndex === 0 ? 600 : 400,
+              "&:hover": {
+                backgroundColor: tabIndex !== 0
+                  ? theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.04)'
+                    : 'rgba(0, 0, 0, 0.03)'
+                  : theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.07)',
+              },
             }}
-            disableRipple
           >
             My Notes
           </Button>
+
           <Button
-            disableRipple
             onClick={() => handleTabChange(null, 1)}
-            color={tabIndex === 1 ? "primary" : "inherit"}
-            startIcon={<PeopleAltOutlinedIcon sx={{ fontSize: "1rem" }} />}
+            disableRipple
+            startIcon={<PeopleAltOutlinedIcon sx={{ fontSize: isNonMobile ? "1.1rem" : "1rem" }} />}
             sx={{
               textTransform: "none",
-              width: "50%", // Full width for mobile view
-              borderRadius: "0", // No border radius
-              color: tabIndex === 1 ? colors.primary[500] : colors.primary[100],
-              fontSize: "0.8rem",
-              padding: "6px 0",
+              width: isNonMobile ? "auto" : "50%",
+              borderRadius: isNonMobile ? "12px" : "0px",
+              backgroundColor: tabIndex === 1
+                ? theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.05)'
+                : 'transparent',
+              color: tabIndex === 1
+                ? theme.palette.mode === 'dark'
+                  ? colors.primary[300]
+                  : colors.primary[600]
+                : theme.palette.mode === 'dark'
+                  ? colors.grey[300]
+                  : colors.grey[700],
+              fontSize: { xs: "0.8rem", sm: "0.85rem" },
+              padding: isNonMobile ? "8px 16px" : "10px 0",
+              transition: "all 0.2s ease",
+              fontWeight: tabIndex === 1 ? 600 : 400,
+              "&:hover": {
+                backgroundColor: tabIndex !== 1
+                  ? theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.04)'
+                    : 'rgba(0, 0, 0, 0.03)'
+                  : theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.07)',
+              },
             }}
           >
             From Others
           </Button>
-        </Box>
-      )}
+        </Paper>
+      </Box>
 
       <Box
         sx={{
@@ -487,66 +464,168 @@ export default function Home({
       >
         {loading ? (
           Array.from(new Array(6)).map((_, index) => (
-            <Skeleton
+            <Paper
               key={index}
-              variant="rectangular"
-              width={"100%"}
-              height={"80px"}
-              sx={{ borderRadius: "10px", backgroundColor: colors.grey[700] }}
-            />
+              elevation={0}
+              sx={{
+                width: "100%",
+                height: "100px",
+                borderRadius: "16px",
+                overflow: "hidden",
+                position: "relative",
+                border: `1px solid ${theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)'}`,
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.4)'
+                  : 'rgba(255, 255, 255, 0.4)',
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <Skeleton
+                variant="rectangular"
+                width={"60%"}
+                height={"20px"}
+                sx={{
+                  borderRadius: "4px",
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.1)',
+                  position: "absolute",
+                  top: "16px",
+                  left: "16px"
+                }}
+              />
+              <Skeleton
+                variant="rectangular"
+                width={"40%"}
+                height={"16px"}
+                sx={{
+                  borderRadius: "4px",
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.07)'
+                    : 'rgba(0, 0, 0, 0.07)',
+                  position: "absolute",
+                  top: "48px",
+                  left: "16px"
+                }}
+              />
+              <Skeleton
+                variant="rectangular"
+                width={"30%"}
+                height={"16px"}
+                sx={{
+                  borderRadius: "4px",
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.05)',
+                  position: "absolute",
+                  top: "72px",
+                  left: "16px"
+                }}
+              />
+            </Paper>
           ))
         ) : tabIndex === 0 && data.every((item) => !item.isAdmin) ? (
           // No notes created by the user
           <Paper
-            elevation={2}
+            component={motion.div}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            elevation={0}
             sx={{
-              width: "100%", // Ensure it takes the full width
-              height: { xs: "50vh", md: "60vh" }, // Adjust height for better view
+              width: "100%",
+              height: { xs: "50vh", md: "60vh" },
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
               flexDirection: "column",
-              padding: { xs: "16px", md: "20px" },
+              padding: { xs: "24px", md: "32px" },
               textAlign: "center",
-              borderRadius: "10px",
-              border: `1px solid ${colors.primary[700]}`,
-              backgroundColor: colors.grey[800],
+              borderRadius: "20px",
+              border: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.08)'}`,
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(20, 23, 39, 0.6)'
+                : 'rgba(255, 255, 255, 0.6)',
+              backdropFilter: "blur(8px)",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <Typography
-              variant="subtitle1"
-              color={colors.primary[100]}
-              sx={{ fontSize: { xs: "0.9rem", md: "1rem" }, fontWeight: "bold" }}
-            >
-              No notes found!
-            </Typography>
-            <Typography
-              variant="body2"
-              color={colors.primary[200]}
-              sx={{ fontSize: { xs: "0.8rem", md: "0.9rem" }, mt: 1 }}
-            >
-              Click the button below to create your first note.
-            </Typography>
-            <Fab
-              color="primary"
-              aria-label="add"
-              size="small"
-              onClick={handleCreateGroup}
+            {/* Subtle gradient overlay for depth */}
+            <Box
               sx={{
-                marginTop: "16px",
-                backgroundColor: colors.primary[500],
-                "&:hover": {
-                  backgroundColor: colors.primary[700],
-                },
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "100px",
+                background: theme.palette.mode === 'dark'
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+                  : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+                zIndex: 0,
               }}
-            >
-              <AddIcon fontSize="small" />
-            </Fab>
+            />
+
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+              <Typography
+                variant="h6"
+                color={theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800]}
+                sx={{
+                  fontSize: { xs: "1.1rem", md: "1.2rem" },
+                  fontWeight: "600",
+                  mb: 1,
+                  letterSpacing: "-0.01em"
+                }}
+              >
+                No notes found!
+              </Typography>
+
+              <Typography
+                variant="body1"
+                color={theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600]}
+                sx={{
+                  fontSize: { xs: "0.85rem", md: "0.95rem" },
+                  mb: 4,
+                  maxWidth: "300px"
+                }}
+              >
+                Click the button below to create your first note.
+              </Typography>
+
+              <Fab
+                color="primary"
+                aria-label="add"
+                size="medium"
+                onClick={handleCreateGroup}
+                component={motion.button}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                sx={{
+                  backgroundColor: colors.primary[500],
+                  "&:hover": {
+                    backgroundColor: colors.primary[600],
+                  },
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 4px 12px rgba(0, 0, 0, 0.4)'
+                    : '0 4px 12px rgba(0, 0, 0, 0.2)',
+                }}
+              >
+                <AddIcon />
+              </Fab>
+            </Box>
           </Paper>
         ) : tabIndex === 1 && data.every((item) => item.isAdmin) ? (
           // No shared notes from other users
           <Paper
-            elevation={2}
+            component={motion.div}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            elevation={0}
             sx={{
               width: "100%",
               height: { xs: "40vh", md: "50vh" },
@@ -554,27 +633,60 @@ export default function Home({
               justifyContent: "center",
               alignItems: "center",
               flexDirection: "column",
-              padding: { xs: "16px", md: "20px" },
+              padding: { xs: "24px", md: "32px" },
               textAlign: "center",
-              borderRadius: "10px",
-              backgroundColor: "transparent",
-              boxShadow: "none",
+              borderRadius: "20px",
+              border: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.08)'}`,
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(20, 23, 39, 0.6)'
+                : 'rgba(255, 255, 255, 0.6)',
+              backdropFilter: "blur(8px)",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <Typography
-              variant="subtitle1"
-              color={colors.primary[100]}
-              sx={{ fontSize: { xs: "0.9rem", md: "1rem" }, fontWeight: "bold" }}
-            >
-              No shared notes found!
-            </Typography>
-            <Typography
-              variant="body2"
-              color={colors.primary[200]}
-              sx={{ fontSize: { xs: "0.8rem", md: "0.9rem" }, mt: 1 }}
-            >
-              Ask your friends to share their notes with you.
-            </Typography>
+            {/* Subtle gradient overlay for depth */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "100px",
+                background: theme.palette.mode === 'dark'
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+                  : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+                zIndex: 0,
+              }}
+            />
+
+            <Box sx={{ position: "relative", zIndex: 1 }}>
+              <Typography
+                variant="h6"
+                color={theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800]}
+                sx={{
+                  fontSize: { xs: "1.1rem", md: "1.2rem" },
+                  fontWeight: "600",
+                  mb: 1,
+                  letterSpacing: "-0.01em"
+                }}
+              >
+                No shared notes found!
+              </Typography>
+
+              <Typography
+                variant="body1"
+                color={theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600]}
+                sx={{
+                  fontSize: { xs: "0.85rem", md: "0.95rem" },
+                  maxWidth: "300px"
+                }}
+              >
+                Ask your friends to share their notes with you.
+              </Typography>
+            </Box>
           </Paper>
         ) : (
           data
@@ -602,6 +714,7 @@ export default function Home({
           flexDirection: "column",
           gap: "12px",
           transition: "right 0.3s ease-in-out", // Smooth transition
+          zIndex: 1500, // Higher z-index to ensure buttons stay above cards
         }}
       >
         <Fab
@@ -609,17 +722,21 @@ export default function Home({
           aria-label="add"
           size="small"
           onClick={handleCreateGroup}
+          component={motion.button}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           sx={{
             backgroundColor: colors.primary[500],
             "&:hover": {
-              backgroundColor: colors.primary[700],
-              transform: "scale(1.1) translateZ(5px)",
-              boxShadow: `0 5px 15px ${colors.primary[500]}88`,
+              backgroundColor: colors.primary[600],
             },
-            width: "40px",
-            height: "40px",
-            transition: "transform 0.3s, box-shadow 0.3s, background-color 0.3s",
-            boxShadow: `0 3px 10px ${colors.primary[900]}66`,
+            width: "48px",
+            height: "48px",
+            transition: "background-color 0.3s",
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 4px 12px rgba(0, 0, 0, 0.4)'
+              : '0 4px 12px rgba(0, 0, 0, 0.2)',
+            zIndex: 1500,
           }}
         >
           <AddIcon fontSize="small" />
@@ -637,72 +754,157 @@ export default function Home({
         TransitionComponent={Slide}
         TransitionProps={{ direction: "up" }}
         PaperProps={{
+          component: motion.div,
+          initial: { opacity: 0, y: 20 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.3 },
           sx: {
-            backgroundColor: `${colors.grey[900]}ee`,
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(20, 23, 39, 0.9)'
+              : 'rgba(255, 255, 255, 0.9)',
             backdropFilter: "blur(10px)",
-            borderRadius: "10px",
-            padding: { xs: "12px", md: "16px" },
-            color: colors.primary[100],
-            border: `1px solid ${colors.primary[700]}44`,
-            boxShadow: `0 10px 25px ${colors.primary[900]}aa`,
+            borderRadius: "16px",
+            padding: { xs: "16px", md: "20px" },
+            color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+            border: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 10px 25px rgba(0, 0, 0, 0.5)'
+              : '0 10px 25px rgba(0, 0, 0, 0.1)',
+            overflow: "hidden",
+            maxWidth: "400px",
+            width: "100%",
+            margin: "16px",
           },
         }}
       >
-        <DialogTitle sx={{ padding: { xs: "8px 12px", md: "12px 16px" } }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <WarningIcon sx={{ color: colors.redAccent[500], fontSize: { xs: "1.2rem", md: "1.4rem" } }} />
-            <Typography
-              variant="subtitle1"
+        {/* Subtle gradient overlay for depth */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "60px",
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+              : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+            zIndex: 0,
+          }}
+        />
+
+        <DialogTitle
+          sx={{
+            padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+            position: "relative",
+            zIndex: 1
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
               sx={{
-                color: colors.primary[500],
-                fontSize: { xs: "0.9rem", md: "1rem" },
-                fontWeight: "bold"
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 59, 59, 0.15)'
+                  : 'rgba(255, 59, 59, 0.1)',
+                borderRadius: "12px",
+                padding: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              <WarningIcon
+                sx={{
+                  color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
+                  fontSize: { xs: "1.3rem", md: "1.5rem" }
+                }}
+              />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                fontSize: { xs: "1rem", md: "1.1rem" },
+                fontWeight: "600",
+                letterSpacing: "-0.01em"
               }}
             >
               Confirm Delete
             </Typography>
           </Stack>
         </DialogTitle>
-        <DialogContent sx={{ padding: { xs: "8px 12px", md: "12px 16px" } }}>
+
+        <DialogContent sx={{ padding: "0", position: "relative", zIndex: 1 }}>
           <Typography
-            variant="body2"
-            color={colors.primary[300]}
-            sx={{ fontSize: { xs: "0.8rem", md: "0.9rem" } }}
+            variant="body1"
+            color={theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700]}
+            sx={{
+              fontSize: { xs: "0.85rem", md: "0.95rem" },
+              lineHeight: 1.5,
+              mb: 3
+            }}
           >
-            Are you sure you want to delete the <strong>{noteToDeleteName}</strong> note? <br />This action cannot be undone.
+            Are you sure you want to delete <strong>"{noteToDeleteName}"</strong>? <br />
+            This action cannot be undone.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ padding: { xs: "8px 12px", md: "12px 16px" } }}>
+
+        <DialogActions
+          sx={{
+            padding: "0",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "12px",
+            position: "relative",
+            zIndex: 1
+          }}
+        >
           <Button
             onClick={() => setOpenDeleteDialog(false)}
+            variant="outlined"
             sx={{
-              color: colors.primary[500],
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
               textTransform: "none",
-              fontWeight: "bold",
-              fontSize: { xs: "0.75rem", md: "0.85rem" },
-              padding: { xs: "4px 8px", md: "6px 12px" },
+              fontWeight: "500",
+              fontSize: { xs: "0.8rem", md: "0.9rem" },
+              padding: { xs: "6px 16px", md: "8px 20px" },
+              borderRadius: "8px",
+              '&:hover': {
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+              }
             }}
           >
             Cancel
           </Button>
+
           <Button
             onClick={() => handleDeleteNote(noteToDelete)}
-            color="secondary"
+            variant="contained"
             disabled={deleting}
-            startIcon={deleting && <CircularProgress size="0.9rem" />}
+            startIcon={deleting && <CircularProgress size="1rem" color="inherit" />}
+            component={motion.button}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             sx={{
-              backgroundColor: colors.redAccent[500],
-              color: colors.grey[100],
+              backgroundColor: colors.redAccent[theme.palette.mode === 'dark' ? 500 : 600],
+              color: "#fff",
               "&:hover": {
-                backgroundColor: colors.redAccent[700],
+                backgroundColor: colors.redAccent[theme.palette.mode === 'dark' ? 600 : 700],
               },
               textTransform: "none",
-              fontWeight: "bold",
-              fontSize: { xs: "0.75rem", md: "0.85rem" },
-              padding: { xs: "4px 8px", md: "6px 12px" },
+              fontWeight: "500",
+              fontSize: { xs: "0.8rem", md: "0.9rem" },
+              padding: { xs: "6px 16px", md: "8px 20px" },
+              borderRadius: "8px",
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 4px 10px rgba(255, 59, 59, 0.2)'
+                : '0 4px 10px rgba(255, 59, 59, 0.15)',
             }}
           >
-            Delete
+            {deleting ? "Deleting..." : "Delete Note"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -711,22 +913,68 @@ export default function Home({
         autoHideDuration={3000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        TransitionComponent={Slide}
+        TransitionProps={{ direction: "left" }}
         sx={{
           '& .MuiPaper-root': {
-            borderRadius: '6px',
-            fontSize: { xs: "0.75rem", md: "0.85rem" }
+            borderRadius: '12px',
+            fontSize: { xs: "0.8rem", md: "0.9rem" },
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 8px 20px rgba(0, 0, 0, 0.4)'
+              : '0 8px 20px rgba(0, 0, 0, 0.1)',
           }
         }}
       >
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbarSuccess ? "success" : "error"}
+          variant="filled"
+          icon={snackbarSuccess ?
+            <Box
+              sx={{
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '50%',
+                width: 24,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CheckIcon fontSize="small" />
+            </Box> :
+            <Box
+              sx={{
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '50%',
+                width: 24,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <WarningIcon fontSize="small" />
+            </Box>
+          }
           sx={{
             width: "100%",
-            padding: { xs: "4px 8px", md: "6px 12px" },
+            padding: { xs: "10px 16px", md: "12px 20px" },
+            backgroundColor: snackbarSuccess
+              ? theme.palette.mode === 'dark' ? '#2e7d32' : '#4caf50'
+              : theme.palette.mode === 'dark' ? '#d32f2f' : '#f44336',
             '& .MuiAlert-icon': {
               fontSize: { xs: "1.1rem", md: "1.2rem" },
-              marginRight: { xs: "6px", md: "8px" }
+              marginRight: { xs: "10px", md: "12px" },
+              padding: 0,
+            },
+            '& .MuiAlert-message': {
+              padding: 0,
+              fontWeight: 500,
+            },
+            '& .MuiAlert-action': {
+              padding: 0,
+              marginRight: 0,
             }
           }}
         >

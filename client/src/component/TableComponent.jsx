@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../theme";
-import { Box, useTheme, useMediaQuery } from "@mui/material";
+import { Box, useTheme, useMediaQuery, alpha } from "@mui/material";
 import PaginatedList from './PaginatedList';
+import { motion } from "framer-motion";
 
 function TableComponent({ rows, columns, height, hideFooter = false, isLoading = false, addToolBar = true, rowsPerPage = 5, viewMode = 'table' }) {
   const theme = useTheme();
@@ -16,91 +17,217 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
     // Render paginated list view for mobile screens or when viewMode is 'list'
     return (
       <Box
+        component={motion.div}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
         height={height}
         sx={{
           overflowX: "auto",
           width: "100%",
-          backgroundColor: colors.background,
-          border: `1px solid ${colors.primary[600]}`,
-          padding: 1,
-          color: theme.palette.text.primary, // Use theme text color
-          fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, Merriweather, sans-serif', // Use specified fonts
+          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(20, 23, 39, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+          padding: "8px 16px",
+          color: theme.palette.text.primary,
+          fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, sans-serif',
           fontSize: "0.85rem",
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: "16px",
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.08)'
+            : 'rgba(0, 0, 0, 0.08)'}`,
+          backdropFilter: "blur(8px)",
           "& .MuiListItem-root": {
-            backgroundColor: isDark ? colors.grey[800] : colors.grey[100], // Adjust background color for light mode
-            color: isDark ? colors.primary[100] : colors.blueAccent[900],
-            padding: "6px 8px",
+            backgroundColor: "transparent",
+            color: theme.palette.mode === 'dark'
+              ? colors.grey[100]
+              : colors.grey[800],
+            padding: "8px 0",
+            borderRadius: 0,
+            marginBottom: 0,
+            borderBottom: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.05)'
+              : 'rgba(0, 0, 0, 0.05)'}`,
+            transition: "all 0.2s ease",
             "&:hover": {
-              backgroundColor: isDark ? colors.grey[700] : colors.grey[200],
-              color: isDark ? colors.primary[100] : colors.primary[900], // Ensure text color is visible on hover
+              backgroundColor: "transparent",
             }
           },
         }}
       >
-        <PaginatedList rows={rows} columns={columns} rowsPerPage={rowsPerPage} />
+
+
+        <PaginatedList
+          rows={rows}
+          columns={columns}
+          rowsPerPage={rowsPerPage}
+          isLoading={isLoading}
+        />
       </Box>
     );
   }
 
   return (
     <Box
+      component={motion.div}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
       height={height}
       sx={{
         overflowX: "auto",
         width: "100%",
-        backgroundColor: colors.background, // Match box background color
-        border: `1px solid ${colors.primary[600]}`, // Match box border color
-        fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, Merriweather, sans-serif', // Use specified fonts
+        backgroundColor: theme.palette.mode === 'dark'
+          ? 'rgba(20, 23, 39, 0.6)'
+          : 'rgba(255, 255, 255, 0.6)',
+        backdropFilter: "blur(8px)",
+        borderRadius: "16px",
+        border: `1px solid ${theme.palette.mode === 'dark'
+          ? 'rgba(255, 255, 255, 0.08)'
+          : 'rgba(0, 0, 0, 0.08)'}`,
+        padding: 0,
+        fontFamily: 'Bricolage Grotesque, Montserrat, Poppins, sans-serif',
         fontSize: "0.85rem",
+        boxShadow: theme.palette.mode === 'dark'
+          ? '0 8px 20px rgba(0, 0, 0, 0.4)'
+          : '0 8px 20px rgba(0, 0, 0, 0.1)',
+        position: "relative",
+        overflow: "hidden",
         "& .MuiDataGrid-root": {
-          backgroundColor: colors.background, // Match box background color
-          fontSize: "0.8rem",
-        },
-        "& .MuiDataGrid-columnHeaders": { // This is the header row
-          backgroundColor: isDark ? colors.grey[800] : colors.primary[600], // Match box background color
-          color: isDark ? colors.primary[100] : colors.blueAccent[900], // Ensure text color is visible in light mode
-          minHeight: "40px !important",
-          maxHeight: "40px !important",
-          lineHeight: "40px",
-        },
-        "& .MuiDataGrid-footerContainer": {
-          borderTop: `1px solid ${colors.primary[600]}`, // Match box border color
-          backgroundColor: colors.background, // Match box background color
-          minHeight: "40px !important",
-        },
-        "& .MuiDataGrid-row": {
-          backgroundColor: isDark ? colors.grey[800] : colors.grey[100], // Adjust background color for light mode
-          color: isDark ? colors.primary[100] : colors.blueAccent[900],
-          minHeight: "36px !important",
-          maxHeight: "36px !important",
-          "&:hover": {
-            backgroundColor: isDark ? colors.grey[700] : colors.grey[200],
-            color: isDark ? colors.primary[100] : colors.blueAccent[300], // Ensure text color is visible on hover
-          }
+          border: "none",
+          fontSize: "0.85rem",
+          fontWeight: 500,
         },
         "& .MuiDataGrid-cell": {
-          padding: "0px 8px",
+          borderBottom: theme.palette.mode === 'dark'
+            ? `1px solid rgba(255, 255, 255, 0.08)`
+            : `1px solid rgba(0, 0, 0, 0.08)`,
+          padding: "0 16px",
+          color: theme.palette.mode === 'dark'
+            ? colors.grey[100]
+            : colors.grey[800],
+          height: "52px !important",
+          lineHeight: "52px",
+          display: "flex",
+          alignItems: "center",
+        },
+        "& .MuiDataGrid-columnHeaders": {
+          backgroundColor: theme.palette.mode === 'dark'
+            ? alpha(colors.primary[600], 0.2)
+            : alpha(colors.primary[600], 0.1),
+          color: theme.palette.mode === 'dark'
+            ? colors.grey[100]
+            : colors.grey[900],
+          borderBottom: theme.palette.mode === 'dark'
+            ? `1px solid rgba(255, 255, 255, 0.12)`
+            : `1px solid rgba(0, 0, 0, 0.12)`,
+          borderRadius: 0,
+          fontWeight: 600,
+          minHeight: "52px !important",
+          maxHeight: "52px !important",
+          lineHeight: "52px",
+        },
+        "& .MuiDataGrid-columnHeaderTitle": {
+          fontWeight: 600,
+          fontSize: "0.85rem",
+        },
+        "& .MuiDataGrid-virtualScroller": {
+          backgroundColor: "transparent",
+        },
+        "& .MuiDataGrid-footerContainer": {
+          borderTop: theme.palette.mode === 'dark'
+            ? `1px solid rgba(255, 255, 255, 0.12)`
+            : `1px solid rgba(0, 0, 0, 0.12)`,
+          backgroundColor: "transparent",
+          minHeight: "52px !important",
+          height: "52px !important",
         },
         "& .MuiDataGrid-toolbarContainer": {
-          padding: "4px",
+          padding: "8px 16px",
+          backgroundColor: theme.palette.mode === 'dark'
+            ? alpha(colors.primary[900], 0.2)
+            : alpha(colors.primary[100], 0.2),
+          "& .MuiButton-root": {
+            color: theme.palette.mode === 'dark'
+              ? colors.grey[300]
+              : colors.grey[700],
+            fontSize: "0.75rem",
+            fontWeight: 500,
+            textTransform: "none",
+            padding: "4px 8px",
+            minWidth: "auto",
+            borderRadius: "8px",
+            "&:hover": {
+              backgroundColor: theme.palette.mode === 'dark'
+                ? alpha(colors.primary[600], 0.2)
+                : alpha(colors.primary[600], 0.1),
+            }
+          },
         },
-        "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-          color: `${colors.primary[600]} !important`,
-          padding: "2px 8px",
-          minHeight: "30px",
-          fontSize: "0.75rem",
+        "& .MuiDataGrid-row": {
+          backgroundColor: "transparent",
+          color: theme.palette.mode === 'dark'
+            ? colors.grey[100]
+            : colors.grey[800],
+          minHeight: "52px !important",
+          maxHeight: "52px !important",
+          "&:hover": {
+            backgroundColor: theme.palette.mode === 'dark'
+              ? alpha(colors.primary[600], 0.1)
+              : alpha(colors.primary[600], 0.05),
+          },
+          "&.Mui-selected": {
+            backgroundColor: theme.palette.mode === 'dark'
+              ? alpha(colors.primary[600], 0.2)
+              : alpha(colors.primary[600], 0.1),
+            "&:hover": {
+              backgroundColor: theme.palette.mode === 'dark'
+                ? alpha(colors.primary[600], 0.3)
+                : alpha(colors.primary[600], 0.15),
+            }
+          }
         },
         "& .MuiDataGrid-overlay": {
-          backgroundColor: colors.primary[300],
-          opacity: 0.9,
+          backgroundColor: "transparent",
         },
         "& .MuiCircularProgress-root": {
-          color: colors.blueAccent[900],
+          color: colors.primary[500],
+        },
+        "& .MuiTablePagination-root": {
+          color: theme.palette.mode === 'dark'
+            ? colors.grey[300]
+            : colors.grey[700],
+        },
+        "& .MuiTablePagination-selectIcon": {
+          color: theme.palette.mode === 'dark'
+            ? colors.grey[300]
+            : colors.grey[700],
+        },
+        "& .MuiIconButton-root.Mui-disabled": {
+          color: theme.palette.mode === 'dark'
+            ? alpha(colors.grey[300], 0.3)
+            : alpha(colors.grey[700], 0.3),
         },
       }}
     >
+      {/* Subtle gradient overlay for depth */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "60px",
+          background: theme.palette.mode === 'dark'
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+          zIndex: 1,
+          pointerEvents: "none",
+        }}
+      />
+
       <DataGrid
-        density="compact"
+        density="standard"
         rows={rows}
         columns={columns}
         loading={isLoading}
@@ -113,14 +240,29 @@ function TableComponent({ rows, columns, height, hideFooter = false, isLoading =
         columnBuffer={5}
         columnResizeMode="onResize"
         resizable
+        rowHeight={52}
+        headerHeight={52}
         hideFooter={hideFooter}
         sx={{
           width: '100%',
           '& .MuiTablePagination-root': {
-            fontSize: '0.75rem',
+            fontSize: '0.8rem',
           },
           '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-            fontSize: '0.75rem',
+            fontSize: '0.8rem',
+          },
+          '& .MuiSelect-select': {
+            fontSize: '0.8rem',
+            padding: '4px 24px 4px 8px',
+          },
+          '& .MuiMenuItem-root': {
+            fontSize: '0.8rem',
+          },
+          '& .MuiDataGrid-cell:focus-within, & .MuiDataGrid-cell:focus': {
+            outline: 'none',
+          },
+          '& .MuiDataGrid-columnHeader:focus-within, & .MuiDataGrid-columnHeader:focus': {
+            outline: 'none',
           }
         }}
       />

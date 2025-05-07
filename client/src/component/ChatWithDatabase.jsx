@@ -66,21 +66,34 @@ const FloatingChat = ({ userId, scrollDirection }) => {
   return (
     <React.Fragment>
       <Fab
-        color="primary"
         aria-label="chat"
         size="small"
         onClick={handleOpen}
         sx={{
-          backgroundColor: colors.primary[500],
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(66, 66, 255, 0.8)'
+            : 'rgba(100, 100, 255, 0.8)',
           "&:hover": {
-            backgroundColor: colors.primary[700],
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(66, 66, 255, 0.9)'
+              : 'rgba(100, 100, 255, 0.9)',
             transform: "scale(1.1) translateZ(5px)",
-            boxShadow: `0 5px 15px ${colors.primary[500]}88`,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 5px 15px rgba(66, 66, 255, 0.5)'
+              : '0 5px 15px rgba(100, 100, 255, 0.5)',
           },
           width: "40px",
           height: "40px",
           transition: "transform 0.3s, box-shadow 0.3s, background-color 0.3s",
-          boxShadow: `0 3px 10px ${colors.primary[900]}66`,
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 3px 10px rgba(0, 0, 0, 0.4)'
+            : '0 3px 10px rgba(0, 0, 0, 0.2)',
+          zIndex: 1500,
+          color: '#fff',
+          backdropFilter: 'blur(4px)',
+          border: `1px solid ${theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.1)'
+            : 'rgba(255, 255, 255, 0.5)'}`,
         }}
       >
         <ChatBubbleOutlineIcon fontSize="small" />
@@ -90,25 +103,55 @@ const FloatingChat = ({ userId, scrollDirection }) => {
         open={open}
         onClose={handleClose}
         fullWidth
-        maxWidth={isMobile ? "xs" : "sm"} // Adjust maxWidth based on screen size
-        fullScreen={isMobile} // Make dialog full screen on mobile
+        maxWidth={isMobile ? "xs" : "sm"}
+        fullScreen={isMobile}
         TransitionComponent={Slide}
-        TransitionProps={{ direction: "up" }} // Adjust slide direction
+        TransitionProps={{ direction: "up" }}
+        sx={{ zIndex: 1600 }}
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : 1, // Remove border-radius on mobile for full-screen effect
-            height: isMobile ? "100%" : "auto", // Full height on mobile
-            backgroundColor: colors.grey[900], // Background color for the dialog
-            color: colors.primary[100], // Text color for the dialog
+            borderRadius: isMobile ? 0 : '16px',
+            height: isMobile ? "100%" : "80vh",
+            maxHeight: "80vh",
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(20, 23, 39, 0.9)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 8px 32px rgba(0, 0, 0, 0.4)'
+              : '0 8px 32px rgba(0, 0, 0, 0.1)',
+            border: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.1)'
+              : 'rgba(0, 0, 0, 0.05)'}`,
+            overflow: 'hidden',
+            position: 'relative',
+            '&:before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(40, 43, 59, 0.2) 0%, rgba(20, 23, 39, 0.2) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 240, 240, 0.2) 100%)',
+              zIndex: -1,
+            }
           },
         }}
       >
         <AppBar
           position="static"
+          elevation={0}
           sx={{
-            borderBottom: `1px solid ${colors.grey[700]}`,
-            borderRadius: 0,
-            backgroundColor: colors.primary[500],
+            borderBottom: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            borderRadius: isMobile ? 0 : '16px 16px 0 0',
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(66, 66, 255, 0.8)'
+              : 'rgba(100, 100, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
           }}
         >
           <Toolbar
@@ -116,21 +159,17 @@ const FloatingChat = ({ userId, scrollDirection }) => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              padding: "0 8px",
+              padding: "0 16px",
+              minHeight: { xs: '56px', md: '64px' },
             }}
           >
             <Tooltip title="Clear Chat">
               <IconButton
                 onClick={handleClearChat}
-                disableRipple
-                disableFocusRipple
-                disableTouchRipple
                 sx={{
-                  color: colors.primary[900],
-                  marginRight: 1,
-                  "&:hover": {
-                    backgroundColor: "transparent", // No hover background
-                    color: colors.primary[900], // No hover color change
+                  color: '#fff',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   },
                 }}
               >
@@ -139,22 +178,21 @@ const FloatingChat = ({ userId, scrollDirection }) => {
             </Tooltip>
             <Typography
               variant="h6"
-              sx={{ fontWeight: 900, color: colors.primary[900] }}
+              sx={{
+                fontWeight: 600,
+                color: '#fff',
+                fontSize: { xs: '1rem', md: '1.2rem' },
+              }}
             >
               Chat with AI
             </Typography>
             <Tooltip title="Minimize">
               <IconButton
                 onClick={handleClose}
-                disableRipple
-                disableFocusRipple
-                disableTouchRipple
                 sx={{
-                  color: colors.primary[900],
-                  marginRight: 1,
-                  "&:hover": {
-                    backgroundColor: "transparent", // No hover background
-                    color: colors.primary[900], // No hover color change
+                  color: '#fff',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   },
                 }}
               >
@@ -165,9 +203,12 @@ const FloatingChat = ({ userId, scrollDirection }) => {
         </AppBar>
         <DialogContent
           sx={{
-            backgroundColor: colors.grey[800],
-            color: colors.grey[100],
-            padding: isMobile ? "8px" : "16px",
+            backgroundColor: 'transparent',
+            color: theme.palette.mode === 'dark' ? '#fff' : '#333',
+            padding: isMobile ? "12px" : "16px",
+            height: 'calc(100% - 64px)',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           <ChatMessages

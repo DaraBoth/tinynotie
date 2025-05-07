@@ -14,7 +14,9 @@ import {
   Divider,
   Tooltip,
   IconButton,
+  alpha,
 } from "@mui/material";
+import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -282,22 +284,50 @@ export default function Group({ user, secret, setGroupInfo }) {
           {/* Members Section */}
           <Grid item xs={12} md={8}>
             <Card
+              component={motion.div}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
               sx={{
                 height: "100%",
-                backgroundColor: colors.background,
-                borderRadius: "8px",
-                boxShadow: `0px 2px 8px ${theme.palette.mode === "light"
-                  ? "rgba(0, 0, 0, 0.1)"
-                  : "rgba(0, 0, 0, 0.4)"
-                  }`,
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.6)'
+                  : 'rgba(255, 255, 255, 0.6)',
+                backdropFilter: "blur(8px)",
+                borderRadius: "16px",
+                border: `1px solid ${theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)'}`,
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 8px 20px rgba(0, 0, 0, 0.4)'
+                  : '0 8px 20px rgba(0, 0, 0, 0.1)',
+                position: "relative",
+                overflow: "hidden",
               }}
             >
+              {/* Subtle gradient overlay for depth */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "60px",
+                  background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+                    : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+                  zIndex: 0,
+                }}
+              />
+
               <CardContent
                 sx={{
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  padding: { xs: "8px", md: "10px" },
+                  padding: { xs: "16px", md: "20px" },
+                  position: "relative",
+                  zIndex: 1,
                 }}
               >
                 <Box
@@ -306,19 +336,40 @@ export default function Group({ user, secret, setGroupInfo }) {
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 0.5,
+                    marginBottom: 2,
                   }}
                 >
                   <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                    <StickyNote2Icon
-                      sx={{ marginRight: 0.5, color: colors.primary[500], fontSize: "1rem" }}
-                    />
-                    <Typography
-                      variant="subtitle1"
-                      color={colors.primary[600]}
-                      sx={{ margin: 0, fontSize: "0.9rem", fontWeight: "bold" }}
+                    <Box
+                      sx={{
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(0, 123, 255, 0.15)'
+                          : 'rgba(0, 123, 255, 0.1)',
+                        borderRadius: "12px",
+                        padding: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 1.5
+                      }}
                     >
-                      Note Member Contributions
+                      <StickyNote2Icon
+                        sx={{
+                          color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                          fontSize: { xs: "1.2rem", md: "1.3rem" }
+                        }}
+                      />
+                    </Box>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                        fontSize: { xs: "1rem", md: "1.1rem" },
+                        fontWeight: "600",
+                        letterSpacing: "-0.01em"
+                      }}
+                    >
+                      Member Contributions
                     </Typography>
                   </Box>
                   <IconButton
@@ -328,7 +379,18 @@ export default function Group({ user, secret, setGroupInfo }) {
                       )
                     }
                     size="small"
-                    sx={{ padding: "4px" }}
+                    sx={{
+                      padding: "8px",
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : 'rgba(0, 0, 0, 0.05)',
+                      borderRadius: "10px",
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.1)'
+                          : 'rgba(0, 0, 0, 0.1)',
+                      }
+                    }}
                   >
                     {memberViewMode === "table" ? (
                       <ListViewIcon fontSize="small" />
@@ -337,7 +399,14 @@ export default function Group({ user, secret, setGroupInfo }) {
                     )}
                   </IconButton>
                 </Box>
-                <Divider sx={{ marginBottom: 0.5 }} />
+                <Divider
+                  sx={{
+                    marginBottom: 2,
+                    borderColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(0, 0, 0, 0.08)',
+                  }}
+                />
                 <TableComponent
                   rows={newData || []}
                   columns={columns || []}
@@ -366,23 +435,51 @@ export default function Group({ user, secret, setGroupInfo }) {
           >
             {/* Recent Trips Card */}
             <Card
+              component={motion.div}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
               sx={{
                 flexGrow: 1,
                 minHeight: { xs: "auto", md: "68%" },
-                backgroundColor: colors.background,
-                boxShadow: `0px 2px 8px ${theme.palette.mode === "light"
-                  ? "rgba(0, 0, 0, 0.1)"
-                  : "rgba(0, 0, 0, 0.4)"
-                  }`,
-                borderRadius: "8px",
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.6)'
+                  : 'rgba(255, 255, 255, 0.6)',
+                backdropFilter: "blur(8px)",
+                borderRadius: "16px",
+                border: `1px solid ${theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)'}`,
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 8px 20px rgba(0, 0, 0, 0.4)'
+                  : '0 8px 20px rgba(0, 0, 0, 0.1)',
+                position: "relative",
+                overflow: "hidden",
               }}
             >
+              {/* Subtle gradient overlay for depth */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "60px",
+                  background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+                    : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+                  zIndex: 0,
+                }}
+              />
+
               <CardContent
                 sx={{
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
-                  padding: { xs: "8px", md: "10px" },
+                  padding: { xs: "16px", md: "20px" },
+                  position: "relative",
+                  zIndex: 1,
                 }}
               >
                 <Box
@@ -391,17 +488,38 @@ export default function Group({ user, secret, setGroupInfo }) {
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 0.5,
+                    marginBottom: 2,
                   }}
                 >
                   <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-                    <StickyNote2Icon
-                      sx={{ marginRight: 0.5, color: colors.primary[500], fontSize: "1rem" }}
-                    />
+                    <Box
+                      sx={{
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(0, 123, 255, 0.15)'
+                          : 'rgba(0, 123, 255, 0.1)',
+                        borderRadius: "12px",
+                        padding: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 1.5
+                      }}
+                    >
+                      <StickyNote2Icon
+                        sx={{
+                          color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                          fontSize: { xs: "1.2rem", md: "1.3rem" }
+                        }}
+                      />
+                    </Box>
                     <Typography
-                      variant="subtitle1"
-                      color={colors.primary[500]}
-                      sx={{ margin: 0, fontSize: "0.9rem", fontWeight: "bold" }}
+                      variant="h6"
+                      sx={{
+                        color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                        fontSize: { xs: "1rem", md: "1.1rem" },
+                        fontWeight: "600",
+                        letterSpacing: "-0.01em"
+                      }}
                     >
                       Recent Trips
                     </Typography>
@@ -413,7 +531,18 @@ export default function Group({ user, secret, setGroupInfo }) {
                       )
                     }
                     size="small"
-                    sx={{ padding: "4px" }}
+                    sx={{
+                      padding: "8px",
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : 'rgba(0, 0, 0, 0.05)',
+                      borderRadius: "10px",
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.1)'
+                          : 'rgba(0, 0, 0, 0.1)',
+                      }
+                    }}
                   >
                     {tripViewMode === "table" ? (
                       <ListViewIcon fontSize="small" />
@@ -422,7 +551,14 @@ export default function Group({ user, secret, setGroupInfo }) {
                     )}
                   </IconButton>
                 </Box>
-                <Divider sx={{ marginBottom: 0.5 }} />
+                <Divider
+                  sx={{
+                    marginBottom: 2,
+                    borderColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(0, 0, 0, 0.08)',
+                  }}
+                />
                 <TableComponent
                   rows={trip || []}
                   columns={tripColumns || []}
@@ -439,24 +575,52 @@ export default function Group({ user, secret, setGroupInfo }) {
 
             {/* Total Spend Summary Card */}
             <Card
+              component={motion.div}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
               sx={{
                 flexGrow: 1,
                 minHeight: { xs: "auto", md: "25%" },
-                marginTop: "8px",
-                backgroundColor: colors.background,
-                boxShadow: `0px 2px 8px ${theme.palette.mode === "light"
-                  ? "rgba(0, 0, 0, 0.1)"
-                  : "rgba(0, 0, 0, 0.4)"
-                  }`,
-                borderRadius: "8px",
+                marginTop: "16px",
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(20, 23, 39, 0.6)'
+                  : 'rgba(255, 255, 255, 0.6)',
+                backdropFilter: "blur(8px)",
+                borderRadius: "16px",
+                border: `1px solid ${theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.08)'
+                  : 'rgba(0, 0, 0, 0.08)'}`,
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 8px 20px rgba(0, 0, 0, 0.4)'
+                  : '0 8px 20px rgba(0, 0, 0, 0.1)',
+                position: "relative",
+                overflow: "hidden",
               }}
             >
+              {/* Subtle gradient overlay for depth */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "60px",
+                  background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+                    : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+                  zIndex: 0,
+                }}
+              />
+
               <CardContent
                 sx={{
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
-                  padding: { xs: "8px", md: "10px" },
+                  padding: { xs: "16px", md: "20px" },
+                  position: "relative",
+                  zIndex: 1,
                 }}
               >
                 <TotalSpendTable
@@ -494,7 +658,7 @@ export default function Group({ user, secret, setGroupInfo }) {
       <CustomDialog
         open={openAddTripDialog}
         onClose={() => setOpenAddTripDialog(false)}
-        title="Add Trip"
+        title="Edit or Add Trip"
       >
         <EditTrip
           triggerTrip={triggerTrip}
@@ -537,30 +701,110 @@ export default function Group({ user, secret, setGroupInfo }) {
       {groupInfoState?.isAdmin && <CustomDialog
         open={openRecieptScannarDialog}
         onClose={() => setOpenRecieptScannarDialog(false)}
-        title="Reciept Scanner"
-        sx={{ minHeight: "100vh", minWidth: "100vw", borderRadius: "0px" }}
+        title="Receipt Scanner"
+        sx={{
+          maxWidth: { xs: "100%", sm: "90%", md: "800px" },
+          width: { xs: "100%", sm: "90%", md: "800px" },
+          maxHeight: { xs: "100vh", md: "80vh" },
+          '& .MuiDialog-paper': {
+            margin: '16px auto',
+          },
+          '& .MuiDialogContent-root': {
+            padding: { xs: "16px 0", md: "20px 0" },
+            overflowY: "auto",
+          }
+        }}
       >
         <ReceiptScanner
           triggerMember={triggerMember}
-          triggerTrips={triggerTrip} // New prop for triggering trip refresh
+          triggerTrips={triggerTrip}
           member={member}
-          trips={trip} // New prop for trip data
+          trips={trip}
           group_id={groupId}
         />
       </CustomDialog>}
 
       {groupInfoState?.isAdmin && (
         <SpeedDial
-          ariaLabel="SpeedDial example"
-          sx={{ position: "fixed", bottom: 16, right: 16 }}
+          ariaLabel="Group Actions"
+          component={motion.div}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.5 }}
+          sx={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            '& .MuiFab-primary': {
+              backgroundColor: theme.palette.mode === 'dark'
+                ? colors.primary[600]
+                : colors.primary[500],
+              color: '#fff',
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 8px 16px rgba(0, 0, 0, 0.5)'
+                : '0 8px 16px rgba(0, 123, 255, 0.3)',
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? colors.primary[500]
+                  : colors.primary[400],
+              }
+            }
+          }}
           icon={<SpeedDialIcon />}
+          FabProps={{
+            sx: {
+              width: 56,
+              height: 56,
+            }
+          }}
         >
-          {actions.map((action) => (
+          {actions.map((action, index) => (
             <SpeedDialAction
               key={action.name}
               icon={action.icon}
               tooltipTitle={action.name}
               onClick={action.onClick}
+              FabProps={{
+                component: motion.button,
+                whileHover: { scale: 1.05 },
+                whileTap: { scale: 0.95 },
+                sx: {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(20, 23, 39, 0.8)'
+                    : 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: "blur(8px)",
+                  border: `1px solid ${theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.08)'}`,
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 4px 12px rgba(0, 0, 0, 0.4)'
+                    : '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  color: theme.palette.mode === 'dark'
+                    ? colors.grey[100]
+                    : colors.grey[800],
+                }
+              }}
+              TooltipProps={{
+                sx: {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(20, 23, 39, 0.9)'
+                    : 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: "blur(8px)",
+                  border: `1px solid ${theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.08)'}`,
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 4px 12px rgba(0, 0, 0, 0.4)'
+                    : '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  color: theme.palette.mode === 'dark'
+                    ? colors.grey[100]
+                    : colors.grey[800],
+                  fontSize: '0.8rem',
+                  fontWeight: 500,
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                }
+              }}
             />
           ))}
         </SpeedDial>
@@ -578,6 +822,8 @@ export default function Group({ user, secret, setGroupInfo }) {
 }
 
 const TotalSpendTable = ({ info, isLoading }) => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
   const rows = [{ id: 1, totalPaid, totalRemain, totalSpend, totalUnPaid }];
   const columns = [
@@ -587,6 +833,18 @@ const TotalSpendTable = ({ info, isLoading }) => {
       width: 100,
       headerAlign: "center",
       align: "center",
+      renderCell: ({ value }) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            color: colors.greenAccent[theme.palette.mode === 'dark' ? 400 : 600],
+            fontSize: '0.9rem',
+          }}
+        >
+          {value}
+        </Typography>
+      ),
     },
     {
       field: "totalRemain",
@@ -594,6 +852,18 @@ const TotalSpendTable = ({ info, isLoading }) => {
       width: 100,
       headerAlign: "center",
       align: "center",
+      renderCell: ({ value }) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
+            fontSize: '0.9rem',
+          }}
+        >
+          {value}
+        </Typography>
+      ),
     },
     {
       field: "totalSpend",
@@ -601,6 +871,18 @@ const TotalSpendTable = ({ info, isLoading }) => {
       width: 100,
       headerAlign: "center",
       align: "center",
+      renderCell: ({ value }) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            color: colors.blueAccent[theme.palette.mode === 'dark' ? 400 : 600],
+            fontSize: '0.9rem',
+          }}
+        >
+          {value}
+        </Typography>
+      ),
     },
     {
       field: "totalUnPaid",
@@ -608,6 +890,18 @@ const TotalSpendTable = ({ info, isLoading }) => {
       width: 100,
       headerAlign: "center",
       align: "center",
+      renderCell: ({ value }) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
+            fontSize: '0.9rem',
+          }}
+        >
+          {value}
+        </Typography>
+      ),
     },
   ];
 
@@ -621,7 +915,9 @@ const TotalSpendTable = ({ info, isLoading }) => {
       addToolBar={false}
       sx={{
         minHeight: "180px",
-        backgroundColor: "rgba(0, 123, 255, 0.1)",
+        backgroundColor: theme.palette.mode === 'dark'
+          ? 'rgba(0, 123, 255, 0.05)'
+          : 'rgba(0, 123, 255, 0.03)',
       }}
       viewMode="list"
     />

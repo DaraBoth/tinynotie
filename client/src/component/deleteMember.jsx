@@ -8,11 +8,17 @@ import {
   Button,
   CircularProgress,
   useTheme,
+  Typography,
+  alpha,
+  Chip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
+import EventBusyIcon from "@mui/icons-material/EventBusy";
 import { tokens } from "../theme";
 import { useDeleteMemberMutation, useDeleteTripMutation } from "../api/api";
 import CustomAlert from "../component/CustomAlert";
+import { motion } from "framer-motion";
 
 export default function DeleteMember({
   triggerMember,
@@ -85,178 +91,417 @@ export default function DeleteMember({
   return (
     <React.Fragment>
       <Box
-        display="grid"
-        gap="20px"
-        gridTemplateColumns="repeat(4, 1fr)"
+        component={motion.div}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
         sx={{
-          marginTop: "5px",
-          "& > div": { gridColumn: "span 4" },
+          display: "flex",
+          flexDirection: "column",
+          gap: "24px",
+          width: "100%",
         }}
       >
-        <FormControl variant="standard" sx={{ minWidth: "263px" }}>
-          <InputLabel
-            color="primary"
-            sx={{
-              color: colors.primary[500],
-              "&.Mui-focused": {
-                color: colors.primary[500],
-              },
-            }}
-          >
-            Pick a member
-          </InputLabel>
-          <Select
-            value={deleteName}
-            onChange={handleChange}
-            label="Pick a member"
-            color="primary"
-            sx={{
-              "& .MuiSelect-select": {
-                color: colors.primary[600],
-              },
-              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[400],
-              },
-              "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[500],
-              },
-              "& .MuiSelect-icon": {
-                color: colors.primary[500],
-              },
-            }}
-          >
-            <MenuItem value="" sx={{ color: colors.primary[600] }}>
-              {" "}
-              {/* Add 'None' option */}
-              None
-            </MenuItem>
-            {member?.map((item) => (
-              <MenuItem
-                key={item.id}
-                value={item.id}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <Box
+              sx={{
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 59, 59, 0.15)'
+                  : 'rgba(255, 59, 59, 0.1)',
+                borderRadius: "12px",
+                padding: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 1.5
+              }}
+            >
+              <PersonRemoveIcon
                 sx={{
-                  backgroundColor:
-                    deleteName === item.id ? colors.primary[500] : "inherit",
-                  color: deleteName === item.id ? "#fff" : colors.primary[600],
-                  "&:hover": {
-                    backgroundColor: colors.primary[400],
-                    color: "#fff",
-                  },
-                  "&.Mui-selected": {
-                    backgroundColor: colors.primary[400],
-                    color: "#fff",
-                    "&:hover": {
-                      backgroundColor: colors.primary[500],
-                      color: "#fff",
-                    },
-                  },
+                  color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
+                  fontSize: { xs: "1.2rem", md: "1.3rem" }
                 }}
-              >
-                {item.mem_name}
+              />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                fontSize: { xs: "1rem", md: "1.1rem" },
+                fontWeight: 600,
+                letterSpacing: "-0.01em"
+              }}
+            >
+              Select Member to Delete
+            </Typography>
+          </Box>
+
+          <FormControl
+            variant="outlined"
+            fullWidth
+            sx={{
+              minWidth: "100%",
+            }}
+          >
+            <InputLabel
+              id="member-select-label"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+                '&.Mui-focused': {
+                  color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                },
+              }}
+            >
+              Select Member
+            </InputLabel>
+            <Select
+              labelId="member-select-label"
+              value={deleteName}
+              onChange={handleChange}
+              label="Select Member"
+              color="primary"
+              sx={{
+                borderRadius: "10px",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.15)'
+                    : 'rgba(0, 0, 0, 0.15)',
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.25)'
+                    : 'rgba(0, 0, 0, 0.25)',
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                },
+                "& .MuiSelect-select": {
+                  color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                  padding: "12px 14px",
+                },
+                "& .MuiSelect-icon": {
+                  color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+                },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(20, 23, 39, 0.9)'
+                      : 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: "blur(10px)",
+                    borderRadius: "10px",
+                    border: `1px solid ${theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(0, 0, 0, 0.08)'}`,
+                    boxShadow: theme.palette.mode === 'dark'
+                      ? '0 8px 16px rgba(0, 0, 0, 0.4)'
+                      : '0 8px 16px rgba(0, 0, 0, 0.1)',
+                  }
+                }
+              }}
+            >
+              <MenuItem value="" sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                borderRadius: "6px",
+                margin: "4px",
+                '&:hover': {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.05)',
+                }
+              }}>
+                None
               </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl variant="standard" sx={{ minWidth: "263px", mt: 2 }}>
-          <InputLabel
-            color="primary"
-            sx={{
-              color: colors.primary[500],
-              "&.Mui-focused": {
-                color: colors.primary[500],
-              },
-            }}
-          >
-            Pick a Trip
-          </InputLabel>
-          <Select
-            value={deleteTrip}
-            onChange={(event) => setDeleteTrip(event.target.value)}
-            label="Pick a Trip"
-            color="primary"
-            sx={{
-              "& .MuiSelect-select": {
-                color: colors.primary[600],
-              },
-              "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[400],
-              },
-              "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: colors.primary[500],
-              },
-              "& .MuiSelect-icon": {
-                color: colors.primary[500],
-              },
-            }}
-          >
-            <MenuItem value="" sx={{ color: colors.primary[600] }}>
-              {" "}
-              {/* Add 'None' option */}
-              None
-            </MenuItem>
-            {trips?.map((trip) => (
-              <MenuItem
-                key={trip.id}
-                value={trip.id}
+              {member?.map((item) => (
+                <MenuItem
+                  key={item.id}
+                  value={item.id}
+                  sx={{
+                    color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                    borderRadius: "6px",
+                    margin: "4px",
+                    '&:hover': {
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : 'rgba(0, 0, 0, 0.05)',
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? alpha(colors.primary[600], 0.2)
+                        : alpha(colors.primary[600], 0.1),
+                      color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? alpha(colors.primary[600], 0.3)
+                          : alpha(colors.primary[600], 0.2),
+                      }
+                    }
+                  }}
+                >
+                  {item.mem_name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <Box
+              sx={{
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 59, 59, 0.15)'
+                  : 'rgba(255, 59, 59, 0.1)',
+                borderRadius: "12px",
+                padding: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 1.5
+              }}
+            >
+              <EventBusyIcon
                 sx={{
-                  backgroundColor:
-                    deleteTrip === trip.id ? colors.primary[500] : "inherit",
-                  color: deleteTrip === trip.id ? "#fff" : colors.primary[600],
-                  "&:hover": {
-                    backgroundColor: colors.primary[400],
-                    color: "#fff",
-                  },
-                  "&.Mui-selected": {
-                    backgroundColor: colors.primary[400],
-                    color: "#fff",
-                    "&:hover": {
-                      backgroundColor: colors.primary[500],
-                      color: "#fff",
-                    },
-                  },
+                  color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
+                  fontSize: { xs: "1.2rem", md: "1.3rem" }
                 }}
-              >
-                {trip.trp_name} {/* Updated to correct key */}
+              />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                fontSize: { xs: "1rem", md: "1.1rem" },
+                fontWeight: 600,
+                letterSpacing: "-0.01em"
+              }}
+            >
+              Select Trip to Delete
+            </Typography>
+          </Box>
+
+          <FormControl
+            variant="outlined"
+            fullWidth
+            sx={{
+              minWidth: "100%",
+            }}
+          >
+            <InputLabel
+              id="trip-select-label"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+                '&.Mui-focused': {
+                  color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                },
+              }}
+            >
+              Select Trip
+            </InputLabel>
+            <Select
+              labelId="trip-select-label"
+              value={deleteTrip}
+              onChange={(event) => setDeleteTrip(event.target.value)}
+              label="Select Trip"
+              color="primary"
+              sx={{
+                borderRadius: "10px",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.15)'
+                    : 'rgba(0, 0, 0, 0.15)',
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.25)'
+                    : 'rgba(0, 0, 0, 0.25)',
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                },
+                "& .MuiSelect-select": {
+                  color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                  padding: "12px 14px",
+                },
+                "& .MuiSelect-icon": {
+                  color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+                },
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(20, 23, 39, 0.9)'
+                      : 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: "blur(10px)",
+                    borderRadius: "10px",
+                    border: `1px solid ${theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(0, 0, 0, 0.08)'}`,
+                    boxShadow: theme.palette.mode === 'dark'
+                      ? '0 8px 16px rgba(0, 0, 0, 0.4)'
+                      : '0 8px 16px rgba(0, 0, 0, 0.1)',
+                  }
+                }
+              }}
+            >
+              <MenuItem value="" sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                borderRadius: "6px",
+                margin: "4px",
+                '&:hover': {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.05)',
+                }
+              }}>
+                None
               </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+              {trips?.map((trip) => (
+                <MenuItem
+                  key={trip.id}
+                  value={trip.id}
+                  sx={{
+                    color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                    borderRadius: "6px",
+                    margin: "4px",
+                    '&:hover': {
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : 'rgba(0, 0, 0, 0.05)',
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? alpha(colors.primary[600], 0.2)
+                        : alpha(colors.primary[600], 0.1),
+                      color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? alpha(colors.primary[600], 0.3)
+                          : alpha(colors.primary[600], 0.2),
+                      }
+                    }
+                  }}
+                >
+                  {trip.trp_name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {(deleteName || deleteTrip) && (
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            sx={{
+              mt: 1,
+              p: 2,
+              borderRadius: "10px",
+              backgroundColor: theme.palette.mode === 'dark'
+                ? alpha(colors.redAccent[700], 0.15)
+                : alpha(colors.redAccent[100], 0.3),
+              border: `1px solid ${theme.palette.mode === 'dark'
+                ? alpha(colors.redAccent[700], 0.3)
+                : alpha(colors.redAccent[300], 0.3)}`,
+            }}
+          >
+            <Typography
+              variant="body1"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[200] : colors.grey[800],
+                fontSize: { xs: "0.85rem", md: "0.9rem" },
+                fontWeight: 500,
+                mb: 1,
+              }}
+            >
+              You are about to delete:
+            </Typography>
+
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {deleteName && (
+                <Chip
+                  label={`Member: ${member.find((m) => m.id === deleteName)?.mem_name}`}
+                  color="error"
+                  variant="outlined"
+                  icon={<PersonRemoveIcon />}
+                  sx={{
+                    borderRadius: "8px",
+                    fontWeight: 500,
+                    fontSize: "0.8rem",
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? alpha(colors.redAccent[700], 0.2)
+                      : alpha(colors.redAccent[100], 0.4),
+                  }}
+                />
+              )}
+
+              {deleteTrip && (
+                <Chip
+                  label={`Trip: ${trips.find((t) => t.id === deleteTrip)?.trp_name}`}
+                  color="error"
+                  variant="outlined"
+                  icon={<EventBusyIcon />}
+                  sx={{
+                    borderRadius: "8px",
+                    fontWeight: 500,
+                    fontSize: "0.8rem",
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? alpha(colors.redAccent[700], 0.2)
+                      : alpha(colors.redAccent[100], 0.4),
+                  }}
+                />
+              )}
+            </Box>
+
+            <Typography
+              variant="body2"
+              sx={{
+                color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
+                fontSize: { xs: "0.8rem", md: "0.85rem" },
+                fontWeight: 500,
+                mt: 1,
+              }}
+            >
+              This action cannot be undone.
+            </Typography>
+          </Box>
+        )}
 
         <Button
-          sx={{
-            gridColumn: "span 4",
-            backgroundColor: colors.primary[500],
-            color: "#fff",
-          }}
           onClick={handleDelete}
           type="button"
-          color="error"
           variant="contained"
-          startIcon={
-            (isLoading || isDeletingTrip) ? <CircularProgress size="1rem" /> : <DeleteIcon />
-          }
-          disabled={isLoading || (!deleteName && !deleteTrip)} // Updated condition
+          color="error"
+          component={motion.button}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          disabled={isLoading || isDeletingTrip || (!deleteName && !deleteTrip)}
+          startIcon={(isLoading || isDeletingTrip) ? <CircularProgress size="1rem" color="inherit" /> : <DeleteIcon />}
+          sx={{
+            backgroundColor: colors.redAccent[theme.palette.mode === 'dark' ? 500 : 600],
+            color: "#fff",
+            "&:hover": {
+              backgroundColor: colors.redAccent[theme.palette.mode === 'dark' ? 600 : 700],
+            },
+            textTransform: "none",
+            fontWeight: "500",
+            fontSize: { xs: "0.85rem", md: "0.95rem" },
+            padding: { xs: "10px 16px", md: "12px 20px" },
+            borderRadius: "8px",
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 4px 10px rgba(255, 59, 59, 0.2)'
+              : '0 4px 10px rgba(255, 59, 59, 0.15)',
+            alignSelf: "flex-end",
+            mt: 1,
+          }}
         >
-          {isLoading ? "Deleting..." : "Delete"}
+          {(isLoading || isDeletingTrip) ? "Deleting..." : "Delete Selected Items"}
         </Button>
-      </Box>
-      <Box mt={2} sx={{ color: colors.primary[600] }}>
-        {deleteName &&
-          !deleteTrip &&
-          `Selected Member: ${member.find((m) => m.id === deleteName)?.mem_name
-          } will be deleted.`}
-        {deleteTrip &&
-          !deleteName &&
-          `Selected Trip: ${trips.find((t) => t.id === deleteTrip)?.trp_name
-          } will be deleted.`}{" "}
-        {/* Updated here */}
-        {deleteName &&
-          deleteTrip &&
-          `Selected Member: ${member.find((m) => m.id === deleteName)?.mem_name
-          } and Trip: ${trips.find((t) => t.id === deleteTrip)?.trp_name
-          } will be deleted.`}{" "}
-        {/* Updated here */}
-        {!deleteName && !deleteTrip && "No member or trip is selected."}
       </Box>
       <CustomAlert
         open={alertOpen}

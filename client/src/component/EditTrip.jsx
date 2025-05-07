@@ -22,14 +22,17 @@ import {
   Typography,
   ListItemText,
   Tooltip,
+  alpha,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SaveIcon from "@mui/icons-material/Save";
 import RemoveIcon from "@mui/icons-material/Remove";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
+import CloseIcon from "@mui/icons-material/Close";
 import { tokens } from "../theme";
 import CustomAlert from "./CustomAlert";
 import CurrencyConverterDialog from "./CurrencyConverterDialog";
+import { motion } from "framer-motion";
 import moment from "moment";
 
 const filter = createFilterOptions();
@@ -237,7 +240,7 @@ export default function EditTrip({
     setConverterOpen(false);
   };
 
-  const handleConversionComplete = (convertedAmount, convertedCurrency) => {
+  const handleConversionComplete = (convertedAmount) => {
     // Update the appropriate field with the converted amount
     if (converterField === "money") {
       setMoney(convertedAmount);
@@ -575,26 +578,128 @@ export default function EditTrip({
       <Dialog
         open={open}
         onClose={loading ? null : handleClose}
+        maxWidth="sm"
+        fullWidth
+        TransitionComponent={motion.div}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          '& .MuiDialog-container': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }
+        }}
         PaperProps={{
+          component: motion.div,
+          initial: { opacity: 0, y: 20, scale: 0.95 },
+          animate: { opacity: 1, y: 0, scale: 1 },
+          exit: { opacity: 0, y: 20, scale: 0.95 },
+          transition: { duration: 0.3 },
           sx: {
-            backgroundColor: colors.background,
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(20, 23, 39, 0.9)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: "blur(10px)",
+            borderRadius: "16px",
+            padding: { xs: "16px", md: "20px" },
+            color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+            border: `1px solid ${theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(0, 0, 0, 0.08)'}`,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 10px 25px rgba(0, 0, 0, 0.5)'
+              : '0 10px 25px rgba(0, 0, 0, 0.1)',
+            overflow: "hidden",
+            margin: '0 auto',
+            position: 'relative',
+            minWidth: { xs: "90%", sm: "450px", md: "500px" },
           },
         }}
       >
+        {/* Subtle gradient overlay for depth */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "60px",
+            background: theme.palette.mode === 'dark'
+              ? 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+              : 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+
         <form onSubmit={handleSubmit}>
           <DialogTitle
             sx={{
-              color: colors.primary[500],
+              color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+              fontSize: { xs: "1.1rem", md: "1.2rem" },
+              fontWeight: 600,
+              padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+              position: "relative",
+              zIndex: 1,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderBottom: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.08)'}`,
+              marginBottom: 2,
             }}
           >
-            New trip
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                fontSize: { xs: "1.1rem", md: "1.2rem" },
+                fontWeight: 600,
+                letterSpacing: "-0.01em"
+              }}
+            >
+              New trip
+            </Typography>
+            <IconButton
+              onClick={handleClose}
+              size="small"
+              component={motion.button}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? alpha(colors.grey[800], 0.5)
+                  : alpha(colors.grey[200], 0.5),
+                borderRadius: "8px",
+                padding: "6px",
+                '&:hover': {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? alpha(colors.grey[700], 0.7)
+                    : alpha(colors.grey[300], 0.7),
+                }
+              }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
           </DialogTitle>
-          <DialogContent>
+          <DialogContent
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              padding: { xs: "16px 0", md: "20px 0" },
+              position: "relative",
+              zIndex: 1,
+              fontSize: { xs: "0.9rem", md: "1rem" },
+              overflowY: "auto",
+            }}
+          >
             <TextField
               autoFocus
               margin="dense"
               id="trp_name"
-              color="secondary"
               value={dialogValue.trp_name}
               onChange={(event) =>
                 setDialogValue({
@@ -607,14 +712,22 @@ export default function EditTrip({
               variant="standard"
               fullWidth
               sx={{
+                mb: 2,
                 "& .MuiInputBase-input": {
-                  color: colors.primary[600],
+                  color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
                 },
                 "& .MuiInputLabel-root": {
-                  color: colors.primary[500],
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600],
                 },
-                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                  borderColor: colors.primary[400],
+                "& .MuiInput-underline:before": {
+                  borderBottomColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.1)',
+                },
+                "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                  borderBottomColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.2)'
+                    : 'rgba(0, 0, 0, 0.2)',
                 },
               }}
             />
@@ -623,7 +736,6 @@ export default function EditTrip({
                 <TextField
                   margin="dense"
                   id="spended"
-                  color="secondary"
                   value={dialogValue.spended}
                   onChange={(e) => {
                     e.target.value = e.target.value.trim();
@@ -639,22 +751,34 @@ export default function EditTrip({
                   fullWidth
                   sx={{
                     "& .MuiInputBase-input": {
-                      color: colors.primary[600],
+                      color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
                     },
                     "& .MuiInputLabel-root": {
-                      color: colors.primary[500],
+                      color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600],
                     },
-                    "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                      borderColor: colors.primary[400],
+                    "& .MuiInput-underline:before": {
+                      borderBottomColor: theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.1)'
+                        : 'rgba(0, 0, 0, 0.1)',
+                    },
+                    "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                      borderBottomColor: theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.2)'
+                        : 'rgba(0, 0, 0, 0.2)',
                     },
                   }}
                 />
                 <Tooltip title="Convert Currency">
                   <IconButton
                     onClick={() => handleOpenConverter(dialogValue.spended, currencyType, "dialogSpend")}
-                    color="secondary"
                     disabled={!dialogValue.spended || isNaN(parseFloat(dialogValue.spended))}
-                    sx={{ mt: 1, ml: 0.5 }}
+                    sx={{
+                      ml: 0.5,
+                      color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
+                      '&.Mui-disabled': {
+                        color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+                      }
+                    }}
                   >
                     <CurrencyExchangeIcon />
                   </IconButton>
@@ -666,19 +790,18 @@ export default function EditTrip({
                   <Checkbox
                     checked={isEachMember}
                     onChange={(e) => setIsEachMember(e.target.checked)}
-                    color="secondary"
                     sx={{
-                      color: colors.primary[500],
+                      color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
                       '&.Mui-checked': {
-                        color: colors.primary[500],
-                      },
+                        color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
+                      }
                     }}
                   />
                 }
                 label="Each member pays this amount"
                 sx={{
                   mt: 1,
-                  color: colors.primary[600],
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
                   '& .MuiFormControlLabel-label': {
                     fontSize: '0.85rem',
                   }
@@ -690,9 +813,15 @@ export default function EditTrip({
                   variant="body2"
                   sx={{
                     mt: 1,
-                    color: colors.primary[500],
+                    color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
                     fontStyle: 'italic',
                     fontSize: '0.85rem',
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(0, 123, 255, 0.1)'
+                      : 'rgba(0, 123, 255, 0.05)',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    display: 'inline-block'
                   }}
                 >
                   Total: {currencyType}{(parseFloat(dialogValue.spended) * selectedMemberIds.length).toFixed(2)}
@@ -700,11 +829,10 @@ export default function EditTrip({
                 </Typography>
               )}
             </Box>
-            <FormControl variant="standard" fullWidth sx={{ mt: 2 }}>
+            <FormControl variant="standard" fullWidth sx={{ mt: 2, mb: 2 }}>
               <InputLabel
-                color="secondary"
                 sx={{
-                  color: colors.primary[500],
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600],
                 }}
               >
                 Members
@@ -713,27 +841,52 @@ export default function EditTrip({
                 multiple
                 value={selectedMembers}
                 onChange={handleMemberChange}
-                color="secondary"
                 renderValue={(selected) => selected.join(", ")}
                 sx={{
-                  "& .MuiSelect-select": {
-                    color: colors.primary[600],
+                  "& .MuiInputBase-input": {
+                    color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
                   },
-                  "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary[400],
+                  "& .MuiInput-underline:before": {
+                    borderBottomColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.1)'
+                      : 'rgba(0, 0, 0, 0.1)',
                   },
-                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary[500],
-                  },
-                  "& .MuiSelect-icon": {
-                    color: colors.primary[500],
+                  "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                    borderBottomColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.2)'
+                      : 'rgba(0, 0, 0, 0.2)',
                   },
                 }}
               >
-                {member?.map((item, index) => (
-                  <MenuItem key={item.id} value={item.mem_name}>
-                    <Checkbox checked={selectedMembers.includes(item.mem_name)} />
-                    <ListItemText primary={item.mem_name} />
+                {member?.map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    value={item.mem_name}
+                    sx={{
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(20, 23, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 33, 49, 0.9)' : 'rgba(245, 245, 245, 0.9)',
+                      },
+                      '&.Mui-selected': {
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(40, 43, 59, 0.9)' : 'rgba(235, 235, 235, 0.9)',
+                      }
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedMembers.includes(item.mem_name)}
+                      sx={{
+                        color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
+                        '&.Mui-checked': {
+                          color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
+                        }
+                      }}
+                    />
+                    <ListItemText
+                      primary={item.mem_name}
+                      sx={{
+                        color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                      }}
+                    />
                   </MenuItem>
                 ))}
               </Select>
@@ -741,9 +894,8 @@ export default function EditTrip({
 
             <FormControl variant="standard" fullWidth sx={{ mt: 2 }}>
               <InputLabel
-                color="secondary"
                 sx={{
-                  color: colors.primary[500],
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600],
                 }}
               >
                 Who paid?
@@ -756,19 +908,19 @@ export default function EditTrip({
                     payer_id: e.target.value,
                   })
                 }
-                color="secondary"
                 sx={{
-                  "& .MuiSelect-select": {
-                    color: colors.primary[600],
+                  "& .MuiInputBase-input": {
+                    color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
                   },
-                  "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary[400],
+                  "& .MuiInput-underline:before": {
+                    borderBottomColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.1)'
+                      : 'rgba(0, 0, 0, 0.1)',
                   },
-                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary[500],
-                  },
-                  "& .MuiSelect-icon": {
-                    color: colors.primary[500],
+                  "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                    borderBottomColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.2)'
+                      : 'rgba(0, 0, 0, 0.2)',
                   },
                 }}
               >
@@ -777,17 +929,15 @@ export default function EditTrip({
                     key={item.id}
                     value={item.id}
                     sx={{
-                      color: colors.primary[600],
-                      "&:hover": {
-                        backgroundColor: colors.primary[400],
-                        color: "#fff",
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(20, 23, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                      color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 33, 49, 0.9)' : 'rgba(245, 245, 245, 0.9)',
                       },
-                      "&.Mui-selected": {
-                        backgroundColor: colors.primary[400],
-                        color: "#fff",
-                        "&:hover": {
-                          backgroundColor: colors.primary[500],
-                          color: "#fff",
+                      '&.Mui-selected': {
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(40, 43, 59, 0.9)' : 'rgba(235, 235, 235, 0.9)',
+                        '&:hover': {
+                          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(50, 53, 69, 0.9)' : 'rgba(225, 225, 225, 0.9)',
                         },
                       },
                     }}
@@ -798,24 +948,65 @@ export default function EditTrip({
               </Select>
             </FormControl>
           </DialogContent>
-          <DialogActions sx={{ display: "flex", flexDirection: "row" }}>
+          <DialogActions
+            sx={{
+              padding: { xs: "16px 0 0 0", md: "20px 0 0 0" },
+              position: "relative",
+              zIndex: 1,
+              borderTop: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.08)'}`,
+              marginTop: 2,
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 1
+            }}
+          >
             <Button
-              color="error"
               variant="outlined"
               onClick={loading ? null : handleClose}
               disabled={loading}
+              component={motion.button}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+                textTransform: "none",
+                fontWeight: "500",
+                fontSize: { xs: "0.8rem", md: "0.9rem" },
+                padding: { xs: "6px 16px", md: "8px 20px" },
+                borderRadius: "8px",
+                '&:hover': {
+                  borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                }
+              }}
             >
               Cancel
             </Button>
             <Button
-              color="primary"
               variant="contained"
               type="submit"
               startIcon={loading && <CircularProgress size={20} />}
               disabled={loading}
+              component={motion.button}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               sx={{
-                backgroundColor: colors.primary[500],
+                backgroundColor: theme.palette.mode === 'dark' ? colors.primary[600] : colors.primary[500],
                 color: "#fff",
+                textTransform: "none",
+                fontWeight: "500",
+                fontSize: { xs: "0.8rem", md: "0.9rem" },
+                padding: { xs: "6px 16px", md: "8px 20px" },
+                borderRadius: "8px",
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 4px 10px rgba(0, 0, 0, 0.3)'
+                  : '0 4px 10px rgba(0, 123, 255, 0.2)',
+                '&:hover': {
+                  backgroundColor: theme.palette.mode === 'dark' ? colors.primary[500] : colors.primary[400],
+                }
               }}
             >
               Add
@@ -843,10 +1034,11 @@ export default function EditTrip({
   );
 }
 
-function convertMemKeyToArray(member, key) {
-  let newArray = [];
-  for (let i in member) {
-    newArray[i] = member[i][key];
-  }
-  return newArray;
-}
+// Helper function to convert member key to array (kept for reference)
+// function convertMemKeyToArray(member, key) {
+//   let newArray = [];
+//   for (let i in member) {
+//     newArray[i] = member[i][key];
+//   }
+//   return newArray;
+// }
