@@ -1,12 +1,15 @@
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, useTheme, Box, IconButton, Typography, alpha } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, useTheme, Box, IconButton, Typography, alpha, useMediaQuery } from '@mui/material';
 import { tokens } from '../theme';
 import CloseIcon from '@mui/icons-material/Close';
 import { motion } from 'framer-motion';
+import useWindowDimensions from '../hooks/useWindowDimensions';
 
 const CustomDialog = ({ open, onClose, title, children, sx }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { width: windowWidth } = useWindowDimensions();
 
   return (
     <Dialog
@@ -19,6 +22,7 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: 1600, // Higher z-index to ensure it appears above floating buttons
         '& .MuiDialog-container': {
           display: 'flex',
           alignItems: 'center',
@@ -46,9 +50,11 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
             ? '0 10px 25px rgba(0, 0, 0, 0.5)'
             : '0 10px 25px rgba(0, 0, 0, 0.1)',
           overflow: "hidden",
-          margin: '0 auto',
+          margin: isMobile ? '32px' : '16px',
           position: 'relative',
-          minWidth: { xs: "90%", sm: "450px", md: "600px" },
+          width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with even larger margins
+          maxWidth: isMobile ? `${windowWidth - 64}px` : "550px",
+          minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
           ...sx,
         },
       }}

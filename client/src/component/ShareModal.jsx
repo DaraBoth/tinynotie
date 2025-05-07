@@ -16,6 +16,7 @@ import {
   MenuItem,
   useTheme,
   alpha,
+  useMediaQuery,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
@@ -26,6 +27,7 @@ import CustomAlert from "./CustomAlert";
 import { tokens } from "../theme";
 import currency from "currency.js";
 import { motion } from "framer-motion";
+import useWindowDimensions from "../hooks/useWindowDimensions";
 
 export default function ShareModal({
   open,
@@ -36,6 +38,8 @@ export default function ShareModal({
 }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { width: windowWidth } = useWindowDimensions();
 
   // State for bank details
   const [bankName, setBankName] = useState(
@@ -100,6 +104,7 @@ export default function ShareModal({
         participants: "Participants",
         perMember: "Per Member",
         eachPersonPays: "Each Person Pays",
+        paidBy: "Paid By",
         thankYou: "Thank you for your cooperation!",
       },
       KR: {
@@ -109,6 +114,7 @@ export default function ShareModal({
         participants: "참여 멤버",
         perMember: "1인당 금액",
         eachPersonPays: "각 사람의 지불 금액",
+        paidBy: "결제자",
         thankYou: "협조해 주셔서 감사합니다!",
       },
       KH: {
@@ -118,6 +124,7 @@ export default function ShareModal({
         participants: "អ្នក​ចូលរួម",
         perMember: "ចំណាយតាមម្នាក់",
         eachPersonPays: "ការទូទាត់តាមម្នាក់",
+        paidBy: "បង់ដោយ",
         thankYou: "អរគុណសម្រាប់កិច្ចសហការរបស់អ្នក!",
       },
     };
@@ -127,25 +134,49 @@ export default function ShareModal({
 
     const tripDetails = trips
       .map((trip) => {
-        const members = JSON.parse(trip.mem_id).map((memId) => {
-          const memberName = member.find((m) => m.id === memId)?.mem_name;
-          return memberName;
-        });
+        // Safely parse mem_id - handle both string and array formats
+        let memberIds = [];
+        try {
+          memberIds = typeof trip.mem_id === 'string' ? JSON.parse(trip.mem_id) : trip.mem_id;
+        } catch (e) {
+          console.error("Error parsing mem_id:", e);
+          memberIds = [];
+        }
 
-        const perMemberAmount = currency(trip.spend / members.length, {
+        // Get member names, filtering out any undefined values
+        const members = memberIds
+          .map(memId => {
+            const memberObj = member.find(m => m.id === memId);
+            return memberObj ? memberObj.mem_name : null;
+          })
+          .filter(name => name !== null);
+
+        // Get payer name
+        let payerName = "-";
+        if (trip.payer_id) {
+          const payer = member.find(m => m.id === Number(trip.payer_id));
+          if (payer) {
+            payerName = payer.mem_name;
+          }
+        }
+
+        // Calculate per member amount only if there are members
+        const memberCount = members.length || 1; // Avoid division by zero
+        const perMemberAmount = currency(trip.spend / memberCount, {
           symbol: currencyType,
         }).format();
 
+        // Update total per member
         members.forEach((mem) => {
           if (!totalPerMember[mem]) {
             totalPerMember[mem] = 0;
           }
-          totalPerMember[mem] += trip.spend / members.length;
+          totalPerMember[mem] += trip.spend / memberCount;
         });
 
         return `${trip.trp_name}\n${t.totalAmount}: ${currency(trip.spend, {
           symbol: currencyType,
-        }).format()}\n${t.participants}: ${members.join(", ")}\n${
+        }).format()}\n${t.paidBy}: ${payerName}\n${t.participants}: ${members.join(", ") || "-"}\n${
           t.perMember
         }: ${perMemberAmount}\n\n`;
       })
@@ -207,6 +238,14 @@ export default function ShareModal({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      sx={{
+        zIndex: 1600, // Higher z-index to ensure it appears above floating buttons
+        '& .MuiDialog-container': {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }
+      }}
       PaperProps={{
         component: motion.div,
         initial: { opacity: 0, y: 20, scale: 0.95 },
@@ -228,6 +267,10 @@ export default function ShareModal({
             ? '0 10px 25px rgba(0, 0, 0, 0.5)'
             : '0 10px 25px rgba(0, 0, 0, 0.1)',
           overflow: "hidden",
+          margin: isMobile ? '32px' : '16px',
+          width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with even larger margins
+          maxWidth: isMobile ? `${windowWidth - 64}px` : "550px",
+          minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
         },
       }}
     >

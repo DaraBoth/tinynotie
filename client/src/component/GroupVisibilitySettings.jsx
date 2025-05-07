@@ -22,7 +22,9 @@ import {
   useTheme,
   Skeleton,
   alpha,
+  useMediaQuery,
 } from "@mui/material";
+import useWindowDimensions from "../hooks/useWindowDimensions";
 import SearchIcon from "@mui/icons-material/Search";
 import PersonIcon from "@mui/icons-material/Person";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
@@ -40,6 +42,8 @@ import { motion } from "framer-motion";
 export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { width: windowWidth } = useWindowDimensions();
   const [visibility, setVisibility] = useState("public");
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
@@ -254,6 +258,14 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
         onClose={handleClose}
         maxWidth="md"
         fullWidth
+        sx={{
+          zIndex: 1600, // Higher z-index to ensure it appears above floating buttons
+          '& .MuiDialog-container': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }
+        }}
         PaperProps={{
           component: motion.div,
           initial: { opacity: 0, y: 20, scale: 0.95 },
@@ -275,6 +287,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               ? '0 10px 25px rgba(0, 0, 0, 0.5)'
               : '0 10px 25px rgba(0, 0, 0, 0.1)',
             overflow: "hidden",
+            width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with larger margins
+            maxWidth: isMobile ? `${windowWidth - 64}px` : "md",
+            minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
+            margin: isMobile ? '32px' : 'auto',
           },
         }}
       >
@@ -326,12 +342,13 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
 
         <DialogTitle
           sx={{
-            padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+            padding: { xs: "0 0 12px 0", md: "0 0 20px 0" },
             position: "relative",
             zIndex: 1,
             display: "flex",
+            flexDirection: isMobile ? "column" : "row",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: isMobile ? "flex-start" : "center",
             borderBottom: `1px solid ${theme.palette.mode === 'dark'
               ? 'rgba(255, 255, 255, 0.08)'
               : 'rgba(0, 0, 0, 0.08)'}`,
@@ -345,17 +362,17 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                   ? 'rgba(0, 123, 255, 0.15)'
                   : 'rgba(0, 123, 255, 0.1)',
                 borderRadius: "12px",
-                padding: "10px",
+                padding: isMobile ? "8px" : "10px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 1.5
+                marginRight: isMobile ? 1 : 1.5
               }}
             >
               <VisibilityIcon
                 sx={{
                   color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
-                  fontSize: { xs: "1.2rem", md: "1.3rem" }
+                  fontSize: { xs: "1rem", md: "1.3rem" }
                 }}
               />
             </Box>
@@ -363,12 +380,12 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               variant="h6"
               sx={{
                 color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
-                fontSize: { xs: "1.1rem", md: "1.2rem" },
+                fontSize: { xs: "0.9rem", md: "1.2rem" },
                 fontWeight: 600,
                 letterSpacing: "-0.01em"
               }}
             >
-              Group Visibility Settings
+              {isMobile ? "Visibility" : "Group Visibility Settings"}
             </Typography>
           </Box>
 
@@ -378,6 +395,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                 checked={visibility === "public"}
                 onChange={handleVisibilityToggle}
                 color="primary"
+                size={isMobile ? "small" : "medium"}
               />
             }
             label={
@@ -385,13 +403,18 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                 variant="body2"
                 sx={{
                   fontWeight: 500,
+                  fontSize: isMobile ? "0.8rem" : "0.875rem",
                   color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
                 }}
               >
                 {visibility === "private" ? "Private" : "Public"}
               </Typography>
             }
-            sx={{ mt: { xs: 2, md: 0 } }}
+            sx={{
+              mt: isMobile ? 1 : { xs: 2, md: 0 },
+              ml: isMobile ? 0 : undefined,
+              alignSelf: isMobile ? "flex-end" : undefined
+            }}
           />
         </DialogTitle>
 
@@ -420,7 +443,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                   label="Search User"
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  onKeyPress={(event) => {
+                  onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       handleSearch();
                     }

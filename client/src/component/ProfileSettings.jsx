@@ -12,7 +12,9 @@ import {
   Skeleton,
   Typography,
   useTheme,
+  useMediaQuery,
 } from "@mui/material";
+import useWindowDimensions from "../hooks/useWindowDimensions";
 import { useUpdateUserInfoMutation, useUploadImageMutation, useLazyGetUserProfileQuery } from "../api/api"; // Import the uploadImage mutation and the query for fetching user profile
 import imageCompression from "browser-image-compression"; // Import the image compression library
 import defaultProfileImage from "../../public/default_profile.jpg"; // Import the default profile image
@@ -24,6 +26,8 @@ const MAX_IMAGE_SIZE_MB = 32; // Maximum allowed image size in MB for compressio
 const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { width: windowWidth } = useWindowDimensions();
   const [formData, setFormData] = useState({});
   const [profilePreview, setProfilePreview] = useState(""); // For previewing uploaded image
   const [getUserProfile, { data: fetchedProfile, isFetching }] = useLazyGetUserProfileQuery(); // Lazy query for user profile
@@ -139,6 +143,14 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
       <Dialog
         open={open}
         onClose={() => onClose(null)}
+        sx={{
+          zIndex: 1600, // Higher z-index than floating buttons (1500)
+          '& .MuiDialog-container': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }
+        }}
         PaperProps={{
           sx: {
             backgroundColor: theme.palette.mode === 'dark'
@@ -153,9 +165,10 @@ const ProfileSettings = ({ open, onClose, user, profileData, setProfileData }) =
               ? 'rgba(255, 255, 255, 0.1)'
               : 'rgba(0, 0, 0, 0.05)'}`,
             overflow: 'hidden',
-            maxWidth: '450px',
-            width: '100%',
-            margin: { xs: '16px', md: 'auto' },
+            width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with larger margins
+            maxWidth: isMobile ? `${windowWidth - 64}px` : "450px",
+            minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
+            margin: isMobile ? '32px' : 'auto',
             position: 'relative',
             '&:before': {
               content: '""',

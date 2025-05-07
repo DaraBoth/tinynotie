@@ -14,11 +14,12 @@ import {
 } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import RemoveIcon from '@mui/icons-material/Remove';
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
+import useWindowDimensions from "../hooks/useWindowDimensions";
+import CloseButton from "./CloseButton";
 
 const FloatingChat = ({ userId, scrollDirection }) => {
   const [open, setOpen] = useState(false);
@@ -29,6 +30,7 @@ const FloatingChat = ({ userId, scrollDirection }) => {
   const colors = tokens(theme.palette.mode);
   const chatContainerRef = useRef(null); // Ref for the chat container
   const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // Check if screen is mobile
+  const { width: windowWidth } = useWindowDimensions(); // Get window width
 
   useEffect(() => {
     const chatHistory =
@@ -82,13 +84,13 @@ const FloatingChat = ({ userId, scrollDirection }) => {
               ? '0 5px 15px rgba(66, 66, 255, 0.5)'
               : '0 5px 15px rgba(100, 100, 255, 0.5)',
           },
-          width: "40px",
-          height: "40px",
+          width: isMobile ? "52px" : "40px", // Larger on mobile
+          height: isMobile ? "52px" : "40px", // Larger on mobile
           transition: "transform 0.3s, box-shadow 0.3s, background-color 0.3s",
           boxShadow: theme.palette.mode === 'dark'
             ? '0 3px 10px rgba(0, 0, 0, 0.4)'
             : '0 3px 10px rgba(0, 0, 0, 0.2)',
-          zIndex: 1500,
+          zIndex: 1000, // Lower z-index to ensure it stays below dialogs
           color: '#fff',
           backdropFilter: 'blur(4px)',
           border: `1px solid ${theme.palette.mode === 'dark'
@@ -96,23 +98,47 @@ const FloatingChat = ({ userId, scrollDirection }) => {
             : 'rgba(255, 255, 255, 0.5)'}`,
         }}
       >
-        <ChatBubbleOutlineIcon fontSize="small" />
+        <ChatBubbleOutlineIcon fontSize={isMobile ? "medium" : "small"} />
       </Fab>
+
+      {/* Close button outside the dialog */}
+      {open && (
+        <CloseButton
+          onClick={handleClose}
+          position="fixed"
+          bottom={isMobile ? "24px" : "24px"}
+          right={isMobile ? "24px" : "24px"}
+          zIndex={1600}
+          size="medium"
+        />
+      )}
 
       <Dialog
         open={open}
         onClose={handleClose}
         fullWidth
         maxWidth={isMobile ? "xs" : "sm"}
-        fullScreen={isMobile}
+        fullScreen={false}
         TransitionComponent={Slide}
         TransitionProps={{ direction: "up" }}
-        sx={{ zIndex: 1600 }}
+        sx={{
+          zIndex: 1600, // Higher z-index to ensure it appears above floating buttons
+          width:`${windowWidth - 500}px`,
+          '& .MuiDialog-container': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }
+        }}
         PaperProps={{
           sx: {
-            borderRadius: isMobile ? 0 : '16px',
-            height: isMobile ? "100%" : "80vh",
-            maxHeight: "80vh",
+            borderRadius: '16px',
+            height: isMobile ? "80vh" : "80vh",
+            maxHeight: isMobile ? "80vh" : "80vh",
+            width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with even larger margins
+            maxWidth: isMobile ? `${windowWidth - 64}px` : "550px",
+            minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
+            margin: isMobile ? "32px auto" : "auto",
             backgroundColor: theme.palette.mode === 'dark'
               ? 'rgba(20, 23, 39, 0.9)'
               : 'rgba(255, 255, 255, 0.9)',
@@ -186,19 +212,8 @@ const FloatingChat = ({ userId, scrollDirection }) => {
             >
               Chat with AI
             </Typography>
-            <Tooltip title="Minimize">
-              <IconButton
-                onClick={handleClose}
-                sx={{
-                  color: '#fff',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  },
-                }}
-              >
-                <RemoveIcon />
-              </IconButton>
-            </Tooltip>
+            {/* Spacer to maintain toolbar layout */}
+            <Box sx={{ width: '40px' }} />
           </Toolbar>
         </AppBar>
         <DialogContent

@@ -24,6 +24,7 @@ import RegisterGuide from "./pages/RegisterGuide";
 import Lottie from "lottie-react";
 import moon from "./assets/moon.json";
 import sun from "./assets/sun.json";
+import CloseButton from "./component/CloseButton";
 
 function App() {
   const [theme, colorMode, setMode] = useMode();
@@ -64,7 +65,7 @@ function App() {
       sessionStorage.removeItem("secret");
     }
   }, [user, secret, isAuth]);
- 
+
   return (
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>

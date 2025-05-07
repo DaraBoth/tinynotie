@@ -708,13 +708,13 @@ export default function Home({
       <Box
         sx={{
           position: "fixed",
-          bottom: "12px",
-          right: scrollDirection === "down" ? "-80px" : "12px", // Move out of view when scrolling down
+          bottom: !isNonMobile ? "24px" : "12px", // Increased bottom margin on mobile
+          right: scrollDirection === "down" ? "-80px" : (!isNonMobile ? "16px" : "12px"), // Move out of view when scrolling down
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
+          gap: "16px", // Increased gap between buttons
           transition: "right 0.3s ease-in-out", // Smooth transition
-          zIndex: 1500, // Higher z-index to ensure buttons stay above cards
+          zIndex: 1000, // Lower z-index to ensure buttons stay below dialogs
         }}
       >
         <Fab
@@ -730,8 +730,8 @@ export default function Home({
             "&:hover": {
               backgroundColor: colors.primary[600],
             },
-            width: "48px",
-            height: "48px",
+            width: !isNonMobile ? "52px" : "48px", // Slightly larger on mobile
+            height: !isNonMobile ? "52px" : "48px", // Slightly larger on mobile
             transition: "background-color 0.3s",
             boxShadow: theme.palette.mode === 'dark'
               ? '0 4px 12px rgba(0, 0, 0, 0.4)'
@@ -739,7 +739,7 @@ export default function Home({
             zIndex: 1500,
           }}
         >
-          <AddIcon fontSize="small" />
+          <AddIcon fontSize={!isNonMobile ? "medium" : "small"} />
         </Fab>
 
         <FloatingChat

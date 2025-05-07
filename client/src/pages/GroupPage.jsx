@@ -53,11 +53,14 @@ import {
 import NotFoundPage from "./NotFoundPage";
 import ReceiptScanner from "../component/ReceiptScanner";
 import { borderRadius, minHeight, minWidth } from "@mui/system";
+import useWindowDimensions from "../hooks/useWindowDimensions";
 
 export default function Group({ user, secret, setGroupInfo }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { width: windowWidth } = useWindowDimensions();
   const { groupParam } = useParams(); // Get the group ID from the URL
   const {
     groupId,
@@ -703,11 +706,12 @@ export default function Group({ user, secret, setGroupInfo }) {
         onClose={() => setOpenRecieptScannarDialog(false)}
         title="Receipt Scanner"
         sx={{
-          maxWidth: { xs: "100%", sm: "90%", md: "800px" },
-          width: { xs: "100%", sm: "90%", md: "800px" },
+          maxWidth: { xs: "calc(100% - 64px)", sm: "90%", md: "800px" },
+          width: { xs: "calc(100% - 64px)", sm: "90%", md: "800px" },
           maxHeight: { xs: "100vh", md: "80vh" },
           '& .MuiDialog-paper': {
-            margin: '16px auto',
+            margin: '32px auto',
+            minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
           },
           '& .MuiDialogContent-root': {
             padding: { xs: "16px 0", md: "20px 0" },
@@ -733,8 +737,8 @@ export default function Group({ user, secret, setGroupInfo }) {
           transition={{ duration: 0.3, delay: 0.5 }}
           sx={{
             position: "fixed",
-            bottom: 24,
-            right: 24,
+            bottom: isNonMobile ? "24px" : "32px", // Increased bottom margin on mobile
+            right: isNonMobile ? "24px" : "24px",
             '& .MuiFab-primary': {
               backgroundColor: theme.palette.mode === 'dark'
                 ? colors.primary[600]
@@ -753,8 +757,8 @@ export default function Group({ user, secret, setGroupInfo }) {
           icon={<SpeedDialIcon />}
           FabProps={{
             sx: {
-              width: 56,
-              height: 56,
+              width: isNonMobile ? 56 : 60, // Larger on mobile
+              height: isNonMobile ? 56 : 60, // Larger on mobile
             }
           }}
         >
@@ -782,6 +786,8 @@ export default function Group({ user, secret, setGroupInfo }) {
                   color: theme.palette.mode === 'dark'
                     ? colors.grey[100]
                     : colors.grey[800],
+                  width: isNonMobile ? 'auto' : '44px', // Larger on mobile
+                  height: isNonMobile ? 'auto' : '44px', // Larger on mobile
                 }
               }}
               TooltipProps={{
