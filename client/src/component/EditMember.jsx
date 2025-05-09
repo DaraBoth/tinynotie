@@ -18,6 +18,7 @@ import {
   useTheme,
   Typography,
   alpha,
+  Popper,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -36,6 +37,18 @@ export default function EditMember({
   group_id,
   currencyType,
 }) {
+  // Debug the member prop
+  React.useEffect(() => {
+    console.log("Member prop:", member);
+    if (Array.isArray(member)) {
+      console.log("Member array length:", member.length);
+      if (member.length > 0) {
+        console.log("First member sample:", member[0]);
+      }
+    } else {
+      console.log("Member is not an array:", typeof member);
+    }
+  }, [member]);
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddMember, resultAddMember] = usePostAddMemberMutation();
@@ -165,10 +178,13 @@ export default function EditMember({
           marginBottom: "10px",
         }}
       >
+        {/* Simplified Autocomplete component */}
         <Autocomplete
+          disablePortal
           value={value}
-          onChange={(event, newValue) => {
+          onChange={(_, newValue) => {
             if (typeof newValue === "string") {
+              // Handle string input (new member name)
               setTimeout(() => {
                 toggleOpen(true);
                 setDialogValue({
@@ -177,20 +193,25 @@ export default function EditMember({
                 });
               });
             } else if (newValue && newValue.inputValue) {
+              // Handle "Add new" option
               toggleOpen(true);
               setDialogValue({
                 mem_name: newValue.inputValue,
                 paid: "",
               });
             } else {
+              // Handle selecting existing member
               setValue(newValue);
-              setMoney(newValue.paid);
-              setSelectedChip(currencySuggestions[currencyType][0]);
+              if (newValue && newValue.paid) {
+                setMoney(newValue.paid);
+                setSelectedChip(currencySuggestions[currencyType][0]);
+              }
             }
           }}
           filterOptions={(options, params) => {
             const filtered = filter(options, params);
 
+            // Add "create new" option
             if (params.inputValue !== "") {
               filtered.push({
                 inputValue: params.inputValue,
@@ -200,53 +221,91 @@ export default function EditMember({
 
             return filtered;
           }}
-          options={member}
+          options={Array.isArray(member) ? member : []}
           getOptionLabel={(option) => {
-            if (typeof option === "string") {
-              return option;
-            }
-            if (option.inputValue) {
-              return option.inputValue;
-            }
-            return option.mem_name;
+            // Handle different option types
+            if (!option) return '';
+            if (typeof option === "string") return option;
+            if (option.inputValue) return option.inputValue;
+            return option.mem_name || '';
           }}
-          selectOnFocus
-          clearOnBlur
-          handleHomeEndKeys
           renderOption={(props, option) => (
             <li
               {...props}
               style={{
-                backgroundColor:
-                  value === option ? colors.primary[500] : "inherit",
-                color:
-                  value === option ? colors.grey[100] : colors.primary[600],
+                padding: '8px 16px',
+                cursor: 'pointer',
+                color: theme.palette.mode === 'dark' ? '#fff' : '#000',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 34, 51, 0.95)' : '#fff',
+                borderBottom: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #eee'
               }}
             >
-              {option.mem_name}
+              {option.mem_name || (option.inputValue ? `Add "${option.inputValue}"` : '')}
             </li>
           )}
           freeSolo
           renderInput={(params) => (
             <TextField
-              color="primary"
               {...params}
+              label="Select Member"
               variant="standard"
-              label="Edit Member or add new member"
               InputProps={{
                 ...params.InputProps,
-                style: {
-                  color: theme.palette.text.primary,
-                },
+                style: { color: theme.palette.text.primary }
               }}
               sx={{
+                "& .MuiInputBase-input": {
+                  color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.primary[600],
+                },
                 "& .MuiInputLabel-root": {
-                  color: colors.primary[500],
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.primary[500],
+                },
+                "& .MuiInput-underline:before": {
+                  borderBottomColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.1)',
+                },
+                "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                  borderBottomColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.2)'
+                    : 'rgba(0, 0, 0, 0.2)',
                 },
                 "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                  borderColor: colors.primary[400],
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : colors.primary[400],
                 },
               }}
+            />
+          )}
+          ListboxProps={{
+            style: {
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 34, 51, 0.95)' : '#fff',
+              color: theme.palette.mode === 'dark' ? '#fff' : '#000',
+              maxHeight: '300px',
+              overflow: 'auto',
+              borderRadius: '8px',
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 8px 16px rgba(0, 0, 0, 0.6)'
+                : '0 8px 16px rgba(0, 0, 0, 0.1)',
+              backdropFilter: 'blur(10px)'
+            }
+          }}
+          PopperComponent={(props) => (
+            <Popper
+              {...props}
+              style={{
+                zIndex: 9999,
+                backdropFilter: 'blur(10px)'
+              }}
+              modifiers={[
+                {
+                  name: 'offset',
+                  options: {
+                    offset: [0, 8],
+                  },
+                },
+              ]}
             />
           )}
         />

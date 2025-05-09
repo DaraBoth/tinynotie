@@ -23,6 +23,7 @@ import {
   ListItemText,
   Tooltip,
   alpha,
+  Popper,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SaveIcon from "@mui/icons-material/Save";
@@ -45,6 +46,18 @@ export default function EditTrip({
   group_id,
   currencyType,
 }) {
+  // Debug the trip prop
+  React.useEffect(() => {
+    console.log("Trip prop:", trip);
+    if (Array.isArray(trip)) {
+      console.log("Trip array length:", trip.length);
+      if (trip.length > 0) {
+        console.log("First trip sample:", trip[0]);
+      }
+    } else {
+      console.log("Trip is not an array:", typeof trip);
+    }
+  }, [trip]);
   const [value, setValue] = React.useState(null);
   const [open, toggleOpen] = React.useState(false);
   const [triggerAddTrip, resultAddTrip] = usePostAddTripMutation();
@@ -265,33 +278,39 @@ export default function EditTrip({
           "& > div": { gridColumn: "span 4" },
         }}
       >
+        {/* Simplified Autocomplete component */}
         <Autocomplete
+          disablePortal
           value={value}
           onChange={(_, newValue) => {
             if (typeof newValue === "string") {
-              setTimeout(() => {
-                toggleOpen(true);
-                setDialogValue({
-                  trp_name: newValue,
-                  spended: "",
-                });
+              // Handle string input (new trip name)
+              toggleOpen(true);
+              setDialogValue({
+                trp_name: newValue,
+                spended: "",
               });
             } else if (newValue && newValue.inputValue) {
+              // Handle "Add new" option
               toggleOpen(true);
               setDialogValue({
                 trp_name: newValue.inputValue,
                 spended: "",
               });
             } else {
+              // Handle selecting existing trip
               setValue(newValue);
-              setMoney(newValue.spend);
-              setSelectedPayerId(newValue.payer_id || "");
-              setSelectedChip(currencySuggestions[currencyType][0]);
+              if (newValue) {
+                setMoney(newValue.spend || "");
+                setSelectedPayerId(newValue.payer_id || "");
+                setSelectedChip(currencySuggestions[currencyType][0]);
+              }
             }
           }}
           filterOptions={(options, params) => {
             const filtered = filter(options, params);
 
+            // Add "create new" option
             if (params.inputValue !== "") {
               filtered.push({
                 inputValue: params.inputValue,
@@ -301,28 +320,26 @@ export default function EditTrip({
 
             return filtered;
           }}
-          options={trip}
+          options={Array.isArray(trip) ? trip : []}
           getOptionLabel={(option) => {
-            if (typeof option === "string") {
-              return option;
-            }
-            if (option.inputValue) {
-              return option.inputValue;
-            }
-            return option.trp_name;
+            // Handle different option types
+            if (!option) return '';
+            if (typeof option === "string") return option;
+            if (option.inputValue) return option.inputValue;
+            return option.trp_name || '';
           }}
-          selectOnFocus
-          clearOnBlur
-          handleHomeEndKeys
           renderOption={(props, option) => (
             <li
               {...props}
               style={{
-                backgroundColor: value === option ? colors.primary[500] : "inherit",
-                color: value === option ? colors.grey[100] : colors.primary[600],
+                padding: '8px 16px',
+                cursor: 'pointer',
+                color: theme.palette.mode === 'dark' ? '#fff' : '#000',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 34, 51, 0.95)' : '#fff',
+                borderBottom: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #eee'
               }}
             >
-              {option.trp_name}
+              {option.trp_name || (option.inputValue ? `Add "${option.inputValue}"` : '')}
             </li>
           )}
           freeSolo
@@ -332,17 +349,63 @@ export default function EditTrip({
               {...params}
               variant="standard"
               label="Select or Add Trip"
+              InputProps={{
+                ...params.InputProps,
+                style: { color: theme.palette.text.primary }
+              }}
               sx={{
                 "& .MuiInputBase-input": {
-                  color: colors.primary[600],
+                  color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.primary[600],
                 },
                 "& .MuiInputLabel-root": {
-                  color: colors.primary[500],
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.primary[500],
+                },
+                "& .MuiInput-underline:before": {
+                  borderBottomColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.1)',
+                },
+                "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                  borderBottomColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.2)'
+                    : 'rgba(0, 0, 0, 0.2)',
                 },
                 "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
-                  borderColor: colors.primary[400],
+                  borderColor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : colors.primary[400],
                 },
               }}
+            />
+          )}
+          ListboxProps={{
+            style: {
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 34, 51, 0.95)' : '#fff',
+              color: theme.palette.mode === 'dark' ? '#fff' : '#000',
+              maxHeight: '300px',
+              overflow: 'auto',
+              borderRadius: '8px',
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 8px 16px rgba(0, 0, 0, 0.6)'
+                : '0 8px 16px rgba(0, 0, 0, 0.1)',
+              backdropFilter: 'blur(10px)'
+            }
+          }}
+          PopperComponent={(props) => (
+            <Popper
+              {...props}
+              style={{
+                zIndex: 9999,
+                backdropFilter: 'blur(10px)'
+              }}
+              modifiers={[
+                {
+                  name: 'offset',
+                  options: {
+                    offset: [0, 8],
+                  },
+                },
+              ]}
             />
           )}
         />
