@@ -237,7 +237,8 @@ export default function EditMember({
                 cursor: 'pointer',
                 color: theme.palette.mode === 'dark' ? '#fff' : '#000',
                 backgroundColor: theme.palette.mode === 'dark' ? 'rgba(30, 34, 51, 0.95)' : '#fff',
-                borderBottom: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #eee'
+                borderBottom: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #eee',
+                width: '100%',
               }}
             >
               {option.mem_name || (option.inputValue ? `Add "${option.inputValue}"` : '')}
@@ -288,7 +289,8 @@ export default function EditMember({
               boxShadow: theme.palette.mode === 'dark'
                 ? '0 8px 16px rgba(0, 0, 0, 0.6)'
                 : '0 8px 16px rgba(0, 0, 0, 0.1)',
-              backdropFilter: 'blur(10px)'
+              backdropFilter: 'blur(10px)',
+              width: '100%'
             }
           }}
           PopperComponent={(props) => (
@@ -296,7 +298,8 @@ export default function EditMember({
               {...props}
               style={{
                 zIndex: 9999,
-                backdropFilter: 'blur(10px)'
+                backdropFilter: 'blur(10px)',
+                width: props.anchorEl ? props.anchorEl.clientWidth + 'px' : 'auto'
               }}
               modifiers={[
                 {
@@ -304,6 +307,16 @@ export default function EditMember({
                   options: {
                     offset: [0, 8],
                   },
+                },
+                {
+                  name: 'sameWidth',
+                  enabled: true,
+                  fn: ({ state }) => {
+                    state.styles.popper.width = `${state.rects.reference.width}px`;
+                    return state;
+                  },
+                  phase: 'beforeWrite',
+                  requires: ['computeStyles'],
                 },
               ]}
             />

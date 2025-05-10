@@ -198,14 +198,27 @@ export default function DeleteMember({
                     boxShadow: theme.palette.mode === 'dark'
                       ? '0 8px 16px rgba(0, 0, 0, 0.4)'
                       : '0 8px 16px rgba(0, 0, 0, 0.1)',
+                    width: 'auto'
                   }
-                }
+                },
+                anchorOrigin: {
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                },
+                transformOrigin: {
+                  vertical: 'top',
+                  horizontal: 'left',
+                },
+                getContentAnchorEl: null,
+                anchorReference: 'anchorEl',
+                marginThreshold: 0
               }}
             >
               <MenuItem value="" sx={{
                 color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
                 borderRadius: "6px",
                 margin: "4px",
+                width: '100%',
                 '&:hover': {
                   backgroundColor: theme.palette.mode === 'dark'
                     ? 'rgba(255, 255, 255, 0.05)'
@@ -222,6 +235,7 @@ export default function DeleteMember({
                     color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
                     borderRadius: "6px",
                     margin: "4px",
+                    width: '100%',
                     '&:hover': {
                       backgroundColor: theme.palette.mode === 'dark'
                         ? 'rgba(255, 255, 255, 0.05)'
@@ -343,14 +357,27 @@ export default function DeleteMember({
                     boxShadow: theme.palette.mode === 'dark'
                       ? '0 8px 16px rgba(0, 0, 0, 0.4)'
                       : '0 8px 16px rgba(0, 0, 0, 0.1)',
+                    width: 'auto'
                   }
-                }
+                },
+                anchorOrigin: {
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                },
+                transformOrigin: {
+                  vertical: 'top',
+                  horizontal: 'left',
+                },
+                getContentAnchorEl: null,
+                anchorReference: 'anchorEl',
+                marginThreshold: 0
               }}
             >
               <MenuItem value="" sx={{
                 color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
                 borderRadius: "6px",
                 margin: "4px",
+                width: '100%',
                 '&:hover': {
                   backgroundColor: theme.palette.mode === 'dark'
                     ? 'rgba(255, 255, 255, 0.05)'
@@ -367,6 +394,7 @@ export default function DeleteMember({
                     color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
                     borderRadius: "6px",
                     margin: "4px",
+                    width: '100%',
                     '&:hover': {
                       backgroundColor: theme.palette.mode === 'dark'
                         ? 'rgba(255, 255, 255, 0.05)'

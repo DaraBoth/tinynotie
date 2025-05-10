@@ -157,10 +157,23 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
             onChange={handleChange}
             label="Choose Event"
             color="primary"
-            sx={{ minWidth: isNonMobile ? "300px" : "100%" }}
+            sx={{ width: "100%" }}
+            MenuProps={{
+              disablePortal: false,
+              slotProps: {
+                paper: {
+                  sx: {
+                    zIndex: 9999
+                  }
+                }
+              }
+            }}
           >
             {trip?.map((item) => (
-              <MenuItem key={item.id} value={item.trp_name}>
+              <MenuItem
+                key={item.id}
+                value={item.trp_name}
+              >
                 {item.trp_name}
               </MenuItem>
             ))}
@@ -176,10 +189,23 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
             label="Member"
             color="primary"
             renderValue={(selected) => selected.join(", ")}
-            sx={{ minWidth: isNonMobile ? "300px" : "100%" }}
+            sx={{ width: "100%" }}
+            MenuProps={{
+              disablePortal: false,
+              slotProps: {
+                paper: {
+                  sx: {
+                    zIndex: 9999
+                  }
+                }
+              }
+            }}
           >
             {member.map((item, index) => (
-              <MenuItem key={item.id} value={item.mem_name}>
+              <MenuItem
+                key={item.id}
+                value={item.mem_name}
+              >
                 <Checkbox checked={state.isCheckedMember[index]} />
                 <ListItemText primary={item.mem_name} />
               </MenuItem>
@@ -194,13 +220,26 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
             onChange={handlePayerChange}
             label="Who paid?"
             color="primary"
-            sx={{ minWidth: isNonMobile ? "300px" : "100%" }}
+            sx={{ width: "100%" }}
+            MenuProps={{
+              disablePortal: false,
+              slotProps: {
+                paper: {
+                  sx: {
+                    zIndex: 9999
+                  }
+                }
+              }
+            }}
           >
             <MenuItem value="">
               <em>None</em>
             </MenuItem>
             {member.map((item) => (
-              <MenuItem key={item.id} value={item.id.toString()}>
+              <MenuItem
+                key={item.id}
+                value={item.id.toString()}
+              >
                 {item.mem_name}
               </MenuItem>
             ))}
