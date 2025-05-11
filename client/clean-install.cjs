@@ -34,7 +34,7 @@ if (fs.existsSync(yarnLockPath)) {
 // Install dependencies
 console.log('Installing dependencies...');
 try {
-  execSync('npm install --no-package-lock', { stdio: 'inherit' });
+  execSync('yarn install --network-timeout 600000', { stdio: 'inherit' });
 } catch (error) {
   console.error('Error installing dependencies:', error);
 }
