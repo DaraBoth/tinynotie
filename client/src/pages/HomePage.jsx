@@ -730,8 +730,10 @@ export default function Home({
             "&:hover": {
               backgroundColor: colors.primary[600],
             },
-            width: !isNonMobile ? "52px" : "48px", // Slightly larger on mobile
-            height: !isNonMobile ? "52px" : "48px", // Slightly larger on mobile
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%", // Ensure perfect circle
+            aspectRatio: "1/1", // Maintain aspect ratio
             transition: "background-color 0.3s",
             boxShadow: theme.palette.mode === 'dark'
               ? '0 4px 12px rgba(0, 0, 0, 0.4)'

@@ -36,6 +36,10 @@ const ScrollToBottomButton = ({ chatContainerRef , handleScrollToBottom}) => {
           top: -25, // Adjust to the inside of the container
           backgroundColor: colors.grey[800], // Update to use colors matching your theme
           color: "#fff", // Icon color
+          width: "32px",
+          height: "32px",
+          borderRadius: "50%", // Ensure perfect circle
+          aspectRatio: "1/1", // Maintain aspect ratio
           "&:hover": {
             backgroundColor: "rgba(255, 255, 255, 0.2)", // Subtle hover effect
           },

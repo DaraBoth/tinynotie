@@ -757,8 +757,10 @@ export default function Group({ user, secret, setGroupInfo }) {
           icon={<SpeedDialIcon />}
           FabProps={{
             sx: {
-              width: isNonMobile ? 56 : 60, // Larger on mobile
-              height: isNonMobile ? 56 : 60, // Larger on mobile
+              width: 56,
+              height: 56,
+              borderRadius: '50%', // Ensure perfect circle
+              aspectRatio: '1/1', // Maintain aspect ratio
             }
           }}
         >
@@ -786,8 +788,10 @@ export default function Group({ user, secret, setGroupInfo }) {
                   color: theme.palette.mode === 'dark'
                     ? colors.grey[100]
                     : colors.grey[800],
-                  width: isNonMobile ? 'auto' : '44px', // Larger on mobile
-                  height: isNonMobile ? 'auto' : '44px', // Larger on mobile
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%', // Ensure perfect circle
+                  aspectRatio: '1/1' // Maintain aspect ratio
                 }
               }}
               TooltipProps={{
@@ -830,12 +834,58 @@ export default function Group({ user, secret, setGroupInfo }) {
 const TotalSpendTable = ({ info, isLoading }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
-  const rows = [{ id: 1, totalPaid, totalRemain, totalSpend, totalUnPaid }];
+  const { totalPaid, totalPayFirst, totalDirectPaid, totalRemain, totalSpend, totalUnPaid } = info;
+  const rows = [{
+    id: 1,
+    totalPayFirst,
+    totalDirectPaid,
+    totalPaid,
+    totalRemain,
+    totalSpend,
+    totalUnPaid
+  }];
   const columns = [
     {
+      field: "totalPayFirst",
+      headerName: "Pay First",
+      width: 100,
+      headerAlign: "center",
+      align: "center",
+      renderCell: ({ value }) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            color: colors.blueAccent[theme.palette.mode === 'dark' ? 400 : 600],
+            fontSize: '0.9rem',
+          }}
+        >
+          {value}
+        </Typography>
+      ),
+    },
+    {
+      field: "totalDirectPaid",
+      headerName: "Direct Paid",
+      width: 100,
+      headerAlign: "center",
+      align: "center",
+      renderCell: ({ value }) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            color: colors.blueAccent[theme.palette.mode === 'dark' ? 400 : 600],
+            fontSize: '0.9rem',
+          }}
+        >
+          {value}
+        </Typography>
+      ),
+    },
+    {
       field: "totalPaid",
-      headerName: "Paid",
+      headerName: "Total Paid",
       width: 100,
       headerAlign: "center",
       align: "center",
@@ -845,25 +895,6 @@ const TotalSpendTable = ({ info, isLoading }) => {
           sx={{
             fontWeight: 600,
             color: colors.greenAccent[theme.palette.mode === 'dark' ? 400 : 600],
-            fontSize: '0.9rem',
-          }}
-        >
-          {value}
-        </Typography>
-      ),
-    },
-    {
-      field: "totalRemain",
-      headerName: "UnPaid",
-      width: 100,
-      headerAlign: "center",
-      align: "center",
-      renderCell: ({ value }) => (
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 600,
-            color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
             fontSize: '0.9rem',
           }}
         >
@@ -892,7 +923,7 @@ const TotalSpendTable = ({ info, isLoading }) => {
     },
     {
       field: "totalUnPaid",
-      headerName: "Remain",
+      headerName: "Unpaid",
       width: 100,
       headerAlign: "center",
       align: "center",
@@ -902,6 +933,25 @@ const TotalSpendTable = ({ info, isLoading }) => {
           sx={{
             fontWeight: 600,
             color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
+            fontSize: '0.9rem',
+          }}
+        >
+          {value}
+        </Typography>
+      ),
+    },
+    {
+      field: "totalRemain",
+      headerName: "Remain",
+      width: 100,
+      headerAlign: "center",
+      align: "center",
+      renderCell: ({ value }) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            color: colors.greenAccent[theme.palette.mode === 'dark' ? 400 : 600],
             fontSize: '0.9rem',
           }}
         >

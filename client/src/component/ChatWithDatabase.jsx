@@ -84,8 +84,10 @@ const FloatingChat = ({ userId, scrollDirection }) => {
               ? '0 5px 15px rgba(66, 66, 255, 0.5)'
               : '0 5px 15px rgba(100, 100, 255, 0.5)',
           },
-          width: isMobile ? "52px" : "40px", // Larger on mobile
-          height: isMobile ? "52px" : "40px", // Larger on mobile
+          width: "48px",
+          height: "48px",
+          borderRadius: "50%", // Ensure perfect circle
+          aspectRatio: "1/1", // Maintain aspect ratio
           transition: "transform 0.3s, box-shadow 0.3s, background-color 0.3s",
           boxShadow: theme.palette.mode === 'dark'
             ? '0 3px 10px rgba(0, 0, 0, 0.4)'

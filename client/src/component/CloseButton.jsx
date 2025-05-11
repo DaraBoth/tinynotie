@@ -76,6 +76,7 @@ const CloseButton = ({
           ? 'rgba(255, 255, 255, 0.1)'
           : 'rgba(255, 255, 255, 0.5)'}`,
         borderRadius: '50%', // Ensure it's always perfectly round
+        aspectRatio: '1/1', // Maintain aspect ratio
       }}
     >
       <CloseIcon fontSize={iconSize} />

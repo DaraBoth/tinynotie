@@ -7,17 +7,19 @@ export function calculateMoney(allMembers, trips, currencyType) {
 
   let totalMember = 0,
     totalPaid = 0,
+    totalPayFirst = 0,
+    totalDirectPaid = 0,
     totalRemain = 0,
     totalUnPaid = 0,
     totalSpend = 0;
 
-  // First, calculate how much each member has paid for trips
+  // First, calculate how much each member has paid for trips (Pay First)
   const memberPayments = {};
   allMembers.forEach(member => {
     memberPayments[member.id] = 0;
   });
 
-  // Add payments made by members as payers
+  // Add payments made by members as payers (Pay First)
   trips.forEach(trip => {
     const payerId = trip.payer_id ? Number(trip.payer_id) : null;
     if (payerId) {
@@ -27,9 +29,9 @@ export function calculateMoney(allMembers, trips, currencyType) {
 
   newData = allMembers.map((member, id) => {
     let luyForTrip = 0; // How much this member owes for all trips they participated in
-    let paidForTrips = memberPayments[member.id] || 0; // How much this member paid as a payer
-    let paid = member.paid; // How much this member has paid to the group (from member_infm table)
-    let totalPaidAmount = paid + paidForTrips; // Total amount paid (direct payments + trip payments)
+    let payFirst = memberPayments[member.id] || 0; // How much this member paid as a payer (Pay First)
+    let directPaid = member.paid || 0; // How much this member has directly paid to the group (from member_infm table)
+    let totalPaidAmount = directPaid + payFirst; // Total amount paid (direct payments + trip payments)
     let luySol = totalPaidAmount; // Initial balance
 
     trips.forEach((trip) => {
@@ -54,7 +56,7 @@ export function calculateMoney(allMembers, trips, currencyType) {
           // Adjust balance based on whether this member was the payer
           if (member.id == Number(payer_id)) {
             // If this member paid for the trip, they only owe their share
-            // The payment itself is already accounted for in paidForTrips
+            // The payment itself is already accounted for in payFirst
           } else {
             // If someone else paid, this member owes their share
             luySol = totalPaidAmount - luyForTrip;
@@ -74,30 +76,47 @@ export function calculateMoney(allMembers, trips, currencyType) {
     }
 
     totalPaid += totalPaidAmount;
+    totalPayFirst += payFirst;
+    totalDirectPaid += directPaid;
     totalRemain += luySol;
     totalUnPaid += unPaid;
 
     return {
       id: id + 1,
       name: member.mem_name,
-      paid: currency(totalPaidAmount, { symbol: currencyType }).format(),
+      payFirst: formatMoney(payFirst, 2, currencyType), // New column: money paid upfront for trips
+      directPaid: formatMoney(directPaid, 2, currencyType), // Renamed from 'paid': direct contributions
+      totalPaid: formatMoney(totalPaidAmount, 2, currencyType), // Total of payFirst + directPaid
       ...kitLuy,
       remain: formatMoney(luySol, 2, currencyType),
       unpaid: formatMoney(unPaid, 2, currencyType),
     };
   });
+
   totalMember = newData.length;
   totalSpend =
     "-" +
     currency(totalPaid, { symbol: currencyType })
       .subtract(totalRemain)
       .format();
+
+  // Format totals for display
   totalPaid = formatMoney(totalPaid, 2, currencyType);
+  totalPayFirst = formatMoney(totalPayFirst, 2, currencyType);
+  totalDirectPaid = formatMoney(totalDirectPaid, 2, currencyType);
   totalRemain = formatMoney(totalRemain, 2, currencyType);
   totalUnPaid = formatMoney(totalUnPaid, 2, currencyType);
 
   return {
-    info: { totalMember, totalPaid, totalRemain, totalSpend, totalUnPaid },
+    info: {
+      totalMember,
+      totalPaid,
+      totalPayFirst,
+      totalDirectPaid,
+      totalRemain,
+      totalSpend,
+      totalUnPaid
+    },
     newData,
   };
 }
@@ -131,7 +150,17 @@ export function getMemberID(allMember, selectedMember) {
 }
 
 export function functionRenderColumns(rows) {
-  let headerValues = ["ID", "Name", "Paid", "Remain", "Unpaid"];
+  let headerValues = ["ID", "Name", "Pay First", "Direct Paid", "Total Paid", "Remain", "Unpaid"];
+  let headerMapping = {
+    "id": "ID",
+    "name": "Name",
+    "payFirst": "Pay First",
+    "directPaid": "Direct Paid",
+    "totalPaid": "Total Paid",
+    "remain": "Remain",
+    "unpaid": "Unpaid"
+  };
+
   let newColumns = [],
     key;
   try {
@@ -139,15 +168,24 @@ export function functionRenderColumns(rows) {
   } catch {
     key = headerValues;
   }
+
   for (let i in key) {
     let title = key[i];
-    for (let j in headerValues) {
-      if (
-        key[i].toLocaleLowerCase().includes(headerValues[j].toLocaleLowerCase())
-      ) {
-        title = headerValues[j];
+
+    // Check if we have a direct mapping for this key
+    if (headerMapping[key[i]]) {
+      title = headerMapping[key[i]];
+    } else {
+      // Fall back to the old method for trip-specific columns
+      for (let j in headerValues) {
+        if (
+          key[i].toLocaleLowerCase().includes(headerValues[j].toLocaleLowerCase())
+        ) {
+          title = headerValues[j];
+        }
       }
     }
+
     newColumns[i] = {
       field: key[i],
       headerName: title,
@@ -155,6 +193,7 @@ export function functionRenderColumns(rows) {
       align: "center",
       minWidth: 110 + key[i].length,
     };
+
     if (title === "Name") {
       newColumns[i] = {
         ...newColumns[i],
@@ -164,6 +203,7 @@ export function functionRenderColumns(rows) {
         hideable: false,
       };
     }
+
     if (title === "Remain" || title === "Unpaid") {
       newColumns[i] = {
         ...newColumns[i],
@@ -172,6 +212,16 @@ export function functionRenderColumns(rows) {
         align: "right",
       };
     }
+
+    if (title === "Pay First" || title === "Direct Paid" || title === "Total Paid") {
+      newColumns[i] = {
+        ...newColumns[i],
+        minWidth: 110,
+        headerAlign: "right",
+        align: "right",
+      };
+    }
+
     if (title === "ID") {
       newColumns[i] = {
         ...newColumns[i],
@@ -181,6 +231,7 @@ export function functionRenderColumns(rows) {
       };
     }
   }
+
   return newColumns;
 }
 
