@@ -3,7 +3,6 @@ import sjcl from "sjcl";
 
 export function calculateMoney(allMembers, trips, currencyType) {
   let newData = [];
-  let kitLuy = {};
 
   let totalMember = 0,
     totalPaid = 0,
@@ -15,80 +14,110 @@ export function calculateMoney(allMembers, trips, currencyType) {
 
   // First, calculate how much each member has paid for trips (Pay First)
   const memberPayments = {};
+  const memberShares = {}; // Track how much each member owes for trips they joined
+
+  // Initialize tracking objects
   allMembers.forEach(member => {
     memberPayments[member.id] = 0;
+    memberShares[member.id] = 0;
   });
 
   // Add payments made by members as payers (Pay First)
   trips.forEach(trip => {
     const payerId = trip.payer_id ? Number(trip.payer_id) : null;
+    const spend = Number(trip.spend);
+
     if (payerId) {
-      memberPayments[payerId] = (memberPayments[payerId] || 0) + Number(trip.spend);
+      memberPayments[payerId] = (memberPayments[payerId] || 0) + spend;
+    }
+
+    // Calculate each member's share of this trip
+    let mem_id = trip.mem_id;
+    try {
+      mem_id = JSON.parse(mem_id);
+    } catch(e) {
+      console.log("mem_id already array");
+    }
+
+    const joinedMemCount = getMemberID(allMembers, mem_id);
+    if (joinedMemCount > 0) {
+      const sharePerMember = spend / joinedMemCount;
+
+      mem_id.forEach(joined => {
+        const memberId = Number(joined);
+        if (memberShares[memberId] !== undefined) {
+          memberShares[memberId] += sharePerMember;
+        }
+      });
     }
   });
 
   newData = allMembers.map((member, id) => {
-    let luyForTrip = 0; // How much this member owes for all trips they participated in
-    let payFirst = memberPayments[member.id] || 0; // How much this member paid as a payer (Pay First)
-    let directPaid = member.paid || 0; // How much this member has directly paid to the group (from member_infm table)
-    let totalPaidAmount = directPaid + payFirst; // Total amount paid (direct payments + trip payments)
-    let luySol = totalPaidAmount; // Initial balance
+    const memberId = member.id;
 
+    // How much this member paid as a payer (Pay First)
+    const payFirst = memberPayments[memberId] || 0;
+
+    // How much this member has directly paid to the group (from member_infm table)
+    const directPaid = member.paid || 0;
+
+    // How much this member owes for all trips they participated in
+    const memberShare = memberShares[memberId] || 0;
+
+    // Calculate the effective direct paid amount
+    // This is the amount the member has directly contributed to the group
+    // after accounting for their "Pay First" contributions
+    const effectiveDirectPaid = directPaid;
+
+    // Total amount paid (direct payments + trip payments)
+    const totalPaidAmount = effectiveDirectPaid + payFirst;
+
+    // Calculate the remaining balance
+    // This is how much money the member has left after accounting for their share of expenses
+    let balance = totalPaidAmount - memberShare;
+
+    // Determine if the member has unpaid amounts or remaining funds
+    let remain = balance > 0 ? balance : 0;
+    let unPaid = balance < 0 ? Math.abs(balance) : 0;
+
+    // Build trip-specific expense data
+    let tripExpenses = {};
     trips.forEach((trip) => {
-      let { mem_id, spend, payer_id } = trip;
+      let { mem_id, spend } = trip;
       try {
         mem_id = JSON.parse(mem_id);
       } catch(e) {
-        console.log("mem_id already array");
+        // Already an array
       }
 
-      let osMnek = 0;
       const joinedMemCount = getMemberID(allMembers, mem_id);
 
-      // Calculate this member's share of the trip expense
-      mem_id.forEach((joined) => {
-        if (member.id == Number(joined)) {
-          // This member participated in the trip
-          const memberShare = currency(spend).divide(joinedMemCount).value;
-          osMnek = memberShare;
-          luyForTrip += memberShare;
+      // Check if this member participated in this trip
+      const participated = mem_id.some(joined => Number(joined) === memberId);
 
-          // Adjust balance based on whether this member was the payer
-          if (member.id == Number(payer_id)) {
-            // If this member paid for the trip, they only owe their share
-            // The payment itself is already accounted for in payFirst
-          } else {
-            // If someone else paid, this member owes their share
-            luySol = totalPaidAmount - luyForTrip;
-          }
-        }
-      });
-
-      // Store the amount this member owes for this specific trip
-      kitLuy[trip.trp_name] = formatMoney(osMnek, 1, currencyType);
+      if (participated && joinedMemCount > 0) {
+        const memberShare = currency(spend).divide(joinedMemCount).value;
+        tripExpenses[trip.trp_name] = formatMoney(memberShare, 1, currencyType);
+      } else {
+        tripExpenses[trip.trp_name] = "-/-";
+      }
     });
 
-    let unPaid = 0;
-    if (luySol < 0) {
-      // If balance is negative, this member owes money
-      unPaid = Math.abs(luySol);
-      luySol = 0;
-    }
-
+    // Update totals
     totalPaid += totalPaidAmount;
     totalPayFirst += payFirst;
-    totalDirectPaid += directPaid;
-    totalRemain += luySol;
+    totalDirectPaid += effectiveDirectPaid;
+    totalRemain += remain;
     totalUnPaid += unPaid;
 
     return {
       id: id + 1,
       name: member.mem_name,
-      payFirst: formatMoney(payFirst, 2, currencyType), // New column: money paid upfront for trips
-      directPaid: formatMoney(directPaid, 2, currencyType), // Renamed from 'paid': direct contributions
+      payFirst: formatMoney(payFirst, 2, currencyType), // Money paid upfront for trips
+      directPaid: formatMoney(effectiveDirectPaid, 2, currencyType), // Direct contributions
       totalPaid: formatMoney(totalPaidAmount, 2, currencyType), // Total of payFirst + directPaid
-      ...kitLuy,
-      remain: formatMoney(luySol, 2, currencyType),
+      ...tripExpenses,
+      remain: formatMoney(remain, 2, currencyType),
       unpaid: formatMoney(unPaid, 2, currencyType),
     };
   });
