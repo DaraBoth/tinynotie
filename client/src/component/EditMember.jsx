@@ -63,12 +63,15 @@ export default function EditMember({
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const handleClose = () => {
+    // Reset all form values
     setDialogValue({
       mem_name: "",
       paid: "",
     });
-    setValue("");
+    setValue(null);
     setMoney("");
+    setSelectedChip(null);
+    setCustomAmount("");
     toggleOpen(false);
   };
 
@@ -103,6 +106,7 @@ export default function EditMember({
           setValue(null);
           setMoney("");
           setSelectedChip(null);
+          setCustomAmount("");
           triggerMember({ group_id });
         });
     }
@@ -183,6 +187,17 @@ export default function EditMember({
           disablePortal
           value={value}
           onChange={(_, newValue) => {
+            // Clear all form values first
+            setMoney("");
+            setSelectedChip(null);
+            setCustomAmount("");
+
+            if (newValue === null) {
+              // If clearing the input, reset everything
+              setValue(null);
+              return;
+            }
+
             if (typeof newValue === "string") {
               // Handle string input (new member name)
               setTimeout(() => {

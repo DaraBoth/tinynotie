@@ -6,30 +6,21 @@ export function calculateMoney(allMembers, trips, currencyType) {
 
   let totalMember = 0,
     totalPaid = 0,
-    totalPayFirst = 0,
-    totalDirectPaid = 0,
     totalRemain = 0,
     totalUnPaid = 0,
     totalSpend = 0;
 
-  // First, calculate how much each member has paid for trips (Pay First)
-  const memberPayments = {};
-  const memberShares = {}; // Track how much each member owes for trips they joined
+  // Track how much each member owes for trips they joined
+  const memberShares = {};
 
   // Initialize tracking objects
   allMembers.forEach(member => {
-    memberPayments[member.id] = 0;
     memberShares[member.id] = 0;
   });
 
-  // Add payments made by members as payers (Pay First)
+  // Calculate each member's share of each trip
   trips.forEach(trip => {
-    const payerId = trip.payer_id ? Number(trip.payer_id) : null;
     const spend = Number(trip.spend);
-
-    if (payerId) {
-      memberPayments[payerId] = (memberPayments[payerId] || 0) + spend;
-    }
 
     // Calculate each member's share of this trip
     let mem_id = trip.mem_id;
@@ -55,26 +46,15 @@ export function calculateMoney(allMembers, trips, currencyType) {
   newData = allMembers.map((member, id) => {
     const memberId = member.id;
 
-    // How much this member paid as a payer (Pay First)
-    const payFirst = memberPayments[memberId] || 0;
-
-    // How much this member has directly paid to the group (from member_infm table)
-    const directPaid = member.paid || 0;
+    // How much this member has paid to the group (from member_infm table)
+    const paid = member.paid || 0;
 
     // How much this member owes for all trips they participated in
     const memberShare = memberShares[memberId] || 0;
 
-    // Calculate the effective direct paid amount
-    // This is the amount the member has directly contributed to the group
-    // after accounting for their "Pay First" contributions
-    const effectiveDirectPaid = directPaid;
-
-    // Total amount paid (direct payments + trip payments)
-    const totalPaidAmount = effectiveDirectPaid + payFirst;
-
     // Calculate the remaining balance
     // This is how much money the member has left after accounting for their share of expenses
-    let balance = totalPaidAmount - memberShare;
+    let balance = paid - memberShare;
 
     // Determine if the member has unpaid amounts or remaining funds
     let remain = balance > 0 ? balance : 0;
@@ -104,18 +84,14 @@ export function calculateMoney(allMembers, trips, currencyType) {
     });
 
     // Update totals
-    totalPaid += totalPaidAmount;
-    totalPayFirst += payFirst;
-    totalDirectPaid += effectiveDirectPaid;
+    totalPaid += paid;
     totalRemain += remain;
     totalUnPaid += unPaid;
 
     return {
       id: id + 1,
       name: member.mem_name,
-      payFirst: formatMoney(payFirst, 2, currencyType), // Money paid upfront for trips
-      directPaid: formatMoney(effectiveDirectPaid, 2, currencyType), // Direct contributions
-      totalPaid: formatMoney(totalPaidAmount, 2, currencyType), // Total of payFirst + directPaid
+      paid: formatMoney(paid, 2, currencyType), // Total amount paid by this member
       ...tripExpenses,
       remain: formatMoney(remain, 2, currencyType),
       unpaid: formatMoney(unPaid, 2, currencyType),
@@ -123,6 +99,8 @@ export function calculateMoney(allMembers, trips, currencyType) {
   });
 
   totalMember = newData.length;
+
+  // Calculate total spend (negative of the difference between total paid and remaining)
   totalSpend =
     "-" +
     currency(totalPaid, { symbol: currencyType })
@@ -130,21 +108,17 @@ export function calculateMoney(allMembers, trips, currencyType) {
       .format();
 
   // Format totals for display
-  totalPaid = formatMoney(totalPaid, 2, currencyType);
-  totalPayFirst = formatMoney(totalPayFirst, 2, currencyType);
-  totalDirectPaid = formatMoney(totalDirectPaid, 2, currencyType);
-  totalRemain = formatMoney(totalRemain, 2, currencyType);
-  totalUnPaid = formatMoney(totalUnPaid, 2, currencyType);
+  const formattedTotalPaid = formatMoney(totalPaid, 2, currencyType);
+  const formattedTotalRemain = formatMoney(totalRemain, 2, currencyType);
+  const formattedTotalUnPaid = formatMoney(totalUnPaid, 2, currencyType);
 
   return {
     info: {
       totalMember,
-      totalPaid,
-      totalPayFirst,
-      totalDirectPaid,
-      totalRemain,
+      totalPaid: formattedTotalPaid,
+      totalRemain: formattedTotalRemain,
       totalSpend,
-      totalUnPaid
+      totalUnPaid: formattedTotalUnPaid
     },
     newData,
   };
@@ -179,13 +153,11 @@ export function getMemberID(allMember, selectedMember) {
 }
 
 export function functionRenderColumns(rows) {
-  let headerValues = ["ID", "Name", "Pay First", "Direct Paid", "Total Paid", "Remain", "Unpaid"];
+  let headerValues = ["ID", "Name", "Paid", "Remain", "Unpaid"];
   let headerMapping = {
     "id": "ID",
     "name": "Name",
-    "payFirst": "Pay First",
-    "directPaid": "Direct Paid",
-    "totalPaid": "Total Paid",
+    "paid": "Paid",
     "remain": "Remain",
     "unpaid": "Unpaid"
   };
@@ -242,7 +214,7 @@ export function functionRenderColumns(rows) {
       };
     }
 
-    if (title === "Pay First" || title === "Direct Paid" || title === "Total Paid") {
+    if (title === "Paid") {
       newColumns[i] = {
         ...newColumns[i],
         minWidth: 110,

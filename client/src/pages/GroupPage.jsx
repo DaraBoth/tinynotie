@@ -834,11 +834,9 @@ export default function Group({ user, secret, setGroupInfo }) {
 const TotalSpendTable = ({ info, isLoading }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { totalPaid, totalPayFirst, totalDirectPaid, totalRemain, totalSpend, totalUnPaid } = info;
+  const { totalPaid, totalRemain, totalSpend, totalUnPaid } = info;
   const rows = [{
     id: 1,
-    totalPayFirst,
-    totalDirectPaid,
     totalPaid,
     totalRemain,
     totalSpend,
@@ -846,46 +844,8 @@ const TotalSpendTable = ({ info, isLoading }) => {
   }];
   const columns = [
     {
-      field: "totalPayFirst",
-      headerName: "Pay First",
-      width: 100,
-      headerAlign: "center",
-      align: "center",
-      renderCell: ({ value }) => (
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 600,
-            color: colors.blueAccent[theme.palette.mode === 'dark' ? 400 : 600],
-            fontSize: '0.9rem',
-          }}
-        >
-          {value}
-        </Typography>
-      ),
-    },
-    {
-      field: "totalDirectPaid",
-      headerName: "Direct Paid",
-      width: 100,
-      headerAlign: "center",
-      align: "center",
-      renderCell: ({ value }) => (
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 600,
-            color: colors.blueAccent[theme.palette.mode === 'dark' ? 400 : 600],
-            fontSize: '0.9rem',
-          }}
-        >
-          {value}
-        </Typography>
-      ),
-    },
-    {
       field: "totalPaid",
-      headerName: "Total Paid",
+      headerName: "Paid",
       width: 100,
       headerAlign: "center",
       align: "center",

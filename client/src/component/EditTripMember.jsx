@@ -40,6 +40,17 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
   const [alertType, setAlertType] = useState("success");
 
   const handleChange = (event) => {
+    // Reset state first
+    setState((prevState) => ({
+      ...prevState,
+      memberName: [],
+      memberID: [],
+      isCheckedMember: [],
+      trpIDtoEdit: "",
+      selectedPayerId: "",
+    }));
+
+    // Then set new values
     const trpNametoEdit = event.target.value;
     const memberName = getMemberName(trpNametoEdit, trip, member);
     const memberID = getMemberID(member, memberName);
@@ -61,6 +72,14 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
   };
 
   const handleChangeMemName = (event) => {
+    // Reset member-related state first
+    setState((prevState) => ({
+      ...prevState,
+      memberID: [],
+      isCheckedMember: [],
+    }));
+
+    // Then set new values
     const { value } = event.target;
     const memberName = typeof value === "string" ? value.split(",") : value;
     const memberID = getMemberID(member, memberName);

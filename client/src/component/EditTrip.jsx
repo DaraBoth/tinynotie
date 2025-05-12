@@ -81,14 +81,17 @@ export default function EditTrip({
   const colors = tokens(theme.palette.mode);
 
   const handleClose = () => {
+    // Reset all form values
     setDialogValue({
       trp_name: "",
       spended: "",
       payer_id: "",
     });
-    setValue("");
+    setValue(null);
     setMoney("");
     setSelectedPayerId("");
+    setSelectedChip(null);
+    setCustomAmount("");
     setIsEachMember(false);
     // Reset selected members to all members
     if (member && member.length > 0) {
@@ -141,6 +144,9 @@ export default function EditTrip({
           setValue(null);
           setMoney("");
           setSelectedChip(null);
+          setCustomAmount("");
+          setSelectedPayerId("");
+          setIsEachMember(false);
         });
     }
   };
@@ -283,12 +289,25 @@ export default function EditTrip({
           disablePortal
           value={value}
           onChange={(_, newValue) => {
+            // Clear all form values first
+            setMoney("");
+            setSelectedPayerId("");
+            setSelectedChip(null);
+            setCustomAmount("");
+
+            if (newValue === null) {
+              // If clearing the input, reset everything
+              setValue(null);
+              return;
+            }
+
             if (typeof newValue === "string") {
               // Handle string input (new trip name)
               toggleOpen(true);
               setDialogValue({
                 trp_name: newValue,
                 spended: "",
+                payer_id: "",
               });
             } else if (newValue && newValue.inputValue) {
               // Handle "Add new" option
@@ -296,6 +315,7 @@ export default function EditTrip({
               setDialogValue({
                 trp_name: newValue.inputValue,
                 spended: "",
+                payer_id: "",
               });
             } else {
               // Handle selecting existing trip
