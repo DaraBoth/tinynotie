@@ -6,7 +6,7 @@
             "use": "@vercel/static-build",
             "config": {
                 "distDir": "dist",
-                "installCommand": "yarn install --network-timeout 600000",
+                "installCommand": "yarn install --network-timeout 600000 --prefer-offline",
                 "buildCommand": "yarn build"
             }
         }
