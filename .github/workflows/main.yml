@@ -10,6 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Vercel API Endpoint
-        run: |
-          curl -X POST "https://tinynotie-api.vercel.app/openai/b2bAlert" \
-          -H "Content-Type: application/json" \
+        # run: |
+        #   curl -X POST "https://tinynotie-api.vercel.app/openai/b2bAlert" \
+        #   -H "Content-Type: application/json" \
