@@ -212,6 +212,7 @@ export default function Home({
   const navigate = useNavigate();
   const [tabIndex, setTabIndex] = useState(0);
   const isNonMobile = useMediaQuery("(min-width:600px)");
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // Define isMobile for responsive dialog
   const gridColItem = rspWidth("repeat(4,1fr)", "repeat(1,1fr)", "auto");
   const [openProfileSettings, setOpenProfileSettings] = useState(false); // State to control profile settings dialog
   const [profileViewMode, setProfileViewMode] = useState(false); // State to control view/edit mode
