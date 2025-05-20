@@ -9,7 +9,16 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { width: windowWidth } = useWindowDimensions();
+  const { dialogDimensions } = useWindowDimensions();
+
+  // Determine optimal dialog dimensions based on screen size
+  const {
+    width: optimalWidth,
+    maxWidth: optimalMaxWidth,
+    sideMargin,
+    isSmallDevice,
+    isVerySmallDevice
+  } = dialogDimensions;
 
   return (
     <Dialog
@@ -29,10 +38,10 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
           justifyContent: 'center',
         },
         '& .MuiBackdrop-root': {
-          zIndex: 1299 // Ensure backdrop is below the dialog
+          zIndex: -1 // Relative to the dialog itself, not an absolute z-index
         },
         '& .MuiPopover-root': {
-          zIndex: 1400 // Ensure popover menus appear above the dialog
+          zIndex: 1500 // Ensure popover menus appear above the dialog
         }
       }}
       PaperProps={{
@@ -47,7 +56,10 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
             : 'rgba(255, 255, 255, 0.9)',
           backdropFilter: "blur(10px)",
           borderRadius: "16px",
-          padding: { xs: "16px", md: "20px" },
+          padding: {
+            xs: isVerySmallDevice ? "12px" : isSmallDevice ? "14px" : "16px",
+            md: "20px"
+          },
           color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
           border: `1px solid ${theme.palette.mode === 'dark'
             ? 'rgba(255, 255, 255, 0.08)'
@@ -56,10 +68,10 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
             ? '0 10px 25px rgba(0, 0, 0, 0.5)'
             : '0 10px 25px rgba(0, 0, 0, 0.1)',
           overflow: "hidden",
-          margin: isMobile ? '32px' : '16px',
+          margin: `${sideMargin}px`,
           position: 'relative',
-          width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with even larger margins
-          maxWidth: isMobile ? `${windowWidth - 64}px` : "550px",
+          width: isMobile ? `${optimalWidth}px` : "auto",
+          maxWidth: isMobile ? `${optimalMaxWidth}px` : "550px",
           minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
           ...sx,
         },
@@ -136,14 +148,20 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
       <DialogContent
         sx={{
           color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
-          padding: { xs: "16px 0", md: "20px 0" },
+          padding: {
+            xs: isVerySmallDevice ? "12px 0" : isSmallDevice ? "14px 0" : "16px 0",
+            md: "20px 0"
+          },
           position: "relative",
           zIndex: 1,
-          fontSize: { xs: "0.9rem", md: "1rem" },
+          fontSize: {
+            xs: isVerySmallDevice ? "0.85rem" : "0.9rem",
+            md: "1rem"
+          },
           overflowY: "auto",
-          maxHeight: "calc(100vh - 200px)",
+          maxHeight: isMobile ? `calc(100vh - ${sideMargin * 2 + 120}px)` : "calc(100vh - 200px)",
           '&::-webkit-scrollbar': {
-            width: '8px',
+            width: isMobile ? '6px' : '8px',
           },
           '&::-webkit-scrollbar-track': {
             background: 'transparent',
@@ -166,13 +184,18 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
 
       <DialogActions
         sx={{
-          padding: { xs: "16px 0 0 0", md: "20px 0 0 0" },
+          padding: {
+            xs: isVerySmallDevice ? "12px 0 0 0" : isSmallDevice ? "14px 0 0 0" : "16px 0 0 0",
+            md: "20px 0 0 0"
+          },
           position: "relative",
           zIndex: 1,
           borderTop: `1px solid ${theme.palette.mode === 'dark'
             ? 'rgba(255, 255, 255, 0.08)'
             : 'rgba(0, 0, 0, 0.08)'}`,
-          marginTop: 2,
+          marginTop: isVerySmallDevice ? 1 : isSmallDevice ? 1.5 : 2,
+          justifyContent: "flex-end",
+          gap: 1,
         }}
       >
         <Button
@@ -186,9 +209,16 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
             borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
             textTransform: "none",
             fontWeight: "500",
-            fontSize: { xs: "0.8rem", md: "0.9rem" },
-            padding: { xs: "6px 16px", md: "8px 20px" },
+            fontSize: {
+              xs: isVerySmallDevice ? "0.75rem" : "0.8rem",
+              md: "0.9rem"
+            },
+            padding: {
+              xs: isVerySmallDevice ? "4px 12px" : isSmallDevice ? "5px 14px" : "6px 16px",
+              md: "8px 20px"
+            },
             borderRadius: "8px",
+            minWidth: isVerySmallDevice ? "60px" : isSmallDevice ? "70px" : "80px",
             '&:hover': {
               borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
               backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',

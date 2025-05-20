@@ -17,6 +17,7 @@ import {
   Skeleton,
   CircularProgress,
   Slide,
+  Tooltip,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import SpaceSkyNew from "../component/SpaceSkyNew";
@@ -38,6 +39,7 @@ import ProfileSettings from "../component/ProfileSettings";
 import defaultProfileImage from "../../public/default_profile.jpg";
 import HomeTopbar from "../global/HomeTopbar";
 import { Stack } from "@mui/system";
+import useWindowDimensions from "../hooks/useWindowDimensions";
 
 function GroupCard({ item, onDelete, onClick }) {
   const theme = useTheme();
@@ -138,35 +140,49 @@ function GroupCard({ item, onDelete, onClick }) {
       </Box>
 
       {item.isAdmin && (
-        <IconButton
-          component={motion.button}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          aria-label="delete"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(item.id);
-          }}
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            color: colors.redAccent[500],
-            padding: "6px",
-            backgroundColor: theme.palette.mode === 'dark'
-              ? 'rgba(0, 0, 0, 0.2)'
-              : 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: "blur(4px)",
-            '&:hover': {
+        <Tooltip title="Delete Group" placement="top" arrow>
+          <IconButton
+            component={motion.button}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="delete group"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(item.id);
+            }}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              color: colors.redAccent[500],
+              padding: { xs: "8px", md: "10px" }, // Increased padding for larger touch target
+              minWidth: { xs: "36px", md: "40px" }, // Ensure minimum width
+              minHeight: { xs: "36px", md: "40px" }, // Ensure minimum height
               backgroundColor: theme.palette.mode === 'dark'
-                ? 'rgba(255, 0, 0, 0.1)'
-                : 'rgba(255, 0, 0, 0.05)',
-            }
-          }}
-          size="small"
-        >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
+                ? 'rgba(0, 0, 0, 0.4)'
+                : 'rgba(255, 255, 255, 0.4)',
+              backdropFilter: "blur(4px)",
+              border: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 0, 0, 0.2)'
+                : 'rgba(255, 0, 0, 0.1)'}`,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              zIndex: 10, // Ensure it's above other elements
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 0, 0, 0.2)'
+                  : 'rgba(255, 0, 0, 0.1)',
+              },
+              '&:active': {
+                backgroundColor: theme.palette.mode === 'dark'
+                  ? 'rgba(255, 0, 0, 0.3)'
+                  : 'rgba(255, 0, 0, 0.2)',
+              }
+            }}
+            size="medium" // Changed from small to medium
+          >
+            <DeleteIcon sx={{ fontSize: { xs: "1.2rem", md: "1.3rem" } }} />
+          </IconButton>
+        </Tooltip>
       )}
     </Paper>
   );
@@ -202,6 +218,16 @@ export default function Home({
   const [getUserProfile, { data: userProfile }] = useLazyGetUserProfileQuery(); // Lazy query for user profile
   const [profileData, setProfileData] = useState(null); // Shared state for profile data
   const [scrollDirection, setScrollDirection] = useState("up"); // Track scroll direction
+  const { dialogDimensions } = useWindowDimensions(); // Get responsive dialog dimensions
+
+  // Determine optimal dialog dimensions based on screen size
+  const {
+    width: optimalWidth,
+    maxWidth: optimalMaxWidth,
+    sideMargin,
+    isSmallDevice,
+    isVerySmallDevice
+  } = dialogDimensions;
 
   const handleTabChange = (_, newValue) => {
     setTabIndex(newValue);
@@ -758,7 +784,7 @@ export default function Home({
         sx={{
           zIndex: 1300, // Standard MUI Dialog z-index
           '& .MuiBackdrop-root': {
-            zIndex: 1299 // Ensure backdrop is below the dialog
+            zIndex: -1 // Relative to the dialog itself, not an absolute z-index
           }
         }}
         PaperProps={{
@@ -772,7 +798,10 @@ export default function Home({
               : 'rgba(255, 255, 255, 0.9)',
             backdropFilter: "blur(10px)",
             borderRadius: "16px",
-            padding: { xs: "16px", md: "20px" },
+            padding: {
+              xs: isVerySmallDevice ? "12px" : isSmallDevice ? "14px" : "16px",
+              md: "20px"
+            },
             color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
             border: `1px solid ${theme.palette.mode === 'dark'
               ? 'rgba(255, 255, 255, 0.08)'
@@ -781,9 +810,10 @@ export default function Home({
               ? '0 10px 25px rgba(0, 0, 0, 0.5)'
               : '0 10px 25px rgba(0, 0, 0, 0.1)',
             overflow: "hidden",
-            maxWidth: "400px",
-            width: "100%",
-            margin: "16px",
+            width: isMobile ? `${optimalWidth}px` : "auto",
+            maxWidth: isMobile ? `${optimalMaxWidth}px` : "400px",
+            minWidth: isMobile ? "auto" : "350px", // Smaller minWidth for confirmation dialog
+            margin: `${sideMargin}px`,
           },
         }}
       >
@@ -804,7 +834,10 @@ export default function Home({
 
         <DialogTitle
           sx={{
-            padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+            padding: {
+              xs: isVerySmallDevice ? "0 0 12px 0" : isSmallDevice ? "0 0 14px 0" : "0 0 16px 0",
+              md: "0 0 20px 0"
+            },
             position: "relative",
             zIndex: 1
           }}
@@ -816,7 +849,7 @@ export default function Home({
                   ? 'rgba(255, 59, 59, 0.15)'
                   : 'rgba(255, 59, 59, 0.1)',
                 borderRadius: "12px",
-                padding: "10px",
+                padding: isVerySmallDevice ? "8px" : isSmallDevice ? "9px" : "10px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center"
@@ -825,7 +858,10 @@ export default function Home({
               <WarningIcon
                 sx={{
                   color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
-                  fontSize: { xs: "1.3rem", md: "1.5rem" }
+                  fontSize: {
+                    xs: isVerySmallDevice ? "1.1rem" : isSmallDevice ? "1.2rem" : "1.3rem",
+                    md: "1.5rem"
+                  }
                 }}
               />
             </Box>
@@ -833,7 +869,10 @@ export default function Home({
               variant="h6"
               sx={{
                 color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
-                fontSize: { xs: "1rem", md: "1.1rem" },
+                fontSize: {
+                  xs: isVerySmallDevice ? "0.9rem" : isSmallDevice ? "0.95rem" : "1rem",
+                  md: "1.1rem"
+                },
                 fontWeight: "600",
                 letterSpacing: "-0.01em"
               }}
@@ -843,14 +882,24 @@ export default function Home({
           </Stack>
         </DialogTitle>
 
-        <DialogContent sx={{ padding: "0", position: "relative", zIndex: 1 }}>
+        <DialogContent sx={{
+          padding: {
+            xs: isVerySmallDevice ? "0 0 8px 0" : isSmallDevice ? "0 0 10px 0" : "0",
+            md: "0"
+          },
+          position: "relative",
+          zIndex: 1
+        }}>
           <Typography
             variant="body1"
             color={theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700]}
             sx={{
-              fontSize: { xs: "0.85rem", md: "0.95rem" },
+              fontSize: {
+                xs: isVerySmallDevice ? "0.8rem" : isSmallDevice ? "0.85rem" : "0.85rem",
+                md: "0.95rem"
+              },
               lineHeight: 1.5,
-              mb: 3
+              mb: isVerySmallDevice ? 2 : 3
             }}
           >
             Are you sure you want to delete <strong>"{noteToDeleteName}"</strong>? <br />
@@ -860,10 +909,13 @@ export default function Home({
 
         <DialogActions
           sx={{
-            padding: "0",
+            padding: {
+              xs: isVerySmallDevice ? "8px 0 0 0" : isSmallDevice ? "10px 0 0 0" : "0",
+              md: "0"
+            },
             display: "flex",
             justifyContent: "flex-end",
-            gap: "12px",
+            gap: isVerySmallDevice ? "8px" : "12px",
             position: "relative",
             zIndex: 1
           }}
@@ -871,14 +923,22 @@ export default function Home({
           <Button
             onClick={() => setOpenDeleteDialog(false)}
             variant="outlined"
+            size={isVerySmallDevice ? "small" : "medium"}
             sx={{
               color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
               borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
               textTransform: "none",
               fontWeight: "500",
-              fontSize: { xs: "0.8rem", md: "0.9rem" },
-              padding: { xs: "6px 16px", md: "8px 20px" },
+              fontSize: {
+                xs: isVerySmallDevice ? "0.75rem" : "0.8rem",
+                md: "0.9rem"
+              },
+              padding: {
+                xs: isVerySmallDevice ? "4px 10px" : isSmallDevice ? "5px 12px" : "6px 16px",
+                md: "8px 20px"
+              },
               borderRadius: "8px",
+              minWidth: isVerySmallDevice ? "60px" : isSmallDevice ? "70px" : "80px",
               '&:hover': {
                 borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
                 backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
@@ -891,8 +951,9 @@ export default function Home({
           <Button
             onClick={() => handleDeleteNote(noteToDelete)}
             variant="contained"
+            size={isVerySmallDevice ? "small" : "medium"}
             disabled={deleting}
-            startIcon={deleting && <CircularProgress size="1rem" color="inherit" />}
+            startIcon={deleting && <CircularProgress size={isVerySmallDevice ? "0.8rem" : "1rem"} color="inherit" />}
             component={motion.button}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -904,9 +965,16 @@ export default function Home({
               },
               textTransform: "none",
               fontWeight: "500",
-              fontSize: { xs: "0.8rem", md: "0.9rem" },
-              padding: { xs: "6px 16px", md: "8px 20px" },
+              fontSize: {
+                xs: isVerySmallDevice ? "0.75rem" : "0.8rem",
+                md: "0.9rem"
+              },
+              padding: {
+                xs: isVerySmallDevice ? "4px 10px" : isSmallDevice ? "5px 12px" : "6px 16px",
+                md: "8px 20px"
+              },
               borderRadius: "8px",
+              minWidth: isVerySmallDevice ? "80px" : isSmallDevice ? "90px" : "100px",
               boxShadow: theme.palette.mode === 'dark'
                 ? '0 4px 10px rgba(255, 59, 59, 0.2)'
                 : '0 4px 10px rgba(255, 59, 59, 0.15)',
@@ -924,7 +992,7 @@ export default function Home({
         TransitionComponent={Slide}
         TransitionProps={{ direction: "left" }}
         sx={{
-          zIndex: 1500, // Higher than all dialogs
+          zIndex: 1700, // Higher than all dialogs and confirmation dialogs
           '& .MuiPaper-root': {
             borderRadius: '12px',
             fontSize: { xs: "0.8rem", md: "0.9rem" },

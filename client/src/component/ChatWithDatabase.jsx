@@ -30,7 +30,17 @@ const FloatingChat = ({ userId, scrollDirection }) => {
   const colors = tokens(theme.palette.mode);
   const chatContainerRef = useRef(null); // Ref for the chat container
   const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // Check if screen is mobile
-  const { width: windowWidth } = useWindowDimensions(); // Get window width
+  const { dialogDimensions } = useWindowDimensions(); // Get responsive dialog dimensions
+
+  // Determine optimal dialog dimensions based on screen size
+  const {
+    width: optimalWidth,
+    maxWidth: optimalMaxWidth,
+    height: optimalHeight,
+    sideMargin,
+    isSmallDevice,
+    isVerySmallDevice
+  } = dialogDimensions;
 
   useEffect(() => {
     const chatHistory =
@@ -125,7 +135,6 @@ const FloatingChat = ({ userId, scrollDirection }) => {
         TransitionProps={{ direction: "up" }}
         sx={{
           zIndex: 1600, // Higher z-index to ensure it appears above floating buttons
-          width:`${windowWidth - 500}px`,
           '& .MuiDialog-container': {
             display: 'flex',
             alignItems: 'center',
@@ -135,12 +144,12 @@ const FloatingChat = ({ userId, scrollDirection }) => {
         PaperProps={{
           sx: {
             borderRadius: '16px',
-            height: isMobile ? "80vh" : "80vh",
-            maxHeight: isMobile ? "80vh" : "80vh",
-            width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with even larger margins
-            maxWidth: isMobile ? `${windowWidth - 64}px` : "550px",
+            height: isMobile ? `${optimalHeight}px` : "80vh",
+            maxHeight: isMobile ? `${optimalHeight}px` : "80vh",
+            width: isMobile ? `${optimalWidth}px` : "auto",
+            maxWidth: isMobile ? `${optimalMaxWidth}px` : "550px",
             minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
-            margin: isMobile ? "32px auto" : "auto",
+            margin: `${sideMargin}px auto`,
             backgroundColor: theme.palette.mode === 'dark'
               ? 'rgba(20, 23, 39, 0.9)'
               : 'rgba(255, 255, 255, 0.9)',
@@ -222,7 +231,9 @@ const FloatingChat = ({ userId, scrollDirection }) => {
           sx={{
             backgroundColor: 'transparent',
             color: theme.palette.mode === 'dark' ? '#fff' : '#333',
-            padding: isMobile ? "12px" : "16px",
+            padding: isMobile
+              ? isVerySmallDevice ? "8px" : isSmallDevice ? "10px" : "12px"
+              : "16px",
             height: 'calc(100% - 64px)',
             display: 'flex',
             flexDirection: 'column',

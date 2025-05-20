@@ -43,7 +43,16 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { width: windowWidth } = useWindowDimensions();
+  const { dialogDimensions } = useWindowDimensions();
+
+  // Determine optimal dialog dimensions based on screen size
+  const {
+    width: optimalWidth,
+    maxWidth: optimalMaxWidth,
+    sideMargin,
+    isSmallDevice,
+    isVerySmallDevice
+  } = dialogDimensions;
   const [visibility, setVisibility] = useState("public");
   const [allowedUsers, setAllowedUsers] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
@@ -266,10 +275,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
             justifyContent: 'center',
           },
           '& .MuiBackdrop-root': {
-            zIndex: 1299 // Ensure backdrop is below the dialog
+            zIndex: -1 // Relative to the dialog itself, not an absolute z-index
           },
           '& .MuiPopover-root': {
-            zIndex: 1400 // Ensure popover menus appear above the dialog
+            zIndex: 1500 // Ensure popover menus appear above the dialog
           }
         }}
         PaperProps={{
@@ -293,10 +302,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               ? '0 10px 25px rgba(0, 0, 0, 0.5)'
               : '0 10px 25px rgba(0, 0, 0, 0.1)',
             overflow: "hidden",
-            width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with larger margins
-            maxWidth: isMobile ? `${windowWidth - 64}px` : "md",
+            width: isMobile ? `${optimalWidth}px` : "auto",
+            maxWidth: isMobile ? `${optimalMaxWidth}px` : "md",
             minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
-            margin: isMobile ? '32px' : 'auto',
+            margin: `${sideMargin}px`,
           },
         }}
       >
@@ -312,7 +321,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               backgroundColor: theme.palette.mode === "dark"
                 ? "rgba(20, 23, 39, 0.7)"
                 : "rgba(255, 255, 255, 0.7)",
-              zIndex: 1300,
+              zIndex: 1350, // Higher than the dialog (1300) but lower than confirmation dialog (1400)
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -679,7 +688,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                       backgroundColor: theme.palette.mode === 'dark'
                         ? 'rgba(20, 23, 39, 0.85)'
                         : 'rgba(255, 255, 255, 0.85)',
-                      zIndex: 100, // Higher z-index but still within the dialog context
+                      zIndex: 1200, // High enough to be above content but below dialog overlays
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -781,7 +790,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
         onClose={() => setSnackbarMessage("")}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
         sx={{
-          zIndex: 1500, // Higher than all dialogs
+          zIndex: 1700, // Higher than all dialogs and confirmation dialogs
         }}
       >
         <Alert
@@ -800,14 +809,14 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
       <Dialog
         open={showConfirmationDialog}
         sx={{
-          zIndex: 1400, // Higher than the parent dialog
+          zIndex: 1600, // Much higher than the parent dialog (1300) and loading overlay (1350)
           '& .MuiDialog-container': {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           },
           '& .MuiBackdrop-root': {
-            zIndex: 1399 // Ensure backdrop is below the dialog
+            zIndex: -1 // Relative to the dialog itself, not an absolute z-index
           }
         }}
         PaperProps={{
@@ -822,7 +831,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               : 'rgba(255, 255, 255, 0.9)',
             backdropFilter: "blur(10px)",
             borderRadius: "16px",
-            padding: { xs: "16px", md: "20px" },
+            padding: {
+              xs: isVerySmallDevice ? "12px" : isSmallDevice ? "14px" : "16px",
+              md: "20px"
+            },
             color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
             border: `1px solid ${theme.palette.mode === 'dark'
               ? 'rgba(255, 255, 255, 0.08)'
@@ -831,6 +843,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               ? '0 10px 25px rgba(0, 0, 0, 0.5)'
               : '0 10px 25px rgba(0, 0, 0, 0.1)',
             overflow: "hidden",
+            width: isMobile ? `${optimalWidth}px` : "auto",
+            maxWidth: isMobile ? `${optimalMaxWidth}px` : "450px",
+            minWidth: isMobile ? "auto" : "350px", // Smaller minWidth for confirmation dialog
+            margin: `${sideMargin}px`,
           },
         }}
       >
@@ -852,7 +868,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
 
         <DialogTitle
           sx={{
-            padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+            padding: {
+              xs: isVerySmallDevice ? "0 0 12px 0" : isSmallDevice ? "0 0 14px 0" : "0 0 16px 0",
+              md: "0 0 20px 0"
+            },
             position: "relative",
             zIndex: 1,
             display: "flex",
@@ -860,7 +879,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
             borderBottom: `1px solid ${theme.palette.mode === 'dark'
               ? 'rgba(255, 255, 255, 0.08)'
               : 'rgba(0, 0, 0, 0.08)'}`,
-            marginBottom: 2,
+            marginBottom: isVerySmallDevice ? 1 : isSmallDevice ? 1.5 : 2,
           }}
         >
           <Box
@@ -869,17 +888,20 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                 ? 'rgba(255, 59, 59, 0.15)'
                 : 'rgba(255, 59, 59, 0.1)',
               borderRadius: "12px",
-              padding: "10px",
+              padding: isVerySmallDevice ? "8px" : isSmallDevice ? "9px" : "10px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginRight: 1.5
+              marginRight: isVerySmallDevice ? 1 : 1.5
             }}
           >
             <WarningIcon
               sx={{
                 color: colors.redAccent[theme.palette.mode === 'dark' ? 400 : 600],
-                fontSize: { xs: "1.2rem", md: "1.3rem" }
+                fontSize: {
+                  xs: isVerySmallDevice ? "1rem" : isSmallDevice ? "1.1rem" : "1.2rem",
+                  md: "1.3rem"
+                }
               }}
             />
           </Box>
@@ -887,7 +909,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
             variant="h6"
             sx={{
               color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
-              fontSize: { xs: "1.1rem", md: "1.2rem" },
+              fontSize: {
+                xs: isVerySmallDevice ? "0.95rem" : isSmallDevice ? "1rem" : "1.1rem",
+                md: "1.2rem"
+              },
               fontWeight: 600,
               letterSpacing: "-0.01em"
             }}
@@ -898,7 +923,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
 
         <DialogContent
           sx={{
-            padding: { xs: "16px 0", md: "20px 0" },
+            padding: {
+              xs: isVerySmallDevice ? "12px 0" : isSmallDevice ? "14px 0" : "16px 0",
+              md: "20px 0"
+            },
             position: "relative",
             zIndex: 1,
           }}
@@ -907,7 +935,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
             variant="body1"
             sx={{
               color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
-              fontSize: { xs: "0.9rem", md: "1rem" },
+              fontSize: {
+                xs: isVerySmallDevice ? "0.85rem" : "0.9rem",
+                md: "1rem"
+              },
               lineHeight: 1.5,
             }}
           >
@@ -917,16 +948,19 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
 
         <DialogActions
           sx={{
-            padding: { xs: "16px 0 0 0", md: "20px 0 0 0" },
+            padding: {
+              xs: isVerySmallDevice ? "12px 0 0 0" : isSmallDevice ? "14px 0 0 0" : "16px 0 0 0",
+              md: "20px 0 0 0"
+            },
             position: "relative",
             zIndex: 1,
             borderTop: `1px solid ${theme.palette.mode === 'dark'
               ? 'rgba(255, 255, 255, 0.08)'
               : 'rgba(0, 0, 0, 0.08)'}`,
-            marginTop: 2,
+            marginTop: isVerySmallDevice ? 1 : isSmallDevice ? 1.5 : 2,
             display: "flex",
             justifyContent: "flex-end",
-            gap: 2
+            gap: isVerySmallDevice ? 1 : 2
           }}
         >
           <Button
@@ -935,14 +969,22 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
             component={motion.button}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            size={isVerySmallDevice ? "small" : "medium"}
             sx={{
               color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
               borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
               textTransform: "none",
               fontWeight: "500",
-              fontSize: { xs: "0.8rem", md: "0.9rem" },
-              padding: { xs: "6px 16px", md: "8px 20px" },
+              fontSize: {
+                xs: isVerySmallDevice ? "0.75rem" : "0.8rem",
+                md: "0.9rem"
+              },
+              padding: {
+                xs: isVerySmallDevice ? "4px 10px" : isSmallDevice ? "5px 12px" : "6px 16px",
+                md: "8px 20px"
+              },
               borderRadius: "8px",
+              minWidth: isVerySmallDevice ? "70px" : isSmallDevice ? "80px" : "90px",
               '&:hover': {
                 borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
                 backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
@@ -958,6 +1000,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
             component={motion.button}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            size={isVerySmallDevice ? "small" : "medium"}
             autoFocus
             sx={{
               backgroundColor: colors.redAccent[theme.palette.mode === 'dark' ? 500 : 600],
@@ -967,9 +1010,16 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
               },
               textTransform: "none",
               fontWeight: "500",
-              fontSize: { xs: "0.8rem", md: "0.9rem" },
-              padding: { xs: "6px 16px", md: "8px 20px" },
+              fontSize: {
+                xs: isVerySmallDevice ? "0.75rem" : "0.8rem",
+                md: "0.9rem"
+              },
+              padding: {
+                xs: isVerySmallDevice ? "4px 10px" : isSmallDevice ? "5px 12px" : "6px 16px",
+                md: "8px 20px"
+              },
               borderRadius: "8px",
+              minWidth: isVerySmallDevice ? "90px" : isSmallDevice ? "100px" : "110px",
               boxShadow: theme.palette.mode === 'dark'
                 ? '0 4px 10px rgba(255, 59, 59, 0.2)'
                 : '0 4px 10px rgba(255, 59, 59, 0.15)',

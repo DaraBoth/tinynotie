@@ -39,7 +39,16 @@ export default function ShareModal({
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { width: windowWidth } = useWindowDimensions();
+  const { dialogDimensions } = useWindowDimensions();
+
+  // Determine optimal dialog dimensions based on screen size
+  const {
+    width: optimalWidth,
+    maxWidth: optimalMaxWidth,
+    sideMargin,
+    isSmallDevice,
+    isVerySmallDevice
+  } = dialogDimensions;
 
   // State for bank details
   const [bankName, setBankName] = useState(
@@ -258,7 +267,10 @@ export default function ShareModal({
             : 'rgba(255, 255, 255, 0.9)',
           backdropFilter: "blur(10px)",
           borderRadius: "16px",
-          padding: { xs: "16px", md: "20px" },
+          padding: {
+            xs: isVerySmallDevice ? "12px" : isSmallDevice ? "14px" : "16px",
+            md: "20px"
+          },
           color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
           border: `1px solid ${theme.palette.mode === 'dark'
             ? 'rgba(255, 255, 255, 0.08)'
@@ -267,10 +279,10 @@ export default function ShareModal({
             ? '0 10px 25px rgba(0, 0, 0, 0.5)'
             : '0 10px 25px rgba(0, 0, 0, 0.1)',
           overflow: "hidden",
-          margin: isMobile ? '32px' : '16px',
-          width: isMobile ? `${windowWidth - 64}px` : "auto", // Calculate exact width with even larger margins
-          maxWidth: isMobile ? `${windowWidth - 64}px` : "550px",
-          minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
+          margin: `${sideMargin}px`,
+          width: isMobile ? `${optimalWidth}px` : "auto",
+          maxWidth: isMobile ? `${optimalMaxWidth}px` : "550px",
+          minWidth: isMobile ? "auto" : "450px" // Override default minWidth for mobile
         },
       }}
     >
@@ -363,11 +375,17 @@ export default function ShareModal({
       </DialogTitle>
       <DialogContent
         sx={{
-          padding: { xs: "16px 0", md: "20px 0" },
+          padding: {
+            xs: isVerySmallDevice ? "12px 0" : isSmallDevice ? "14px 0" : "16px 0",
+            md: "20px 0"
+          },
           position: "relative",
           zIndex: 1,
           color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
-          fontSize: { xs: "0.9rem", md: "1rem" },
+          fontSize: {
+            xs: isVerySmallDevice ? "0.85rem" : "0.9rem",
+            md: "1rem"
+          },
         }}
       >
         <Box display="flex" alignItems="center" justifyContent="space-between">

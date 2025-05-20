@@ -675,21 +675,33 @@ const ReceiptScanner = ({
               ? 'rgba(20, 23, 39, 0.4)'
               : 'rgba(255, 255, 255, 0.4)',
             borderRadius: "12px",
-            padding: "16px",
+            padding: { xs: "16px 12px", sm: "16px", md: "20px" },
             border: `1px solid ${theme.palette.mode === 'dark'
               ? 'rgba(255, 255, 255, 0.08)'
               : 'rgba(0, 0, 0, 0.08)'}`,
             height: "auto",
             width: "100%",
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 4px 12px rgba(0, 0, 0, 0.2)'
+              : '0 4px 12px rgba(0, 0, 0, 0.05)',
+            display: "flex",
+            flexDirection: "column",
           }}
         >
+          {/* Header section with title and action buttons */}
           <Box
             sx={{
               display: "flex",
-              flexDirection: "row",
+              flexDirection: { xs: "column", sm: "row" },
               justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "16px",
+              alignItems: { xs: "flex-start", sm: "center" },
+              marginBottom: { xs: "12px", sm: "16px", md: "20px" },
+              gap: { xs: "12px", sm: "0" },
+              width: "100%",
+              borderBottom: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.05)'}`,
+              paddingBottom: { xs: "12px", sm: "16px" },
             }}
           >
             <Typography
@@ -697,12 +709,21 @@ const ReceiptScanner = ({
               sx={{
                 fontWeight: 600,
                 color: theme.palette.mode === 'dark' ? colors.grey[200] : colors.grey[800],
+                fontSize: { xs: "1rem", md: "1.1rem" },
+                letterSpacing: "-0.01em",
               }}
             >
               Extracted Items
             </Typography>
 
-            <Box sx={{ display: "flex", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                gap: { xs: "8px", sm: "12px" },
+                width: { xs: "100%", sm: "auto" },
+                justifyContent: { xs: "space-between", sm: "flex-end" },
+              }}
+            >
               <Button
                 variant="outlined"
                 size="small"
@@ -712,6 +733,9 @@ const ReceiptScanner = ({
                   borderRadius: "8px",
                   color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
                   borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+                  padding: { xs: "6px 12px", md: "6px 16px" },
+                  minWidth: { xs: "80px", sm: "100px" },
+                  fontWeight: 500,
                   '&:hover': {
                     borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
                     backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
@@ -730,6 +754,9 @@ const ReceiptScanner = ({
                   borderRadius: "8px",
                   backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 500 : 600],
                   color: "#fff",
+                  padding: { xs: "6px 12px", md: "6px 16px" },
+                  minWidth: { xs: "90px", sm: "110px" },
+                  fontWeight: 500,
                   "&:hover": {
                     backgroundColor: colors.primary[theme.palette.mode === 'dark' ? 600 : 700],
                   },
@@ -743,107 +770,177 @@ const ReceiptScanner = ({
             </Box>
           </Box>
 
-          <DataGrid
+          {/* Data grid container with improved styling */}
+          <Box
             sx={{
-              height: { xs: "50vh", md: "40vh" },
-              border: "none",
-              "& .MuiDataGrid-columnHeaders": {
-                backgroundColor: theme.palette.mode === 'dark'
-                  ? 'rgba(20, 23, 39, 0.6)'
-                  : 'rgba(240, 240, 240, 0.6)',
-                color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
-                borderRadius: "8px",
-                '& .MuiDataGrid-columnHeaderTitle': {
-                  fontWeight: 600,
-                },
-              },
-              "& .MuiDataGrid-virtualScroller": {
-                backgroundColor: theme.palette.mode === 'dark'
-                  ? 'rgba(20, 23, 39, 0.3)'
-                  : 'rgba(255, 255, 255, 0.3)',
-              },
-              "& .MuiDataGrid-row": {
-                borderRadius: "8px",
-                marginTop: "4px",
-                backgroundColor: theme.palette.mode === 'dark'
-                  ? 'rgba(20, 23, 39, 0.6)'
-                  : 'rgba(255, 255, 255, 0.6)',
-                "&:hover": {
-                  backgroundColor: theme.palette.mode === 'dark'
-                    ? 'rgba(30, 33, 49, 0.8)'
-                    : 'rgba(245, 245, 245, 0.8)',
-                }
-              },
-              "& .MuiDataGrid-cell": {
-                borderBottom: "none",
-              },
-              "& .MuiDataGrid-footerContainer": {
-                borderTop: "none",
-                backgroundColor: "transparent",
-              },
-              "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-                color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
-              },
-              "& .MuiDataGrid-overlay": {
-                backgroundColor: "transparent",
-              },
-              "& .MuiCircularProgress-root": {
-                color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
-              },
+              flex: 1,
+              width: "100%",
+              borderRadius: "10px",
+              overflow: "hidden",
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(20, 23, 39, 0.2)'
+                : 'rgba(255, 255, 255, 0.2)',
+              border: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(0, 0, 0, 0.03)'}`,
             }}
-            rows={tableData}
-            columns={[
-              {
-                field: "trp_name",
-                headerName: "Name",
-                flex: 1,
-                minWidth: 150,
-                editable: true,
-              },
-              {
-                field: "spend",
-                headerName: "Spend",
-                flex: 0.7,
-                minWidth: 100,
-                editable: true,
-              },
-              {
-                field: "create_date",
-                headerName: "Date",
-                flex: 0.8,
-                minWidth: 120,
-                editable: true,
-              },
-              {
-                field: "actions",
-                headerName: "Actions",
-                flex: 0.5,
-                minWidth: 80,
-                renderCell: (params) => (
-                  <IconButton
-                    onClick={() => handleRemoveRow(params.row.id)}
-                    size="small"
-                    sx={{
-                      color: theme.palette.mode === 'dark' ? colors.redAccent[400] : colors.redAccent[600],
-                      '&:hover': {
-                        backgroundColor: theme.palette.mode === 'dark'
-                          ? 'rgba(255, 82, 82, 0.1)'
-                          : 'rgba(255, 82, 82, 0.05)',
-                      }
-                    }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                ),
-              },
-            ]}
-            processRowUpdate={handleProcessRowUpdate}
-            disableSelectionOnClick
-            experimentalFeatures={{ newEditingApi: true }}
-            pageSize={8}
-            rowsPerPageOptions={[8]}
-            disableColumnMenu
-          />
+          >
+            <DataGrid
+              sx={{
+                height: { xs: "45vh", sm: "40vh", md: "35vh" },
+                border: "none",
+                "& .MuiDataGrid-columnHeaders": {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(20, 23, 39, 0.6)'
+                    : 'rgba(240, 240, 240, 0.6)',
+                  color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                  borderRadius: "0",
+                  borderBottom: `1px solid ${theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.05)'}`,
+                  '& .MuiDataGrid-columnHeaderTitle': {
+                    fontWeight: 600,
+                    fontSize: { xs: "0.85rem", md: "0.9rem" },
+                  },
+                  padding: "0 8px",
+                },
+                "& .MuiDataGrid-virtualScroller": {
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(20, 23, 39, 0.3)'
+                    : 'rgba(255, 255, 255, 0.3)',
+                },
+                "& .MuiDataGrid-row": {
+                  borderRadius: "0",
+                  borderBottom: `1px solid ${theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.03)'
+                    : 'rgba(0, 0, 0, 0.03)'}`,
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(20, 23, 39, 0.6)'
+                    : 'rgba(255, 255, 255, 0.6)',
+                  "&:hover": {
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(30, 33, 49, 0.8)'
+                      : 'rgba(245, 245, 245, 0.8)',
+                  }
+                },
+                "& .MuiDataGrid-cell": {
+                  borderBottom: "none",
+                  fontSize: { xs: "0.85rem", md: "0.9rem" },
+                  padding: "0 8px",
+                },
+                "& .MuiDataGrid-footerContainer": {
+                  borderTop: `1px solid ${theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.05)'}`,
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(20, 23, 39, 0.6)'
+                    : 'rgba(240, 240, 240, 0.3)',
+                  padding: "4px 8px",
+                },
+                "& .MuiTablePagination-root": {
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                  fontSize: { xs: "0.8rem", md: "0.85rem" },
+                },
+                "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
+                  color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                },
+                "& .MuiDataGrid-overlay": {
+                  backgroundColor: "transparent",
+                },
+                "& .MuiCircularProgress-root": {
+                  color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                },
+              }}
+              rows={tableData}
+              columns={[
+                {
+                  field: "trp_name",
+                  headerName: "Name",
+                  flex: 1,
+                  minWidth: 150,
+                  editable: true,
+                  headerAlign: "left",
+                  align: "left",
+                },
+                {
+                  field: "spend",
+                  headerName: "Spend",
+                  flex: 0.7,
+                  minWidth: 100,
+                  editable: true,
+                  headerAlign: "right",
+                  align: "right",
+                  valueFormatter: (params) => {
+                    if (params.value == null) return '';
+                    return params.value.toLocaleString();
+                  },
+                },
+                {
+                  field: "create_date",
+                  headerName: "Date",
+                  flex: 0.8,
+                  minWidth: 120,
+                  editable: true,
+                  headerAlign: "center",
+                  align: "center",
+                },
+                {
+                  field: "actions",
+                  headerName: "Actions",
+                  flex: 0.5,
+                  minWidth: 80,
+                  headerAlign: "center",
+                  align: "center",
+                  renderCell: (params) => (
+                    <IconButton
+                      onClick={() => handleRemoveRow(params.row.id)}
+                      size="small"
+                      sx={{
+                        color: theme.palette.mode === 'dark' ? colors.redAccent[400] : colors.redAccent[600],
+                        '&:hover': {
+                          backgroundColor: theme.palette.mode === 'dark'
+                            ? 'rgba(255, 82, 82, 0.1)'
+                            : 'rgba(255, 82, 82, 0.05)',
+                        }
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  ),
+                },
+              ]}
+              processRowUpdate={handleProcessRowUpdate}
+              disableSelectionOnClick
+              experimentalFeatures={{ newEditingApi: true }}
+              pageSize={8}
+              rowsPerPageOptions={[8]}
+              disableColumnMenu
+            />
+          </Box>
+
+          {/* Footer section with pagination info */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              marginTop: { xs: "12px", sm: "16px" },
+              paddingTop: { xs: "8px", sm: "8px" },
+              borderTop: `1px solid ${theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.05)'}`,
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: theme.palette.mode === 'dark' ? colors.grey[400] : colors.grey[600],
+                fontSize: { xs: "0.7rem", md: "0.75rem" },
+              }}
+            >
+              {`Total items: ${tableData.length}`}
+            </Typography>
+          </Box>
         </Box>
       )}
 
