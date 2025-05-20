@@ -234,6 +234,13 @@ export const api = createApi({
         params: param, // Passing the message as a query parameter
       }),
     }),
+    receiptImage: build.mutation({
+      query: (formData) => ({
+        url: `/openai/receiptImage`,
+        method: "POST",
+        body: formData, // Send the FormData object with the receipt image
+      }),
+    }),
     updateUserInfo: build.mutation({
       query: (payload) => ({
         url: "api/updateUserInfo",
@@ -282,6 +289,7 @@ export const {
   useAskDatabaseMutation,
   useTranslateMessageMutation,
   useReceiptTextMutation,
+  useReceiptImageMutation, // Export the new receipt image hook
   usePostAddMultipleTripsMutation,
   useUpdateUserInfoMutation,
   useLazyGetUserProfileQuery, // Export the new hook

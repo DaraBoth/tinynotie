@@ -244,6 +244,7 @@ router.post("/askDatabase", async (req, res) => {
   }
 });
 
+// Keep the old text-based endpoint for backward compatibility
 router.get("/receiptText", async (req, res) => {
   try {
     let { text } = req.query;
@@ -294,6 +295,97 @@ router.get("/receiptText", async (req, res) => {
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// New endpoint for processing receipt images directly
+router.post("/receiptImage", async (req, res) => {
+  try {
+    if (!req.files || !req.files.receipt) {
+      return res.status(400).json({
+        status: false,
+        message: "No receipt image uploaded"
+      });
+    }
+
+    const receiptImage = req.files.receipt;
+
+    // Convert the image to base64
+    const imageBase64 = receiptImage.data.toString('base64');
+    const mimeType = receiptImage.mimetype;
+
+    // Initialize Gemini API
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+
+    // Use a model that supports image inputs
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+    // Create a prompt for receipt analysis
+    const prompt = `
+      You are an API endpoint that processes receipt images.
+      Analyze this receipt image and extract all items, prices, and dates.
+      You must respond only in proper JSON format using the structure below.
+      The key "data" should contain an array of objects where each object represents an **item** from the receipt, along with its price and additional metadata.
+
+      Use the following format:
+
+      {
+          "status": true,
+          "data": [
+              {
+                  "trp_name": "[Item Name]",
+                  "spend": [Price as a number],
+                  "mem_id": "[]",
+                  "create_date": "[Date from Receipt or current date]"
+              },
+              ...
+          ]
+      }
+
+      **Important**: Do not respond with an escaped JSON string (e.g., \`\`\`json\\n{\ ... }\`\`\`). You must return a **clean JSON object** without escape characters.
+
+      Ensure all values are formatted correctly and none of them are null. Follow these rules for each field:
+      - "trp_name" should always be the name of the **item** from the receipt (e.g., Coca-Cola, Burger). If no item name is found, return an empty string ("").
+      - "spend" should always be the **price** of the item as a number (not a string). If no price is found, set it to 0.
+      - "mem_id" is always set to "[]".
+      - "create_date" should use the **date from the receipt** if available. If no date is found, use the current date and time in the format YYYY-MM-DD HH:mm:ss.
+
+      Look for patterns in the receipt such as:
+      - Item names followed by prices
+      - Quantity indicators (e.g., "2x" or "×2")
+      - Subtotals, taxes, and totals (these should be excluded from individual items)
+      - Date and time of purchase
+
+      Handle various receipt formats including:
+      - Korean receipts (look for Korean characters and currency symbols)
+      - English receipts
+      - Receipts with multiple columns
+      - Handwritten receipts (to the best of your ability)
+
+      Ensure all values are formatted correctly. Each item from the receipt should have its corresponding price in "spend". No values in the response should be null or undefined.
+    `;
+
+    // Prepare the image part for the model
+    const imagePart = {
+      inlineData: {
+        data: imageBase64,
+        mimeType: mimeType
+      }
+    };
+
+    // Generate content with both the prompt and image
+    const result = await model.generateContent([prompt, imagePart]);
+    const response = result.response;
+
+    // Return the processed data
+    res.status(200).json({ text: response.text() });
+  } catch (error) {
+    console.error("Error processing receipt image:", error);
+    res.status(500).json({
+      status: false,
+      message: "Error processing receipt image",
+      error: error.message
+    });
   }
 });
 

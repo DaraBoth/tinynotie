@@ -9,6 +9,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -18,16 +20,17 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import NoPhotographyRoundedIcon from "@mui/icons-material/NoPhotographyRounded";
 import UploadIcon from "@mui/icons-material/Upload";
 import CloseIcon from "@mui/icons-material/Close";
-import DeleteIcon from "@mui/icons-material/Delete"; // Added for delete functionality
-import Tesseract from "tesseract.js";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CropIcon from "@mui/icons-material/Crop";
 import { DataGrid } from "@mui/x-data-grid";
 import moment from "moment";
 import {
   usePostAddMultipleTripsMutation,
-  useReceiptTextMutation,
+  useReceiptImageMutation,
 } from "../api/api";
 import { tokens } from "../theme";
 import { useTheme } from "@mui/material/styles";
+import ImageCropper from "./ImageCropper";
 
 const StickyIconButton = styled(IconButton)(({ theme }) => ({
   position: "absolute",
@@ -53,12 +56,16 @@ const ReceiptScanner = ({
   const [isProcessing, setIsProcessing] = useState("No image uploaded yet");
   const [validationError, setValidationError] = useState(null);
   const [imageStatus, setImageStatus] = useState(null);
-  const [triggerReceptText, resultReceptText] = useReceiptTextMutation();
+  const [imagePreview, setImagePreview] = useState(null);
+  const [triggerReceiptImage, resultReceiptImage] = useReceiptImageMutation();
   const [triggerAddMultipleTrips, resultAddMultipleTrips] =
     usePostAddMultipleTripsMutation();
   const [showCameraAndUpload, setShowCameraAndUpload] = useState(true);
   const [accordionExpanded, setAccordionExpanded] = useState(true); // Default open
   const [errorMessages, setErrorMessages] = useState([]); // For failed trip submissions
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? colors.grey[800] : colors.grey[100],
@@ -77,9 +84,9 @@ const ReceiptScanner = ({
   }));
 
   useEffect(() => {
-    // Handle result from Tesseract OCR
-    if (resultReceptText.isSuccess && resultReceptText.data) {
-      let responseText = resultReceptText.data.text;
+    // Handle result from receipt image processing
+    if (resultReceiptImage.isSuccess && resultReceiptImage.data) {
+      let responseText = resultReceiptImage.data.text;
 
       try {
         if (
@@ -94,7 +101,7 @@ const ReceiptScanner = ({
             .replaceAll("```", "");
         }
 
-        // Parse OCR results
+        // Parse AI results
         const parsedData = JSON.parse(responseText);
 
         if (parsedData && Array.isArray(parsedData.data)) {
@@ -115,17 +122,18 @@ const ReceiptScanner = ({
           setIsProcessing("");
         }
 
-        setImageStatus(null);
+        // Clear image preview but keep status for reference
+        setImagePreview(null);
         resetImageInput();
       } catch (e) {
         setIsProcessing("Error parsing JSON");
         console.error("Error parsing JSON:", e);
       }
-    } else if (resultReceptText.isError) {
+    } else if (resultReceiptImage.isError) {
       setIsProcessing("Error processing image.");
       resetImageInput();
     }
-  }, [resultReceptText]);
+  }, [resultReceiptImage, group_id]);
 
   const handleCameraClick = () => {
     if (isNonMobile) return;
@@ -144,26 +152,56 @@ const ReceiptScanner = ({
   const handleRemoveImage = () => {
     resetImageInput();
     setImageStatus(null);
+    setImagePreview(null);
+    setSelectedFile(null);
     setIsProcessing("No image uploaded yet");
     setTableData([]);
+  };
+
+  const handleCropComplete = (croppedFile) => {
+    setCropperOpen(false);
+    setSelectedFile(croppedFile);
+
+    // Create a preview URL for the cropped image
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(croppedFile);
+
+    // Process the cropped image
+    processReceiptImage(croppedFile);
+  };
+
+  const processReceiptImage = async (file) => {
+    setIsProcessing("Processing image...");
+
+    try {
+      // Create a FormData object to send the image
+      const formData = new FormData();
+      formData.append('receipt', file);
+
+      // Send the image to the server for processing
+      await triggerReceiptImage(formData);
+      setIsProcessing("AI analyzing image...");
+    } catch (error) {
+      console.error("Error processing image:", error);
+      setIsProcessing("Error processing image.");
+    }
   };
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
       setImageStatus(file.name);
-      setIsProcessing("Processing image...");
 
-      try {
-        const {
-          data: { text },
-        } = await Tesseract.recognize(file, "kor", {});
-        triggerReceptText({ text });
-        setIsProcessing("AI analyzing image...");
-      } catch (error) {
-        console.error("Error extracting text:", error);
-        setIsProcessing("Error extracting text.");
-      }
+      // Create a preview URL for the image
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageToCrop(reader.result);
+        setCropperOpen(true);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -406,67 +444,126 @@ const ReceiptScanner = ({
                     : '0 6px 12px rgba(0, 0, 0, 0.1)',
                 },
               }}
-              onClick={handleUploadClick}
+              onClick={imagePreview ? null : handleUploadClick}
             >
-              <Box
-                sx={{
-                  backgroundColor: theme.palette.mode === 'dark'
-                    ? 'rgba(0, 123, 255, 0.15)'
-                    : 'rgba(0, 123, 255, 0.1)',
-                  borderRadius: "50%",
-                  padding: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "8px",
-                }}
-              >
-                <UploadIcon
-                  sx={{
-                    color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
-                    fontSize: "1.5rem"
-                  }}
-                />
-              </Box>
-              {imageStatus ? (
+              {imagePreview ? (
                 <Box
                   sx={{
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: "4px",
+                    width: "100%",
+                    gap: "12px",
                   }}
                 >
-                  <Typography
-                    variant="body2"
+                  <Box
                     sx={{
-                      color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
-                      fontWeight: 500,
-                      textAlign: "center",
+                      position: "relative",
+                      width: "100%",
+                      maxHeight: "200px",
+                      overflow: "hidden",
+                      borderRadius: "8px",
+                      border: `1px solid ${theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.15)'
+                        : 'rgba(0, 0, 0, 0.15)'}`,
                     }}
                   >
-                    {imageStatus}
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="error"
-                    startIcon={<CloseIcon />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveImage();
-                    }}
+                    <img
+                      src={imagePreview}
+                      alt="Receipt preview"
+                      style={{
+                        width: "100%",
+                        objectFit: "contain",
+                        maxHeight: "200px",
+                      }}
+                    />
+                  </Box>
+
+                  <Box
                     sx={{
-                      marginTop: "4px",
-                      textTransform: "none",
-                      borderRadius: "6px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      gap: "8px",
                     }}
                   >
-                    Remove
-                  </Button>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+                        fontWeight: 500,
+                        textAlign: "center",
+                        flex: 1,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {imageStatus}
+                    </Typography>
+
+                    <Box sx={{ display: "flex", gap: "8px" }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="primary"
+                        startIcon={<CropIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCropperOpen(true);
+                        }}
+                        sx={{
+                          textTransform: "none",
+                          borderRadius: "6px",
+                          minWidth: "auto",
+                          padding: "4px 8px",
+                        }}
+                      >
+                        Crop
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="error"
+                        startIcon={<CloseIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage();
+                        }}
+                        sx={{
+                          textTransform: "none",
+                          borderRadius: "6px",
+                          minWidth: "auto",
+                          padding: "4px 8px",
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </Box>
+                  </Box>
                 </Box>
               ) : (
                 <>
+                  <Box
+                    sx={{
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? 'rgba(0, 123, 255, 0.15)'
+                        : 'rgba(0, 123, 255, 0.1)',
+                      borderRadius: "50%",
+                      padding: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    <UploadIcon
+                      sx={{
+                        color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+                        fontSize: "1.5rem"
+                      }}
+                    />
+                  </Box>
                   <Typography
                     variant="body1"
                     sx={{
@@ -732,6 +829,14 @@ const ReceiptScanner = ({
           />
         </Box>
       )}
+
+      {/* Image Cropper Dialog */}
+      <ImageCropper
+        open={cropperOpen}
+        imageSrc={imageToCrop}
+        onClose={() => setCropperOpen(false)}
+        onCropComplete={handleCropComplete}
+      />
     </Box>
   );
 };

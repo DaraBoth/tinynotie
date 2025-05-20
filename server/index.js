@@ -1,9 +1,10 @@
-import express from "express" 
+import express from "express"
 import dotenv from "dotenv"
 import cors from "cors"
 import helmet from "helmet"
 import morgan from "morgan"
 import bodyParser from "body-parser"
+import fileUpload from "express-fileupload"
 import authRoutes from "./routes/auth.js"
 import apiRoutes from "./routes/api.js"
 import openAiRoutes from "./routes/openai.js";
@@ -26,9 +27,17 @@ app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json({ limit: "50mb" })); // Increase limit
-app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" })); 
+app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cors());
- 
+// Add file upload middleware
+app.use(fileUpload({
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max file size
+  useTempFiles: false, // Don't use temp files
+  abortOnLimit: true, // Return 413 if file size exceeds limit
+  safeFileNames: true, // Remove special characters from file names
+  preserveExtension: true // Preserve file extensions
+}));
+
 // Resolve the absolute path for Swagger API docs
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
