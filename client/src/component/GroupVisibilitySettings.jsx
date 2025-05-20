@@ -252,18 +252,24 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
     isDraggingOver ? draggingOverListStyle : listStyle;
 
   return (
-    <Box sx={{ position: "relative", zIndex: 0 }}>
+    <Box sx={{ position: "relative" }}>
       <Dialog
         open={open}
         onClose={handleClose}
         maxWidth="md"
         fullWidth
         sx={{
-          zIndex: 1600, // Higher z-index to ensure it appears above floating buttons
+          zIndex: 1300, // Standard MUI Dialog z-index
           '& .MuiDialog-container': {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+          },
+          '& .MuiBackdrop-root': {
+            zIndex: 1299 // Ensure backdrop is below the dialog
+          },
+          '& .MuiPopover-root': {
+            zIndex: 1400 // Ensure popover menus appear above the dialog
           }
         }}
         PaperProps={{
@@ -670,8 +676,10 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                      zIndex: 10,
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? 'rgba(20, 23, 39, 0.85)'
+                        : 'rgba(255, 255, 255, 0.85)',
+                      zIndex: 100, // Higher z-index but still within the dialog context
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -679,6 +687,7 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
                       padding: { xs: 2, md: 4 },
                       textAlign: "center",
                       borderRadius: "4px",
+                      backdropFilter: "blur(4px)",
                     }}
                   >
                     <Typography
@@ -771,10 +780,18 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
         autoHideDuration={3000}
         onClose={() => setSnackbarMessage("")}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{
+          zIndex: 1500, // Higher than all dialogs
+        }}
       >
         <Alert
           severity={snackbarSuccess ? "success" : "error"}
-          sx={{ width: "100%" }}
+          sx={{
+            width: "100%",
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 4px 12px rgba(0, 0, 0, 0.4)'
+              : '0 4px 12px rgba(0, 0, 0, 0.2)',
+          }}
         >
           {snackbarMessage}
         </Alert>
@@ -782,6 +799,17 @@ export default function GroupVisibilitySettings({ groupId, open, onClose }) {
 
       <Dialog
         open={showConfirmationDialog}
+        sx={{
+          zIndex: 1400, // Higher than the parent dialog
+          '& .MuiDialog-container': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          },
+          '& .MuiBackdrop-root': {
+            zIndex: 1399 // Ensure backdrop is below the dialog
+          }
+        }}
         PaperProps={{
           component: motion.div,
           initial: { opacity: 0, y: 20, scale: 0.95 },

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import {
   Button,
@@ -24,6 +24,15 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const isNonMobile = useMediaQuery("(min-width:600px)");
+  const isSmallMobile = useMediaQuery("(max-width:380px)");
+
+  // Calculate optimal dialog width based on screen size
+  const [dialogWidth, setDialogWidth] = useState(isNonMobile ? '500px' : '90%');
+
+  // Update dialog width when screen size changes
+  useEffect(() => {
+    setDialogWidth(isNonMobile ? '500px' : isSmallMobile ? '95%' : '90%');
+  }, [isNonMobile, isSmallMobile]);
 
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -42,7 +51,7 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
     setRotation(rotation);
   };
 
-  const onCropCompleteCallback = useCallback((croppedArea, croppedAreaPixels) => {
+  const onCropCompleteCallback = useCallback((_, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
@@ -68,8 +77,10 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
           backgroundImage: 'none',
           borderRadius: '12px',
           overflow: 'hidden',
-          width: isNonMobile ? '500px' : '100%',
+          width: dialogWidth,
           maxWidth: isNonMobile ? '500px' : '100%',
+          margin: isNonMobile ? 'auto' : '16px',
+          position: 'relative',
         }
       }}
     >
@@ -97,7 +108,7 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
 
       <DialogContent sx={{
         p: 0,
-        height: '400px',
+        height: isNonMobile ? '400px' : '350px', // Slightly smaller on mobile
         position: 'relative',
         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.03)',
       }}>
@@ -113,23 +124,30 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
             onRotationChange={onRotationChange}
             onCropComplete={onCropCompleteCallback}
             objectFit="contain"
+            cropSize={isNonMobile ? undefined : { width: 240, height: 320 }} // Smaller crop area on mobile
           />
         </Box>
       </DialogContent>
 
       <Box sx={{
-        p: 2,
+        p: isNonMobile ? 2 : 1.5,
         display: 'flex',
         flexDirection: 'column',
-        gap: 1,
+        gap: isNonMobile ? 1 : 1.5,
         borderTop: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}`,
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: isNonMobile ? 2 : 1 }}>
           <IconButton
             onClick={() => setZoom(Math.max(1, zoom - 0.1))}
-            sx={{ color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700] }}
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              padding: isNonMobile ? '8px' : '10px', // Larger touch target on mobile
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+              }
+            }}
           >
-            <ZoomOutIcon />
+            <ZoomOutIcon fontSize={isNonMobile ? 'medium' : 'small'} />
           </IconButton>
 
           <Slider
@@ -137,45 +155,74 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
             min={1}
             max={3}
             step={0.1}
-            onChange={(e, zoom) => setZoom(zoom)}
+            onChange={(_, newZoom) => setZoom(newZoom)}
             aria-labelledby="Zoom"
             sx={{
               color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[500],
               '& .MuiSlider-thumb': {
-                width: 12,
-                height: 12,
+                width: isNonMobile ? 12 : 16, // Larger thumb on mobile for easier touch
+                height: isNonMobile ? 12 : 16,
               },
               '& .MuiSlider-rail': {
                 opacity: 0.3,
+                height: isNonMobile ? 2 : 4, // Thicker rail on mobile
               },
+              '& .MuiSlider-track': {
+                height: isNonMobile ? 2 : 4, // Thicker track on mobile
+              }
             }}
           />
 
           <IconButton
             onClick={() => setZoom(Math.min(3, zoom + 0.1))}
-            sx={{ color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700] }}
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              padding: isNonMobile ? '8px' : '10px', // Larger touch target on mobile
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+              }
+            }}
           >
-            <ZoomInIcon />
+            <ZoomInIcon fontSize={isNonMobile ? 'medium' : 'small'} />
           </IconButton>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          justifyContent: 'center' // Center on mobile for better thumb access
+        }}>
           <IconButton
             onClick={() => setRotation((rotation + 90) % 360)}
-            sx={{ color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700] }}
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              padding: isNonMobile ? '8px' : '12px', // Larger touch target on mobile
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+              }
+            }}
           >
-            <RotateRightIcon />
+            <RotateRightIcon fontSize={isNonMobile ? 'medium' : 'small'} />
           </IconButton>
 
-          <Typography variant="body2" sx={{ color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700] }}>
+          <Typography
+            variant={isNonMobile ? "body2" : "body1"}
+            sx={{
+              color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
+              fontWeight: 500
+            }}
+          >
             Rotation: {rotation}°
           </Typography>
         </Box>
       </Box>
 
       <DialogActions sx={{
-        justifyContent: 'space-between',
-        p: 2,
+        justifyContent: isNonMobile ? 'space-between' : 'center',
+        p: isNonMobile ? 2 : '16px 12px',
+        gap: 2,
+        flexDirection: isNonMobile ? 'row' : 'row',
         borderTop: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}`,
       }}>
         <Button
@@ -186,7 +233,9 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
             textTransform: 'none',
             borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
             borderRadius: '8px',
-            padding: '6px 16px',
+            padding: isNonMobile ? '6px 16px' : '8px 16px', // Taller buttons on mobile
+            minWidth: isNonMobile ? '80px' : '100px', // Wider buttons on mobile
+            fontSize: isNonMobile ? '0.875rem' : '1rem', // Larger text on mobile
             '&:hover': {
               borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
               backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
@@ -203,11 +252,16 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
             color: theme.palette.mode === 'dark' ? colors.grey[100] : 'white',
             textTransform: 'none',
             borderRadius: '8px',
-            padding: '6px 16px',
+            padding: isNonMobile ? '6px 16px' : '8px 16px', // Taller buttons on mobile
+            minWidth: isNonMobile ? '100px' : '120px', // Wider buttons on mobile
+            fontSize: isNonMobile ? '0.875rem' : '1rem', // Larger text on mobile
             fontWeight: 600,
             '&:hover': {
               bgcolor: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
-            }
+            },
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 4px 10px rgba(0, 123, 255, 0.2)'
+              : '0 4px 10px rgba(0, 123, 255, 0.15)',
           }}
         >
           Apply Crop

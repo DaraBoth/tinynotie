@@ -22,13 +22,17 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: 1300, // Standard MUI Dialog z-index
         '& .MuiDialog-container': {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         },
+        '& .MuiBackdrop-root': {
+          zIndex: 1299 // Ensure backdrop is below the dialog
+        },
         '& .MuiPopover-root': {
-          zIndex: 9999 // Ensure popover menus appear above the dialog
+          zIndex: 1400 // Ensure popover menus appear above the dialog
         }
       }}
       PaperProps={{

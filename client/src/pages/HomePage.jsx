@@ -714,7 +714,7 @@ export default function Home({
           flexDirection: "column",
           gap: "16px", // Increased gap between buttons
           transition: "right 0.3s ease-in-out", // Smooth transition
-          zIndex: 1000, // Lower z-index to ensure buttons stay below dialogs
+          zIndex: 1100, // Lower than dialogs (1300) but higher than most content
         }}
       >
         <Fab
@@ -738,7 +738,7 @@ export default function Home({
             boxShadow: theme.palette.mode === 'dark'
               ? '0 4px 12px rgba(0, 0, 0, 0.4)'
               : '0 4px 12px rgba(0, 0, 0, 0.2)',
-            zIndex: 1500,
+            zIndex: 1, // Local z-index within the container
           }}
         >
           <AddIcon fontSize={!isNonMobile ? "medium" : "small"} />
@@ -755,6 +755,12 @@ export default function Home({
         onClose={() => setOpenDeleteDialog(false)}
         TransitionComponent={Slide}
         TransitionProps={{ direction: "up" }}
+        sx={{
+          zIndex: 1300, // Standard MUI Dialog z-index
+          '& .MuiBackdrop-root': {
+            zIndex: 1299 // Ensure backdrop is below the dialog
+          }
+        }}
         PaperProps={{
           component: motion.div,
           initial: { opacity: 0, y: 20 },
@@ -918,6 +924,7 @@ export default function Home({
         TransitionComponent={Slide}
         TransitionProps={{ direction: "left" }}
         sx={{
+          zIndex: 1500, // Higher than all dialogs
           '& .MuiPaper-root': {
             borderRadius: '12px',
             fontSize: { xs: "0.8rem", md: "0.9rem" },
