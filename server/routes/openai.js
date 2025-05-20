@@ -317,8 +317,8 @@ router.post("/receiptImage", async (req, res) => {
     // Initialize Gemini API
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
 
-    // Use a model that supports image inputs
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    // Use a model that supports image inputs with better quota limits
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Create a prompt for receipt analysis
     const prompt = `
