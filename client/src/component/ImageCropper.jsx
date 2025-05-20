@@ -64,7 +64,7 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
       fullWidth
       PaperProps={{
         sx: {
-          backgroundColor: theme.palette.mode === 'dark' ? colors.primary[500] : colors.grey[50],
+          backgroundColor: theme.palette.mode === 'dark' ? colors.grey[800] : colors.grey[100],
           backgroundImage: 'none',
           borderRadius: '12px',
           overflow: 'hidden',
@@ -99,7 +99,7 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
         p: 0,
         height: '400px',
         position: 'relative',
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.03)',
       }}>
         <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
           <Cropper
@@ -140,10 +140,13 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
             onChange={(e, zoom) => setZoom(zoom)}
             aria-labelledby="Zoom"
             sx={{
-              color: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
+              color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[500],
               '& .MuiSlider-thumb': {
                 width: 12,
                 height: 12,
+              },
+              '& .MuiSlider-rail': {
+                opacity: 0.3,
               },
             }}
           />
@@ -177,9 +180,17 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
       }}>
         <Button
           onClick={onClose}
+          variant="outlined"
           sx={{
             color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
             textTransform: 'none',
+            borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+            borderRadius: '8px',
+            padding: '6px 16px',
+            '&:hover': {
+              borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+            }
           }}
         >
           Cancel
@@ -188,11 +199,14 @@ const ImageCropper = ({ open, imageSrc, onClose, onCropComplete }) => {
           onClick={handleCrop}
           variant="contained"
           sx={{
-            bgcolor: colors.primary[theme.palette.mode === 'dark' ? 400 : 600],
-            color: theme.palette.mode === 'dark' ? colors.primary[100] : 'white',
+            bgcolor: theme.palette.mode === 'dark' ? colors.primary[500] : colors.primary[500],
+            color: theme.palette.mode === 'dark' ? colors.grey[100] : 'white',
             textTransform: 'none',
+            borderRadius: '8px',
+            padding: '6px 16px',
+            fontWeight: 600,
             '&:hover': {
-              bgcolor: colors.primary[theme.palette.mode === 'dark' ? 300 : 700],
+              bgcolor: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
             }
           }}
         >

@@ -462,10 +462,16 @@ const ReceiptScanner = ({
                       width: "100%",
                       maxHeight: "200px",
                       overflow: "hidden",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       border: `1px solid ${theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.15)'
-                        : 'rgba(0, 0, 0, 0.15)'}`,
+                        ? 'rgba(255, 255, 255, 0.12)'
+                        : 'rgba(0, 0, 0, 0.08)'}`,
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? 'rgba(0, 0, 0, 0.2)'
+                        : 'rgba(0, 0, 0, 0.02)',
+                      boxShadow: theme.palette.mode === 'dark'
+                        ? '0 4px 8px rgba(0, 0, 0, 0.4)'
+                        : '0 4px 8px rgba(0, 0, 0, 0.05)',
                     }}
                   >
                     <img
@@ -475,6 +481,7 @@ const ReceiptScanner = ({
                         width: "100%",
                         objectFit: "contain",
                         maxHeight: "200px",
+                        display: "block",
                       }}
                     />
                   </Box>
@@ -506,7 +513,6 @@ const ReceiptScanner = ({
                       <Button
                         variant="outlined"
                         size="small"
-                        color="primary"
                         startIcon={<CropIcon />}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -514,9 +520,15 @@ const ReceiptScanner = ({
                         }}
                         sx={{
                           textTransform: "none",
-                          borderRadius: "6px",
+                          borderRadius: "8px",
                           minWidth: "auto",
                           padding: "4px 8px",
+                          color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[500],
+                          borderColor: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[500],
+                          '&:hover': {
+                            borderColor: theme.palette.mode === 'dark' ? colors.primary[300] : colors.primary[600],
+                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(120, 123, 212, 0.1)' : 'rgba(45, 194, 255, 0.1)',
+                          }
                         }}
                       >
                         Crop
@@ -524,7 +536,6 @@ const ReceiptScanner = ({
                       <Button
                         variant="outlined"
                         size="small"
-                        color="error"
                         startIcon={<CloseIcon />}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -532,9 +543,15 @@ const ReceiptScanner = ({
                         }}
                         sx={{
                           textTransform: "none",
-                          borderRadius: "6px",
+                          borderRadius: "8px",
                           minWidth: "auto",
                           padding: "4px 8px",
+                          color: theme.palette.mode === 'dark' ? colors.redAccent[400] : colors.redAccent[500],
+                          borderColor: theme.palette.mode === 'dark' ? colors.redAccent[400] : colors.redAccent[500],
+                          '&:hover': {
+                            borderColor: theme.palette.mode === 'dark' ? colors.redAccent[300] : colors.redAccent[600],
+                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 114, 108, 0.1)' : 'rgba(255, 82, 81, 0.1)',
+                          }
                         }}
                       >
                         Remove
