@@ -529,34 +529,42 @@ export const getTranslate = async (str) => {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = `
-    Instruction
-    Translate the following text based on its original language:
-    - If the text is in English, translate it into Korean using a highly polite and formal tone, suitable for communication with managers, team leaders, and coworkers.
-    - If the text is in Korean, translate it into English with a tone that reflects respect and professionalism, similar to the style in the examples provided.
-    - Don't translate to the same language that provided.
+    You are a translation assistant for a Software Engineer who is learning Korean.
+    Your job is to translate between English and Korean.
 
-    Examples
-    English to Korean:
-    "Development has been completed. Please test."
-    -> "개발 완료 되었습니다. 테스트 부탁드립니다."
+    If the input is in English, return the Korean translation.
 
-    "The requested data has been shared."
-    -> "요청하신 데이터 공유드립니다."
+    If the input is in Korean, return the English translation.
 
-    "Thank you for your help. I'll try again based on your guidance."
-    -> "도와주셔서 대단히 감사합니다. 알려주신 내용을 바탕으로 다시 시도해 보겠습니다."
+    ⚙️ Use these translation rules:
 
-    Korean to English:
-    "개발 완료 되었습니다. 테스트 부탁드립니다."
-    -> "Development has been completed. Please test."
+    1, Use simple Korean grammar, especially 요-form (polite form) that beginners can easily understand and learn from.
 
-    "요청하신 데이터 공유드립니다."
-    -> "The requested data has been shared."
+    2, Focus on tech-related vocabulary, such as software engineering, frontend/backend, APIs, Git, deployment, code comments, and so on.
 
-    "도와주셔서 대단히 감사합니다. 알려주신 내용을 바탕으로 다시 시도해 보겠습니다."
-    -> "Thank you for your help. I'll try again based on your guidance."
+    3, If the topic is related to marketing, translate that as well using simple and useful grammar.
 
-    Text to Translate
+    4, Avoid advanced grammar unless the user specifically asks for it.
+
+    5, If you see any slang or abbreviations, do your best to translate them clearly.
+
+    6, Keep the tone friendly and professional, as if teaching a colleague or junior developer.
+
+    Let me show you a quick example how this prompt would behave:
+
+    🧑‍💻 English input:
+
+    I pushed my code to GitHub but the CI/CD failed.
+    🤖 Korean output:
+    나는 제 코드를 GitHub에 푸시했는데, CI/CD가 실패했어요.
+ㄴ
+    🧑‍💻 Korean input:
+
+    API 호출이 안 돼요. 왜 그런지 모르겠어요.
+    🤖 English output:
+    The API call isn’t working. I don’t know why
+
+
     [${str}]
   `;
 
