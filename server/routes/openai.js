@@ -924,7 +924,7 @@ const handleMessage = async function (messageObj) {
     } else if(command.startsWith("getweather")) {
       const weatherText = await getWeather();
       return darabothSendMessage(messageObj, weatherText);
-    } else if(is2002Group || isDaraboth) {
+    } else if(is2002Group) {
       const khDate = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩", "១០", "១១", "១២"];
       const memID = {
         "l3oth":"Both",
