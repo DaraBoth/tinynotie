@@ -1,12 +1,32 @@
-# KitLuyApp
+# TinyNotie
 
+TinyNotie is a full-stack application designed to help users manage groups, trips, and expenses efficiently. It features a robust frontend built with React.js, providing a rich and interactive user experience.
 
+## Features (Frontend - Client)
 
-## Getting started
+### Core Functionalities
+*   **User Authentication**: Secure login and registration processes.
+*   **Group Management**: Create, view, and manage groups with customizable visibility settings.
+*   **Trip and Member Management**: Add, edit, and delete trip details and members within groups.
+*   **Translation**: Translate text between different languages.
+*   **Receipt Scanning**: Scan physical receipts to extract item details and prices, aiding expense tracking.
+*   **Currency Conversion**: Convert currencies within the application.
+*   **Interactive Chat**: Engage in chat conversations, including interactions with an AI database.
+*   **User Profile**: Manage personal settings and preferences.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### UI Components & Utilities
+*   **Customizable Themes**: Switch between different application themes.
+*   **Image Cropping**: Crop images before uploading.
+*   **Share Functionality**: Share content or information through a dedicated modal.
+*   **Data Display**: Paginated lists and table components for efficient data presentation.
+*   **Alerts and Dialogs**: Custom alerts, snackbars, and dialogs for user feedback and interaction.
+*   **Loading Indicators**: Visual feedback during data loading.
+*   **Scroll-to-Bottom**: Easy navigation in long content areas like chat.
+*   **Service Worker**: Enhances offline capabilities and push notifications.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Getting Started
+
+To make it easy for you to get started with TinyNotie, here's a list of recommended next steps.
 
 ## Add your files
 
