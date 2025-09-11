@@ -15,4 +15,9 @@ const handleError = (error, res) => {
   res.status(500).json({ status: false, error: error.message });
 };
 
-export { pool, handleError };
+// Utility function to sanitize integer fields - converts empty strings to null
+const sanitizeIntegerField = (value) => {
+  return value === "" || value === undefined ? null : value;
+};
+
+export { pool, handleError, sanitizeIntegerField };

@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateToken } from "./middleware/auth.js";
-import { pool, handleError } from "../utils/db.js";
+import { pool, handleError, sanitizeIntegerField } from "../utils/db.js";
 import moment from "moment";
 
 const router = express.Router();
@@ -171,6 +171,10 @@ const router = express.Router();
 router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
   const { trp_name, spend, mem_id, description, group_id, update_dttm, payer_id = null } = req.body;
   let create_date = req.body?.create_date || moment().format("YYYY-MM-DD HH:mm:ss");
+
+  // Sanitize payer_id: convert empty string to null for integer field
+  const sanitizedPayerId = sanitizeIntegerField(payer_id);
+
   try {
     const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
     const results = await pool.query(sql, [group_id, trp_name]);
@@ -187,7 +191,7 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
         group_id,
         create_date,
         update_dttm,
-        payer_id,
+        sanitizedPayerId,
       ]);
       res.send({ status: true, message: "Add trip success!" });
     } else {
@@ -227,6 +231,9 @@ router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) =>
       } = trip;
       const createDate = create_date || moment().format("YYYY-MM-DD HH:mm:ss");
 
+      // Sanitize payer_id: convert empty string to null for integer field
+      const sanitizedPayerId = sanitizeIntegerField(payer_id);
+
       // Check if the trip already exists
       const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
       const results = await pool.query(sql, [group_id, trp_name]);
@@ -244,7 +251,7 @@ router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) =>
           group_id,
           createDate,
           update_dttm,
-          payer_id,
+          sanitizedPayerId,
         ]);
         return {
           status: true,
@@ -269,6 +276,9 @@ router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) =>
 // Edit trip by group ID
 router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
   const { trp_name, spend, group_id, type, update_dttm, payer_id } = req.body;
+
+  // Sanitize payer_id: convert empty string to null for integer field
+  const sanitizedPayerId = sanitizeIntegerField(payer_id);
 
   try {
     // Fetch the current spend value for the trip
@@ -309,7 +319,7 @@ router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
 
     // Update the spend value and payer_id in the database
     const sql2 = `UPDATE trp_infm SET spend = $1, update_dttm = $2, payer_id = $3 WHERE id = $4;`;
-    await pool.query(sql2, [newSpend, update_dttm, payer_id, results.rows[0].id]);
+    await pool.query(sql2, [newSpend, update_dttm, sanitizedPayerId, results.rows[0].id]);
 
     res.send({ status: true, message: `Edit ${trp_name} success!` });
   } catch (error) {
