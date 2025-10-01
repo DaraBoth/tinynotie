@@ -18,7 +18,7 @@ export const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kp
 export const handleInsertIntoExcel = async ({ messageObj, messageText }) => {
   // Initialize the AI with your API key
   const genAI = new GoogleGenerativeAI(process.env.API_KEY3);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const today = moment(getDateInSeoulTime()).format("YYYY-MM-DD");
 

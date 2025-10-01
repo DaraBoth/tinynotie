@@ -147,7 +147,7 @@ router.get("/text", async (req, res) => {
   try {
     let { text, random } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     if (random == "true") {
       const prompt = `
@@ -219,7 +219,7 @@ router.post("/text", async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(`${text}`);
     const response = result.response;
     saveChat({ chat_id: chatId, chat_history: chatHistory });
@@ -249,7 +249,7 @@ router.get("/receiptText", async (req, res) => {
   try {
     let { text } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
       You are an API endpoint that processes receipt data.
@@ -318,7 +318,7 @@ router.post("/receiptImage", async (req, res) => {
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
 
     // Use a model that supports image inputs with better quota limits
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Create a prompt for receipt analysis
     const prompt = `
@@ -708,7 +708,7 @@ async function _getKoreanWords(messageObj) {
   });
 
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `
   You are a Korean language tutor.
@@ -769,7 +769,7 @@ async function _getKoreanWords(messageObj) {
 // This function has been moved to aiUtils.js
 async function _getCleaningProm(data, msg) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const prompt = `
       This data is about cleaning schedule in a house.
       And it's a trigger when there is change updated in excel.
@@ -799,7 +799,7 @@ async function _getCleaningProm(data, msg) {
 // This function has been moved to aiUtils.js
 async function _getTranslate(str) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const prompt = `
       Instruction
       Translate the following text based on its original language:
@@ -1256,7 +1256,7 @@ router.post("/batchPush", async (req, res) => {
 });
 
 router.post("/push", async (req, res) => {
-  const { identifier, payload } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const { identifier, payload, data } = req.body; // Extract identifier (username or deviceId) and payload from request body
   const client = await pool.connect();
 
   try {
@@ -1351,7 +1351,7 @@ router.get("/translateforhouyly", async (req, res) => {
 async function getTranslateOrExplain(str, action, targetLang, context, level) {
   try {
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
       Instruction

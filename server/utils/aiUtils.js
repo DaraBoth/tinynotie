@@ -11,7 +11,7 @@ import axios from "axios";
 export const AI_Human_readable = async (prompt, chatHistory = []) => {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY);
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
   });
 
   const template = `
@@ -113,7 +113,7 @@ export const callAI = async (text, chatHistory, defaultChatHistory = []) => {
   try {
     genAI = new GoogleGenerativeAI(process.env.API_KEY2);
     model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
     });
     console.log("Using API_KEY2");
   } catch(e) {
@@ -121,14 +121,14 @@ export const callAI = async (text, chatHistory, defaultChatHistory = []) => {
     try {
       genAI = new GoogleGenerativeAI(process.env.API_KEY3);
       model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
       });
       console.log("Using API_KEY3");
     } catch(e) {
       console.log(e);
       genAI = new GoogleGenerativeAI(process.env.API_KEY);
       model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
       });
       console.log("Using API_KEY");
     }
@@ -179,7 +179,7 @@ export const callAI = async (text, chatHistory, defaultChatHistory = []) => {
  */
 export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `
   Instruction:
@@ -507,7 +507,7 @@ export const getWeather = async () => {
 
     // Initialize the AI with your API key
     const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Generate content using the AI
     const result = await model.generateContent(prompt);
@@ -527,7 +527,7 @@ export const getWeather = async () => {
  */
 export const getTranslate = async (str) => {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const prompt = `
     You are a translation assistant for a Software Engineer who is learning Korean.
     Your job is to translate between English and Korean.
@@ -611,7 +611,7 @@ export const getKoreanWords = async (messageObj, defaultChatHistory = []) => {
     });
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
     You are a Korean language tutor.
@@ -681,7 +681,7 @@ export const getKoreanWords = async (messageObj, defaultChatHistory = []) => {
  */
 export const getCleaningProm = async (data, msg) => {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const prompt = `
     This data is about cleaning schedule in a house.
     And it's a trigger when there is change updated in excel.

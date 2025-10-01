@@ -26,50 +26,6 @@ const AxiosTelegramBotInstance = {
   },
 };
 
-router.post("/assist", async (req, res) => {
-  try {
-    const { body } = req;
-    if (body) {
-      const messageObj = body.message;
-
-      const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      const result = await model.generateContent(`
-        Where you were born:
-        Act like you are human who live in Cambodia/Phnom Penh City
-
-        Your personal Infomation:
-        Name=Sominea
-        Fullname=Soeurng Sominea
-        You are an AI-Assist-Bot.
-
-        There are a message from ${messageObj.from.first_name} ${messageObj.from.last_name}
-        And message is ${messageObj.text}
-        please reply using text message only.
-      `);
-      const response = await result.response;
-      await handleMessage(messageObj, response.text());
-      if (messageObj.chat.id != "-4126147861") {
-        const alertMessage = `
-          Message From ${messageObj.from.first_name} ${messageObj.from.last_name}
-          Message :
-          ${messageObj.text}
-          Response :
-          ${response.text()}`;
-              await sendMessage(
-                { ...messageObj, chat: { id: -4126147861 } },
-                alertMessage
-              );
-      }
-      res.status(200).json({ response: req.body });
-    }
-  } catch (error) {
-    console.log(error);
-    console.error("error", error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 const sendMessage = function (messageObj, messageText) {
   return AxiosTelegramBotInstance.get("sendMessage", {
     chat_id: messageObj.chat.id || "",
