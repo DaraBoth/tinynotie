@@ -952,6 +952,7 @@ const handleMessage = async function (messageObj) {
         try {
           const requestJsonData = JSON.parse(requestJson);
           if(requestJsonData){
+            requestJsonData["operatingDate"] = momem(requestJsonData["operatingDate"]).format("YYYY-MM-DD");
             const response = await callInsertIntoExcel(requestJsonData);
             const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
             return darabothSendMessage(messageObj, telegramResponse);
