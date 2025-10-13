@@ -1261,6 +1261,8 @@ router.post("/push", async (req, res) => {
   const hostname = req.hostname;
   const client = await pool.connect();
 
+  console.log("LOG HOSTNAME::",hostname);
+
   let app_id = 0;
   if(hostname.includes("goal")) app_id = 2;
   if(hostname.includes("tinynotie")) app_id = 1;
@@ -1268,7 +1270,7 @@ router.post("/push", async (req, res) => {
   try {
     // Check if the identifier is a username or a deviceId
     const userQuery = `
-      SELECT id FROM user_infm WHERE usernm = $1 ${(app_id != 0) ?? `and app_id = ${app_id}`};
+      SELECT id FROM user_infm WHERE usernm = $1 ${(app_id != 0) && `and app_id = ${app_id}`};
     `;
     const userResult = await client.query(userQuery, [identifier]);
 
