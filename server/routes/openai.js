@@ -1258,58 +1258,45 @@ router.post("/batchPush", async (req, res) => {
 
 router.post("/push", async (req, res) => {
   const { identifier, payload, data } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const hostname = req.hostname;
   const client = await pool.connect();
 
-  try {
-    let subscription;
+  let app_id = 0;
+  if(hostname.includes("goal")) app_id = 2;
+  if(hostname.includes("tinynotie")) app_id = 1;
 
+  try {
     // Check if the identifier is a username or a deviceId
     const userQuery = `
-      SELECT device_id FROM user_infm WHERE usernm = $1;
+      SELECT id FROM user_infm WHERE usernm = $1 ${(app_id != 0) ?? `and app_id = ${app_id}`};
     `;
     const userResult = await client.query(userQuery, [identifier]);
 
     if (userResult.rows.length > 0) {
       // If a username is provided, retrieve the device_id from user_infm
-      const { device_id } = userResult.rows[0];
+      const { id } = userResult.rows[0];
 
-      // Fetch the subscription details for the device_id
+      // Fetch the subscription details for the user's
       const subscriptionQuery = `
-        SELECT endpoint, expiration_time, keys FROM subscriptions WHERE device_id = $1;
+        SELECT endpoint, expiration_time, keys FROM subscriptions WHERE user_id = $1;
       `;
       const subscriptionResult = await client.query(subscriptionQuery, [
-        device_id,
+        id,
       ]);
 
       if (subscriptionResult.rows.length > 0) {
-        subscription = subscriptionResult.rows[0];
+        subscriptionResult.rows.forEach((value,index)=>{
+          // Send the notification using the fetched subscription
+          sendNotification(value, payload, req, res); 
+        })
       } else {
         return res.status(404).json({
           status: false,
           message: "No subscription found for the provided username",
         });
       }
-    } else {
-      // If the identifier is not found in user_infm, assume it's a deviceId and fetch the subscription directly
-      const subscriptionQuery = `
-        SELECT endpoint, expiration_time, keys FROM subscriptions WHERE device_id = $1;
-      `;
-      const subscriptionResult = await client.query(subscriptionQuery, [
-        identifier,
-      ]);
-
-      if (subscriptionResult.rows.length > 0) {
-        subscription = subscriptionResult.rows[0];
-      } else {
-        return res.status(404).json({
-          status: false,
-          message: "No subscription found for the provided device ID",
-        });
-      }
     }
 
-    // Send the notification using the fetched subscription
-    sendNotification(subscription, payload, req, res);
   } catch (error) {
     console.error("Error finding subscription or sending notification", error);
     res.status(500).json({
@@ -1555,7 +1542,7 @@ router.post("/subscribe", async (req, res) => {
       message:
         "Subscription added/updated successfully and user device ID updated.",
     });
-    
+
   } catch (error) {
     // Rollback the transaction in case of an error
     await client.query("ROLLBACK");
