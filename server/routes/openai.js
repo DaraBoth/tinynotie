@@ -1477,7 +1477,7 @@ router.delete("/deleteTranslation/:id", authenticateToken, async (req, res) => {
 
 router.post("/subscribe", async (req, res) => {
   const { deviceId, userAgent, subscription, userInfo } = req.body; // Extract data from request body
-  console.log(deviceId, userAgent, subscription);
+  console.log(deviceId, userAgent, subscription, userInfo);
   const client = await pool.connect();
 
   try {
@@ -1527,7 +1527,8 @@ router.post("/subscribe", async (req, res) => {
       ]);
     }
 
-    if (userInfo) {
+    if (userInfo) { // cound be user gmail or name
+      console.log("a sub from: ",userInfo)
       // Update the user's device_id in the user_infm table based on the username
       const updateUserDeviceIdQuery = `
         UPDATE user_infm

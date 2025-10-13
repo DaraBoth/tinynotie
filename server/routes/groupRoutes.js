@@ -35,6 +35,10 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
                WHEN g.admin_id = $1::int THEN TRUE
                ELSE FALSE
              END AS "isAdmin"
+             CASE 
+               WHEN gu.user_id IS NOT NULL THEN TRUE
+               ELSE FALSE
+             END AS "isMember"
       FROM grp_infm g
       LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $1::int
       WHERE g.visibility = 'public'

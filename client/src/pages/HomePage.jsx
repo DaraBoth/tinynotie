@@ -42,6 +42,7 @@ import { Stack } from "@mui/system";
 import useWindowDimensions from "../hooks/useWindowDimensions";
 
 function GroupCard({ item, onDelete, onClick }) {
+  console.log("item")
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
