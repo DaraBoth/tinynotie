@@ -1486,6 +1486,23 @@ router.post("/subscribe", async (req, res) => {
     // Start a transaction to ensure atomicity
     await client.query("BEGIN");
 
+    const checkUserQuery = `
+      SELECT * FROM user_infm WHERE usernm = $1;
+    `;
+
+    const userExistResult = await client.query(checkUserQuery, [userInfo]); // userinfo type = string
+
+    if(userExistResult.rowCount <= 0){
+       // Commit the transaction after all queries succeed
+      await client.query("COMMIT"); client.release();
+      
+      res.status(500).json({
+        status: false,
+        message:
+          "Username not found! Check the user subscriptions.",
+      });
+    }
+
     // Check if the device ID already exists in the subscriptions table
     const checkDeviceQuery = `
       SELECT 1 FROM subscriptions WHERE device_id = $1;
@@ -1509,14 +1526,16 @@ router.post("/subscribe", async (req, res) => {
         expirationTime,
         keys,
         userAgent,
-        deviceId,
+        deviceId
       ]);
     } else {
       // Device ID does not exist, insert a new subscription
       const insertSubscriptionQuery = `
-        INSERT INTO subscriptions (endpoint, expiration_time, keys, device_id, user_agent, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+        INSERT INTO subscriptions (endpoint, expiration_time, keys, device_id, user_agent, created_at, updated_at, user_id)
+        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $6);
       `;
+
+      const userId = userExistResult["rows"][0]["id"] || null;
 
       await client.query(insertSubscriptionQuery, [
         endpoint,
@@ -1524,20 +1543,8 @@ router.post("/subscribe", async (req, res) => {
         keys,
         deviceId,
         userAgent,
+        userId
       ]);
-    }
-
-    if (userInfo) { // cound be user gmail or name
-      console.log("a sub from: ",userInfo)
-      // Update the user's device_id in the user_infm table based on the username
-      const updateUserDeviceIdQuery = `
-        UPDATE user_infm
-        SET device_id = $1
-        WHERE usernm = $2;
-      `;
-
-      // Execute the query to update the user's device_id
-      await client.query(updateUserDeviceIdQuery, [deviceId, userInfo]);
     }
 
     // Commit the transaction after all queries succeed
@@ -1548,6 +1555,7 @@ router.post("/subscribe", async (req, res) => {
       message:
         "Subscription added/updated successfully and user device ID updated.",
     });
+    
   } catch (error) {
     // Rollback the transaction in case of an error
     await client.query("ROLLBACK");
