@@ -1284,6 +1284,7 @@ router.post("/push", async (req, res) => {
 
       if (subscriptionResult.rows.length > 0) {
         subscriptionResult.rows.forEach((value,index)=>{
+          console.log(value,index);
           // Send the notification using the fetched subscription
           sendNotification(value, payload, req, res); 
         })
