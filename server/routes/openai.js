@@ -1257,23 +1257,19 @@ router.post("/batchPush", async (req, res) => {
 });
 
 router.post("/push", async (req, res) => {
-  const { identifier, payload, data } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const { identifier, payload, appId } = req.body; // Extract identifier (username or deviceId) and payload from request body
   const hostname = req.hostname;
   const client = await pool.connect();
 
   console.log("LOG HOSTNAME::",hostname);
 
-  let app_id = 0;
-  if(hostname.includes("goal")) app_id = 2;
-  if(hostname.includes("tinynotie")) app_id = 1;
-
   try {
     // Check if the identifier is a username or a deviceId
     const userQuery = `
-      SELECT id FROM user_infm WHERE usernm = $1 ${(app_id != 0) && `and app_id = ${app_id}`};
+      SELECT id FROM user_infm WHERE usernm = $1 ${(appId != 0) && `and app_id = ${appId}`};
     `;
     const userResult = await client.query(userQuery, [identifier]);
-
+    console.log({userResult});
     if (userResult.rows.length > 0) {
       // If a username is provided, retrieve the device_id from user_infm
       const { id } = userResult.rows[0];
@@ -1291,6 +1287,10 @@ router.post("/push", async (req, res) => {
           // Send the notification using the fetched subscription
           sendNotification(value, payload, req, res); 
         })
+        return res.json({
+          status: true,
+          message: "Notification completed!",
+        });
       } else {
         return res.status(404).json({
           status: false,
