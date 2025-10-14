@@ -39,7 +39,7 @@ export const sendNotificationToUserEachDevice = async (userId,payload) => {
       FROM subscriptions WHERE user_id = $1;
     `;
     const client = await pool.connect();
-    const result = await client.query(query);
+    const result = await client.query(query, [userId]);
 
     if (!result.rows || result.rows.length === 0) {
       return {
