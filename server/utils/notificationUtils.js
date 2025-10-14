@@ -11,7 +11,6 @@ import moment from "moment";
  * @param {Object} res - The response object
  */
 export const sendNotification = (subscription, data, req, res) => {
-  console.log(subscription);
   webPush
     .sendNotification(subscription, JSON.stringify(data))
     .then((response) => {

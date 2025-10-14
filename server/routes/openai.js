@@ -1282,14 +1282,16 @@ router.post("/push", async (req, res) => {
       ]);
 
       if (subscriptionResult.rows.length > 0) {
-        subscriptionResult.rows.forEach((value,index)=>{
+         const promises = subscriptionResult.rows.map((value,index)=>{
           console.log(value,index);
           // Send the notification using the fetched subscription
-          sendNotification(value, payload, req, res); 
+          return sendNotification(value, payload, req, res); 
         })
+        const results = await Promise.all(promises);
         return res.json({
           status: true,
           message: "Notification completed!",
+          results
         });
       } else {
         return res.status(404).json({
