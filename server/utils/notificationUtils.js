@@ -10,8 +10,8 @@ import moment from "moment";
  * @param {Object} req - The request object
  * @param {Object} res - The response object
  */
-export const sendNotification = (subscription, data, req, res) => {
-  webPush
+export const sendNotification = async  (subscription, data, req, res) => {
+  return await webPush
     .sendNotification(subscription, JSON.stringify(data))
     .then((response) => {
       console.log("Notification sent successfully", response);
@@ -30,6 +30,62 @@ export const sendNotification = (subscription, data, req, res) => {
       });
     });
 };
+
+export const sendNotificationToUserEachDevice = async (userId,payload) => {
+  try {
+    // Query to fetch all subscriptions
+    const query = `
+      SELECT endpoint, keys, expiration_time 
+      FROM subscriptions WHERE user_id = $1;
+    `;
+    const client = await pool.connect();
+    const result = await client.query(query);
+
+    if (!result.rows || result.rows.length === 0) {
+      return {
+        status: false,
+        message: "No subscriptions found for this user to send notifications.",
+      };
+    }
+
+    // Map subscription data into the format required by webPush
+    const subscriptions = result.rows.map((row) => ({
+      endpoint: row.endpoint,
+      keys: row.keys, // Ensure keys are parsed as JSON
+    }));
+
+    // Send notifications to all subscriptions
+    const notificationPromises = subscriptions.map((subscription) =>
+      webPush.sendNotification(subscription, JSON.stringify(payload))
+    );
+
+    // Wait for all notifications to resolve
+    const results = await Promise.allSettled(notificationPromises);
+
+    const successful = results.filter(
+      (result) => result.status === "fulfilled"
+    );
+    const failed = results.filter((result) => result.status === "rejected");
+
+    return {
+      status: true,
+      message: "Notifications processed.",
+      summary: {
+        total: subscriptions.length,
+        successful: successful.length,
+        failed: failed.length,
+      },
+    };
+  } catch (error) {
+    console.error("Error sending batch notifications", error);
+    return {
+      status: false,
+      message: "Error sending batch notifications",
+      error,
+    };
+  }
+};
+
 
 /**
  * Send a batch notification to all subscriptions

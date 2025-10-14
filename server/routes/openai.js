@@ -12,7 +12,7 @@ import { authenticateToken } from "../middleware/auth.js";
 import { pool, runQuery, saveChat, getChat, templateSaveChat } from "../utils/dbUtils.js";
 import { createTelegramBotClient, detectAndExtractPermission, getDateInSeoulTime, formatTelegramResponseKhmer, getGuideLineCommand } from "../utils/telegramUtils.js";
 import { callAI, AI_Database, getWeather, getTranslate, getKoreanWords, getCleaningProm } from "../utils/aiUtils.js";
-import { sendNotification, sendBatchNotification, sendEmail } from "../utils/notificationUtils.js";
+import { sendNotificationToUserEachDevice, sendBatchNotification, sendEmail } from "../utils/notificationUtils.js";
 import { handleInsertIntoExcel, callInsertIntoExcel, callRollBackExcel, getCleaningData, excel2002Url } from "../utils/excelUtils.js";
 
 // Configure web push notifications
@@ -1258,7 +1258,6 @@ router.post("/batchPush", async (req, res) => {
 
 router.post("/push", async (req, res) => {
   const { identifier, payload, appId=0 } = req.body; // Extract identifier (username or deviceId) and payload from request body
-  const hostname = req.hostname;
   const client = await pool.connect();
 
   try {
@@ -1266,39 +1265,11 @@ router.post("/push", async (req, res) => {
     let userQuery = `
       SELECT id FROM user_infm WHERE usernm = $1 and app_id = $2;
     `;
-
     const userResult = await client.query(userQuery, [identifier, appId]);
-    console.log({userResult});
     if (userResult.rows.length > 0) {
       // If a username is provided, retrieve the device_id from user_infm
       const { id } = userResult.rows[0];
-
-      // Fetch the subscription details for the user's
-      const subscriptionQuery = `
-        SELECT endpoint, expiration_time, keys FROM subscriptions WHERE user_id = $1;
-      `;
-      const subscriptionResult = await client.query(subscriptionQuery, [
-        id,
-      ]);
-
-      if (subscriptionResult.rows.length > 0) {
-         const promises = subscriptionResult.rows.map((value,index)=>{
-          console.log(value,index);
-          // Send the notification using the fetched subscription
-          return sendNotification(value, payload, req, res); 
-        })
-        const results = await Promise.all(promises);
-        return res.json({
-          status: true,
-          message: "Notification completed!",
-          results
-        });
-      } else {
-        return res.status(404).json({
-          status: false,
-          message: "No subscription found for the provided username",
-        });
-      }
+      res.send(await sendNotificationToUserEachDevice(id,payload));
     } else {
        return res.status(404).json({
         status: false,
