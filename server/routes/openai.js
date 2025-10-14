@@ -1261,14 +1261,13 @@ router.post("/push", async (req, res) => {
   const hostname = req.hostname;
   const client = await pool.connect();
 
-  console.log("LOG HOSTNAME::",hostname);
-
   try {
     // Check if the identifier is a username or a deviceId
-    const userQuery = `
-      SELECT id FROM user_infm WHERE usernm = $1 ${(appId != 0) && `and app_id = ${appId}`};
+    let userQuery = `
+      SELECT id FROM user_infm WHERE usernm = $1 and app_id = $2;
     `;
-    const userResult = await client.query(userQuery, [identifier]);
+
+    const userResult = await client.query(userQuery, [identifier, appId]);
     console.log({userResult});
     if (userResult.rows.length > 0) {
       // If a username is provided, retrieve the device_id from user_infm
@@ -1298,6 +1297,11 @@ router.post("/push", async (req, res) => {
           message: "No subscription found for the provided username",
         });
       }
+    } else {
+       return res.status(404).json({
+        status: false,
+        message: "No subscription found for the provided username",
+      });
     }
 
   } catch (error) {
