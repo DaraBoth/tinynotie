@@ -1257,7 +1257,7 @@ router.post("/batchPush", async (req, res) => {
 });
 
 router.post("/push", async (req, res) => {
-  const { identifier, payload, appId } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const { identifier, payload, appId=0 } = req.body; // Extract identifier (username or deviceId) and payload from request body
   const hostname = req.hostname;
   const client = await pool.connect();
 
