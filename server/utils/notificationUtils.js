@@ -55,8 +55,10 @@ export const sendNotificationToUserEachDevice = async (userId,payload) => {
     }));
 
     // Send notifications to all subscriptions
-    const notificationPromises = subscriptions.map((subscription) =>
-      webPush.sendNotification(subscription, JSON.stringify(payload))
+    const notificationPromises = subscriptions.map((subscription) => {
+        console.log({payload});
+        return webPush.sendNotification(subscription, JSON.stringify(payload))
+      }
     );
 
     // Wait for all notifications to resolve
