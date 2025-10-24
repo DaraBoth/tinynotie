@@ -1269,6 +1269,7 @@ router.post("/push", async (req, res) => {
     if (userResult.rows.length > 0) {
       // If a username is provided, retrieve the device_id from user_infm
       const { id } = userResult.rows[0];
+      console.log({payload});
       res.send(await sendNotificationToUserEachDevice(id,payload));
     } else {
        return res.status(404).json({
