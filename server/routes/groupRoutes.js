@@ -34,7 +34,7 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
              CASE
                WHEN g.admin_id = $1::int THEN TRUE
                ELSE FALSE
-             END AS "isAdmin"
+             END AS "isAdmin",
              CASE 
                WHEN gu.user_id IS NOT NULL THEN TRUE
                ELSE FALSE
