@@ -4,6 +4,10 @@ import path from "path"; // Import path for file handling
 import { authenticateToken } from "./middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
 import { put } from "@vercel/blob"; // Import the put function from Vercel Blob
+import { promisify } from "util";
+import dns from "dns";
+
+const dnsLookup = promisify(dns.lookup);
 
 const router = express.Router();
 
@@ -540,8 +544,8 @@ router.post("/chatMobile", async (req, res) => {
     }
     console.log(`[${requestId}] ✓ User exists: ${userResult.rows[0].usernm}`);
 
-    // Wait for webhook to acknowledge (starts processing) but don't wait for full response
-    console.log(`[${requestId}] Step 3: Calling webhook...`);
+    // Fire webhook request in background (don't wait for response)
+    console.log(`[${requestId}] Step 3: Firing webhook in background...`);
     const finalSessionId = sessionId || `session_${userId}_${Date.now()}`;
     const webhookPayload = {
       action: "sendMessage",
@@ -553,85 +557,67 @@ router.post("/chatMobile", async (req, res) => {
     };
     
     console.log(`[${requestId}] Webhook URL: ${WEBHOOK_URL_MB}`);
-    console.log(`[${requestId}] Webhook payload:`, JSON.stringify(webhookPayload, null, 2));
     
+    // Check DNS resolution and IP version
     try {
-      const controller = new AbortController();
-      const webhookCallStart = Date.now();
+      const webhookHost = new URL(WEBHOOK_URL_MB).hostname;
+      console.log(`[${requestId}] Resolving DNS for: ${webhookHost}`);
       
-      console.log(`[${requestId}] Sending fetch request at ${new Date().toISOString()}...`);
-
-      const webhookResponse = await fetch(WEBHOOK_URL_MB, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(webhookPayload),
-        signal: controller.signal
-      });
-
-      const webhookCallDuration = Date.now() - webhookCallStart;
-      console.log(`[${requestId}] Webhook responded in ${webhookCallDuration}ms`);
-      console.log(`[${requestId}] Webhook status: ${webhookResponse.status} ${webhookResponse.statusText}`);
-      console.log(`[${requestId}] Webhook headers:`, Object.fromEntries(webhookResponse.headers.entries()));
-
-      // Check if webhook acknowledged the request (status 200-299)
-      if (webhookResponse.ok) {
-        console.log(`[${requestId}] ✓ Webhook accepted the request`);
-        console.log(`[${requestId}] Total processing time: ${Date.now() - webhookCallStart}ms`);
-        console.log(`[${requestId}] Sending success response to client...`);
-        
-        // Webhook has started processing, now we can return
-        // The webhook will continue processing in the background
-        return res.json({
-          status: true,
-          message: "Request accepted and processing started.",
-          data: {
-            userId,
-            sessionId: finalSessionId,
-            timestamp: new Date().toISOString(),
-            requestId
-          }
-        });
-      } else {
-        console.log(`[${requestId}] ❌ Webhook rejected the request`);
-        console.log(`[${requestId}] Response status: ${webhookResponse.status}`);
-        
-        // Try to read error body
-        try {
-          const errorBody = await webhookResponse.text();
-          console.log(`[${requestId}] Webhook error body:`, errorBody);
-        } catch (readErr) {
-          console.log(`[${requestId}] Could not read error body:`, readErr.message);
-        }
-        
-        // Webhook rejected the request
-        return res.status(502).json({
-          status: false,
-          message: "Webhook rejected the request.",
-          webhookStatus: webhookResponse.status,
-          requestId
-        });
-      }
-    } catch (fetchError) {
-      const errorDuration = Date.now() - Date.now();
-      console.log(`[${requestId}] ❌ Webhook call failed after attempt`);
-      console.log(`[${requestId}] Error type: ${fetchError.name}`);
-      console.log(`[${requestId}] Error message: ${fetchError.message}`);
-      console.log(`[${requestId}] Error stack:`, fetchError.stack);
-      
-      if (fetchError.name === "AbortError") {
-        console.log(`[${requestId}] Request was aborted (timeout)`);
-        return res.status(504).json({
-          status: false,
-          message: "Webhook acknowledgment timeout.",
-          requestId
-        });
+      // Try IPv4
+      try {
+        const ipv4Result = await dnsLookup(webhookHost, { family: 4 });
+        console.log(`[${requestId}] ✓ IPv4 resolved: ${ipv4Result.address}`);
+      } catch (ipv4Error) {
+        console.log(`[${requestId}] ❌ IPv4 resolution failed: ${ipv4Error.message}`);
       }
       
-      console.log(`[${requestId}] Throwing error up to catch block...`);
-      throw fetchError;
+      // Try IPv6
+      try {
+        const ipv6Result = await dnsLookup(webhookHost, { family: 6 });
+        console.log(`[${requestId}] ✓ IPv6 resolved: ${ipv6Result.address}`);
+      } catch (ipv6Error) {
+        console.log(`[${requestId}] ❌ IPv6 resolution failed: ${ipv6Error.message}`);
+      }
+      
+      // Default (system preference)
+      const defaultResult = await dnsLookup(webhookHost);
+      console.log(`[${requestId}] System default resolved to: ${defaultResult.address} (family: ${defaultResult.family === 4 ? 'IPv4' : 'IPv6'})`);
+    } catch (dnsError) {
+      console.log(`[${requestId}] DNS lookup error: ${dnsError.message}`);
     }
+    
+    console.log(`[${requestId}] Webhook payload:`, JSON.stringify(webhookPayload, null, 2));
+    console.log(`[${requestId}] Initiating fire-and-forget request at ${new Date().toISOString()}...`);
+    
+    // Fire the request without awaiting (true background execution)
+    fetch(WEBHOOK_URL_MB, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(webhookPayload),
+    })
+    .then(response => {
+      console.log(`[${requestId}] 🔥 Background webhook completed with status: ${response.status}`);
+    })
+    .catch(error => {
+      console.error(`[${requestId}] 🔥 Background webhook error:`, error.message);
+    });
+    
+    console.log(`[${requestId}] ✓ Webhook request initiated in background`);
+    console.log(`[${requestId}] Sending immediate response to client...`);
+    
+    // Return immediately without waiting for webhook
+    return res.json({
+      status: true,
+      message: "Request queued for processing.",
+      data: {
+        userId,
+        sessionId: finalSessionId,
+        timestamp: new Date().toISOString(),
+        requestId
+      }
+    });
   } catch (err) {
     console.error(`[${requestId}] ❌ FATAL ERROR in chatMobile endpoint`);
     console.error(`[${requestId}] Error type: ${err.name}`);
