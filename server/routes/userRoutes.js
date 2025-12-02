@@ -6,8 +6,17 @@ import { pool, handleError } from "../utils/db.js";
 import { put } from "@vercel/blob"; // Import the put function from Vercel Blob
 import { promisify } from "util";
 import dns from "dns";
+import https from "https";
+import http from "http";
 
 const dnsLookup = promisify(dns.lookup);
+
+// Create HTTP agent that forces IPv4
+const ipv4Agent = new https.Agent({
+  family: 4, // Force IPv4
+  keepAlive: true,
+  timeout: 30000
+});
 
 const router = express.Router();
 
@@ -557,45 +566,18 @@ router.post("/chatMobile", async (req, res) => {
     };
     
     console.log(`[${requestId}] Webhook URL: ${WEBHOOK_URL_MB}`);
-    
-    // Check DNS resolution and IP version
-    try {
-      const webhookHost = new URL(WEBHOOK_URL_MB).hostname;
-      console.log(`[${requestId}] Resolving DNS for: ${webhookHost}`);
-      
-      // Try IPv4
-      try {
-        const ipv4Result = await dnsLookup(webhookHost, { family: 4 });
-        console.log(`[${requestId}] ✓ IPv4 resolved: ${ipv4Result.address}`);
-      } catch (ipv4Error) {
-        console.log(`[${requestId}] ❌ IPv4 resolution failed: ${ipv4Error.message}`);
-      }
-      
-      // Try IPv6
-      try {
-        const ipv6Result = await dnsLookup(webhookHost, { family: 6 });
-        console.log(`[${requestId}] ✓ IPv6 resolved: ${ipv6Result.address}`);
-      } catch (ipv6Error) {
-        console.log(`[${requestId}] ❌ IPv6 resolution failed: ${ipv6Error.message}`);
-      }
-      
-      // Default (system preference)
-      const defaultResult = await dnsLookup(webhookHost);
-      console.log(`[${requestId}] System default resolved to: ${defaultResult.address} (family: ${defaultResult.family === 4 ? 'IPv4' : 'IPv6'})`);
-    } catch (dnsError) {
-      console.log(`[${requestId}] DNS lookup error: ${dnsError.message}`);
-    }
-    
     console.log(`[${requestId}] Webhook payload:`, JSON.stringify(webhookPayload, null, 2));
     console.log(`[${requestId}] Initiating fire-and-forget request at ${new Date().toISOString()}...`);
+    console.log(`[${requestId}] Using IPv4-only connection`);
     
-    // Fire the request without awaiting (true background execution)
+    // Fire the request without awaiting (true background execution) - FORCED IPv4
     fetch(WEBHOOK_URL_MB, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
       },
       body: JSON.stringify(webhookPayload),
+      agent: ipv4Agent, // Force IPv4
     })
     .then(response => {
       console.log(`[${requestId}] 🔥 Background webhook completed with status: ${response.status}`);
@@ -726,6 +708,7 @@ router.post("/chatDesktop", async (req, res) => {
           mobile: false,
         }),
         signal: controller.signal,
+        agent: ipv4Agent, // Force IPv4
       });
 
       clearTimeout(timeout);
