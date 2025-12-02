@@ -524,34 +524,59 @@ router.post("/chatMobile", async (req, res) => {
       });
     }
 
-    // Fire and forget - send request without waiting for response
-    fetch(WEBHOOK_URL_MB, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "sendMessage",
-        sessionId: sessionId || `session_${userId}_${Date.now()}`,
-        chatInput: message,
-        goalId: goalId || null,
-        userId: userId,
-        mobile: true
-      })
-    }).catch(err => {
-      console.error("Webhook call failed (fire and forget):", err);
-    });
+    // Wait for webhook to acknowledge (starts processing) but don't wait for full response
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout for acknowledgment
 
-    // Immediately return success response
-    return res.json({
-      status: true,
-      message: "Request sent successfully.",
-      data: {
-        userId,
-        sessionId: sessionId || `session_${userId}_${Date.now()}`,
-        timestamp: new Date().toISOString()
+      const webhookResponse = await fetch(WEBHOOK_URL_MB, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "sendMessage",
+          sessionId: sessionId || `session_${userId}_${Date.now()}`,
+          chatInput: message,
+          goalId: goalId || null,
+          userId: userId,
+          mobile: true
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      // Check if webhook acknowledged the request (status 200-299)
+      if (webhookResponse.ok) {
+        // Webhook has started processing, now we can return
+        // The webhook will continue processing in the background
+        return res.json({
+          status: true,
+          message: "Request accepted and processing started.",
+          data: {
+            userId,
+            sessionId: sessionId || `session_${userId}_${Date.now()}`,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } else {
+        // Webhook rejected the request
+        return res.status(502).json({
+          status: false,
+          message: "Webhook rejected the request.",
+          webhookStatus: webhookResponse.status
+        });
       }
-    });
+    } catch (fetchError) {
+      if (fetchError.name === "AbortError") {
+        return res.status(504).json({
+          status: false,
+          message: "Webhook acknowledgment timeout after 30 seconds."
+        });
+      }
+      throw fetchError;
+    }
   } catch (err) {
     console.error("Proxy error:", err);
     return res.status(500).json({ 
