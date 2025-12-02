@@ -3,7 +3,7 @@ import multer from "multer"; // Import multer for file uploads
 import path from "path"; // Import path for file handling
 import { authenticateToken } from "./middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
-import { put } from '@vercel/blob'; // Import the put function from Vercel Blob
+import { put } from "@vercel/blob"; // Import the put function from Vercel Blob
 
 const router = express.Router();
 
@@ -12,8 +12,10 @@ const storage = multer.memoryStorage(); // Store files in memory
 const upload = multer({ storage }); // Initialize multer with memory storage
 
 // Webhook URLs
-const WEBHOOK_URL = 'https://n8n.tonlaysab.com/webhook/142e0e30-4fce-4baa-ac7e-6ead0b16a3a9/chat';
-const WEBHOOK_URL_MB = 'https://n8n.tonlaysab.com/webhook/4a558f06-2c2a-40ef-9a14-43d035c0ba8b/chat';
+const WEBHOOK_URL =
+  "https://n8n.tonlaysab.com/webhook/142e0e30-4fce-4baa-ac7e-6ead0b16a3a9/chat";
+const WEBHOOK_URL_MB =
+  "https://n8n.tonlaysab.com/webhook/4a558f06-2c2a-40ef-9a14-43d035c0ba8b/chat";
 const MIN_MESSAGE_INTERVAL = 3000;
 
 /**
@@ -244,19 +246,32 @@ router.put("/updateUserInfo", authenticateToken, async (req, res) => {
   const fields = req.body;
 
   // Whitelist of allowed fields to update
-  const allowedFields = ["phone_number", "email", "first_name", "last_name","profile_url", "device_id"];
+  const allowedFields = [
+    "phone_number",
+    "email",
+    "first_name",
+    "last_name",
+    "profile_url",
+    "device_id",
+  ];
 
   // Filter out any fields that are not in the allowed list
-  const updateFields = Object.keys(fields).filter(key => allowedFields.includes(key));
+  const updateFields = Object.keys(fields).filter((key) =>
+    allowedFields.includes(key)
+  );
 
   if (updateFields.length === 0) {
-    return res.status(400).json({ status: false, message: "No valid fields to update." });
+    return res
+      .status(400)
+      .json({ status: false, message: "No valid fields to update." });
   }
 
   try {
     // Build the SET clause dynamically
-    const setClause = updateFields.map((key, index) => `${key} = $${index + 1}`).join(", ");
-    const values = updateFields.map(key => fields[key]);
+    const setClause = updateFields
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(", ");
+    const values = updateFields.map((key) => fields[key]);
 
     const sql = `
       UPDATE user_infm
@@ -266,7 +281,10 @@ router.put("/updateUserInfo", authenticateToken, async (req, res) => {
     values.push(user_id);
 
     await pool.query(sql, values);
-    res.json({ status: true, message: "User information updated successfully." });
+    res.json({
+      status: true,
+      message: "User information updated successfully.",
+    });
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ status: false, error: error.message });
@@ -327,7 +345,9 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
     const result = await pool.query(sql, [user_id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ status: false, message: "User not found." });
     }
 
     res.json({ status: true, data: result.rows[0] });
@@ -365,75 +385,92 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/uploadImage", authenticateToken, upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ status: false, message: "Image file is required." });
-    }
+router.post(
+  "/uploadImage",
+  authenticateToken,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({ status: false, message: "Image file is required." });
+      }
 
-    const { originalname, mimetype, buffer } = req.file;
-    const { _id: user_id } = req.user;
-    const sql = `
+      const { originalname, mimetype, buffer } = req.file;
+      const { _id: user_id } = req.user;
+      const sql = `
       SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_chat_id
       FROM user_infm
       WHERE id = $1;
     `;
-    const result = await pool.query(sql, [user_id]);
+      const result = await pool.query(sql, [user_id]);
 
-    // Ensure file size is within limits (50MB)
-    const imageSizeInMB = buffer.length / (1024 * 1024);
-    if (imageSizeInMB > 50) {
-      return res.status(413).json({
+      // Ensure file size is within limits (50MB)
+      const imageSizeInMB = buffer.length / (1024 * 1024);
+      if (imageSizeInMB > 50) {
+        return res.status(413).json({
+          status: false,
+          message:
+            "Image is too large. Please upload an image smaller than 50 MB.",
+        });
+      }
+
+      // Generate a timestamp-based unique filename
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[-T:.Z]/g, "")
+        .slice(0, 14); // YYYYMMDDHHMMSS
+      const extension = path.extname(originalname); // File extension
+      const basename = path.basename(originalname, extension); // Filename without extension
+      const uniqueFilename = `${basename}_${timestamp}${extension}`;
+
+      // Define the storage path for the user
+      const filePath = `profile/${result.rows[0].usernm}/${uniqueFilename}`;
+
+      let imageUrl = "";
+
+      try {
+        // Try to upload the image to Vercel Blob
+        if (process.env.BLOB_READ_WRITE_TOKEN) {
+          const { url } = await put(filePath, buffer, {
+            contentType: mimetype,
+            access: "public",
+            token: process.env.BLOB_READ_WRITE_TOKEN,
+          });
+          imageUrl = url;
+        } else {
+          // Fallback: Use a placeholder image URL if Vercel Blob is not configured
+          console.warn(
+            "BLOB_READ_WRITE_TOKEN not found. Using placeholder image URL."
+          );
+          imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            result.rows[0].usernm
+          )}&background=random&color=fff&size=200`;
+        }
+      } catch (uploadError) {
+        console.error("Error uploading to Vercel Blob:", uploadError);
+        // Fallback: Use a placeholder image URL
+        imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          result.rows[0].usernm
+        )}&background=random&color=fff&size=200`;
+      }
+
+      return res.json({
+        status: true,
+        message: "Image uploaded successfully.",
+        data: { url: imageUrl, uniqueFilename, path: filePath },
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return res.status(500).json({
         status: false,
-        message: "Image is too large. Please upload an image smaller than 50 MB.",
+        message: "An error occurred while uploading the image.",
+        error: error.message,
       });
     }
-
-    // Generate a timestamp-based unique filename
-    const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "").slice(0, 14); // YYYYMMDDHHMMSS
-    const extension = path.extname(originalname); // File extension
-    const basename = path.basename(originalname, extension); // Filename without extension
-    const uniqueFilename = `${basename}_${timestamp}${extension}`;
-
-    // Define the storage path for the user
-    const filePath = `profile/${result.rows[0].usernm}/${uniqueFilename}`;
-
-    let imageUrl = '';
-
-    try {
-      // Try to upload the image to Vercel Blob
-      if (process.env.BLOB_READ_WRITE_TOKEN) {
-        const { url } = await put(filePath, buffer, {
-          contentType: mimetype,
-          access: "public",
-          token: process.env.BLOB_READ_WRITE_TOKEN,
-        });
-        imageUrl = url;
-      } else {
-        // Fallback: Use a placeholder image URL if Vercel Blob is not configured
-        console.warn("BLOB_READ_WRITE_TOKEN not found. Using placeholder image URL.");
-        imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(result.rows[0].usernm)}&background=random&color=fff&size=200`;
-      }
-    } catch (uploadError) {
-      console.error("Error uploading to Vercel Blob:", uploadError);
-      // Fallback: Use a placeholder image URL
-      imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(result.rows[0].usernm)}&background=random&color=fff&size=200`;
-    }
-
-    return res.json({
-      status: true,
-      message: "Image uploaded successfully.",
-      data: { url: imageUrl, uniqueFilename, path: filePath },
-    });
-  } catch (error) {
-    console.error("Error uploading image:", error);
-    return res.status(500).json({
-      status: false,
-      message: "An error occurred while uploading the image.",
-      error: error.message,
-    });
   }
-});
+);
 
 /**
  * @swagger
@@ -464,77 +501,52 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
  */
 router.post("/chatMobile", async (req, res) => {
   const { userId, userEmail, message, sessionId, goalId } = req.body;
-
   try {
-    // Set no timeout for this request
-    req.setTimeout(0);
-    res.setTimeout(0);
 
+    console.log("Proxy → Incoming payload:", req.body);
     // Validate required fields
     if (!userId || !message) {
-      return res.status(400).json({ 
-        status: false, 
-        message: "userId and message are required." 
+      return res.status(400).json({
+        status: false,
+        message: "userId and message are required.",
       });
     }
 
     // Check if user exists in database
     const userCheckSql = `SELECT id, usernm FROM user_infm WHERE usernm = $1;`;
     const userResult = await pool.query(userCheckSql, [userEmail]);
-
+    
     if (userResult.rows.length === 0) {
-      return res.status(404).json({ 
-        status: false, 
-        message: "User not found." 
+      return res.status(404).json({
+        status: false,
+        message: "User not found.",
       });
     }
 
-    // Call the mobile webhook (no stream) with extended timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 1200000); // 20 minutes timeout
-
-    try {
-      const webhookResponse = await fetch(WEBHOOK_URL_MB, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Connection': 'keep-alive'
-        },
-        body: JSON.stringify({
-          action: "sendMessage",
-          sessionId: sessionId || `session_${userId}_${Date.now()}`,
-          chatInput: message,
-          goalId: goalId || null,
-          userId: userId,
-          mobile: true
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeout);
-      const responseData = await webhookResponse.json();
-
-      res.json({ 
-        status: true, 
-        data: responseData 
-      });
-    } catch (fetchError) {
-      clearTimeout(timeout);
-      if (fetchError.name === 'AbortError') {
-        return res.status(504).json({
-          status: false,
-          message: "Request timeout after 20 minutes"
-        });
+    const n8nRes = await fetch(
+      "https://n8n.tonlaysab.com/webhook/142e0e30-4fce-4baa-ac7e-6ead0b16a3a9/chat",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
       }
-      throw fetchError;
-    }
-  } catch (error) {
-    console.error("Error in chatMobile:", error);
-    res.status(500).json({ 
-      status: false, 
-      error: error.message 
-    });
+    );
+
+    // Keep headers from N8N
+    res.setHeader(
+      "Content-Type",
+      n8nRes.headers.get("content-type") || "text/plain"
+    );
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cache-Control", "no-cache");
+
+    // Stream the response directly
+    n8nRes.body.pipe(res);
+  } catch (err) {
+    console.error("Proxy error:", err);
+    res.status(500).json({ error: "Proxy failed", message: err.message });
   }
+  
 });
 
 /**
@@ -574,9 +586,9 @@ router.post("/chatDesktop", async (req, res) => {
 
     // Validate required fields
     if (!userId || !message) {
-      return res.status(400).json({ 
-        status: false, 
-        message: "userId and message are required." 
+      return res.status(400).json({
+        status: false,
+        message: "userId and message are required.",
       });
     }
 
@@ -585,25 +597,25 @@ router.post("/chatDesktop", async (req, res) => {
     const userResult = await pool.query(userCheckSql, [userEmail]);
 
     if (userResult.rows.length === 0) {
-      return res.status(404).json({ 
-        status: false, 
-        message: "User not found." 
+      return res.status(404).json({
+        status: false,
+        message: "User not found.",
       });
     }
 
     // Set headers for streaming
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no'); // Disable proxy buffering
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no"); // Disable proxy buffering
 
     // Send initial comment to establish connection
-    res.write(': connected\n\n');
+    res.write(": connected\n\n");
 
     // Set up keep-alive interval to prevent timeout
     const keepAliveInterval = setInterval(() => {
       if (!res.writableEnded) {
-        res.write(': keep-alive\n\n');
+        res.write(": keep-alive\n\n");
       }
     }, 15000); // Send keep-alive every 15 seconds
 
@@ -613,10 +625,10 @@ router.post("/chatDesktop", async (req, res) => {
       const timeout = setTimeout(() => controller.abort(), 1200000); // 20 minutes timeout
 
       const webhookResponse = await fetch(WEBHOOK_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Connection': 'keep-alive'
+          "Content-Type": "application/json",
+          Connection: "keep-alive",
         },
         body: JSON.stringify({
           action: "sendMessage",
@@ -624,9 +636,9 @@ router.post("/chatDesktop", async (req, res) => {
           chatInput: message,
           goalId: goalId || null,
           userId: userId,
-          mobile: false
+          mobile: false,
         }),
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       clearTimeout(timeout);
@@ -638,7 +650,7 @@ router.post("/chatDesktop", async (req, res) => {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value, { stream: true });
         if (!res.writableEnded) {
           res.write(chunk);
@@ -649,9 +661,13 @@ router.post("/chatDesktop", async (req, res) => {
       res.end();
     } catch (fetchError) {
       clearInterval(keepAliveInterval);
-      if (fetchError.name === 'AbortError') {
+      if (fetchError.name === "AbortError") {
         if (!res.writableEnded) {
-          res.write(`data: ${JSON.stringify({ error: "Request timeout after 20 minutes" })}\n\n`);
+          res.write(
+            `data: ${JSON.stringify({
+              error: "Request timeout after 20 minutes",
+            })}\n\n`
+          );
           res.end();
         }
       } else {
@@ -661,9 +677,9 @@ router.post("/chatDesktop", async (req, res) => {
   } catch (error) {
     console.error("Error in chatDesktop:", error);
     if (!res.headersSent) {
-      res.status(500).json({ 
-        status: false, 
-        error: error.message 
+      res.status(500).json({
+        status: false,
+        error: error.message,
       });
     } else if (!res.writableEnded) {
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
