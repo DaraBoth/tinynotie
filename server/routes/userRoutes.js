@@ -475,7 +475,7 @@ router.post("/chatMobile", async (req, res) => {
     }
 
     // Check if user exists in database
-    const userCheckSql = `SELECT id, usernm FROM user_infm WHERE id = $1;`;
+    const userCheckSql = `SELECT id, usernm FROM user_infm WHERE usernm = $1;`;
     const userResult = await pool.query(userCheckSql, [userId]);
 
     if (userResult.rows.length === 0) {
@@ -554,7 +554,7 @@ router.post("/chatDesktop", async (req, res) => {
     }
 
     // Check if user exists in database
-    const userCheckSql = `SELECT id, usernm FROM user_infm WHERE id = $1;`;
+    const userCheckSql = `SELECT id, usernm FROM user_infm WHERE usernm = $1;`;
     const userResult = await pool.query(userCheckSql, [userId]);
 
     if (userResult.rows.length === 0) {
