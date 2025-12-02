@@ -501,51 +501,86 @@ router.post(
  */
 router.post("/chatMobile", async (req, res) => {
   const { userId, userEmail, message, sessionId, goalId } = req.body;
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
   try {
-    console.log("Proxy → Incoming payload:", req.body);
+    console.log(`[${requestId}] ===== NEW REQUEST =====`);
+    console.log(`[${requestId}] Timestamp: ${new Date().toISOString()}`);
+    console.log(`[${requestId}] Incoming payload:`, JSON.stringify(req.body, null, 2));
     
     // Validate required fields
+    console.log(`[${requestId}] Step 1: Validating required fields...`);
     if (!userId || !message) {
+      console.log(`[${requestId}] ❌ Validation failed: Missing userId or message`);
       return res.status(400).json({
         status: false,
         message: "userId and message are required.",
       });
     }
+    console.log(`[${requestId}] ✓ Validation passed`);
 
     // Check if user exists in database
+    console.log(`[${requestId}] Step 2: Checking user in database...`);
+    console.log(`[${requestId}] Query: SELECT id, usernm FROM user_infm WHERE usernm = '${userEmail}'`);
+    
+    const dbQueryStart = Date.now();
     const userCheckSql = `SELECT id, usernm FROM user_infm WHERE usernm = $1;`;
     const userResult = await pool.query(userCheckSql, [userEmail]);
+    const dbQueryDuration = Date.now() - dbQueryStart;
+    
+    console.log(`[${requestId}] DB query completed in ${dbQueryDuration}ms`);
+    console.log(`[${requestId}] User found:`, userResult.rows.length > 0);
     
     if (userResult.rows.length === 0) {
+      console.log(`[${requestId}] ❌ User not found in database`);
       return res.status(404).json({
         status: false,
         message: "User not found.",
       });
     }
+    console.log(`[${requestId}] ✓ User exists: ${userResult.rows[0].usernm}`);
 
     // Wait for webhook to acknowledge (starts processing) but don't wait for full response
+    console.log(`[${requestId}] Step 3: Calling webhook...`);
+    const finalSessionId = sessionId || `session_${userId}_${Date.now()}`;
+    const webhookPayload = {
+      action: "sendMessage",
+      sessionId: finalSessionId,
+      chatInput: message,
+      goalId: goalId || null,
+      userId: userId,
+      mobile: true
+    };
+    
+    console.log(`[${requestId}] Webhook URL: ${WEBHOOK_URL_MB}`);
+    console.log(`[${requestId}] Webhook payload:`, JSON.stringify(webhookPayload, null, 2));
+    
     try {
       const controller = new AbortController();
+      const webhookCallStart = Date.now();
+      
+      console.log(`[${requestId}] Sending fetch request at ${new Date().toISOString()}...`);
 
       const webhookResponse = await fetch(WEBHOOK_URL_MB, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          action: "sendMessage",
-          sessionId: sessionId || `session_${userId}_${Date.now()}`,
-          chatInput: message,
-          goalId: goalId || null,
-          userId: userId,
-          mobile: true
-        }),
+        body: JSON.stringify(webhookPayload),
         signal: controller.signal
       });
 
+      const webhookCallDuration = Date.now() - webhookCallStart;
+      console.log(`[${requestId}] Webhook responded in ${webhookCallDuration}ms`);
+      console.log(`[${requestId}] Webhook status: ${webhookResponse.status} ${webhookResponse.statusText}`);
+      console.log(`[${requestId}] Webhook headers:`, Object.fromEntries(webhookResponse.headers.entries()));
+
       // Check if webhook acknowledged the request (status 200-299)
       if (webhookResponse.ok) {
+        console.log(`[${requestId}] ✓ Webhook accepted the request`);
+        console.log(`[${requestId}] Total processing time: ${Date.now() - webhookCallStart}ms`);
+        console.log(`[${requestId}] Sending success response to client...`);
+        
         // Webhook has started processing, now we can return
         // The webhook will continue processing in the background
         return res.json({
@@ -553,34 +588,65 @@ router.post("/chatMobile", async (req, res) => {
           message: "Request accepted and processing started.",
           data: {
             userId,
-            sessionId: sessionId || `session_${userId}_${Date.now()}`,
-            timestamp: new Date().toISOString()
+            sessionId: finalSessionId,
+            timestamp: new Date().toISOString(),
+            requestId
           }
         });
       } else {
+        console.log(`[${requestId}] ❌ Webhook rejected the request`);
+        console.log(`[${requestId}] Response status: ${webhookResponse.status}`);
+        
+        // Try to read error body
+        try {
+          const errorBody = await webhookResponse.text();
+          console.log(`[${requestId}] Webhook error body:`, errorBody);
+        } catch (readErr) {
+          console.log(`[${requestId}] Could not read error body:`, readErr.message);
+        }
+        
         // Webhook rejected the request
         return res.status(502).json({
           status: false,
           message: "Webhook rejected the request.",
-          webhookStatus: webhookResponse.status
+          webhookStatus: webhookResponse.status,
+          requestId
         });
       }
     } catch (fetchError) {
+      const errorDuration = Date.now() - Date.now();
+      console.log(`[${requestId}] ❌ Webhook call failed after attempt`);
+      console.log(`[${requestId}] Error type: ${fetchError.name}`);
+      console.log(`[${requestId}] Error message: ${fetchError.message}`);
+      console.log(`[${requestId}] Error stack:`, fetchError.stack);
+      
       if (fetchError.name === "AbortError") {
+        console.log(`[${requestId}] Request was aborted (timeout)`);
         return res.status(504).json({
           status: false,
-          message: "Webhook acknowledgment timeout after 30 seconds."
+          message: "Webhook acknowledgment timeout.",
+          requestId
         });
       }
+      
+      console.log(`[${requestId}] Throwing error up to catch block...`);
       throw fetchError;
     }
   } catch (err) {
-    console.error("Proxy error:", err);
+    console.error(`[${requestId}] ❌ FATAL ERROR in chatMobile endpoint`);
+    console.error(`[${requestId}] Error type: ${err.name}`);
+    console.error(`[${requestId}] Error message: ${err.message}`);
+    console.error(`[${requestId}] Error stack:`, err.stack);
+    console.error(`[${requestId}] Full error object:`, JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+    
     return res.status(500).json({ 
       status: false, 
       error: "Proxy failed", 
-      message: err.message 
+      message: err.message,
+      requestId
     });
+  } finally {
+    console.log(`[${requestId}] ===== REQUEST END =====\n`);
   }
 });
 
