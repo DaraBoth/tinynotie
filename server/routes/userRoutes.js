@@ -11,6 +11,11 @@ const router = express.Router();
 const storage = multer.memoryStorage(); // Store files in memory
 const upload = multer({ storage }); // Initialize multer with memory storage
 
+// Webhook URLs
+const WEBHOOK_URL = 'https://n8n.tonlaysab.com/webhook/142e0e30-4fce-4baa-ac7e-6ead0b16a3a9/chat';
+const WEBHOOK_URL_MB = 'https://n8n.tonlaysab.com/webhook/4a558f06-2c2a-40ef-9a14-43d035c0ba8b/chat';
+const MIN_MESSAGE_INTERVAL = 3000;
+
 /**
  * @swagger
  * /api/listUsers:
@@ -427,6 +432,178 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
       message: "An error occurred while uploading the image.",
       error: error.message,
     });
+  }
+});
+
+/**
+ * @swagger
+ * /api/chatMobile:
+ *   post:
+ *     summary: Chat endpoint for mobile (no stream)
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *               message:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Chat response
+ *       400:
+ *         description: Missing userId or message
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/chatMobile", async (req, res) => {
+  const { userId, message } = req.body;
+
+  try {
+    // Validate required fields
+    if (!userId || !message) {
+      return res.status(400).json({ 
+        status: false, 
+        message: "userId and message are required." 
+      });
+    }
+
+    // Check if user exists in database
+    const userCheckSql = `SELECT id, usernm FROM user_infm WHERE id = $1;`;
+    const userResult = await pool.query(userCheckSql, [userId]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ 
+        status: false, 
+        message: "User not found." 
+      });
+    }
+
+    // Call the mobile webhook (no stream)
+    const webhookResponse = await fetch(WEBHOOK_URL_MB, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        username: userResult.rows[0].usernm,
+        message,
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    const responseData = await webhookResponse.json();
+
+    res.json({ 
+      status: true, 
+      data: responseData 
+    });
+  } catch (error) {
+    console.error("Error in chatMobile:", error);
+    res.status(500).json({ 
+      status: false, 
+      error: error.message 
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/chatDesktop:
+ *   post:
+ *     summary: Chat endpoint for desktop (stream)
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *               message:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Chat stream response
+ *       400:
+ *         description: Missing userId or message
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/chatDesktop", async (req, res) => {
+  const { userId, message } = req.body;
+
+  try {
+    // Validate required fields
+    if (!userId || !message) {
+      return res.status(400).json({ 
+        status: false, 
+        message: "userId and message are required." 
+      });
+    }
+
+    // Check if user exists in database
+    const userCheckSql = `SELECT id, usernm FROM user_infm WHERE id = $1;`;
+    const userResult = await pool.query(userCheckSql, [userId]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ 
+        status: false, 
+        message: "User not found." 
+      });
+    }
+
+    // Set headers for streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Call the desktop webhook (with stream)
+    const webhookResponse = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        username: userResult.rows[0].usernm,
+        message,
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    // Stream the response
+    const reader = webhookResponse.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value);
+      res.write(chunk);
+    }
+
+    res.end();
+  } catch (error) {
+    console.error("Error in chatDesktop:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        status: false, 
+        error: error.message 
+      });
+    }
   }
 });
 
