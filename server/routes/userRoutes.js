@@ -466,6 +466,10 @@ router.post("/chatMobile", async (req, res) => {
   const { userId, userEmail, message, sessionId, goalId } = req.body;
 
   try {
+    // Set no timeout for this request
+    req.setTimeout(0);
+    res.setTimeout(0);
+
     // Validate required fields
     if (!userId || !message) {
       return res.status(400).json({ 
@@ -485,28 +489,45 @@ router.post("/chatMobile", async (req, res) => {
       });
     }
 
-    // Call the mobile webhook (no stream)
-    const webhookResponse = await fetch(WEBHOOK_URL_MB, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: "sendMessage",
-        sessionId: sessionId || `session_${userId}_${Date.now()}`,
-        chatInput: message,
-        goalId: goalId || null,
-        userId: userId,
-        mobile: true
-      })
-    });
+    // Call the mobile webhook (no stream) with extended timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1200000); // 20 minutes timeout
 
-    const responseData = await webhookResponse.json();
+    try {
+      const webhookResponse = await fetch(WEBHOOK_URL_MB, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Connection': 'keep-alive'
+        },
+        body: JSON.stringify({
+          action: "sendMessage",
+          sessionId: sessionId || `session_${userId}_${Date.now()}`,
+          chatInput: message,
+          goalId: goalId || null,
+          userId: userId,
+          mobile: true
+        }),
+        signal: controller.signal
+      });
 
-    res.json({ 
-      status: true, 
-      data: responseData 
-    });
+      clearTimeout(timeout);
+      const responseData = await webhookResponse.json();
+
+      res.json({ 
+        status: true, 
+        data: responseData 
+      });
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      if (fetchError.name === 'AbortError') {
+        return res.status(504).json({
+          status: false,
+          message: "Request timeout after 20 minutes"
+        });
+      }
+      throw fetchError;
+    }
   } catch (error) {
     console.error("Error in chatMobile:", error);
     res.status(500).json({ 
@@ -547,6 +568,10 @@ router.post("/chatDesktop", async (req, res) => {
   const { userId, userEmail, message, sessionId, goalId } = req.body;
 
   try {
+    // Set no timeout for this request
+    req.setTimeout(0);
+    res.setTimeout(0);
+
     // Validate required fields
     if (!userId || !message) {
       return res.status(400).json({ 
@@ -570,36 +595,69 @@ router.post("/chatDesktop", async (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable proxy buffering
 
-    // Call the desktop webhook (with stream)
-    const webhookResponse = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: "sendMessage",
-        sessionId: sessionId || `session_${userId}_${Date.now()}`,
-        chatInput: message,
-        goalId: goalId || null,
-        userId: userId,
-        mobile: false
-      })
-    });
+    // Send initial comment to establish connection
+    res.write(': connected\n\n');
 
-    // Stream the response
-    const reader = webhookResponse.body.getReader();
-    const decoder = new TextDecoder();
+    // Set up keep-alive interval to prevent timeout
+    const keepAliveInterval = setInterval(() => {
+      if (!res.writableEnded) {
+        res.write(': keep-alive\n\n');
+      }
+    }, 15000); // Send keep-alive every 15 seconds
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      const chunk = decoder.decode(value);
-      res.write(chunk);
+    try {
+      // Call the desktop webhook (with stream)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1200000); // 20 minutes timeout
+
+      const webhookResponse = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Connection': 'keep-alive'
+        },
+        body: JSON.stringify({
+          action: "sendMessage",
+          sessionId: sessionId || `session_${userId}_${Date.now()}`,
+          chatInput: message,
+          goalId: goalId || null,
+          userId: userId,
+          mobile: false
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      // Stream the response
+      const reader = webhookResponse.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        if (!res.writableEnded) {
+          res.write(chunk);
+        }
+      }
+
+      clearInterval(keepAliveInterval);
+      res.end();
+    } catch (fetchError) {
+      clearInterval(keepAliveInterval);
+      if (fetchError.name === 'AbortError') {
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ error: "Request timeout after 20 minutes" })}\n\n`);
+          res.end();
+        }
+      } else {
+        throw fetchError;
+      }
     }
-
-    res.end();
   } catch (error) {
     console.error("Error in chatDesktop:", error);
     if (!res.headersSent) {
@@ -607,6 +665,9 @@ router.post("/chatDesktop", async (req, res) => {
         status: false, 
         error: error.message 
       });
+    } else if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      res.end();
     }
   }
 });
