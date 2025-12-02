@@ -463,7 +463,7 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
  *         description: Internal server error
  */
 router.post("/chatMobile", async (req, res) => {
-  const { userId, userEmail, message } = req.body;
+  const { userId, userEmail, message, sessionId, goalId } = req.body;
 
   try {
     // Validate required fields
@@ -492,10 +492,12 @@ router.post("/chatMobile", async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId,
-        username: userResult.rows[0].usernm,
-        message,
-        timestamp: new Date().toISOString()
+        action: "sendMessage",
+        sessionId: sessionId || `session_${userId}_${Date.now()}`,
+        chatInput: message,
+        goalId: goalId || null,
+        userId: userId,
+        mobile: true
       })
     });
 
@@ -542,7 +544,7 @@ router.post("/chatMobile", async (req, res) => {
  *         description: Internal server error
  */
 router.post("/chatDesktop", async (req, res) => {
-  const { userId, userEmail, message } = req.body;
+  const { userId, userEmail, message, sessionId, goalId } = req.body;
 
   try {
     // Validate required fields
@@ -576,10 +578,12 @@ router.post("/chatDesktop", async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId,
-        username: userResult.rows[0].usernm,
-        message,
-        timestamp: new Date().toISOString()
+        action: "sendMessage",
+        sessionId: sessionId || `session_${userId}_${Date.now()}`,
+        chatInput: message,
+        goalId: goalId || null,
+        userId: userId,
+        mobile: false
       })
     });
 
