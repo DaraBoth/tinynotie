@@ -549,7 +549,7 @@ router.post("/chatMobile", async (req, res) => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 1200000); // 20 min
 
-      const webhookResponse = await fetch(WEBHOOK_URL, {
+      const webhookResponse = await fetch(WEBHOOK_URL_MB, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
