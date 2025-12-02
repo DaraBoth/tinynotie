@@ -503,10 +503,6 @@ router.post("/chatMobile", async (req, res) => {
   const { userId, userEmail, message, sessionId, goalId } = req.body;
   
   try {
-    // Set no timeout for this request
-    req.setTimeout(0);
-    res.setTimeout(0);
-
     console.log("Proxy → Incoming payload:", req.body);
     
     // Validate required fields
@@ -528,81 +524,41 @@ router.post("/chatMobile", async (req, res) => {
       });
     }
 
-    // Set headers for streaming response
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("X-Accel-Buffering", "no");
+    // Fire and forget - send request without waiting for response
+    fetch(WEBHOOK_URL_MB, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "sendMessage",
+        sessionId: sessionId || `session_${userId}_${Date.now()}`,
+        chatInput: message,
+        goalId: goalId || null,
+        userId: userId,
+        mobile: true
+      })
+    }).catch(err => {
+      console.error("Webhook call failed (fire and forget):", err);
+    });
 
-    // Send initial connection confirmation
-    res.write(": connected\n\n");
-
-    // Set up keep-alive to prevent timeout
-    const keepAliveInterval = setInterval(() => {
-      if (!res.writableEnded) {
-        res.write(": ping\n\n");
+    // Immediately return success response
+    return res.json({
+      status: true,
+      message: "Request sent successfully.",
+      data: {
+        userId,
+        sessionId: sessionId || `session_${userId}_${Date.now()}`,
+        timestamp: new Date().toISOString()
       }
-    }, 15000);
-
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 1200000); // 20 min
-
-      const webhookResponse = await fetch(WEBHOOK_URL_MB, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Connection": "keep-alive"
-        },
-        body: JSON.stringify({
-          action: "sendMessage",
-          sessionId: sessionId || `session_${userId}_${Date.now()}`,
-          chatInput: message,
-          goalId: goalId || null,
-          userId: userId,
-          mobile: true
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeout);
-
-      // Stream the response
-      const reader = webhookResponse.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        if (!res.writableEnded) {
-          res.write(chunk);
-        }
-      }
-
-      clearInterval(keepAliveInterval);
-      res.end();
-    } catch (fetchError) {
-      clearInterval(keepAliveInterval);
-      if (fetchError.name === "AbortError") {
-        if (!res.writableEnded) {
-          res.write(`data: ${JSON.stringify({ error: "Request timeout after 20 minutes" })}\n\n`);
-          res.end();
-        }
-      } else {
-        throw fetchError;
-      }
-    }
+    });
   } catch (err) {
     console.error("Proxy error:", err);
-    if (!res.headersSent) {
-      res.status(500).json({ error: "Proxy failed", message: err.message });
-    } else if (!res.writableEnded) {
-      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-      res.end();
-    }
+    return res.status(500).json({ 
+      status: false, 
+      error: "Proxy failed", 
+      message: err.message 
+    });
   }
 });
 
