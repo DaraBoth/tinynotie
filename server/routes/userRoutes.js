@@ -463,7 +463,7 @@ router.post("/uploadImage", authenticateToken, upload.single("image"), async (re
  *         description: Internal server error
  */
 router.post("/chatMobile", async (req, res) => {
-  const { userId, message } = req.body;
+  const { userId, userEmail, message } = req.body;
 
   try {
     // Validate required fields
@@ -476,7 +476,7 @@ router.post("/chatMobile", async (req, res) => {
 
     // Check if user exists in database
     const userCheckSql = `SELECT id, usernm FROM user_infm WHERE usernm = $1;`;
-    const userResult = await pool.query(userCheckSql, [userId]);
+    const userResult = await pool.query(userCheckSql, [userEmail]);
 
     if (userResult.rows.length === 0) {
       return res.status(404).json({ 
@@ -542,7 +542,7 @@ router.post("/chatMobile", async (req, res) => {
  *         description: Internal server error
  */
 router.post("/chatDesktop", async (req, res) => {
-  const { userId, message } = req.body;
+  const { userId, userEmail, message } = req.body;
 
   try {
     // Validate required fields
@@ -555,7 +555,7 @@ router.post("/chatDesktop", async (req, res) => {
 
     // Check if user exists in database
     const userCheckSql = `SELECT id, usernm FROM user_infm WHERE usernm = $1;`;
-    const userResult = await pool.query(userCheckSql, [userId]);
+    const userResult = await pool.query(userCheckSql, [userEmail]);
 
     if (userResult.rows.length === 0) {
       return res.status(404).json({ 
