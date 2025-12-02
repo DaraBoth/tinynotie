@@ -527,7 +527,6 @@ router.post("/chatMobile", async (req, res) => {
     // Wait for webhook to acknowledge (starts processing) but don't wait for full response
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout for acknowledgment
 
       const webhookResponse = await fetch(WEBHOOK_URL_MB, {
         method: "POST",
@@ -544,8 +543,6 @@ router.post("/chatMobile", async (req, res) => {
         }),
         signal: controller.signal
       });
-
-      clearTimeout(timeout);
 
       // Check if webhook acknowledged the request (status 200-299)
       if (webhookResponse.ok) {
