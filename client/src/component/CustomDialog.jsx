@@ -42,6 +42,9 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
         },
         '& .MuiPopover-root': {
           zIndex: 1500 // Ensure popover menus appear above the dialog
+        },
+        '& .MuiPopper-root': {
+          zIndex: 1500 // Ensure popper menus (like Autocomplete) appear above the dialog
         }
       }}
       PaperProps={{
@@ -57,7 +60,7 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
           backdropFilter: "blur(10px)",
           borderRadius: "16px",
           padding: {
-            xs: isVerySmallDevice ? "12px" : isSmallDevice ? "14px" : "16px",
+            xs: isVerySmallDevice ? "10px" : isSmallDevice ? "12px" : "14px",
             md: "20px"
           },
           color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
@@ -72,7 +75,10 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
           position: 'relative',
           width: isMobile ? `${optimalWidth}px` : "auto",
           maxWidth: isMobile ? `${optimalMaxWidth}px` : "550px",
-          minWidth: isMobile ? "auto" : "450px", // Override default minWidth for mobile
+          minWidth: isMobile ? "auto" : "450px",
+          maxHeight: isMobile ? `calc(100vh - ${sideMargin * 2}px)` : "90vh",
+          display: 'flex',
+          flexDirection: 'column',
           ...sx,
         },
       }}
@@ -149,17 +155,18 @@ const CustomDialog = ({ open, onClose, title, children, sx }) => {
         sx={{
           color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
           padding: {
-            xs: isVerySmallDevice ? "12px 0" : isSmallDevice ? "14px 0" : "16px 0",
-            md: "20px 0"
+            xs: isVerySmallDevice ? "8px 0" : isSmallDevice ? "10px 0" : "12px 0",
+            md: "16px 0"
           },
           position: "relative",
           zIndex: 1,
           fontSize: {
-            xs: isVerySmallDevice ? "0.85rem" : "0.9rem",
-            md: "1rem"
+            xs: isVerySmallDevice ? "0.8rem" : "0.85rem",
+            md: "0.95rem"
           },
           overflowY: "auto",
-          maxHeight: isMobile ? `calc(100vh - ${sideMargin * 2 + 120}px)` : "calc(100vh - 200px)",
+          flex: 1,
+          maxHeight: isMobile ? `calc(100vh - ${sideMargin * 2 + 140}px)` : "calc(100vh - 200px)",
           '&::-webkit-scrollbar': {
             width: isMobile ? '6px' : '8px',
           },

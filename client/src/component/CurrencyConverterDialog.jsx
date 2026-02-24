@@ -103,6 +103,9 @@ const CurrencyConverterDialog = ({
     <Dialog
       open={open}
       onClose={onClose}
+      sx={{
+        zIndex: 1600, // Above nested dialogs (1400) and CustomDialog (1300)
+      }}
       PaperProps={{
         sx: {
           backgroundColor: colors.background,

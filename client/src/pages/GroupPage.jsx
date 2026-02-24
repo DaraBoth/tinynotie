@@ -90,6 +90,7 @@ export default function Group({ user, secret, setGroupInfo }) {
   const [isLoading, setIsLoading] = useState("loadingPage");
   const [memberViewMode, setMemberViewMode] = useState(isNonMobile ? "table" : "list");
   const [tripViewMode, setTripViewMode] = useState(isNonMobile ? "table" : "list");
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
 
   useEffect(() => {
     triggerGroupDetails({ group_id: groupId, user_id: secret });
@@ -129,11 +130,14 @@ export default function Group({ user, secret, setGroupInfo }) {
     }
   }, [resultMember]);
 
-  // Automatically switch view mode based on screen size
+  // Set initial view mode based on screen size (only on first mount)
   useEffect(() => {
-    setMemberViewMode(isNonMobile ? "table" : "list");
-    setTripViewMode(isNonMobile ? "table" : "list");
-  }, [isNonMobile]);
+    if (!viewModeInitialized) {
+      setMemberViewMode(isNonMobile ? "table" : "list");
+      setTripViewMode(isNonMobile ? "table" : "list");
+      setViewModeInitialized(true);
+    }
+  }, [isNonMobile, viewModeInitialized]);
 
   const { info, newData } = useMemo(
     () => calculateMoney(member, trip, groupInfoState?.currency),
@@ -375,32 +379,42 @@ export default function Group({ user, secret, setGroupInfo }) {
                       Member Contributions
                     </Typography>
                   </Box>
-                  <IconButton
-                    onClick={() =>
-                      setMemberViewMode((prevMode) =>
-                        prevMode === "table" ? "list" : "table"
-                      )
-                    }
-                    size="small"
-                    sx={{
-                      padding: "8px",
-                      backgroundColor: theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.05)'
-                        : 'rgba(0, 0, 0, 0.05)',
-                      borderRadius: "10px",
-                      '&:hover': {
-                        backgroundColor: theme.palette.mode === 'dark'
-                          ? 'rgba(255, 255, 255, 0.1)'
-                          : 'rgba(0, 0, 0, 0.1)',
+                  <Tooltip title={memberViewMode === "table" ? "Switch to List View" : "Switch to Table View"}>
+                    <IconButton
+                      onClick={() =>
+                        setMemberViewMode((prevMode) =>
+                          prevMode === "table" ? "list" : "table"
+                        )
                       }
-                    }}
-                  >
-                    {memberViewMode === "table" ? (
-                      <ListViewIcon fontSize="small" />
-                    ) : (
-                      <TableViewIcon fontSize="small" />
-                    )}
-                  </IconButton>
+                      size="small"
+                      sx={{
+                        padding: "8px",
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.05)'
+                          : 'rgba(0, 0, 0, 0.05)',
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        pointerEvents: "auto",
+                        zIndex: 10,
+                        '&:hover': {
+                          backgroundColor: theme.palette.mode === 'dark'
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : 'rgba(0, 0, 0, 0.1)',
+                        },
+                        '&:active': {
+                          backgroundColor: theme.palette.mode === 'dark'
+                            ? 'rgba(255, 255, 255, 0.15)'
+                            : 'rgba(0, 0, 0, 0.15)',
+                        }
+                      }}
+                    >
+                      {memberViewMode === "table" ? (
+                        <ListViewIcon fontSize="small" />
+                      ) : (
+                        <TableViewIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </Tooltip>
                 </Box>
                 <Divider
                   sx={{
@@ -527,32 +541,42 @@ export default function Group({ user, secret, setGroupInfo }) {
                       Recent Trips
                     </Typography>
                   </Box>
-                  <IconButton
-                    onClick={() =>
-                      setTripViewMode((prevMode) =>
-                        prevMode === "table" ? "list" : "table"
-                      )
-                    }
-                    size="small"
-                    sx={{
-                      padding: "8px",
-                      backgroundColor: theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.05)'
-                        : 'rgba(0, 0, 0, 0.05)',
-                      borderRadius: "10px",
-                      '&:hover': {
-                        backgroundColor: theme.palette.mode === 'dark'
-                          ? 'rgba(255, 255, 255, 0.1)'
-                          : 'rgba(0, 0, 0, 0.1)',
+                  <Tooltip title={tripViewMode === "table" ? "Switch to List View" : "Switch to Table View"}>
+                    <IconButton
+                      onClick={() =>
+                        setTripViewMode((prevMode) =>
+                          prevMode === "table" ? "list" : "table"
+                        )
                       }
-                    }}
-                  >
-                    {tripViewMode === "table" ? (
-                      <ListViewIcon fontSize="small" />
-                    ) : (
-                      <TableViewIcon fontSize="small" />
-                    )}
-                  </IconButton>
+                      size="small"
+                      sx={{
+                        padding: "8px",
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.05)'
+                          : 'rgba(0, 0, 0, 0.05)',
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        pointerEvents: "auto",
+                        zIndex: 10,
+                        '&:hover': {
+                          backgroundColor: theme.palette.mode === 'dark'
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : 'rgba(0, 0, 0, 0.1)',
+                        },
+                        '&:active': {
+                          backgroundColor: theme.palette.mode === 'dark'
+                            ? 'rgba(255, 255, 255, 0.15)'
+                            : 'rgba(0, 0, 0, 0.15)',
+                        }
+                      }}
+                    >
+                      {tripViewMode === "table" ? (
+                        <ListViewIcon fontSize="small" />
+                      ) : (
+                        <TableViewIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </Tooltip>
                 </Box>
                 <Divider
                   sx={{

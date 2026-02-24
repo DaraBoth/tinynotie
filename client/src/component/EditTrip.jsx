@@ -13,6 +13,7 @@ import {
   Chip,
   IconButton,
   useTheme,
+  useMediaQuery,
   FormControl,
   InputLabel,
   Select,
@@ -35,6 +36,7 @@ import CustomAlert from "./CustomAlert";
 import CurrencyConverterDialog from "./CurrencyConverterDialog";
 import { motion } from "framer-motion";
 import moment from "moment";
+import useWindowDimensions from "../hooks/useWindowDimensions";
 
 const filter = createFilterOptions();
 
@@ -79,6 +81,8 @@ export default function EditTrip({
   const [converterField, setConverterField] = React.useState("");
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { dialogDimensions } = useWindowDimensions();
 
   const handleClose = () => {
     // Reset all form values
@@ -278,7 +282,7 @@ export default function EditTrip({
     <React.Fragment>
       <Box
         display="grid"
-        gap="10px"
+        gap={{ xs: "8px", sm: "10px", md: "12px" }}
         gridTemplateColumns="repeat(4, 1fr)"
         sx={{
           "& > div": { gridColumn: "span 4" },
@@ -417,7 +421,7 @@ export default function EditTrip({
             <Popper
               {...props}
               style={{
-                zIndex: 9999,
+                zIndex: 1350, // Between CustomDialog (1300) and nested dialogs (1400)
                 backdropFilter: 'blur(10px)',
                 width: props.anchorEl ? props.anchorEl.clientWidth + 'px' : 'auto'
               }}
@@ -676,11 +680,13 @@ export default function EditTrip({
         onClose={loading ? null : handleClose}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile && dialogDimensions.isVerySmallDevice}
         TransitionComponent={motion.div}
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          zIndex: 1400, // Higher than CustomDialog (1300)
           '& .MuiDialog-container': {
             display: 'flex',
             alignItems: 'center',
@@ -695,11 +701,15 @@ export default function EditTrip({
           transition: { duration: 0.3 },
           sx: {
             backgroundColor: theme.palette.mode === 'dark'
-              ? 'rgba(20, 23, 39, 0.9)'
-              : 'rgba(255, 255, 255, 0.9)',
+              ? 'rgba(20, 23, 39, 0.95)'
+              : 'rgba(255, 255, 255, 0.95)',
             backdropFilter: "blur(10px)",
-            borderRadius: "16px",
-            padding: { xs: "16px", md: "20px" },
+            borderRadius: isMobile ? "12px" : "16px",
+            padding: {
+              xs: dialogDimensions.isVerySmallDevice ? "8px" : dialogDimensions.isSmallDevice ? "10px" : "12px",
+              sm: "16px",
+              md: "20px"
+            },
             color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
             border: `1px solid ${theme.palette.mode === 'dark'
               ? 'rgba(255, 255, 255, 0.08)'
@@ -708,9 +718,16 @@ export default function EditTrip({
               ? '0 10px 25px rgba(0, 0, 0, 0.5)'
               : '0 10px 25px rgba(0, 0, 0, 0.1)',
             overflow: "hidden",
-            margin: '0 auto',
+            margin: {
+              xs: `${dialogDimensions.sideMargin}px`,
+              sm: 'auto'
+            },
             position: 'relative',
-            minWidth: { xs: "90%", sm: "450px", md: "500px" },
+            width: isMobile ? `${dialogDimensions.width}px` : "auto",
+            maxWidth: isMobile ? `${dialogDimensions.maxWidth}px` : "500px",
+            maxHeight: isMobile ? `${dialogDimensions.maxHeight}px` : "90vh",
+            display: 'flex',
+            flexDirection: 'column',
           },
         }}
       >
@@ -734,9 +751,17 @@ export default function EditTrip({
           <DialogTitle
             sx={{
               color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
-              fontSize: { xs: "1.1rem", md: "1.2rem" },
+              fontSize: {
+                xs: dialogDimensions.isVerySmallDevice ? "0.9rem" : "1rem",
+                sm: "1.1rem",
+                md: "1.2rem"
+              },
               fontWeight: 600,
-              padding: { xs: "0 0 16px 0", md: "0 0 20px 0" },
+              padding: {
+                xs: dialogDimensions.isVerySmallDevice ? "0 0 8px 0" : dialogDimensions.isSmallDevice ? "0 0 10px 0" : "0 0 12px 0",
+                sm: "0 0 16px 0",
+                md: "0 0 20px 0"
+              },
               position: "relative",
               zIndex: 1,
               display: "flex",
@@ -745,14 +770,14 @@ export default function EditTrip({
               borderBottom: `1px solid ${theme.palette.mode === 'dark'
                 ? 'rgba(255, 255, 255, 0.08)'
                 : 'rgba(0, 0, 0, 0.08)'}`,
-              marginBottom: 2,
+              marginBottom: { xs: 1, sm: 1.5, md: 2 },
             }}
           >
             <Typography
               variant="h6"
               sx={{
                 color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
-                fontSize: { xs: "1.1rem", md: "1.2rem" },
+                fontSize: { xs: "1rem", sm: "1.1rem", md: "1.2rem" },
                 fontWeight: 600,
                 letterSpacing: "-0.01em"
               }}
@@ -785,11 +810,33 @@ export default function EditTrip({
           <DialogContent
             sx={{
               color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
-              padding: { xs: "16px 0", md: "20px 0" },
+              padding: {
+                xs: dialogDimensions.isVerySmallDevice ? "8px 0" : dialogDimensions.isSmallDevice ? "10px 0" : "12px 0",
+                sm: "16px 0",
+                md: "20px 0"
+              },
               position: "relative",
               zIndex: 1,
-              fontSize: { xs: "0.9rem", md: "1rem" },
+              fontSize: {
+                xs: dialogDimensions.isVerySmallDevice ? "0.75rem" : "0.85rem",
+                sm: "0.9rem",
+                md: "1rem"
+              },
               overflowY: "auto",
+              flex: 1,
+              maxHeight: isMobile ? `calc(${dialogDimensions.maxHeight}px - 140px)` : "calc(90vh - 200px)",
+              '&::-webkit-scrollbar': {
+                width: isMobile ? '4px' : '6px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: theme.palette.mode === 'dark'
+                  ? alpha(colors.grey[700], 0.8)
+                  : alpha(colors.grey[400], 0.8),
+                borderRadius: '4px',
+              },
             }}
           >
             <TextField
@@ -808,12 +855,24 @@ export default function EditTrip({
               variant="standard"
               fullWidth
               sx={{
-                mb: 2,
+                mb: {
+                  xs: dialogDimensions.isVerySmallDevice ? 0.5 : 1,
+                  sm: 1.5,
+                  md: 2
+                },
                 "& .MuiInputBase-input": {
                   color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                  fontSize: {
+                    xs: dialogDimensions.isVerySmallDevice ? "0.85rem" : "0.9rem",
+                    sm: "1rem"
+                  },
                 },
                 "& .MuiInputLabel-root": {
                   color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600],
+                  fontSize: {
+                    xs: dialogDimensions.isVerySmallDevice ? "0.8rem" : "0.85rem",
+                    sm: "0.9rem"
+                  },
                 },
                 "& .MuiInput-underline:before": {
                   borderBottomColor: theme.palette.mode === 'dark'
@@ -890,16 +949,20 @@ export default function EditTrip({
                       color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
                       '&.Mui-checked': {
                         color: theme.palette.mode === 'dark' ? colors.primary[400] : colors.primary[600],
-                      }
+                      },
+                      padding: isMobile ? "6px" : "9px"
                     }}
                   />
                 }
                 label="Each member pays this amount"
                 sx={{
-                  mt: 1,
+                  mt: dialogDimensions.isVerySmallDevice ? 0.5 : 1,
                   color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[700],
                   '& .MuiFormControlLabel-label': {
-                    fontSize: '0.85rem',
+                    fontSize: {
+                      xs: dialogDimensions.isVerySmallDevice ? "0.75rem" : "0.8rem",
+                      sm: "0.85rem"
+                    },
                   }
                 }}
               />
@@ -925,10 +988,25 @@ export default function EditTrip({
                 </Typography>
               )}
             </Box>
-            <FormControl variant="standard" fullWidth sx={{ mt: 2, mb: 2 }}>
+            <FormControl variant="standard" fullWidth sx={{
+              mt: {
+                xs: dialogDimensions.isVerySmallDevice ? 0.5 : 1,
+                sm: 1.5,
+                md: 2
+              },
+              mb: {
+                xs: dialogDimensions.isVerySmallDevice ? 0.5 : 1,
+                sm: 1.5,
+                md: 2
+              }
+            }}>
               <InputLabel
                 sx={{
                   color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600],
+                  fontSize: {
+                    xs: dialogDimensions.isVerySmallDevice ? "0.8rem" : "0.85rem",
+                    sm: "0.9rem"
+                  },
                 }}
               >
                 Members
@@ -938,9 +1016,25 @@ export default function EditTrip({
                 value={selectedMembers}
                 onChange={handleMemberChange}
                 renderValue={(selected) => selected.join(", ")}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      maxHeight: isMobile ? 200 : 300,
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(20, 23, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                      backdropFilter: 'blur(10px)',
+                    }
+                  },
+                  sx: {
+                    zIndex: 1500, // Above the dialog
+                  }
+                }}
                 sx={{
                   "& .MuiInputBase-input": {
                     color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                    fontSize: {
+                      xs: dialogDimensions.isVerySmallDevice ? "0.8rem" : "0.85rem",
+                      sm: "0.9rem"
+                    },
                   },
                   "& .MuiInput-underline:before": {
                     borderBottomColor: theme.palette.mode === 'dark'
@@ -988,10 +1082,20 @@ export default function EditTrip({
               </Select>
             </FormControl>
 
-            <FormControl variant="standard" fullWidth sx={{ mt: 2 }}>
+            <FormControl variant="standard" fullWidth sx={{
+              mt: {
+                xs: dialogDimensions.isVerySmallDevice ? 0.5 : 1,
+                sm: 1.5,
+                md: 2
+              }
+            }}>
               <InputLabel
                 sx={{
                   color: theme.palette.mode === 'dark' ? colors.grey[300] : colors.grey[600],
+                  fontSize: {
+                    xs: dialogDimensions.isVerySmallDevice ? "0.8rem" : "0.85rem",
+                    sm: "0.9rem"
+                  },
                 }}
               >
                 Who paid?
@@ -1004,9 +1108,25 @@ export default function EditTrip({
                     payer_id: e.target.value,
                   })
                 }
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      maxHeight: isMobile ? 200 : 300,
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(20, 23, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                      backdropFilter: 'blur(10px)',
+                    }
+                  },
+                  sx: {
+                    zIndex: 1500, // Above the dialog
+                  }
+                }}
                 sx={{
                   "& .MuiInputBase-input": {
                     color: theme.palette.mode === 'dark' ? colors.grey[100] : colors.grey[800],
+                    fontSize: {
+                      xs: dialogDimensions.isVerySmallDevice ? "0.8rem" : "0.85rem",
+                      sm: "0.9rem"
+                    },
                   },
                   "& .MuiInput-underline:before": {
                     borderBottomColor: theme.palette.mode === 'dark'
@@ -1046,16 +1166,24 @@ export default function EditTrip({
           </DialogContent>
           <DialogActions
             sx={{
-              padding: { xs: "16px 0 0 0", md: "20px 0 0 0" },
+              padding: {
+                xs: dialogDimensions.isVerySmallDevice ? "8px 0 0 0" : dialogDimensions.isSmallDevice ? "10px 0 0 0" : "12px 0 0 0",
+                sm: "16px 0 0 0",
+                md: "20px 0 0 0"
+              },
               position: "relative",
               zIndex: 1,
               borderTop: `1px solid ${theme.palette.mode === 'dark'
                 ? 'rgba(255, 255, 255, 0.08)'
                 : 'rgba(0, 0, 0, 0.08)'}`,
-              marginTop: 2,
+              marginTop: {
+                xs: dialogDimensions.isVerySmallDevice ? 0.5 : 1,
+                sm: 1.5,
+                md: 2
+              },
               display: "flex",
               justifyContent: "flex-end",
-              gap: 1
+              gap: { xs: 0.5, sm: 1 }
             }}
           >
             <Button
@@ -1070,9 +1198,21 @@ export default function EditTrip({
                 borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
                 textTransform: "none",
                 fontWeight: "500",
-                fontSize: { xs: "0.8rem", md: "0.9rem" },
-                padding: { xs: "6px 16px", md: "8px 20px" },
+                fontSize: {
+                  xs: dialogDimensions.isVerySmallDevice ? "0.7rem" : "0.75rem",
+                  sm: "0.8rem",
+                  md: "0.9rem"
+                },
+                padding: {
+                  xs: dialogDimensions.isVerySmallDevice ? "4px 10px" : dialogDimensions.isSmallDevice ? "5px 12px" : "6px 14px",
+                  sm: "6px 16px",
+                  md: "8px 20px"
+                },
                 borderRadius: "8px",
+                minWidth: {
+                  xs: dialogDimensions.isVerySmallDevice ? "50px" : "60px",
+                  sm: "70px"
+                },
                 '&:hover': {
                   borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
                   backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
@@ -1084,7 +1224,7 @@ export default function EditTrip({
             <Button
               variant="contained"
               type="submit"
-              startIcon={loading && <CircularProgress size={20} />}
+              startIcon={loading && <CircularProgress size={16} />}
               disabled={loading}
               component={motion.button}
               whileHover={{ scale: 1.02 }}
@@ -1094,9 +1234,21 @@ export default function EditTrip({
                 color: "#fff",
                 textTransform: "none",
                 fontWeight: "500",
-                fontSize: { xs: "0.8rem", md: "0.9rem" },
-                padding: { xs: "6px 16px", md: "8px 20px" },
+                fontSize: {
+                  xs: dialogDimensions.isVerySmallDevice ? "0.7rem" : "0.75rem",
+                  sm: "0.8rem",
+                  md: "0.9rem"
+                },
+                padding: {
+                  xs: dialogDimensions.isVerySmallDevice ? "4px 10px" : dialogDimensions.isSmallDevice ? "5px 12px" : "6px 14px",
+                  sm: "6px 16px",
+                  md: "8px 20px"
+                },
                 borderRadius: "8px",
+                minWidth: {
+                  xs: dialogDimensions.isVerySmallDevice ? "50px" : "60px",
+                  sm: "70px"
+                },
                 boxShadow: theme.palette.mode === 'dark'
                   ? '0 4px 10px rgba(0, 0, 0, 0.3)'
                   : '0 4px 10px rgba(0, 123, 255, 0.2)',
