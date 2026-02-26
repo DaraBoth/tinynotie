@@ -56,6 +56,68 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
+ * /groups/getGroupListWithDetails:
+ *   get:
+ *     summary: Get groups with member count and full details
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: List of groups with member count and details
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/getGroupListWithDetails", authenticateToken, async (req, res) => {
+  const { user_id } = req.query;
+  try {
+    const sql = `
+      SELECT
+        g.id,
+        g.grp_name,
+        g.status,
+        g.currency,
+        g.admin_id,
+        g.create_date,
+        g.description,
+        g.visibility,
+        CASE
+          WHEN g.admin_id = $1::int THEN TRUE
+          ELSE FALSE
+        END AS "isAdmin",
+        CASE
+          WHEN gu.user_id IS NOT NULL THEN TRUE
+          ELSE FALSE
+        END AS "isMember",
+        COUNT(DISTINCT m.id) AS member_count,
+        COUNT(DISTINCT t.id) AS trip_count
+      FROM grp_infm g
+      LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $1::int
+      LEFT JOIN member_infm m ON m.group_id = g.id
+      LEFT JOIN trp_infm t ON t.group_id = g.id
+      WHERE g.visibility = 'public'
+         OR g.admin_id = $1::int
+         OR gu.user_id IS NOT NULL
+      GROUP BY g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date, g.description, g.visibility, gu.user_id
+      ORDER BY g.create_date DESC;
+    `;
+    const results = await pool.query(sql, [user_id]);
+    res.send({ status: true, data: results.rows });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
  * /groups/addGroupByUserId:
  *   post:
  *     summary: Add a group by user ID

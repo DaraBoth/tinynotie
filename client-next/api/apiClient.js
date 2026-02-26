@@ -65,6 +65,7 @@ export const api = {
 
   // Groups
   getGroupsByUserId: (userId) => apiClient.get('/api/getGroupByUserId', { params: { user_id: userId } }),
+  getGroupsWithDetails: (userId) => apiClient.get('/api/getGroupListWithDetails', { params: { user_id: userId } }),
   addGroup: (data) => apiClient.post('/api/addGroupByUserId', data),
   getGroupById: (groupId, userId) => apiClient.get('/api/getGroupDetail', { params: { group_id: groupId, user_id: userId } }),
   updateGroupVisibility: (data) => apiClient.post('/api/updateGroupVisibility', data),

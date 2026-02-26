@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, Users, FileText, ArrowLeft, Coins } from 'lucide-react';
+import { Plus, Users, FileText, ArrowLeft, Coins, UserPlus, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { api } from '@/api/apiClient';
 import { useAuthStore } from '@/store/authStore';
@@ -19,17 +20,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { SpaceSky } from '@/components/SpaceSky';
 import { CURRENCY_OPTIONS } from '@/utils/helpers';
 
 export default function CreateGroupPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const memberInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     grp_name: '',
     description: '',
     currency: '$',
   });
+  const [members, setMembers] = useState([]);
+  const [memberInput, setMemberInput] = useState('');
 
   const createGroupMutation = useMutation({
     mutationFn: (groupData) =>
@@ -38,7 +44,7 @@ export default function CreateGroupPage() {
         ...groupData,
         status: 1,
         create_date: new Date().toISOString(),
-        member: JSON.stringify([]),
+        member: JSON.stringify(members),
       }),
     onSuccess: (response) => {
       toast.success('Group created successfully!');
@@ -70,6 +76,29 @@ export default function CreateGroupPage() {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const addMember = useCallback(() => {
+    const name = memberInput.trim();
+    if (!name) return;
+    if (members.includes(name)) {
+      toast.error(`${name} is already in the list`);
+      return;
+    }
+    setMembers((prev) => [...prev, name]);
+    setMemberInput('');
+    memberInputRef.current?.focus();
+  }, [memberInput, members]);
+
+  const removeMember = (name) => {
+    setMembers((prev) => prev.filter((m) => m !== name));
+  };
+
+  const handleMemberKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addMember();
+    }
   };
 
   return (
@@ -160,12 +189,79 @@ export default function CreateGroupPage() {
                 />
               </div>
 
-              {/* Next Steps hint */}
-              <div className="bg-muted/50 p-4 rounded-lg space-y-1.5 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">After creating:</p>
-                <p>① Add members to split expenses with</p>
-                <p>② Record trips / expenses</p>
-                <p>③ Track who owes what</p>
+              {/* Members Section */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Members
+                  <span className="text-muted-foreground text-xs">(optional, can add later)</span>
+                </Label>
+
+                {/* Member input */}
+                <div className="flex gap-2">
+                  <Input
+                    ref={memberInputRef}
+                    placeholder="Type member name and press Enter"
+                    value={memberInput}
+                    onChange={(e) => setMemberInput(e.target.value)}
+                    onKeyDown={handleMemberKeyDown}
+                    className="text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={addMember}
+                    disabled={!memberInput.trim()}
+                    title="Add member"
+                    className="shrink-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Member chips */}
+                <AnimatePresence>
+                  {members.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="flex flex-wrap gap-2 p-3 rounded-lg bg-muted/50 border border-input"
+                    >
+                      {members.map((name) => (
+                        <motion.div
+                          key={name}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <Badge
+                            variant="secondary"
+                            className="flex items-center gap-1.5 pr-1.5 text-sm"
+                          >
+                            <Users className="h-3 w-3" />
+                            {name}
+                            <button
+                              type="button"
+                              onClick={() => removeMember(name)}
+                              className="ml-0.5 rounded-full hover:bg-foreground/20 p-0.5 transition-colors"
+                              title={`Remove ${name}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {members.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {members.length} member{members.length !== 1 ? 's' : ''} added
+                  </p>
+                )}
               </div>
 
               {/* Buttons */}

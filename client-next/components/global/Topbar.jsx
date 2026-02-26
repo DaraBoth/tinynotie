@@ -14,12 +14,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/helpers';
+import { useUserInfo } from '@/hooks/useQueries';
 
 export function Topbar() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const { data: userInfo } = useUserInfo(user?._id);
 
   const handleLogout = () => {
     logout();
@@ -59,6 +61,9 @@ export function Topbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
+                  {userInfo?.profile_url && (
+                    <AvatarImage src={userInfo.profile_url} alt={user?.usernm || 'User'} />
+                  )}
                   <AvatarFallback className="bg-primary/10 text-primary">
                     {user ? getInitials(user.usernm) : 'U'}
                   </AvatarFallback>
