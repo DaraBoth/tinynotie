@@ -58,6 +58,7 @@ export function GroupPageClient({ groupId }) {
   const [mobileTab, setMobileTab]               = useState('contributions');
   const [scannerOpen, setScannerOpen]           = useState(false);
   const [editMemberOpen, setEditMemberOpen]     = useState(false);
+  const [editMemberMode, setEditMemberMode]     = useState(false); // false=add, true=edit
   const [editTripOpen, setEditTripOpen]         = useState(false);
   const [deleteMemberOpen, setDeleteMemberOpen] = useState(false);
   const [chatOpen, setChatOpen]                 = useState(false);
@@ -325,7 +326,7 @@ export function GroupPageClient({ groupId }) {
       <div className="relative z-10 flex flex-col flex-1 w-full">
 
         {/* Page header */}
-        <header className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-4 border-b border-border/20 bg-gradient-to-b from-background/10 to-transparent backdrop-blur-[2px]">
+        <header className="sticky top-0 z-30 w-full px-4 sm:px-6 lg:px-8 pt-4 pb-3 border-b border-border/30 bg-background/80 backdrop-blur-md">
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => router.push('/home')}
@@ -352,7 +353,7 @@ export function GroupPageClient({ groupId }) {
           {/* Action row */}
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
-              onClick={() => { setSelectedMember(null); setEditMemberOpen(true); }}>
+              onClick={() => { setEditMemberMode(false); setSelectedMember(null); setEditMemberOpen(true); }}>
               <UserPlus className="h-3.5 w-3.5" /> Add Member
             </Button>
             <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
@@ -366,11 +367,11 @@ export function GroupPageClient({ groupId }) {
             {members.length > 0 && (
               <>
                 <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
-                  onClick={() => { setSelectedMember(members[0]); setEditMemberOpen(true); }}>
+                  onClick={() => { setEditMemberMode(true); setSelectedMember(null); setEditMemberOpen(true); }}>
                   <Pencil className="h-3.5 w-3.5" /> Edit Member
                 </Button>
                 <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                  onClick={() => { setSelectedMember(members[0]); setDeleteMemberOpen(true); }}>
+                  onClick={() => { setSelectedMember(null); setDeleteMemberOpen(true); }}>
                   <Trash2 className="h-3.5 w-3.5" /> Delete Member
                 </Button>
               </>
@@ -397,7 +398,6 @@ export function GroupPageClient({ groupId }) {
             {[
               { key: 'contributions', label: 'Contributions' },
               { key: 'trips',         label: 'Trips' },
-              { key: 'summary',       label: 'Summary' },
             ].map(({ key, label }) => (
               <button
                 key={key}
@@ -413,7 +413,6 @@ export function GroupPageClient({ groupId }) {
           <div className="md:hidden">
             {mobileTab === 'contributions' && ContributionsSection}
             {mobileTab === 'trips'         && TripsSection}
-            {mobileTab === 'summary'       && SummarySection}
           </div>
 
           {/* Desktop two-column */}
@@ -423,14 +422,13 @@ export function GroupPageClient({ groupId }) {
             </div>
             <div className="md:col-span-4 space-y-6">
               {TripsSection}
-              {SummarySection}
             </div>
           </div>
         </div>
       </div>
 
       {/* Dialogs */}
-      <EditMember        open={editMemberOpen}   onClose={() => setEditMemberOpen(false)}   groupId={groupId} member={selectedMember} currency={currency} />
+      <EditMember        open={editMemberOpen}   onClose={() => setEditMemberOpen(false)}   groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />
       <EditTrip          open={editTripOpen}     onClose={() => setEditTripOpen(false)}     groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
       <DeleteMember      open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
       <ChatWithDatabase  open={chatOpen}         onClose={() => setChatOpen(false)}         groupId={groupId} />

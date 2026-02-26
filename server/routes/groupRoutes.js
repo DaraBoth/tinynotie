@@ -371,7 +371,7 @@ router.post("/createGroup", authenticateToken, async (req, res) => {
  *         description: Internal server error
  */
 router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
-  const { group_id, visibility, allowed_users } = req.body; // allowed_users is an array of user IDs
+  const { group_id, visibility, allowed_users, grp_name, description } = req.body; // allowed_users is an array of user IDs
   const { _id: user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
 
   try {
@@ -392,13 +392,15 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
       });
     }
 
-    // Update the group's visibility
-    const updateVisibilitySql = `
+    // Update visibility, name, and description together
+    const updateSql = `
       UPDATE grp_infm
-      SET visibility = $2
+      SET visibility = $2,
+          grp_name   = COALESCE(NULLIF($3, ''), grp_name),
+          description = COALESCE($4, description)
       WHERE id = $1::int;
     `;
-    await pool.query(updateVisibilitySql, [group_id, visibility]);
+    await pool.query(updateSql, [group_id, visibility, grp_name || null, description ?? null]);
 
     // If the group is set to private, update the allowed users
     if (visibility === "private" && Array.isArray(allowed_users)) {

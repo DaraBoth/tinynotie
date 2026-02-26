@@ -48,16 +48,29 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
   const handleScan = async () => {
     if (!imageFile) { toast.error('Please select an image first'); return; }
     const formData = new FormData();
-    formData.append('image', imageFile);
+    formData.append('receipt', imageFile);
     try {
       const response = await scanMutation.mutateAsync(formData);
-      const data = response?.data ?? response;
-      const trips = Array.isArray(data?.trips) ? data.trips
-        : Array.isArray(data?.data) ? data.data
-        : Array.isArray(data) ? data
+      const raw = response?.data ?? response;
+
+      // Server returns { text: "<JSON string>" } from Gemini
+      let parsed = raw;
+      if (typeof raw?.text === 'string') {
+        try {
+          const clean = raw.text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+          parsed = JSON.parse(clean);
+        } catch {
+          parsed = raw;
+        }
+      }
+
+      const trips = Array.isArray(parsed?.data) ? parsed.data
+        : Array.isArray(parsed?.trips) ? parsed.trips
+        : Array.isArray(parsed) ? parsed
         : [];
+
       if (trips.length === 0) {
-        toast.error('No trips detected in the receipt');
+        toast.error('No items detected in the receipt');
         return;
       }
       setRows(

@@ -107,7 +107,7 @@ export const api = {
   // AI & Utilities
   askDatabase: (data) => apiClient.post('/api/askDatabase', data),
   translateText: (data) => apiClient.post('/api/translate', data),
-  receiptImage: (formData) => apiClient.post('/api/receiptImage', formData, {
+  receiptImage: (formData) => apiClient.post('/openai/receiptImage', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   addMultipleTrips: (data) => apiClient.post('/api/addMultipleTrips', data),

@@ -50,7 +50,12 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
     }
 
     try {
-      await updateMutation.mutateAsync({ visibility: formData.visibility });
+      await updateMutation.mutateAsync({
+        visibility: formData.visibility,
+        grp_name: formData.grp_name.trim(),
+        description: formData.description.trim(),
+      });
+      toast.success('Group settings saved');
       onClose();
     } catch (error) {
       // Error handled by mutation
@@ -98,10 +103,8 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
                 name="grp_name"
                 value={formData.grp_name}
                 onChange={handleChange}
-                disabled
-                className="bg-muted"
+                placeholder="Group name"
               />
-              <p className="text-xs text-muted-foreground">Group name cannot be changed here.</p>
             </div>
 
             <div className="space-y-2">
@@ -112,9 +115,8 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
                 value={formData.description}
                 onChange={handleChange}
                 rows={3}
-                disabled
-                className="flex w-full rounded-md border border-input bg-muted px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                placeholder="No description"
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                placeholder="Add a description…"
               />
             </div>
 

@@ -14,6 +14,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 /* Quick-amount chips per currency symbol */
 const CHIPS = {
@@ -26,9 +33,12 @@ const CHIPS = {
   default: [5, 10, 20, 50, 100],
 };
 
-export function EditMember({ open, onClose, groupId, member, currency = '$' }) {
-  const isEditing = !!member;
+export function EditMember({ open, onClose, groupId, member, members = [], editMode = false, currency = '$' }) {
+  // editMode=true means "edit existing member" (shows a picker)
+  // editMode=false means "add new member"
+  const isEditing = editMode;
 
+  const [pickedMember, setPickedMember] = useState(null); // selected from dropdown in editMode
   const [name, setName]           = useState('');
   const [paid, setPaid]           = useState('');
   const [chip, setChip]           = useState(null);
@@ -40,14 +50,24 @@ export function EditMember({ open, onClose, groupId, member, currency = '$' }) {
 
   const chips = CHIPS[currency] || CHIPS.default;
 
+  // Reset state whenever dialog opens
   useEffect(() => {
     if (open) {
+      setPickedMember(null);
       setName(member?.mem_name || '');
       setPaid(member?.paid ? String(member.paid) : '');
       setChip(null);
       setCustom('');
     }
   }, [open, member]);
+
+  // When user picks a member from the dropdown in editMode, fill fields
+  useEffect(() => {
+    if (editMode && pickedMember) {
+      setName(pickedMember.mem_name || '');
+      setPaid(pickedMember.paid ? String(pickedMember.paid) : '');
+    }
+  }, [pickedMember, editMode]);
 
   const applyChip = (delta) => {
     const amount = chip !== null ? chip : parseFloat(custom || 0);
@@ -57,12 +77,13 @@ export function EditMember({ open, onClose, groupId, member, currency = '$' }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) { toast.error('Member name is required'); return; }
+    if (isEditing && !pickedMember) { toast.error('Please select a member to edit'); return; }
+    if (!isEditing && !name.trim()) { toast.error('Member name is required'); return; }
     const amount = parseFloat(paid) || 0;
     if (amount < 0) { toast.error('Amount cannot be negative'); return; }
     try {
       if (isEditing) {
-        await updateMutation.mutateAsync({ user_id: member.id, paid: amount, group_id: groupId, type: 'UPDATE' });
+        await updateMutation.mutateAsync({ user_id: pickedMember.id, paid: amount, group_id: groupId, type: 'UPDATE' });
       } else {
         await addMutation.mutateAsync({ mem_name: name.trim(), paid: amount });
       }
@@ -86,21 +107,47 @@ export function EditMember({ open, onClose, groupId, member, currency = '$' }) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
-          {/* Member name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="mem_name" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Member Name *
-            </Label>
-            <Input
-              id="mem_name"
-              placeholder="e.g. John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              disabled={isEditing}
-              className="h-11"
-            />
-          </div>
+          {/* Member picker (edit mode only) */}
+          {isEditing && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Select Member *
+              </Label>
+              <Select
+                value={pickedMember ? String(pickedMember.id) : ''}
+                onValueChange={(val) => {
+                  const found = members.find((m) => String(m.id) === val);
+                  setPickedMember(found || null);
+                }}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Choose a member to edit…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((m) => (
+                    <SelectItem key={m.id} value={String(m.id)}>{m.mem_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Member name — editable in add mode, read-only display in edit mode */}
+          {!isEditing && (
+            <div className="space-y-1.5">
+              <Label htmlFor="mem_name" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Member Name *
+              </Label>
+              <Input
+                id="mem_name"
+                placeholder="e.g. John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="h-11"
+              />
+            </div>
+          )}
 
           {/* Amount paid */}
           <div className="space-y-1.5">
@@ -159,7 +206,7 @@ export function EditMember({ open, onClose, groupId, member, currency = '$' }) {
             <Button type="button" variant="ghost" onClick={onClose} className="flex-1" disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={isPending}>
+            <Button type="submit" className="flex-1" disabled={isPending || (isEditing && !pickedMember)}>
               {isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Member'}
             </Button>
           </DialogFooter>
