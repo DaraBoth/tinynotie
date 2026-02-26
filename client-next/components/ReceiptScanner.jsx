@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Camera, Upload, X, ScanLine, Plus, Trash2, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Camera, Upload, X, ScanLine, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useReceiptScan, useAddMultipleTrips } from '@/hooks/useQueries';
 import { Button } from '@/components/ui/button';
@@ -20,8 +26,7 @@ function defaultRow() {
   return { id: Date.now() + Math.random(), trp_name: '', spend: '', payer_id: NONE_PAYER };
 }
 
-export function ReceiptScanner({ groupId, members = [] }) {
-  const [expanded,   setExpanded]   = useState(false);
+export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
   const [imageFile,  setImageFile]  = useState(null);
   const [preview,    setPreview]    = useState('');
   const [rows,       setRows]       = useState([]);
@@ -102,28 +107,27 @@ export function ReceiptScanner({ groupId, members = [] }) {
     setScanned(false);
   };
 
-  return (
-    <div className="rounded-2xl border border-border/40 bg-muted/20 overflow-hidden">
-      {/* Accordion header */}
-      <button
-        type="button"
-        onClick={() => setExpanded((p) => !p)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/30 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <ScanLine className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">Scan Receipt with AI</span>
-          {scanned && rows.length > 0 && (
-            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-              {rows.length} item{rows.length !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-        {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-      </button>
+  const handleClose = () => {
+    clearImage();
+    onClose();
+  };
 
-      {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-border/30 pt-4">
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ScanLine className="h-4 w-4 text-primary" />
+            Scan Receipt with AI
+            {scanned && rows.length > 0 && (
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium ml-1">
+                {rows.length} item{rows.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
           {/* Image upload area */}
           {!preview ? (
             <div className="flex gap-2">
@@ -253,7 +257,7 @@ export function ReceiptScanner({ groupId, members = [] }) {
             </div>
           )}
         </div>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

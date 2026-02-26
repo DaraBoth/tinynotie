@@ -84,6 +84,7 @@ export function calculateMoney(allMembers = [], trips = [], currencySymbol = '')
       id: idx + 1,
       name: member.mem_name,
       paid: fmt(paid),
+      spend: fmt(share),
       ...tripExpenses,
       remain: fmt(remain),
       unpaid: fmt(unpaid),

@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   LayoutGrid, List, MessageSquare, Settings, ArrowLeft,
   Share2, UserPlus, Plus, Pencil, Trash2, Users,
-  Wallet, TrendingUp, Clock, BadgeCheck,
+  Wallet, TrendingUp, Clock, BadgeCheck, ScanLine,
 } from 'lucide-react';
 
 import { api } from '@/api/apiClient';
@@ -56,6 +56,7 @@ export function GroupPageClient({ groupId }) {
 
   const [viewMode, setViewMode]                 = useState('table');
   const [mobileTab, setMobileTab]               = useState('contributions');
+  const [scannerOpen, setScannerOpen]           = useState(false);
   const [editMemberOpen, setEditMemberOpen]     = useState(false);
   const [editTripOpen, setEditTripOpen]         = useState(false);
   const [deleteMemberOpen, setDeleteMemberOpen] = useState(false);
@@ -133,8 +134,6 @@ export function GroupPageClient({ groupId }) {
     } catch { return 1; }
   };
 
-  const tripColumns = trips.map((t) => t.trp_name);
-
   /* ── sub-sections ── */
 
   const ContributionsSection = (
@@ -178,11 +177,7 @@ export function GroupPageClient({ groupId }) {
                 <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide w-8">#</th>
                 <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Name</th>
                 <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Paid</th>
-                {tripColumns.map((name) => (
-                  <th key={name} className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">
-                    <span className="block truncate max-w-[90px]" title={name}>{name}</span>
-                  </th>
-                ))}
+                <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Spend</th>
                 <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Remain</th>
                 <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Unpaid</th>
               </tr>
@@ -193,9 +188,7 @@ export function GroupPageClient({ groupId }) {
                   <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
                   <td className="px-4 py-3 font-semibold">{row.name}</td>
                   <td className="px-4 py-3 text-right text-green-400 font-medium">{row.paid}</td>
-                  {tripColumns.map((name) => (
-                    <td key={name} className="px-4 py-3 text-right text-orange-400 text-sm">{row[name] ?? '—'}</td>
-                  ))}
+                  <td className="px-4 py-3 text-right text-orange-400 font-medium">{row.spend}</td>
                   <td className={`px-4 py-3 text-right font-semibold ${String(row.remain).startsWith('-') ? 'text-red-400' : 'text-green-400'}`}>{row.remain}</td>
                   <td className="px-4 py-3 text-right text-red-400">{row.unpaid}</td>
                 </tr>
@@ -211,10 +204,14 @@ export function GroupPageClient({ groupId }) {
                 <span className="font-semibold">{row.name}</span>
                 <Badge variant="outline" className="text-xs font-normal">#{idx + 1}</Badge>
               </div>
-              <div className="grid grid-cols-3 gap-3 text-sm">
+              <div className="grid grid-cols-4 gap-3 text-sm">
                 <div>
                   <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Paid</span>
                   <span className="text-green-400 font-semibold">{row.paid}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Spend</span>
+                  <span className="text-orange-400 font-semibold">{row.spend}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Remain</span>
@@ -225,16 +222,6 @@ export function GroupPageClient({ groupId }) {
                   <span className="text-red-400 font-semibold">{row.unpaid}</span>
                 </div>
               </div>
-              {tripColumns.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-border/20 flex flex-wrap gap-1.5">
-                  {tripColumns.map((name) => (
-                    <span key={name} className="text-xs bg-muted/60 rounded-lg px-2 py-1">
-                      <span className="text-muted-foreground">{name}:</span>{' '}
-                      <span className="text-orange-400 font-medium">{row[name] ?? '—'}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -358,6 +345,10 @@ export function GroupPageClient({ groupId }) {
               onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
               <Plus className="h-3.5 w-3.5" /> Add Trip
             </Button>
+            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
+              onClick={() => setScannerOpen(true)}>
+              <ScanLine className="h-3.5 w-3.5" /> Scan Receipt
+            </Button>
             {members.length > 0 && (
               <>
                 <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
@@ -382,11 +373,6 @@ export function GroupPageClient({ groupId }) {
             <StatPill icon={Wallet}     label="Remain"      value={info.totalRemain} color="text-blue-400" />
             <StatPill icon={Clock}      label="Unpaid"      value={info.totalUnPaid} color="text-red-400" />
           </div>
-        </div>
-
-        {/* Receipt scanner */}
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-3 border-b border-border/10">
-          <ReceiptScanner groupId={groupId} members={members} />
         </div>
 
         {/* Main content */}
@@ -436,6 +422,7 @@ export function GroupPageClient({ groupId }) {
       <ChatWithDatabase  open={chatOpen}         onClose={() => setChatOpen(false)}         groupId={groupId} />
       <ShareModal        open={shareOpen}        onClose={() => setShareOpen(false)}        group={group} members={members} trips={trips} currency={currency} />
       <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)}  group={group} groupId={groupId} />
+      <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />
     </div>
   );
 }
