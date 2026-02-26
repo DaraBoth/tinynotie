@@ -212,6 +212,137 @@ router.post("/addGroupByUserId", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
+ * /groups/createGroup:
+ *   post:
+ *     summary: Create a new group (Next.js client endpoint)
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [grp_name, currency]
+ *             properties:
+ *               grp_name:
+ *                 type: string
+ *                 description: Group name
+ *               currency:
+ *                 type: string
+ *                 description: Currency symbol (e.g. $, W, R)
+ *               description:
+ *                 type: string
+ *               members:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of member names to add
+ *     responses:
+ *       200:
+ *         description: Group created successfully
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/createGroup", authenticateToken, async (req, res) => {
+  const { _id: user_id } = req.user;
+  const { grp_name, currency = "$", description = "", members = [] } = req.body;
+
+  // Validate required fields
+  if (!grp_name || !grp_name.trim()) {
+    return res.status(400).json({ status: false, error: "Group name is required." });
+  }
+  if (!currency || !currency.trim()) {
+    return res.status(400).json({ status: false, error: "Currency is required." });
+  }
+
+  // Always generate create_date server-side to avoid VARCHAR(20) overflow
+  const create_date = moment().format("YYYY-MM-DD HH:mm:ss");
+
+  // Parse members: accept either an array or a JSON string (for legacy callers)
+  let memberList = [];
+  if (Array.isArray(members)) {
+    memberList = members.map((m) => String(m).trim()).filter(Boolean);
+  } else if (typeof members === "string" && members.trim()) {
+    try {
+      const parsed = JSON.parse(members);
+      memberList = Array.isArray(parsed)
+        ? parsed.map((m) => String(m).trim()).filter(Boolean)
+        : [];
+    } catch {
+      // treat as single member name
+      memberList = [members.trim()];
+    }
+  }
+
+  // Remove duplicate names (case-insensitive)
+  const seen = new Set();
+  memberList = memberList.filter((name) => {
+    const key = name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 1. Create the group
+    const insertGroupSql = `
+      INSERT INTO grp_infm (grp_name, status, description, currency, admin_id, create_date)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id, grp_name, currency, description, create_date;
+    `;
+    const groupResult = await client.query(insertGroupSql, [
+      grp_name.trim(),
+      1,
+      description.trim(),
+      currency.trim(),
+      user_id,
+      create_date,
+    ]);
+    const group = groupResult.rows[0];
+    const group_id = group.id;
+
+    // 2. Insert members
+    if (memberList.length > 0) {
+      const insertMemberSql = `
+        INSERT INTO member_infm (mem_name, paid, group_id)
+        VALUES ($1, 0, $2);
+      `;
+      for (const mem_name of memberList) {
+        await client.query(insertMemberSql, [mem_name, group_id]);
+      }
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      status: true,
+      data: {
+        id: group_id,
+        grp_name: group.grp_name,
+        currency: group.currency,
+        description: group.description,
+        create_date: group.create_date,
+        member_count: memberList.length,
+      },
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("createGroup error:", error);
+    res.status(500).json({ status: false, error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * @swagger
  * /groups/updateGroupVisibility:
  *   post:
  *     summary: Update group visibility

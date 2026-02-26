@@ -11,7 +11,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { api } from '@/api/apiClient';
-import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +29,6 @@ const FEATURES = [
 
 export default function CreateGroupPage() {
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
   const memberInputRef = useRef(null);
 
   const [formData, setFormData] = useState({ grp_name: '', description: '', currency: '$' });
@@ -57,19 +55,18 @@ export default function CreateGroupPage() {
 
   const createGroupMutation = useMutation({
     mutationFn: (data) =>
-      api.addGroup({
-        user_id: user._id,
-        ...data,
-        status: 1,
-        create_date: new Date().toISOString(),
-        member: JSON.stringify(members),
+      api.createGroup({
+        grp_name: data.grp_name,
+        currency: data.currency,
+        description: data.description,
+        members,           // plain array — server handles dedup & date
       }),
     onSuccess: (response) => {
       toast.success('Group created!');
       const id = response.data.data?.id;
       router.push(id ? `/groups/${id}` : '/home');
     },
-    onError: (error) => toast.error(error.response?.data?.message || 'Failed to create group'),
+    onError: (error) => toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to create group'),
   });
 
   const handleSubmit = (e) => {
