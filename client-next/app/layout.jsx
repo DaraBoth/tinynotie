@@ -42,7 +42,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
-      <body className={inter.variable}>
+      <body className={inter.variable} suppressHydrationWarning>
         <Providers>
           <TokenExpirationHandler />
           {children}
