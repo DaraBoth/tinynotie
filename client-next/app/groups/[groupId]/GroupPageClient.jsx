@@ -134,6 +134,8 @@ export function GroupPageClient({ groupId }) {
     } catch { return 1; }
   };
 
+  const tripColumns = trips.map((t) => t.trp_name);
+
   /* ── sub-sections ── */
 
   const ContributionsSection = (
@@ -177,7 +179,11 @@ export function GroupPageClient({ groupId }) {
                 <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide w-8">#</th>
                 <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Name</th>
                 <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Paid</th>
-                <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Spend</th>
+                {tripColumns.map((name) => (
+                  <th key={name} className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide max-w-[100px]">
+                    <span className="block truncate" title={name}>{name}</span>
+                  </th>
+                ))}
                 <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Remain</th>
                 <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Unpaid</th>
               </tr>
@@ -188,7 +194,9 @@ export function GroupPageClient({ groupId }) {
                   <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
                   <td className="px-4 py-3 font-semibold">{row.name}</td>
                   <td className="px-4 py-3 text-right text-green-400 font-medium">{row.paid}</td>
-                  <td className="px-4 py-3 text-right text-orange-400 font-medium">{row.spend}</td>
+                  {tripColumns.map((name) => (
+                    <td key={name} className="px-4 py-3 text-right text-orange-400 text-sm">{row[name] ?? '—'}</td>
+                  ))}
                   <td className={`px-4 py-3 text-right font-semibold ${String(row.remain).startsWith('-') ? 'text-red-400' : 'text-green-400'}`}>{row.remain}</td>
                   <td className="px-4 py-3 text-right text-red-400">{row.unpaid}</td>
                 </tr>
@@ -204,14 +212,10 @@ export function GroupPageClient({ groupId }) {
                 <span className="font-semibold">{row.name}</span>
                 <Badge variant="outline" className="text-xs font-normal">#{idx + 1}</Badge>
               </div>
-              <div className="grid grid-cols-4 gap-3 text-sm">
+              <div className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Paid</span>
                   <span className="text-green-400 font-semibold">{row.paid}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Spend</span>
-                  <span className="text-orange-400 font-semibold">{row.spend}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Remain</span>
@@ -222,6 +226,16 @@ export function GroupPageClient({ groupId }) {
                   <span className="text-red-400 font-semibold">{row.unpaid}</span>
                 </div>
               </div>
+              {tripColumns.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border/20 flex flex-wrap gap-1.5">
+                  {tripColumns.map((name) => (
+                    <span key={name} className="text-xs bg-muted/60 rounded-lg px-2 py-1">
+                      <span className="text-muted-foreground">{name}:</span>{' '}
+                      <span className="text-orange-400 font-medium">{row[name] ?? '—'}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
