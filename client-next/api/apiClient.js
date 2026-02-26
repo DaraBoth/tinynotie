@@ -72,6 +72,7 @@ export const api = {
   deleteGroup: (groupId) => apiClient.delete('/api/deleteGroupById', { params: { group_id: groupId } }),
 
   // Members
+  getAllMembers: () => apiClient.get('/api/getAllMember'),
   addMember: (data) => apiClient.post('/api/addMemberByGroupId', data),
   updateMember: (data) => apiClient.post('/api/editMemberByMemberId', data),
   deleteMember: (memberId) => apiClient.delete(`/api/members/${memberId}`),

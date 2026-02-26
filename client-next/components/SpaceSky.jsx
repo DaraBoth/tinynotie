@@ -1,93 +1,141 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 
 export function SpaceSky() {
   const canvasRef = useRef(null);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme !== 'light';
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
 
-    // Create stars
-    const stars = Array.from({ length: 150 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      radius: Math.random() * 1.5,
-      opacity: Math.random(),
-      speed: Math.random() * 0.5,
-    }));
-
-    let animationId;
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw and update stars
-      stars.forEach((star) => {
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
-        ctx.fill();
-
-        // Twinkle effect
-        star.opacity += star.speed * 0.01;
-        if (star.opacity > 1 || star.opacity < 0) {
-          star.speed *= -1;
-        }
-      });
-
-      animationId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    const handleResize = () => {
+    const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
+    resize();
 
-    window.addEventListener('resize', handleResize);
+    let animationId;
 
+    if (isDark) {
+      // Dark: animated star field
+      const stars = Array.from({ length: 180 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.6 + 0.2,
+        opacity: Math.random(),
+        speed: (Math.random() - 0.5) * 0.8,
+      }));
+      const animate = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stars.forEach((star) => {
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, Math.min(1, star.opacity))})`;
+          ctx.fill();
+          star.opacity += star.speed * 0.01;
+          if (star.opacity > 1 || star.opacity < 0.05) star.speed *= -1;
+        });
+        animationId = requestAnimationFrame(animate);
+      };
+      animate();
+    } else {
+      // Light: soft cloud puffs drifting
+      const clouds = Array.from({ length: 6 }, (_, i) => ({
+        x: (i / 6) * canvas.width * 1.5 - canvas.width * 0.1,
+        y: 40 + Math.random() * canvas.height * 0.45,
+        width: 180 + Math.random() * 200,
+        height: 60 + Math.random() * 50,
+        opacity: 0.55 + Math.random() * 0.3,
+        speed: 0.12 + Math.random() * 0.18,
+      }));
+      const drawCloud = (cx, cy, w, h, alpha) => {
+        ctx.save();
+        const grd = ctx.createRadialGradient(cx, cy, h * 0.1, cx, cy, w * 0.5);
+        grd.addColorStop(0, `rgba(255,255,255,${alpha})`);
+        grd.addColorStop(1, `rgba(200,225,255,0)`);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, w * 0.5, h * 0.5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = grd;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx - w * 0.22, cy + h * 0.05, w * 0.3, h * 0.38, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.7})`;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + w * 0.22, cy + h * 0.05, w * 0.3, h * 0.38, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.7})`;
+        ctx.fill();
+        ctx.restore();
+      };
+      const animate = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        clouds.forEach((cloud) => {
+          drawCloud(cloud.x, cloud.y, cloud.width, cloud.height, cloud.opacity);
+          cloud.x += cloud.speed;
+          if (cloud.x - cloud.width > canvas.width) {
+            cloud.x = -cloud.width;
+            cloud.y = 40 + Math.random() * canvas.height * 0.45;
+          }
+        });
+        animationId = requestAnimationFrame(animate);
+      };
+      animate();
+    }
+
+    window.addEventListener('resize', resize);
     return () => {
       cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [isDark]);
+
+  if (isDark) {
+    return (
+      <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-b from-slate-950 via-[#0d0b2b] to-slate-900">
+        <canvas ref={canvasRef} className="absolute inset-0" />
+        <motion.div
+          className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.25, 1], opacity: [0.25, 0.45, 0.25] }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-purple-700/20 rounded-full blur-3xl"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.45, 0.25, 0.45] }}
+          transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute top-1/3 right-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-2xl"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.3, 0.15] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900">
+    <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-b from-sky-200 via-blue-100 to-indigo-50">
       <canvas ref={canvasRef} className="absolute inset-0" />
-      
-      {/* Gradient overlays */}
       <motion.div
-        className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
+        className="absolute top-8 right-16 w-32 h-32 rounded-full bg-yellow-200/80 blur-2xl"
+        animate={{ opacity: [0.6, 0.9, 0.6], scale: [1, 1.12, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <div className="absolute top-10 right-[4.5rem] w-16 h-16 rounded-full bg-yellow-300/50 blur-sm" />
+      <motion.div
+        className="absolute bottom-0 left-1/4 w-[600px] h-48 bg-indigo-200/40 rounded-full blur-3xl"
+        animate={{ opacity: [0.3, 0.5, 0.3] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
-        className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"
-        animate={{
-          scale: [1.2, 1, 1.2],
-          opacity: [0.5, 0.3, 0.5],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[700px] h-48 bg-sky-300/20 rounded-full blur-3xl"
+        animate={{ opacity: [0.2, 0.4, 0.2] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
       />
     </div>
   );

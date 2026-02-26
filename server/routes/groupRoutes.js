@@ -97,7 +97,9 @@ router.get("/getGroupListWithDetails", authenticateToken, async (req, res) => {
           ELSE FALSE
         END AS "isMember",
         COUNT(DISTINCT m.id) AS member_count,
-        COUNT(DISTINCT t.id) AS trip_count
+        COUNT(DISTINCT t.id) AS trip_count,
+        COALESCE((SELECT SUM(tr.spend) FROM trp_infm tr WHERE tr.group_id = g.id), 0) AS total_spend,
+        COALESCE((SELECT SUM(mi.paid) FROM member_infm mi WHERE mi.group_id = g.id), 0) AS total_paid
       FROM grp_infm g
       LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $1::int
       LEFT JOIN member_infm m ON m.group_id = g.id
