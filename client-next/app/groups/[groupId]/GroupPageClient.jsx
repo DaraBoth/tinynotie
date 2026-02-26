@@ -80,7 +80,7 @@ export function GroupPageClient({ groupId }) {
         trips:   tripsResponse.data.data   || [],
       };
     },
-    enabled: !!groupId && !!user,
+    enabled: hasHydrated && isAuthenticated && !!groupId && !!user,
     refetchInterval: 30000,
   });
 

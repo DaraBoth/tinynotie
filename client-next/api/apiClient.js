@@ -11,18 +11,29 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+/**
+ * Read the token from localStorage (primary) or Zustand in-memory store (fallback).
+ * localStorage is always written synchronously by Zustand persist middleware,
+ * so it is the most reliable source across module boundaries in production builds.
+ */
+function getToken() {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('auth-storage');
+      if (raw) {
+        const token = JSON.parse(raw)?.state?.token;
+        if (token) return token;
+      }
+    } catch { /* ignore */ }
+  }
+  // Fallback: in-memory store (works in same-module-instance scenarios)
+  return useAuthStore.getState().token || null;
+}
+
+// Request interceptor — attach token to every request
 apiClient.interceptors.request.use(
   (config) => {
-    // Read token directly from the Zustand store (in-memory, always up-to-date).
-    // Falls back to localStorage key 'auth-storage' for SSR/edge cases.
-    let token = useAuthStore.getState().token;
-    if (!token && typeof window !== 'undefined') {
-      try {
-        const raw = localStorage.getItem('auth-storage');
-        if (raw) token = JSON.parse(raw)?.state?.token;
-      } catch { /* ignore */ }
-    }
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,15 +42,22 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
+// Response interceptor — handle 401 without causing redirect loops
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid — clear auth state and redirect to login
-      useAuthStore.getState().logout();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      // Only clear auth + redirect when we're NOT already on the login page.
+      // Avoids infinite redirect loops when a stale/unauthenticated request
+      // fires before the store is fully hydrated.
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        // Check if we actually have a token — if we do, it's genuinely expired;
+        // if we don't, it was a request fired before hydration, so just ignore.
+        const token = getToken();
+        if (token) {
+          useAuthStore.getState().logout();
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

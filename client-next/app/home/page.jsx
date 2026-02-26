@@ -195,7 +195,7 @@ export default function HomePage() {
       const response = await api.getGroupsWithDetails(user._id);
       return response.data.data || [];
     },
-    enabled: !!user?._id,
+    enabled: hasHydrated && isAuthenticated && !!user?._id,
   });
 
   const deleteMutation = useMutation({
