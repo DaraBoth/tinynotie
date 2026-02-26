@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '@/store/authStore';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000';
 
@@ -13,17 +14,17 @@ const apiClient = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    // Get token from sessionStorage (matching current behavior)
-    const authData = sessionStorage.getItem('auth-storage');
-    if (authData) {
+    // Read token directly from the Zustand store (in-memory, always up-to-date).
+    // Falls back to localStorage key 'auth-storage' for SSR/edge cases.
+    let token = useAuthStore.getState().token;
+    if (!token && typeof window !== 'undefined') {
       try {
-        const { state } = JSON.parse(authData);
-        if (state?.token) {
-          config.headers.Authorization = `Bearer ${state.token}`;
-        }
-      } catch (error) {
-        console.error('Error parsing auth data:', error);
-      }
+        const raw = localStorage.getItem('auth-storage');
+        if (raw) token = JSON.parse(raw)?.state?.token;
+      } catch { /* ignore */ }
+    }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -35,8 +36,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      sessionStorage.removeItem('auth-storage');
+      // Token expired or invalid — clear auth state and redirect to login
+      useAuthStore.getState().logout();
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
