@@ -27,28 +27,22 @@ const T = {
     thankYou: 'Thank you for your cooperation!',
   },
   KH: {
-    greeting: 'សួស័ដឹ!
-នេហគឺ​ជា​វិក្យបត្រ់។
-
-',
-    totalAmount: 'ចំនផ​សរុប',
-    participants: 'អ្នក​ចូលរួម',
-    perMember: 'ចំណាយតាម្នាក់',
-    eachPersonPays: 'ការតូតាតាម្នាក់',
-    paidBy: 'បងដ័យ',
-    thankYou: 'អរគុតសម្រាបកិច្ចសហការរបស់!',
+    greeting: '\u179f\u17bd\u179f\u17d0\u178a\u17b9!\n\u1793\u17c1\u17a0\u1782\u17ba\u200b\u1787\u17b6\u200b\u179c\u17b7\u1780\u17d2\u1799\u1794\u178f\u17d2\u179a\u17cb\u17d4\n\n',
+    totalAmount: '\u1785\u17c6\u1793\u1795\u200b\u179f\u179a\u17bb\u1794',
+    participants: '\u17a2\u17d2\u1793\u1780\u200b\u1785\u17bc\u179b\u179a\u17bd\u1798',
+    perMember: '\u1785\u17c6\u178e\u17b6\u1799\u178f\u17b6\u1798\u17d2\u1793\u17b6\u1780\u17cb',
+    eachPersonPays: '\u1780\u17b6\u179a\u178f\u17bc\u178f\u17b6\u178f\u17b6\u1798\u17d2\u1793\u17b6\u1780\u17cb',
+    paidBy: '\u1794\u1784\u178a\u17d0\u1799',
+    thankYou: '\u17a2\u179a\u1782\u17bb\u178f\u179f\u1798\u17d2\u179a\u17b6\u1794\u1780\u17b7\u1785\u17d2\u1785\u179f\u17a0\u1780\u17b6\u179a\u179a\u1794\u179f\u17cb!',
   },
   KR: {
-    greeting: '안녕하세요!
-이것은 영수증입니다.
-
-',
-    totalAmount: '종 금액',
-    participants: '참여 멤버',
-    perMember: '1인당 금액',
-    eachPersonPays: '각 사람의 지불 금액',
-    paidBy: '결제자',
-    thankYou: '협조해 주셔서 감사합니다!',
+    greeting: '\uc548\ub155\ud558\uc138\uc694!\n\uc774\uac83\uc740 \uc601\uc218\uc99d\uc785\ub2c8\ub2e4.\n\n',
+    totalAmount: '\uc885 \uae08\uc561',
+    participants: '\ucc38\uc5ec \uba64\ubc84',
+    perMember: '1\uc778\ub2f9 \uae08\uc561',
+    eachPersonPays: '\uac01 \uc0ac\ub78c\uc758 \uc9c0\ubd88 \uae08\uc561',
+    paidBy: '\uacb0\uc81c\uc790',
+    thankYou: '\ud611\uc870\ud574 \uc8fc\uc154\uc11c \uac10\uc0ac\ud569\ub2c8\ub2e4!',
   },
 };
 
