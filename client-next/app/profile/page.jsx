@@ -128,7 +128,7 @@ export default function ProfilePage() {
                 >
                   {profilePreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={profilePreview} alt="Profile" className="w-full h-full object-cover" />
+                    <img src={profilePreview} alt="Profile" className="w-full h-full object-cover" onError={() => setProfilePreview('')} />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center text-4xl font-extrabold text-primary">
                       {initials}
@@ -225,7 +225,7 @@ export default function ProfilePage() {
                 >
                   {profilePreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={profilePreview} alt="Profile" className="w-full h-full object-cover" />
+                    <img src={profilePreview} alt="Profile" className="w-full h-full object-cover" onError={() => setProfilePreview('')} />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center text-2xl font-bold text-primary">
                       {initials}
