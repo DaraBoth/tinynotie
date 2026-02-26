@@ -18,7 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 export function ShareModal({ open, onClose, group }) {
   const [copied, setCopied] = useState(false);
   const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/groups/${group?.grp_id}`
+    ? `${window.location.origin}/groups/${group?.id}`
     : '';
 
   const handleCopy = async () => {
@@ -67,9 +67,9 @@ export function ShareModal({ open, onClose, group }) {
           <Card className="bg-muted/50">
             <CardContent className="p-4">
               <h3 className="font-semibold mb-2">{group?.grp_name}</h3>
-              {group?.grp_description && (
+              {group?.description && (
                 <p className="text-sm text-muted-foreground">
-                  {group.grp_description}
+                  {group.description}
                 </p>
               )}
             </CardContent>

@@ -11,6 +11,14 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
   const { isMobile } = useWindowDimensions();
   const isMembersTable = type === 'members';
 
+  const getMemberName = (memId) =>
+    members?.find((m) => m.id === memId)?.mem_name || 'Unknown';
+
+  const getMemberSpent = (memberId) =>
+    trips
+      ?.filter((t) => t.mem_id === memberId)
+      .reduce((sum, t) => sum + (parseFloat(t.spend) || 0), 0) || 0;
+
   // Table view
   const renderTable = () => (
     <div className="overflow-x-auto">
@@ -27,10 +35,10 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
               </>
             ) : (
               <>
+                <th className="text-left p-3 font-medium">Name</th>
                 <th className="text-left p-3 font-medium">Description</th>
                 <th className="text-left p-3 font-medium">Member</th>
-                <th className="text-left p-3 font-medium">Price</th>
-                <th className="text-left p-3 font-medium">Currency</th>
+                <th className="text-left p-3 font-medium">Amount</th>
                 <th className="text-right p-3 font-medium">Actions</th>
               </>
             )}
@@ -45,7 +53,7 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
             </tr>
           ) : (
             data.map((item) => (
-              <tr key={item.member_id || item.trip_id} className="border-b hover:bg-muted/50">
+              <tr key={item.id} className="border-b hover:bg-muted/50">
                 {isMembersTable ? (
                   <>
                     <td className="p-3">
@@ -53,17 +61,11 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                           <User className="h-4 w-4 text-primary" />
                         </div>
-                        <span className="font-medium">{item.member_name}</span>
+                        <span className="font-medium">{item.mem_name}</span>
                       </div>
                     </td>
-                    <td className="p-3">{formatCurrency(item.member_paid || 0)}</td>
-                    <td className="p-3">
-                      {formatCurrency(
-                        trips
-                          ?.filter((t) => t.member_id === item.member_id)
-                          .reduce((sum, t) => sum + (parseFloat(t.trip_price) || 0), 0) || 0
-                      )}
-                    </td>
+                    <td className="p-3">{formatCurrency(item.paid || 0)}</td>
+                    <td className="p-3">{formatCurrency(getMemberSpent(item.id))}</td>
                     <td className="p-3">
                       <Badge variant={calculateMemberBalance(item, trips) >= 0 ? 'default' : 'destructive'}>
                         {formatCurrency(Math.abs(calculateMemberBalance(item, trips)))}
@@ -84,14 +86,10 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
                   </>
                 ) : (
                   <>
-                    <td className="p-3 font-medium">{item.trip_description}</td>
-                    <td className="p-3">
-                      {members?.find((m) => m.member_id === item.member_id)?.member_name || 'Unknown'}
-                    </td>
-                    <td className="p-3">{formatCurrency(item.trip_price || 0)}</td>
-                    <td className="p-3">
-                      <Badge variant="outline">{item.trip_currency || 'USD'}</Badge>
-                    </td>
+                    <td className="p-3 font-medium">{item.trp_name}</td>
+                    <td className="p-3 text-muted-foreground text-sm">{item.description || '-'}</td>
+                    <td className="p-3">{getMemberName(item.mem_id)}</td>
+                    <td className="p-3 font-semibold text-primary">{formatCurrency(item.spend || 0)}</td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
@@ -118,7 +116,7 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
         </div>
       ) : (
         data.map((item) => (
-          <Card key={item.member_id || item.trip_id} className="backdrop-blur-sm bg-card/80">
+          <Card key={item.id} className="backdrop-blur-sm bg-card/80">
             <CardContent className="p-4">
               {isMembersTable ? (
                 <div className="space-y-3">
@@ -128,9 +126,9 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
                         <User className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <div className="font-semibold">{item.member_name}</div>
+                        <div className="font-semibold">{item.mem_name}</div>
                         <div className="text-sm text-muted-foreground">
-                          Paid: {formatCurrency(item.member_paid || 0)}
+                          Paid: {formatCurrency(item.paid || 0)}
                         </div>
                       </div>
                     </div>
@@ -148,13 +146,7 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t">
                     <div>
                       <div className="text-xs text-muted-foreground">Spent</div>
-                      <div className="font-medium">
-                        {formatCurrency(
-                          trips
-                            ?.filter((t) => t.member_id === item.member_id)
-                            .reduce((sum, t) => sum + (parseFloat(t.trip_price) || 0), 0) || 0
-                        )}
-                      </div>
+                      <div className="font-medium">{formatCurrency(getMemberSpent(item.id))}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground">Balance</div>
@@ -168,9 +160,10 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="font-semibold">{item.trip_description}</div>
+                      <div className="font-semibold">{item.trp_name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {members?.find((m) => m.member_id === item.member_id)?.member_name || 'Unknown'}
+                        {item.description && <span>{item.description} • </span>}
+                        {getMemberName(item.mem_id)}
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
@@ -179,9 +172,8 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
                     <div className="font-semibold text-primary">
-                      {formatCurrency(item.trip_price || 0)}
+                      {formatCurrency(item.spend || 0)}
                     </div>
-                    <Badge variant="outline">{item.trip_currency || 'USD'}</Badge>
                   </div>
                 </div>
               )}

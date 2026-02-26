@@ -22,8 +22,8 @@ export function EditMember({ open, onClose, groupId, member }) {
   const { isMobile, isGalaxyFold, isIPhoneSE } = useWindowDimensions();
   
   const [formData, setFormData] = useState({
-    member_name: '',
-    member_paid: '',
+    mem_name: '',
+    paid: '',
   });
 
   const addMutation = useAddMember(groupId);
@@ -32,13 +32,13 @@ export function EditMember({ open, onClose, groupId, member }) {
   useEffect(() => {
     if (member) {
       setFormData({
-        member_name: member.member_name || '',
-        member_paid: member.member_paid || '',
+        mem_name: member.mem_name || '',
+        paid: member.paid || '',
       });
     } else {
       setFormData({
-        member_name: '',
-        member_paid: '',
+        mem_name: '',
+        paid: '',
       });
     }
   }, [member, open]);
@@ -46,12 +46,12 @@ export function EditMember({ open, onClose, groupId, member }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.member_name.trim()) {
+    if (!formData.mem_name.trim()) {
       toast.error('Please enter a member name');
       return;
     }
 
-    const paid = parseFloat(formData.member_paid) || 0;
+    const paid = parseFloat(formData.paid) || 0;
     if (paid < 0) {
       toast.error('Amount paid cannot be negative');
       return;
@@ -60,16 +60,15 @@ export function EditMember({ open, onClose, groupId, member }) {
     try {
       if (isEditing) {
         await updateMutation.mutateAsync({
-          memberId: member.member_id,
-          data: {
-            member_name: formData.member_name,
-            member_paid: paid,
-          },
+          user_id: member.id,
+          paid,
+          group_id: groupId,
+          type: 'UPDATE',
         });
       } else {
         await addMutation.mutateAsync({
-          member_name: formData.member_name,
-          member_paid: paid,
+          mem_name: formData.mem_name,
+          paid,
         });
       }
       onClose();
@@ -111,16 +110,16 @@ export function EditMember({ open, onClose, groupId, member }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="member_name" className="flex items-center gap-2">
+            <Label htmlFor="mem_name" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Member Name *
             </Label>
             <Input
-              id="member_name"
-              name="member_name"
+              id="mem_name"
+              name="mem_name"
               type="text"
               placeholder="John Doe"
-              value={formData.member_name}
+              value={formData.mem_name}
               onChange={handleChange}
               required
               className={isGalaxyFold ? 'text-sm' : ''}
@@ -128,18 +127,18 @@ export function EditMember({ open, onClose, groupId, member }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="member_paid" className="flex items-center gap-2">
+            <Label htmlFor="paid" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               Amount Paid
             </Label>
             <Input
-              id="member_paid"
-              name="member_paid"
+              id="paid"
+              name="paid"
               type="number"
               step="0.01"
               min="0"
               placeholder="0.00"
-              value={formData.member_paid}
+              value={formData.paid}
               onChange={handleChange}
               className={isGalaxyFold ? 'text-sm' : ''}
             />

@@ -56,13 +56,17 @@ export const api = {
   // User
   getUserInfo: (userId) => apiClient.get('/api/getUserProfile', { params: { user_id: userId } }),
   updateUserInfo: (data) => apiClient.put('/api/updateUserInfo', data),
+  uploadImage: (formData) =>
+    apiClient.post('/api/uploadImage', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   searchUsers: (searchWords, filterBy = 'ALL') => 
     apiClient.get('/api/userSearch', { params: { searchWords, filterBy } }),
 
   // Groups
   getGroupsByUserId: (userId) => apiClient.get('/api/getGroupByUserId', { params: { user_id: userId } }),
   addGroup: (data) => apiClient.post('/api/addGroupByUserId', data),
-  getGroupById: (groupId) => apiClient.get('/api/getGroupDetail', { params: { group_id: groupId } }),
+  getGroupById: (groupId, userId) => apiClient.get('/api/getGroupDetail', { params: { group_id: groupId, user_id: userId } }),
   updateGroupVisibility: (data) => apiClient.post('/api/updateGroupVisibility', data),
   deleteGroup: (groupId) => apiClient.delete('/api/deleteGroupById', { params: { group_id: groupId } }),
 
@@ -75,7 +79,7 @@ export const api = {
   // Trips
   addTrip: (data) => apiClient.post('/api/addTripByGroupId', data),
   updateTrip: (data) => apiClient.post('/api/editTripByGroupId', data),
-  deleteTrip: (tripId) => apiClient.delete('/api/deleteTripById', { params: { trip_id: tripId } }),
+  deleteTrip: (tripId, groupId) => apiClient.delete('/api/deleteTripById', { data: { trip_id: tripId, group_id: groupId } }),
   getTripsByGroupId: (groupId) => apiClient.get('/api/getTripByGroupId', { params: { group_id: groupId } }),
 
   // AI & Utilities

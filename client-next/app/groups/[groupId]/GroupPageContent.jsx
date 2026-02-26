@@ -159,8 +159,8 @@ export default function GroupPageContent() {
               
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold">{group.grp_name}</h1>
-                {group.grp_description && (
-                  <p className="text-sm text-muted-foreground">{group.grp_description}</p>
+                {group.description && (
+                  <p className="text-sm text-muted-foreground">{group.description}</p>
                 )}
               </div>
             </div>

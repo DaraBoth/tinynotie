@@ -60,7 +60,7 @@ export function Topbar() {
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    {user ? getInitials(user.username) : 'U'}
+                    {user ? getInitials(user.usernm) : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -69,7 +69,7 @@ export function Topbar() {
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    {user?.username || 'User'}
+                    {user?.usernm || 'User'}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email || ''}

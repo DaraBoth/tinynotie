@@ -159,7 +159,13 @@ export function useUpdateTrip(groupId) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data) => api.updateTrip(data),
+    mutationFn: ({ tripId, data }) =>
+      api.updateTrip({
+        ...data,
+        group_id: groupId,
+        type: 'UPDATE',
+        update_dttm: new Date().toISOString(),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       toast.success('Trip updated successfully');
@@ -175,7 +181,7 @@ export function useDeleteTrip(groupId) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (tripId) => api.deleteTrip(tripId),
+    mutationFn: (tripId) => api.deleteTrip(tripId, groupId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       toast.success('Trip deleted successfully');

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { FileText, DollarSign, User, Coins } from 'lucide-react';
+import { FileText, DollarSign, Users, CreditCard } from 'lucide-react';
 import { useAddTrip, useUpdateTrip } from '@/hooks/useQueries';
 import { useWindowDimensions } from '@/hooks/useWindowDimensions';
+import { parseMemIds } from '@/utils/helpers';
 import {
   Dialog,
   DialogContent,
@@ -24,107 +25,99 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const COMMON_CURRENCIES = [
-  'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'KRW', 'THB', 'VND', 'SGD', 'MYR',
-  'IDR', 'PHP', 'INR', 'AUD', 'CAD', 'CHF', 'NZD', 'HKD', 'TWD',
-];
-
 export function EditTrip({ open, onClose, groupId, trip, members = [] }) {
   const isEditing = !!trip;
   const { isMobile, isGalaxyFold, isIPhoneSE } = useWindowDimensions();
-  
+
   const [formData, setFormData] = useState({
-    trip_description: '',
-    trip_price: '',
-    trip_currency: 'USD',
-    member_id: '',
+    trp_name: '',
+    spend: '',
+    description: '',
+    payer_id: '',
   });
+  const [selectedMemberIds, setSelectedMemberIds] = useState([]);
 
   const addMutation = useAddTrip(groupId);
   const updateMutation = useUpdateTrip(groupId);
 
   useEffect(() => {
+    if (!open) return;
     if (trip) {
+      const parsed = parseMemIds(trip.mem_id);
+      setSelectedMemberIds(parsed);
       setFormData({
-        trip_description: trip.trip_description || '',
-        trip_price: trip.trip_price || '',
-        trip_currency: trip.trip_currency || 'USD',
-        member_id: trip.member_id || '',
+        trp_name: trip.trp_name || '',
+        spend: trip.spend || '',
+        description: trip.description || '',
+        payer_id: trip.payer_id ? String(trip.payer_id) : '',
       });
     } else {
+      // Default: all members selected
+      setSelectedMemberIds(members.map((m) => m.id));
       setFormData({
-        trip_description: '',
-        trip_price: '',
-        trip_currency: 'USD',
-        member_id: members[0]?.member_id || '',
+        trp_name: '',
+        spend: '',
+        description: '',
+        payer_id: members[0] ? String(members[0].id) : '',
       });
     }
   }, [trip, members, open]);
 
+  const toggleMember = (id) => {
+    setSelectedMemberIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.trip_description.trim()) {
-      toast.error('Please enter a description');
+    if (!formData.trp_name.trim()) {
+      toast.error('Please enter a trip name');
       return;
     }
-
-    const price = parseFloat(formData.trip_price);
+    const price = parseFloat(formData.spend);
     if (isNaN(price) || price <= 0) {
-      toast.error('Please enter a valid price');
+      toast.error('Please enter a valid amount');
       return;
     }
-
-    if (!formData.member_id) {
-      toast.error('Please select a member');
+    if (selectedMemberIds.length === 0) {
+      toast.error('Please select at least one member');
       return;
     }
 
     try {
       const data = {
-        trip_description: formData.trip_description,
-        trip_price: price,
-        trip_currency: formData.trip_currency,
-        member_id: formData.member_id,
+        trp_name: formData.trp_name,
+        spend: price,
+        mem_id: JSON.stringify(selectedMemberIds),
+        description: formData.description,
+        payer_id: formData.payer_id || null,
       };
 
       if (isEditing) {
-        await updateMutation.mutateAsync({
-          tripId: trip.trip_id,
-          data,
-        });
+        await updateMutation.mutateAsync({ tripId: trip.id, data });
       } else {
         await addMutation.mutateAsync(data);
       }
       onClose();
-    } catch (error) {
+    } catch {
       // Error handled by mutation
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  // Responsive styles
   const dialogClass = isGalaxyFold
     ? 'max-w-[95%] p-3'
     : isIPhoneSE
     ? 'max-w-[90%] p-4'
     : isMobile
     ? 'max-w-[85%] p-4'
-    : 'max-w-md';
+    : 'max-w-lg';
 
   if (members.length === 0 && !isEditing) {
     return (
@@ -152,115 +145,86 @@ export function EditTrip({ open, onClose, groupId, trip, members = [] }) {
             {isEditing ? 'Edit Trip' : 'Add New Trip'}
           </DialogTitle>
           <DialogDescription className={isGalaxyFold ? 'text-xs' : 'text-sm'}>
-            {isEditing ? 'Update trip information' : 'Add a new expense to the group'}
+            {isEditing ? 'Update trip information' : 'Add a new shared expense'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="trip_description" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Description *
+            <Label htmlFor="trp_name" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Name *
             </Label>
-            <Input
-              id="trip_description"
-              name="trip_description"
-              type="text"
-              placeholder="Dinner at restaurant"
-              value={formData.trip_description}
-              onChange={handleChange}
-              required
-              className={isGalaxyFold ? 'text-sm' : ''}
-            />
+            <Input id="trp_name" name="trp_name" placeholder="Dinner at restaurant" value={formData.trp_name} onChange={handleChange} required />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="trip_price" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Price *
-              </Label>
-              <Input
-                id="trip_price"
-                name="trip_price"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                value={formData.trip_price}
-                onChange={handleChange}
-                required
-                className={isGalaxyFold ? 'text-sm' : ''}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="trip_currency" className="flex items-center gap-2">
-                <Coins className="h-4 w-4" />
-                Currency
-              </Label>
-              <Select
-                value={formData.trip_currency}
-                onValueChange={(value) => handleSelectChange('trip_currency', value)}
-              >
-                <SelectTrigger className={isGalaxyFold ? 'text-sm' : ''}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent style={{ zIndex: 1500 }}>
-                  {COMMON_CURRENCIES.map((currency) => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Amount */}
+          <div className="space-y-2">
+            <Label htmlFor="spend" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" /> Amount *
+            </Label>
+            <Input id="spend" name="spend" type="number" step="0.01" min="0.01" placeholder="0.00" value={formData.spend} onChange={handleChange} required />
           </div>
 
+          {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="member_id" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Member *
+            <Label htmlFor="description" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Description
             </Label>
-            <Select
-              value={formData.member_id}
-              onValueChange={(value) => handleSelectChange('member_id', value)}
-            >
-              <SelectTrigger className={isGalaxyFold ? 'text-sm' : ''}>
-                <SelectValue placeholder="Select member" />
+            <Input id="description" name="description" placeholder="Optional" value={formData.description} onChange={handleChange} />
+          </div>
+
+          {/* Members (multi-select toggle) */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Users className="h-4 w-4" /> Split Between *
+            </Label>
+            <div className="flex flex-wrap gap-2 border border-border rounded-md p-3">
+              {members.map((member) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  onClick={() => toggleMember(member.id)}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                    selectedMemberIds.includes(member.id)
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-transparent text-muted-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {member.mem_name}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {selectedMemberIds.length} member{selectedMemberIds.length !== 1 ? 's' : ''} selected — cost split equally
+            </p>
+          </div>
+
+          {/* Payer */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" /> Paid by
+            </Label>
+            <Select value={formData.payer_id} onValueChange={(v) => setFormData((p) => ({ ...p, payer_id: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select who paid" />
               </SelectTrigger>
               <SelectContent style={{ zIndex: 1500 }}>
                 {members.map((member) => (
-                  <SelectItem key={member.member_id} value={member.member_id}>
-                    {member.member_name}
+                  <SelectItem key={member.id} value={String(member.id)}>
+                    {member.mem_name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p className={`text-muted-foreground ${isGalaxyFold ? 'text-xs' : 'text-sm'}`}>
-              Who spent this money?
-            </p>
           </div>
 
           <DialogFooter className={`gap-2 ${isMobile ? 'flex-col-reverse' : ''}`}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className={isMobile ? 'w-full' : ''}
-            >
+            <Button type="button" variant="outline" onClick={onClose} className={isMobile ? 'w-full' : ''}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={addMutation.isPending || updateMutation.isPending}
-              className={isMobile ? 'w-full' : ''}
-            >
-              {addMutation.isPending || updateMutation.isPending
-                ? 'Saving...'
-                : isEditing
-                ? 'Update Trip'
-                : 'Add Trip'}
+            <Button type="submit" disabled={addMutation.isPending || updateMutation.isPending} className={isMobile ? 'w-full' : ''}>
+              {addMutation.isPending || updateMutation.isPending ? 'Saving...' : isEditing ? 'Update Trip' : 'Add Trip'}
             </Button>
           </DialogFooter>
         </form>

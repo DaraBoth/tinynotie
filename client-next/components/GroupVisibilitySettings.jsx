@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Settings, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { useUpdateGroup, useDeleteGroup } from '@/hooks/useQueries';
+import { useUpdateGroupVisibility, useDeleteGroup } from '@/hooks/useQueries';
 import {
   Dialog,
   DialogContent,
@@ -23,20 +23,20 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     grp_name: '',
-    grp_description: '',
-    is_public: false,
+    description: '',
+    visibility: 'public',
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const updateMutation = useUpdateGroup(groupId);
+  const updateMutation = useUpdateGroupVisibility(groupId);
   const deleteMutation = useDeleteGroup();
 
   useEffect(() => {
     if (group) {
       setFormData({
         grp_name: group.grp_name || '',
-        grp_description: group.grp_description || '',
-        is_public: group.is_public || false,
+        description: group.description || '',
+        visibility: group.visibility || 'public',
       });
     }
   }, [group, open]);
@@ -50,7 +50,7 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
     }
 
     try {
-      await updateMutation.mutateAsync(formData);
+      await updateMutation.mutateAsync({ visibility: formData.visibility });
       onClose();
     } catch (error) {
       // Error handled by mutation
@@ -98,26 +98,29 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
                 name="grp_name"
                 value={formData.grp_name}
                 onChange={handleChange}
-                required
+                disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">Group name cannot be changed here.</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="grp_description">Description</Label>
+              <Label htmlFor="description">Description</Label>
               <textarea
-                id="grp_description"
-                name="grp_description"
-                value={formData.grp_description}
+                id="description"
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                placeholder="Add a description for your group..."
+                disabled
+                className="flex w-full rounded-md border border-input bg-muted px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                placeholder="No description"
               />
             </div>
 
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
-                {formData.is_public ? (
+                {formData.visibility === 'public' ? (
                   <Eye className="h-5 w-5 text-primary" />
                 ) : (
                   <EyeOff className="h-5 w-5 text-muted-foreground" />
@@ -130,9 +133,9 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
                 </div>
               </div>
               <Switch
-                checked={formData.is_public}
+                checked={formData.visibility === 'public'}
                 onCheckedChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, is_public: checked }))
+                  setFormData((prev) => ({ ...prev, visibility: checked ? 'public' : 'private' }))
                 }
               />
             </div>

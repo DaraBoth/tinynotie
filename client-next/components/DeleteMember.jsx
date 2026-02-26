@@ -19,7 +19,7 @@ export function DeleteMember({ open, onClose, groupId, member }) {
     if (!member) return;
 
     try {
-      await deleteMutation.mutateAsync(member.member_id);
+      await deleteMutation.mutateAsync(member.id);
       onClose();
     } catch (error) {
       // Error handled by mutation
@@ -46,7 +46,7 @@ export function DeleteMember({ open, onClose, groupId, member }) {
         <div className="py-4">
           <p className="text-sm">
             Are you sure you want to delete{' '}
-            <span className="font-semibold">{member?.member_name}</span>?
+            <span className="font-semibold">{member?.mem_name}</span>?
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             All associated trips will remain but will show as belonging to a deleted member.
