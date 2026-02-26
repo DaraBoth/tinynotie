@@ -23,6 +23,7 @@ import { DeleteMember } from '@/components/DeleteMember';
 import { ChatWithDatabase } from '@/components/ChatWithDatabase';
 import { ShareModal } from '@/components/ShareModal';
 import { GroupVisibilitySettings } from '@/components/GroupVisibilitySettings';
+import { ReceiptScanner } from '@/components/ReceiptScanner';
 import { calculateMoney, formatTimeDifference } from '@/utils/helpers';
 
 /* ─── tiny helper ────────────────────────────────────────────────────────── */
@@ -383,6 +384,11 @@ export function GroupPageClient({ groupId }) {
           </div>
         </div>
 
+        {/* Receipt scanner */}
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-3 border-b border-border/10">
+          <ReceiptScanner groupId={groupId} members={members} />
+        </div>
+
         {/* Main content */}
         <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
 
@@ -424,11 +430,11 @@ export function GroupPageClient({ groupId }) {
       </div>
 
       {/* Dialogs */}
-      <EditMember        open={editMemberOpen}   onClose={() => setEditMemberOpen(false)}   groupId={groupId} member={selectedMember} />
-      <EditTrip          open={editTripOpen}     onClose={() => setEditTripOpen(false)}     groupId={groupId} trip={selectedTrip} members={members} />
-      <DeleteMember      open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} />
+      <EditMember        open={editMemberOpen}   onClose={() => setEditMemberOpen(false)}   groupId={groupId} member={selectedMember} currency={currency} />
+      <EditTrip          open={editTripOpen}     onClose={() => setEditTripOpen(false)}     groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
+      <DeleteMember      open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
       <ChatWithDatabase  open={chatOpen}         onClose={() => setChatOpen(false)}         groupId={groupId} />
-      <ShareModal        open={shareOpen}        onClose={() => setShareOpen(false)}        group={group} />
+      <ShareModal        open={shareOpen}        onClose={() => setShareOpen(false)}        group={group} members={members} trips={trips} currency={currency} />
       <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)}  group={group} groupId={groupId} />
     </div>
   );

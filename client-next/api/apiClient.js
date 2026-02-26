@@ -91,4 +91,5 @@ export const api = {
   receiptImage: (formData) => apiClient.post('/api/receiptImage', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  addMultipleTrips: (data) => apiClient.post('/api/addMultipleTrips', data),
 };

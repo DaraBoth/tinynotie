@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { User, DollarSign } from 'lucide-react';
+import { User, Plus, Minus } from 'lucide-react';
 import { useAddMember, useUpdateMember } from '@/hooks/useQueries';
-import { useWindowDimensions } from '@/hooks/useWindowDimensions';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -17,155 +15,152 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function EditMember({ open, onClose, groupId, member }) {
-  const isEditing = !!member;
-  const { isMobile, isGalaxyFold, isIPhoneSE } = useWindowDimensions();
-  
-  const [formData, setFormData] = useState({
-    mem_name: '',
-    paid: '',
-  });
+/* Quick-amount chips per currency symbol */
+const CHIPS = {
+  $:       [5, 10, 20, 50, 100],
+  AUD:     [5, 10, 20, 50, 100],
+  '\u0e3f':[20, 50, 100, 200, 500],
+  '\u20a9':[1000, 5000, 10000, 50000, 100000],
+  '\u20ab':[10000, 50000, 100000, 200000, 500000],
+  '\u17db':[1000, 5000, 10000, 20000, 50000],
+  default: [5, 10, 20, 50, 100],
+};
 
-  const addMutation = useAddMember(groupId);
+export function EditMember({ open, onClose, groupId, member, currency = '$' }) {
+  const isEditing = !!member;
+
+  const [name, setName]           = useState('');
+  const [paid, setPaid]           = useState('');
+  const [chip, setChip]           = useState(null);
+  const [custom, setCustom]       = useState('');
+
+  const addMutation    = useAddMember(groupId);
   const updateMutation = useUpdateMember(groupId);
+  const isPending = addMutation.isPending || updateMutation.isPending;
+
+  const chips = CHIPS[currency] || CHIPS.default;
 
   useEffect(() => {
-    if (member) {
-      setFormData({
-        mem_name: member.mem_name || '',
-        paid: member.paid || '',
-      });
-    } else {
-      setFormData({
-        mem_name: '',
-        paid: '',
-      });
+    if (open) {
+      setName(member?.mem_name || '');
+      setPaid(member?.paid ? String(member.paid) : '');
+      setChip(null);
+      setCustom('');
     }
-  }, [member, open]);
+  }, [open, member]);
+
+  const applyChip = (delta) => {
+    const amount = chip !== null ? chip : parseFloat(custom || 0);
+    if (isNaN(amount) || amount <= 0) return;
+    setPaid((prev) => String(Math.max(0, (parseFloat(prev) || 0) + delta * amount)));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.mem_name.trim()) {
-      toast.error('Please enter a member name');
-      return;
-    }
-
-    const paid = parseFloat(formData.paid) || 0;
-    if (paid < 0) {
-      toast.error('Amount paid cannot be negative');
-      return;
-    }
-
+    if (!name.trim()) { toast.error('Member name is required'); return; }
+    const amount = parseFloat(paid) || 0;
+    if (amount < 0) { toast.error('Amount cannot be negative'); return; }
     try {
       if (isEditing) {
-        await updateMutation.mutateAsync({
-          user_id: member.id,
-          paid,
-          group_id: groupId,
-          type: 'UPDATE',
-        });
+        await updateMutation.mutateAsync({ user_id: member.id, paid: amount, group_id: groupId, type: 'UPDATE' });
       } else {
-        await addMutation.mutateAsync({
-          mem_name: formData.mem_name,
-          paid,
-        });
+        await addMutation.mutateAsync({ mem_name: name.trim(), paid: amount });
       }
       onClose();
-    } catch (error) {
-      // Error handled by mutation
-    }
+    } catch { /* handled by mutation */ }
   };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  // Responsive styles
-  const dialogClass = isGalaxyFold
-    ? 'max-w-[95%] p-3'
-    : isIPhoneSE
-    ? 'max-w-[90%] p-4'
-    : isMobile
-    ? 'max-w-[85%] p-4'
-    : 'max-w-md';
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className={dialogClass} style={{ zIndex: 1400 }}>
-        <DialogHeader>
-          <DialogTitle className={isGalaxyFold ? 'text-base' : 'text-lg'}>
-            {isEditing ? 'Edit Member' : 'Add New Member'}
-          </DialogTitle>
-          <DialogDescription className={isGalaxyFold ? 'text-xs' : 'text-sm'}>
-            {isEditing
-              ? 'Update member information'
-              : 'Add a new member to the group'}
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden">
+        {/* Header */}
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <DialogTitle className="text-lg font-bold">
+              {isEditing ? 'Edit Member' : 'Add Member'}
+            </DialogTitle>
+          </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="mem_name" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+          {/* Member name */}
+          <div className="space-y-1.5">
+            <Label htmlFor="mem_name" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Member Name *
             </Label>
             <Input
               id="mem_name"
-              name="mem_name"
-              type="text"
-              placeholder="John Doe"
-              value={formData.mem_name}
-              onChange={handleChange}
+              placeholder="e.g. John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
-              className={isGalaxyFold ? 'text-sm' : ''}
+              disabled={isEditing}
+              className="h-11"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="paid" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+          {/* Amount paid */}
+          <div className="space-y-1.5">
+            <Label htmlFor="paid" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Amount Paid
             </Label>
             <Input
               id="paid"
-              name="paid"
               type="number"
-              step="0.01"
               min="0"
+              step="0.01"
               placeholder="0.00"
-              value={formData.paid}
-              onChange={handleChange}
-              className={isGalaxyFold ? 'text-sm' : ''}
+              value={paid}
+              onChange={(e) => setPaid(e.target.value)}
+              className="h-11 text-lg font-semibold"
             />
-            <p className={`text-muted-foreground ${isGalaxyFold ? 'text-xs' : 'text-sm'}`}>
-              Total amount this member has paid for the group
-            </p>
           </div>
 
-          <DialogFooter className={`gap-2 ${isMobile ? 'flex-col-reverse' : ''}`}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className={isMobile ? 'w-full' : ''}
-            >
+          {/* Quick chips */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Quick Add</p>
+            <div className="flex flex-wrap gap-1.5">
+              {chips.map((c) => (
+                <button key={c} type="button"
+                  onClick={() => setChip(chip === c ? null : c)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${chip === c ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/60 border-border/40 text-foreground hover:bg-muted'}`}>
+                  {currency}{c.toLocaleString()}
+                </button>
+              ))}
+              <input
+                type="number"
+                min="0"
+                placeholder="Custom"
+                value={custom}
+                onChange={(e) => { setCustom(e.target.value); setChip(null); }}
+                className="w-20 px-2 py-1.5 rounded-lg text-xs border border-border/40 bg-muted/40 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            {/* +/??buttons */}
+            <div className="flex gap-2 pt-1">
+              <Button type="button" variant="outline" size="sm" className="flex-1 gap-1.5 h-9"
+                onClick={() => applyChip(1)}>
+                <Plus className="h-3.5 w-3.5" />
+                Add {chip !== null ? `${currency}${chip.toLocaleString()}` : custom ? `${currency}${custom}` : ''}
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="flex-1 gap-1.5 h-9 text-red-400 hover:text-red-400 border-red-400/30 hover:bg-red-400/10"
+                onClick={() => applyChip(-1)}>
+                <Minus className="h-3.5 w-3.5" />
+                Subtract
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-2 flex gap-2">
+            <Button type="button" variant="ghost" onClick={onClose} className="flex-1" disabled={isPending}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={addMutation.isPending || updateMutation.isPending}
-              className={isMobile ? 'w-full' : ''}
-            >
-              {addMutation.isPending || updateMutation.isPending
-                ? 'Saving...'
-                : isEditing
-                ? 'Update Member'
-                : 'Add Member'}
+            <Button type="submit" className="flex-1" disabled={isPending}>
+              {isPending ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Member'}
             </Button>
           </DialogFooter>
         </form>

@@ -223,6 +223,35 @@ export function useUpdateUserInfo(userId) {
   });
 }
 
+export function useAddMultipleTrips(groupId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (trips) =>
+      api.addMultipleTrips({
+        group_id: groupId,
+        trips: trips.map((t) => ({ ...t, group_id: groupId })),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      toast.success('Trips added successfully');
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Failed to add trips';
+      toast.error(message);
+    },
+  });
+}
+
+export function useReceiptScan() {
+  return useMutation({
+    mutationFn: (formData) => api.receiptImage(formData),
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Failed to scan receipt';
+      toast.error(message);
+    },
+  });
+}
+
 // ==================== AI & Chat ====================
 
 export function useSendMessage() {
