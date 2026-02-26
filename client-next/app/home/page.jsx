@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 import { api } from '@/api/apiClient';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -183,15 +183,11 @@ const FILTER_OPTIONS = [
 export default function HomePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated } = useAuthStore();
+  const { hasHydrated, isAuthenticated, user } = useAuthGuard();
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
   const [filterBy, setFilterBy] = useState('all');
-
-  useEffect(() => {
-    if (!isAuthenticated) router.push('/login');
-  }, [isAuthenticated, router]);
 
   const { data: groups, isLoading } = useQuery({
     queryKey: ['groupsWithDetails', user?._id],
@@ -236,7 +232,7 @@ export default function HomePage() {
     return result;
   }, [groups, search, sortBy, filterBy]);
 
-  if (!isAuthenticated) return <Loading text="Checking authentication..." />;
+  if (!hasHydrated || !isAuthenticated) return <Loading text="Checking authentication..." />;
   if (isLoading) return <Loading text="Loading your groups..." />;
 
   const totalGroups = groups?.length ?? 0;

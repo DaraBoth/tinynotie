@@ -9,7 +9,7 @@ import { SpaceSky } from '@/components/SpaceSky';
 import { Topbar } from '@/components/global/Topbar';
 import { ArrowLeft, Save, Camera } from 'lucide-react';
 import Link from 'next/link';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useUserInfo, useUpdateUserInfo } from '@/hooks/useQueries';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/api/apiClient';
@@ -17,7 +17,7 @@ import { Loading } from '@/components/Loading';
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
-  const { user } = useAuthStore();
+  const { hasHydrated, isAuthenticated, user } = useAuthGuard();
   const { data: userInfo, isLoading } = useUserInfo(user?._id);
   const updateMutation = useUpdateUserInfo(user?._id);
   const fileInputRef = useRef(null);
@@ -91,6 +91,7 @@ export default function ProfilePage() {
     .join('')
     .toUpperCase() || user?.usernm?.substring(0, 2).toUpperCase() || 'U';
 
+  if (!hasHydrated || !isAuthenticated) return <Loading text="Checking authentication..." />;
   if (isLoading) return <Loading text="Loading profile..." />;
 
   const isSaving = updateMutation.isPending || uploadMutation.isPending;

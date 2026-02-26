@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -17,7 +17,17 @@ import { SpaceSky } from '@/components/SpaceSky';
 import { Loading } from '@/components/Loading';
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/home';
   const setAuth = useAuthStore((state) => state.setAuth);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,7 +42,7 @@ export default function LoginPage() {
       if (status) {
         setAuth(token, { usernm, _id });
         toast.success('Welcome back!');
-        router.push('/home');
+        router.push(redirectTo);
       } else {
         toast.error('Login failed');
       }

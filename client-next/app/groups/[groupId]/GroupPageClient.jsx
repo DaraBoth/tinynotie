@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 import { api } from '@/api/apiClient';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useWindowDimensions } from '@/hooks/useWindowDimensions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +35,7 @@ import { calculateMoney, formatTimeDifference } from '@/utils/helpers';
 
 export function GroupPageClient({ groupId }) {
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
+  const { hasHydrated, isAuthenticated, user } = useAuthGuard();
   const { isMobile } = useWindowDimensions();
 
   const [viewMode, setViewMode] = useState('table');
@@ -70,11 +70,7 @@ export function GroupPageClient({ groupId }) {
     setViewMode(isMobile ? 'list' : 'table');
   }, [isMobile]);
 
-  useEffect(() => {
-    if (!user) router.push('/login');
-  }, [user, router]);
-
-  if (!user) return <Loading text="Checking authentication..." />;
+  if (!hasHydrated || !isAuthenticated) return <Loading text="Checking authentication..." />;
   if (isLoading) return <Loading text="Loading group..." />;
 
   if (error) {
