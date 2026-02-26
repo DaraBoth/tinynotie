@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
@@ -29,21 +29,12 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/home';
   const setAuth = useAuthStore((state) => state.setAuth);
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [showPassword, setShowPassword] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [formData, setFormData] = useState({
     usernm: '',
     passwd: '',
   });
-
-  // If already authenticated, skip the form and redirect to home
-  useEffect(() => {
-    if (hasHydrated && isAuthenticated) {
-      router.replace(redirectTo);
-    }
-  }, [hasHydrated, isAuthenticated, router, redirectTo]);
 
   const loginMutation = useMutation({
     mutationFn: (credentials) => api.login(credentials),
@@ -53,9 +44,7 @@ function LoginForm() {
         setAuth(token, { usernm, _id });
         setIsRedirecting(true);
         toast.success('Welcome back!');
-        // Use hard navigation to ensure fresh hydration on the next page,
-        // avoiding any SPA-mode race between router.push and Zustand re-hydration.
-        window.location.href = redirectTo;
+        router.replace(redirectTo);
       } else {
         toast.error('Login failed');
       }
