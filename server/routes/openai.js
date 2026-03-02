@@ -309,82 +309,83 @@ router.post("/receiptImage", async (req, res) => {
     }
 
     const receiptImage = req.files.receipt;
-
-    // Convert the image to base64
     const imageBase64 = receiptImage.data.toString('base64');
     const mimeType = receiptImage.mimetype;
 
-    // Initialize Gemini API
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    const apiKey = process.env.OPENAI_VISION_API_KEY || process.env.OPEN_API_KEY;
 
-    // Use a model that supports image inputs with better quota limits
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    // Create a prompt for receipt analysis
-    const prompt = `
-      You are an API endpoint that processes receipt images.
-      Analyze this receipt image and extract all items, prices, and dates.
-      You must respond only in proper JSON format using the structure below.
-      The key "data" should contain an array of objects where each object represents an **item** from the receipt, along with its price and additional metadata.
-
-      Use the following format:
-
+    // OpenAI Chat Completion with Vision
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
       {
-          "status": true,
-          "data": [
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an API endpoint that processes receipt images. Analyze this receipt image and extract all items, prices, and dates. Respond only in proper JSON format."
+          },
+          {
+            role: "user",
+            content: [
               {
-                  "trp_name": "[Item Name]",
-                  "spend": [Price as a number],
-                  "mem_id": "[]",
-                  "create_date": "[Date from Receipt or current date]"
+                type: "text",
+                text: `
+                  Analyze this receipt image and extract all items, prices, and dates.
+                  You must respond only in proper JSON format using the structure below.
+                  The key "data" should contain an array of objects where each object represents an **item** from the receipt, along with its price and additional metadata.
+
+                  Use the following format:
+                  {
+                      "status": true,
+                      "data": [
+                          {
+                              "trp_name": "[Item Name]",
+                              "spend": [Price as a number],
+                              "mem_id": "[]",
+                              "create_date": "[Date from Receipt or current date in YYYY-MM-DD HH:mm:ss]"
+                          },
+                          ...
+                      ]
+                  }
+
+                  **Important**: Return a clean JSON object. No markdown formatting. No backticks.
+                  - "trp_name": Name of the item.
+                  - "spend": Price as a number (0 if missing).
+                  - "mem_id": Always "[]".
+                  - "create_date": Receipt date or current date (${moment().format("YYYY-MM-DD HH:mm:ss")}).
+                `,
               },
-              ...
-          ]
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${imageBase64}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
       }
+    );
 
-      **Important**: Do not respond with an escaped JSON string (e.g., \`\`\`json\\n{\ ... }\`\`\`). You must return a **clean JSON object** without escape characters.
-
-      Ensure all values are formatted correctly and none of them are null. Follow these rules for each field:
-      - "trp_name" should always be the name of the **item** from the receipt (e.g., Coca-Cola, Burger). If no item name is found, return an empty string ("").
-      - "spend" should always be the **price** of the item as a number (not a string). If no price is found, set it to 0.
-      - "mem_id" is always set to "[]".
-      - "create_date" should use the **date from the receipt** if available. If no date is found, use the current date and time in the format YYYY-MM-DD HH:mm:ss.
-
-      Look for patterns in the receipt such as:
-      - Item names followed by prices
-      - Quantity indicators (e.g., "2x" or "×2")
-      - Subtotals, taxes, and totals (these should be excluded from individual items)
-      - Date and time of purchase
-
-      Handle various receipt formats including:
-      - Korean receipts (look for Korean characters and currency symbols)
-      - English receipts
-      - Receipts with multiple columns
-      - Handwritten receipts (to the best of your ability)
-
-      Ensure all values are formatted correctly. Each item from the receipt should have its corresponding price in "spend". No values in the response should be null or undefined.
-    `;
-
-    // Prepare the image part for the model
-    const imagePart = {
-      inlineData: {
-        data: imageBase64,
-        mimeType: mimeType
-      }
-    };
-
-    // Generate content with both the prompt and image
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = result.response;
+    const resultText = JSON.stringify(response.data.choices[0].message.content);
+    console.log("OpenAI Vision Result:", resultText);
 
     // Return the processed data
-    res.status(200).json({ text: response.text() });
+    res.status(200).json({ text: response.data.choices[0].message.content });
   } catch (error) {
-    console.error("Error processing receipt image:", error);
+    console.error("Error processing receipt image with OpenAI:", error.response?.data || error.message);
     res.status(500).json({
       status: false,
       message: "Error processing receipt image",
-      error: error.message
+      error: error.response?.data?.error?.message || error.message
     });
   }
 });

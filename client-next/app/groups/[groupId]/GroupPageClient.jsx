@@ -29,10 +29,10 @@ import { calculateMoney, formatTimeDifference } from '@/utils/helpers';
 /* ─── tiny helper ────────────────────────────────────────────────────────── */
 function StatPill({ icon: Icon, label, value, color = 'text-foreground' }) {
   const bgMap = {
-    'text-green-400':  'bg-green-500/10',
+    'text-green-400': 'bg-green-500/10',
     'text-orange-400': 'bg-orange-500/10',
-    'text-red-400':    'bg-red-500/10',
-    'text-blue-400':   'bg-blue-500/10',
+    'text-red-400': 'bg-red-500/10',
+    'text-blue-400': 'bg-blue-500/10',
   };
   const bg = bgMap[color] || 'bg-primary/10';
   return (
@@ -54,18 +54,18 @@ export function GroupPageClient({ groupId }) {
   const { hasHydrated, isAuthenticated, user } = useAuthGuard();
   const { isMobile } = useWindowDimensions();
 
-  const [viewMode, setViewMode]                 = useState('table');
-  const [mobileTab, setMobileTab]               = useState('contributions');
-  const [scannerOpen, setScannerOpen]           = useState(false);
-  const [editMemberOpen, setEditMemberOpen]     = useState(false);
-  const [editMemberMode, setEditMemberMode]     = useState(false); // false=add, true=edit
-  const [editTripOpen, setEditTripOpen]         = useState(false);
+  const [viewMode, setViewMode] = useState('table');
+  const [mobileTab, setMobileTab] = useState('contributions');
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [editMemberOpen, setEditMemberOpen] = useState(false);
+  const [editMemberMode, setEditMemberMode] = useState(false); // false=add, true=edit
+  const [editTripOpen, setEditTripOpen] = useState(false);
   const [deleteMemberOpen, setDeleteMemberOpen] = useState(false);
-  const [chatOpen, setChatOpen]                 = useState(false);
-  const [shareOpen, setShareOpen]               = useState(false);
-  const [settingsOpen, setSettingsOpen]         = useState(false);
-  const [selectedMember, setSelectedMember]     = useState(null);
-  const [selectedTrip, setSelectedTrip]         = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [selectedTrip, setSelectedTrip] = useState(null);
 
   const { data: groupData, isLoading, error } = useQuery({
     queryKey: ['group', groupId],
@@ -76,9 +76,9 @@ export function GroupPageClient({ groupId }) {
         api.getTripsByGroupId(groupId),
       ]);
       return {
-        group:   groupResponse.data.data   || {},
+        group: groupResponse.data.data || {},
         members: membersResponse.data.data || [],
-        trips:   tripsResponse.data.data   || [],
+        trips: tripsResponse.data.data || [],
       };
     },
     enabled: hasHydrated && isAuthenticated && !!groupId && !!user,
@@ -111,9 +111,9 @@ export function GroupPageClient({ groupId }) {
   }
 
   /* ── data ── */
-  const group    = groupData?.group   || {};
-  const members  = groupData?.members || [];
-  const trips    = groupData?.trips   || [];
+  const group = groupData?.group || {};
+  const members = groupData?.members || [];
+  const trips = groupData?.trips || [];
   const currency = group.currency || '$';
 
   const { info, newData } = calculateMoney(members, trips, currency);
@@ -303,10 +303,10 @@ export function GroupPageClient({ groupId }) {
       <div className="rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm overflow-hidden">
         {[
           { label: 'Total Members', value: info.totalMember, color: 'text-foreground' },
-          { label: 'Total Paid',    value: info.totalPaid,   color: 'text-green-400' },
-          { label: 'Total Spend',   value: info.totalSpend,  color: 'text-orange-400' },
-          { label: 'Total Remain',  value: info.totalRemain, color: 'text-blue-400' },
-          { label: 'Total Unpaid',  value: info.totalUnPaid, color: 'text-red-400' },
+          { label: 'Total Paid', value: info.totalPaid, color: 'text-green-400' },
+          { label: 'Total Spend', value: info.totalSpend, color: 'text-orange-400' },
+          { label: 'Total Remain', value: info.totalRemain, color: 'text-blue-400' },
+          { label: 'Total Unpaid', value: info.totalUnPaid, color: 'text-red-400' },
         ].map(({ label, value, color }, i, arr) => (
           <div key={label} className={`flex justify-between items-center px-4 py-3.5 ${i < arr.length - 1 ? 'border-b border-border/20' : ''} hover:bg-muted/20 transition-colors`}>
             <span className="text-muted-foreground text-sm">{label}</span>
@@ -325,70 +325,74 @@ export function GroupPageClient({ groupId }) {
 
       <div className="relative z-10 flex flex-col flex-1 w-full">
 
-        {/* Page header */}
-        <header className="sticky top-0 z-30 w-full px-4 sm:px-6 lg:px-8 pt-4 pb-3 border-b border-border/30 bg-background/80 backdrop-blur-md">
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={() => router.push('/home')}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all shrink-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight truncate flex-1">
-              {group.grp_name || 'Group'}
-            </h1>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShareOpen(true)} title="Share">
-                <Share2 className="h-4 w-4" />
+        {/* Sticky Header Section */}
+        <div className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-md border-b border-border/30">
+          <header className="w-full px-4 sm:px-6 lg:px-8 pt-4 pb-3">
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                onClick={() => router.push('/home')}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all shrink-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight truncate flex-1">
+                {group.grp_name || 'Group'}
+              </h1>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShareOpen(true)} title="Share">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setChatOpen(true)} title="AI Chat">
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSettingsOpen(true)} title="Settings">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Action row */}
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
+                onClick={() => { setEditMemberMode(false); setSelectedMember(null); setEditMemberOpen(true); }}>
+                <UserPlus className="h-3.5 w-3.5" /> Add Member
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setChatOpen(true)} title="AI Chat">
-                <MessageSquare className="h-4 w-4" />
+              <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
+                onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
+                <Plus className="h-3.5 w-3.5" /> Add Trip
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSettingsOpen(true)} title="Settings">
-                <Settings className="h-4 w-4" />
+              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
+                onClick={() => setScannerOpen(true)}>
+                <ScanLine className="h-3.5 w-3.5" /> Scan Receipt
               </Button>
+              {members.length > 0 && (
+                <>
+                  <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
+                    onClick={() => { setEditMemberMode(true); setSelectedMember(null); setEditMemberOpen(true); }}>
+                    <Pencil className="h-3.5 w-3.5" /> Edit Member
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => { setSelectedMember(null); setDeleteMemberOpen(true); }}>
+                    <Trash2 className="h-3.5 w-3.5" /> Delete Member
+                  </Button>
+                </>
+              )}
+            </div>
+          </header>
+
+          {/* Stats strip - now inside sticky container */}
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-3 border-t border-border/10">
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
+              <StatPill icon={Users} label="Members" value={info.totalMember} />
+              <StatPill icon={BadgeCheck} label="Total Paid" value={info.totalPaid} color="text-green-400" />
+              <StatPill icon={TrendingUp} label="Total Spend" value={info.totalSpend} color="text-orange-400" />
+              <StatPill icon={Wallet} label="Remain" value={info.totalRemain} color="text-blue-400" />
+              <StatPill icon={Clock} label="Unpaid" value={info.totalUnPaid} color="text-red-400" />
             </div>
           </div>
-
-          {/* Action row */}
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
-              onClick={() => { setEditMemberMode(false); setSelectedMember(null); setEditMemberOpen(true); }}>
-              <UserPlus className="h-3.5 w-3.5" /> Add Member
-            </Button>
-            <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
-              onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-              <Plus className="h-3.5 w-3.5" /> Add Trip
-            </Button>
-            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
-              onClick={() => setScannerOpen(true)}>
-              <ScanLine className="h-3.5 w-3.5" /> Scan Receipt
-            </Button>
-            {members.length > 0 && (
-              <>
-                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
-                  onClick={() => { setEditMemberMode(true); setSelectedMember(null); setEditMemberOpen(true); }}>
-                  <Pencil className="h-3.5 w-3.5" /> Edit Member
-                </Button>
-                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                  onClick={() => { setSelectedMember(null); setDeleteMemberOpen(true); }}>
-                  <Trash2 className="h-3.5 w-3.5" /> Delete Member
-                </Button>
-              </>
-            )}
-          </div>
-        </header>
-
-        {/* Stats strip */}
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 border-b border-border/20">
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
-            <StatPill icon={Users}      label="Members"     value={info.totalMember} />
-            <StatPill icon={BadgeCheck} label="Total Paid"  value={info.totalPaid}   color="text-green-400" />
-            <StatPill icon={TrendingUp} label="Total Spend" value={info.totalSpend}  color="text-orange-400" />
-            <StatPill icon={Wallet}     label="Remain"      value={info.totalRemain} color="text-blue-400" />
-            <StatPill icon={Clock}      label="Unpaid"      value={info.totalUnPaid} color="text-red-400" />
-          </div>
         </div>
+
+        {/* Content starts below sticky section */}
 
         {/* Main content */}
         <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
@@ -397,7 +401,7 @@ export function GroupPageClient({ groupId }) {
           <div className="flex md:hidden gap-0.5 bg-muted/60 p-1 rounded-xl mb-6 w-full">
             {[
               { key: 'contributions', label: 'Contributions' },
-              { key: 'trips',         label: 'Trips' },
+              { key: 'trips', label: 'Trips' },
             ].map(({ key, label }) => (
               <button
                 key={key}
@@ -412,7 +416,7 @@ export function GroupPageClient({ groupId }) {
           {/* Mobile view */}
           <div className="md:hidden">
             {mobileTab === 'contributions' && ContributionsSection}
-            {mobileTab === 'trips'         && TripsSection}
+            {mobileTab === 'trips' && TripsSection}
           </div>
 
           {/* Desktop two-column */}
@@ -428,12 +432,12 @@ export function GroupPageClient({ groupId }) {
       </div>
 
       {/* Dialogs */}
-      <EditMember        open={editMemberOpen}   onClose={() => setEditMemberOpen(false)}   groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />
-      <EditTrip          open={editTripOpen}     onClose={() => setEditTripOpen(false)}     groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
-      <DeleteMember      open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
-      <ChatWithDatabase  open={chatOpen}         onClose={() => setChatOpen(false)}         groupId={groupId} />
-      <ShareModal        open={shareOpen}        onClose={() => setShareOpen(false)}        group={group} members={members} trips={trips} currency={currency} />
-      <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)}  group={group} groupId={groupId} />
+      <EditMember open={editMemberOpen} onClose={() => setEditMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />
+      <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
+      <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
+      <ChatWithDatabase open={chatOpen} onClose={() => setChatOpen(false)} groupId={groupId} />
+      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} group={group} members={members} trips={trips} currency={currency} />
+      <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} />
       <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />
     </div>
   );
