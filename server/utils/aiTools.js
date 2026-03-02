@@ -237,7 +237,7 @@ export const tools = [
     }
 ];
 
-export const toolHandlers = {
+export const handlers = {
     get_group_data,
     add_trip,
     update_trip,

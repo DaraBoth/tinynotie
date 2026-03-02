@@ -14,7 +14,7 @@ import { createTelegramBotClient, detectAndExtractPermission, getDateInSeoulTime
 import { callAI, AI_Database, getWeather, getTranslate, getKoreanWords, getCleaningProm } from "../utils/aiUtils.js";
 import { sendNotificationToUserEachDevice, sendBatchNotification, sendEmail } from "../utils/notificationUtils.js";
 import { handleInsertIntoExcel, callInsertIntoExcel, callRollBackExcel, getCleaningData, excel2002Url } from "../utils/excelUtils.js";
-import { tools, toolHandlers } from "../utils/aiTools.js";
+import { tools, handlers } from "../utils/aiTools.js";
 import { streamAiAgent } from "../services/aiAgentService.js";
 import { processReceiptImage } from "../services/receiptService.js";
 
