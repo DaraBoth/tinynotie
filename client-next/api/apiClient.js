@@ -71,6 +71,7 @@ export const api = {
   // Auth
   login: (credentials) => apiClient.post('/auth/login', credentials),
   register: (userData) => apiClient.post('/auth/register', userData),
+  getTelegramLink: () => apiClient.get('/auth/telegram-link'),
 
   // User
   getUserInfo: (userId) => apiClient.get('/api/getUserProfile', { params: { user_id: userId } }),
@@ -79,7 +80,7 @@ export const api = {
     apiClient.post('/api/uploadImage', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
-  searchUsers: (searchWords, filterBy = 'ALL') => 
+  searchUsers: (searchWords, filterBy = 'ALL') =>
     apiClient.get('/api/userSearch', { params: { searchWords, filterBy } }),
 
   // Groups
@@ -103,6 +104,7 @@ export const api = {
   updateTrip: (data) => apiClient.post('/api/editTripByGroupId', data),
   deleteTrip: (tripId, groupId) => apiClient.delete('/api/deleteTripById', { data: { trip_id: tripId, group_id: groupId } }),
   getTripsByGroupId: (groupId) => apiClient.get('/api/getTripByGroupId', { params: { group_id: groupId } }),
+  shareTripToTelegram: (data) => apiClient.post('/api/shareTripToTelegram', data),
 
   // AI & Utilities
   askDatabase: (data) => apiClient.post('/api/askDatabase', data),

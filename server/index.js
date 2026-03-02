@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.js"
 import apiRoutes from "./routes/api.js"
 import openAiRoutes from "./routes/openai.js";
 import telegrambotRoutes from "./routes/telegrambot.js";
+import { initTelegramBot } from "./services/telegramBotService.js";
 import daraboth from "./routes/daraboth.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
@@ -137,6 +138,8 @@ app.use("/daraboth", daraboth);
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
   console.log(`Example app listening at http://localhost:${PORT}`);
+  // Initialize Telegram Bot
+  initTelegramBot(process.env.TELEGRAM_BOT_TOKEN3);
 });
 
 export default app;

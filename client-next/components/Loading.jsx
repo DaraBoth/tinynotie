@@ -8,7 +8,7 @@
  */
 export function Loading({ text = 'Loading...' }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] gap-5 select-none">
+    <div className="flex flex-col items-center justify-center min-h-[100vh] gap-5 select-none">
       {/* Dual-ring spinner */}
       <div className="relative w-14 h-14">
         <div className="absolute inset-0 rounded-full border-4 border-primary/10" />

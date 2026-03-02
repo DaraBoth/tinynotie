@@ -7,7 +7,7 @@ import {
   LayoutGrid, List, MessageSquare, Settings, ArrowLeft,
   Share2, UserPlus, Plus, Pencil, Trash2, Users,
   Wallet, TrendingUp, Clock, BadgeCheck, ScanLine, X, ChevronDown,
-  Download, FileStack,
+  Download, FileStack, Send, ExternalLink,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
@@ -80,6 +80,25 @@ export function GroupPageClient({ groupId }) {
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [expandedMemberId, setExpandedMemberId] = useState(null);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+
+  const handleTelegramLink = async () => {
+    try {
+      setTelegramLoading(true);
+      const res = await api.getTelegramLink();
+      if (res.data.status && res.data.link) {
+        window.open(res.data.link, '_blank');
+        toast.success('Opening Telegram Bot...');
+      } else {
+        toast.error('Failed to generate Telegram link');
+      }
+    } catch (err) {
+      console.error('Telegram link error:', err);
+      toast.error('Error connecting to Telegram');
+    } finally {
+      setTelegramLoading(false);
+    }
+  };
 
   const openPanel = (action) => {
     setFabOpen(false);
@@ -103,6 +122,21 @@ export function GroupPageClient({ groupId }) {
     enabled: hasHydrated && isAuthenticated && !!groupId && !!user,
     refetchInterval: 30000,
   });
+
+  const handleShareTrip = async (e, trip) => {
+    e.stopPropagation(); // Don't open edit modal
+    try {
+      const res = await api.shareTripToTelegram({ trip_id: trip.id, group_id: groupId });
+      if (res.data.status) {
+        toast.success('Shared to Telegram!');
+      } else {
+        toast.error('Failed to share to Telegram');
+      }
+    } catch (err) {
+      console.error('Share error:', err);
+      toast.error('Error sharing to Telegram');
+    }
+  };
 
   useEffect(() => {
     setViewMode(isMobile ? 'list' : 'table');
@@ -353,7 +387,20 @@ export function GroupPageClient({ groupId }) {
                       })()}
                     </div>
                   </td>
-                  <td className="px-3 py-2.5 text-right text-muted-foreground text-xs">{formatTimeDifference(trip.update_dttm || trip.create_date)}</td>
+                  <td className="px-3 py-2.5 text-right text-muted-foreground text-xs">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                        onClick={(e) => handleShareTrip(e, trip)}
+                        title="Share to Telegram"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                      </Button>
+                      <span>{formatTimeDifference(trip.update_dttm || trip.create_date)}</span>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -415,6 +462,16 @@ export function GroupPageClient({ groupId }) {
                 </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSettingsOpen(true)} title="Settings">
                   <Settings className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-8 w-8 ${telegramLoading ? 'animate-pulse' : ''} text-blue-400 hover:text-blue-300 hover:bg-blue-500/10`}
+                  onClick={handleTelegramLink}
+                  disabled={telegramLoading}
+                  title="Link Telegram"
+                >
+                  <Send className="h-4 w-4" />
                 </Button>
               </div>
             </div>

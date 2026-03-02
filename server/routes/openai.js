@@ -15,6 +15,8 @@ import { callAI, AI_Database, getWeather, getTranslate, getKoreanWords, getClean
 import { sendNotificationToUserEachDevice, sendBatchNotification, sendEmail } from "../utils/notificationUtils.js";
 import { handleInsertIntoExcel, callInsertIntoExcel, callRollBackExcel, getCleaningData, excel2002Url } from "../utils/excelUtils.js";
 import { tools, toolHandlers } from "../utils/aiTools.js";
+import { streamAiAgent } from "../services/aiAgentService.js";
+import { processReceiptImage } from "../services/receiptService.js";
 
 // Configure web push notifications
 const vapidKeys = {
@@ -30,7 +32,7 @@ webPush.setVapidDetails(
 );
 
 /* OPEN AI CONFIGURATION (v4) */
-const openai = new OpenAI({
+export const openai = new OpenAI({
   apiKey: process.env.OPEN_API_KEY,
 });
 
@@ -312,74 +314,10 @@ router.post("/receiptImage", async (req, res) => {
     const imageBase64 = receiptImage.data.toString('base64');
     const mimeType = receiptImage.mimetype;
 
-    const apiKey = process.env.OPENAI_VISION_API_KEY || process.env.OPEN_API_KEY;
-
-    // OpenAI Chat Completion with Vision
-    const response = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an API endpoint that processes receipt images. Analyze this receipt image and extract all items, prices, and dates. Respond only in proper JSON format."
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `
-                  Analyze this receipt image and extract all items, prices, and dates.
-                  You must respond only in proper JSON format using the structure below.
-                  The key "data" should contain an array of objects where each object represents an **item** from the receipt, along with its price and additional metadata.
-
-                  Use the following format:
-                  {
-                      "status": true,
-                      "data": [
-                          {
-                              "trp_name": "[Item Name]",
-                              "spend": [Price as a number],
-                              "mem_id": "[]",
-                              "create_date": "[Date from Receipt or current date in YYYY-MM-DD HH:mm:ss]"
-                          },
-                          ...
-                      ]
-                  }
-
-                  **Important**: Return a clean JSON object. No markdown formatting. No backticks.
-                  - "trp_name": Name of the item.
-                  - "spend": Price as a number (0 if missing).
-                  - "mem_id": Always "[]".
-                  - "create_date": Receipt date or current date (${moment().format("YYYY-MM-DD HH:mm:ss")}).
-                `,
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType};base64,${imageBase64}`,
-                },
-              },
-            ],
-          },
-        ],
-        max_tokens: 1000,
-        response_format: { type: "json_object" }
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-      }
-    );
-
-    const resultText = JSON.stringify(response.data.choices[0].message.content);
-    console.log("OpenAI Vision Result:", resultText);
+    const result = await processReceiptImage(imageBase64, mimeType);
 
     // Return the processed data
-    res.status(200).json({ text: response.data.choices[0].message.content });
+    res.status(200).json({ text: JSON.stringify(result) });
   } catch (error) {
     console.error("Error processing receipt image with OpenAI:", error.response?.data || error.message);
     res.status(500).json({
@@ -411,86 +349,7 @@ router.post("/chat/stream", authenticateToken, async (req, res) => {
   };
 
   try {
-    let messages = [
-      {
-        role: "system",
-        content: `You are a helpful and professional financial assistant for the TinyNotie app.
-Your goal is to help users manage their group expenses, members, and trips.
-The current Group ID is ${groupId}. ALWAYS use this ID for tool calls.
-You can:
-1. Get group data (members and trips) to answer questions.
-2. Add or update trips/expenses.
-3. Add or update members.
-Be precise with numbers. If you add a trip, confirm the members involved.
-Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise English.`
-      },
-      ...history,
-      { role: "user", content: message }
-    ];
-
-    let runLoop = true;
-    let loopCount = 0;
-
-    while (runLoop && loopCount < 5) {
-      loopCount++;
-      const runner = openai.beta.chat.completions.stream({
-        model: "gpt-4o",
-        messages,
-        tools,
-      });
-
-      let currentResponse = "";
-
-      for await (const chunk of runner) {
-        const delta = chunk.choices[0]?.delta?.content;
-        if (delta) {
-          currentResponse += delta;
-          sendEvent("message", { delta });
-        }
-      }
-
-      const finalCompletion = await runner.finalChatCompletion();
-      const responseMessage = finalCompletion.choices[0].message;
-
-      if (responseMessage.tool_calls) {
-        messages.push(responseMessage);
-        sendEvent("status", { message: "Executing tools..." });
-
-        for (const toolCall of responseMessage.tool_calls) {
-          const handler = toolHandlers[toolCall.function.name];
-          if (handler) {
-            try {
-              const args = JSON.parse(toolCall.function.arguments);
-              // Security: Force the groupId from the session
-              if (args.groupId) args.groupId = parseInt(groupId);
-              if (args.group_id) args.group_id = parseInt(groupId);
-
-              const result = await handler(args);
-              sendEvent("tool_result", {
-                tool: toolCall.function.name,
-                result
-              });
-
-              messages.push({
-                role: "tool",
-                tool_call_id: toolCall.id,
-                content: JSON.stringify(result)
-              });
-            } catch (err) {
-              messages.push({
-                role: "tool",
-                tool_call_id: toolCall.id,
-                content: JSON.stringify({ error: err.message })
-              });
-            }
-          }
-        }
-        // Continue loop to let AI process tool results
-      } else {
-        runLoop = false;
-      }
-    }
-
+    await streamAiAgent({ message, groupId, history, sendEvent });
     sendEvent("done", { status: "complete" });
     res.end();
   } catch (error) {

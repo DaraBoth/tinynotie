@@ -2,6 +2,7 @@ import express from "express";
 import { authenticateToken } from "./middleware/auth.js";
 import { pool, handleError, sanitizeIntegerField } from "../utils/db.js";
 import moment from "moment";
+import { notifyGroup } from "../services/telegramBotService.js";
 
 const router = express.Router();
 
@@ -193,6 +194,10 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
         update_dttm,
         sanitizedPayerId,
       ]);
+
+      // Notify Telegram Group if linked
+      notifyGroup(group_id, `🆕 *New Expense Added*\n\n*${trp_name}*\n💰 Amount: ${spend.toLocaleString()}\n📝 Description: ${description || 'N/A'}`);
+
       res.send({ status: true, message: "Add trip success!" });
     } else {
       res
@@ -265,6 +270,14 @@ router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) =>
 
     // Execute all the insert queries in parallel
     const results = await Promise.all(insertTripPromises);
+
+    // Notify Telegram if any trips were added successfully
+    const successTrips = results.filter(r => r.status);
+    if (successTrips.length > 0) {
+      const groupId = trips[0].group_id; // Assuming all trips belong to the same group
+      const tripList = successTrips.map(r => `• *${r.trp_name}*`).join('\n');
+      notifyGroup(groupId, `🆕 *${successTrips.length} New Expenses Added*\n\n${tripList}`);
+    }
 
     res.send({ status: true, results });
   } catch (error) {
@@ -516,13 +529,59 @@ router.delete("/deleteTripById", authenticateToken, async (req, res) => {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("error", error);
-    res.json({
+    res.status(500).json({
       status: false,
       message: "Failed to delete trip",
       error: error.message,
     });
   } finally {
-    client.release();
+    if (client) client.release();
+  }
+});
+
+/**
+ * @swagger
+ * /trips/shareTripToTelegram:
+ *   post:
+ *     summary: Share trip details to linked Telegram group
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               trip_id:
+ *                 type: integer
+ *               group_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Trip shared successfully
+ */
+router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
+  const { trip_id, group_id } = req.body;
+  const username = req.user.usernm;
+
+  try {
+    const tripSql = `SELECT trp_name, spend, description FROM trp_infm WHERE id = $1 AND group_id = $2;`;
+    const tripResult = await pool.query(tripSql, [trip_id, group_id]);
+
+    if (tripResult.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "Trip not found" });
+    }
+
+    const trip = tripResult.rows[0];
+    const message = `📢 *Sharing Expense*\n\n*${trip.trp_name}*\n💰 Amount: ${trip.spend.toLocaleString()}\n📝 Description: ${trip.description || 'N/A'}\n\n👤 Shared by: *${username}*`;
+
+    await notifyGroup(group_id, message);
+    res.send({ status: true, message: "Shared to Telegram!" });
+  } catch (error) {
+    console.error("Share to Telegram error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 

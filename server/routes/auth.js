@@ -2,6 +2,8 @@ import pg from "pg";
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
 const Pool = pg.Pool;
@@ -64,7 +66,7 @@ router.post("/login", async (req, res) => {
   try {
     const sql = `SELECT id, passwd FROM user_infm WHERE usernm = $1;`;
     const values = [usernm];
-     
+
     const { rows } = await pool.query(sql, values);
     if (rows.length > 0) {
       const user = rows[0];
@@ -130,7 +132,7 @@ router.post("/register", async (req, res) => {
   try {
     const sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
     const values = [usernm.toLowerCase()];
-    
+
     const { rows } = await pool.query(sql, values);
     if (rows.length === 0) {
       // Hash the password before storing it
@@ -138,7 +140,7 @@ router.post("/register", async (req, res) => {
 
       const sql2 = `INSERT INTO user_infm (usernm, passwd) VALUES ($1, $2) RETURNING id;`;
       const values2 = [usernm.toLowerCase(), hashedPassword];
-      
+
       const result = await pool.query(sql2, values2);
       const newUserId = result.rows[0].id;
 
@@ -151,6 +153,38 @@ router.post("/register", async (req, res) => {
     }
   } catch (error) {
     console.error("error", error);
+    res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /auth/telegram-link:
+ *   get:
+ *     summary: Generate a Telegram linking link
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Link generated successfully
+ */
+router.get("/telegram-link", authenticateToken, async (req, res) => {
+  const userId = req.user._id;
+  const code = crypto.randomBytes(8).toString('hex');
+
+  try {
+    await pool.query(
+      'INSERT INTO telegram_links (code, user_id) VALUES ($1, $2)',
+      [code, userId]
+    );
+
+    const botUsername = process.env.BOT_USER_NAME || 'TinyNotieBot';
+    const link = `https://t.me/${botUsername}?start=link_${code}`;
+
+    res.json({ status: true, link });
+  } catch (error) {
+    console.error("Telegram link generation error:", error);
     res.status(500).json({ status: false, error: error.message });
   }
 });

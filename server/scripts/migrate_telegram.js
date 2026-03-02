@@ -4,43 +4,53 @@ dotenv.config();
 
 const { Pool } = pg;
 const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL,
+  connectionString: process.env.POSTGRES_URL,
 });
 
 async function migrate() {
-    try {
-        console.log('Starting migration...');
+  try {
+    console.log('Starting migration...');
 
-        // Add telegram_id to user_infm
-        await pool.query(`
-      ALTER TABLE user_infm 
-      ADD COLUMN IF NOT EXISTS telegram_id BIGINT UNIQUE;
-    `);
-        console.log('Added telegram_id to user_infm');
+    // 1. User Table (user_infm)
+    await pool.query(`
+            ALTER TABLE user_infm 
+            ADD COLUMN IF NOT EXISTS telegram_id BIGINT UNIQUE;
+        `);
+    console.log('Checked user_infm: telegram_id added');
 
-        // Add telegram_chat_id to grp_infm
-        await pool.query(`
-      ALTER TABLE grp_infm 
-      ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT;
-    `);
-        console.log('Added telegram_chat_id to grp_infm');
+    // 2. Group Table (grp_infm)
+    await pool.query(`
+            ALTER TABLE grp_infm 
+            ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT,
+            ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT '$',
+            ADD COLUMN IF NOT EXISTS visibility VARCHAR(20) DEFAULT 'public';
+        `);
+    console.log('Checked grp_infm: telegram_chat_id, currency, visibility added');
 
-        // Create telegram_links table
-        await pool.query(`
-      CREATE TABLE IF NOT EXISTS telegram_links (
-        code VARCHAR(255) PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '1 hour')
-      );
-    `);
-        console.log('Created telegram_links table');
+    // 3. Trip Table (trp_infm)
+    await pool.query(`
+            ALTER TABLE trp_infm 
+            ADD COLUMN IF NOT EXISTS update_dttm VARCHAR(20),
+            ADD COLUMN IF NOT EXISTS payer_id INTEGER;
+        `);
+    console.log('Checked trp_infm: update_dttm, payer_id added');
 
-        console.log('Migration completed successfully.');
-        process.exit(0);
-    } catch (err) {
-        console.error('Migration failed:', err);
-        process.exit(1);
-    }
+    // 4. Telegram Links (Internal)
+    await pool.query(`
+            CREATE TABLE IF NOT EXISTS telegram_links (
+                code VARCHAR(255) PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '1 hour')
+            );
+        `);
+    console.log('Checked telegram_links: table verified');
+
+    console.log('Migration completed successfully.');
+    process.exit(0);
+  } catch (err) {
+    console.error('Migration failed:', err);
+    process.exit(1);
+  }
 }
 
 migrate();
