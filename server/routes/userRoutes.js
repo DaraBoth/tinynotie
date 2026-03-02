@@ -187,8 +187,7 @@ router.get("/userSearch", authenticateToken, async (req, res) => {
         if (key !== "ALL") {
           if (filterMap[key] === "id") {
             searchConditions.push(
-              `CAST(${filterMap[key]} AS TEXT) ILIKE '%' || $${
-                values.length + 1
+              `CAST(${filterMap[key]} AS TEXT) ILIKE '%' || $${values.length + 1
               } || '%'`
             );
           } else {
@@ -351,7 +350,7 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
 
   try {
     const sql = `
-      SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_chat_id
+      SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_id
       FROM user_infm
       WHERE id = $1;
     `;
@@ -413,7 +412,7 @@ router.post(
       const { originalname, mimetype, buffer } = req.file;
       const { _id: user_id } = req.user;
       const sql = `
-      SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_chat_id
+      SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_id
       FROM user_infm
       WHERE id = $1;
     `;
@@ -515,12 +514,12 @@ router.post(
 router.post("/chatMobile", async (req, res) => {
   const { userId, userEmail, message, sessionId, goalId } = req.body;
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   try {
     console.log(`[${requestId}] ===== NEW REQUEST =====`);
     console.log(`[${requestId}] Timestamp: ${new Date().toISOString()}`);
     console.log(`[${requestId}] Incoming payload:`, JSON.stringify(req.body, null, 2));
-    
+
     // Validate required fields
     console.log(`[${requestId}] Step 1: Validating required fields...`);
     if (!userId || !message) {
@@ -535,15 +534,15 @@ router.post("/chatMobile", async (req, res) => {
     // Check if user exists in database
     console.log(`[${requestId}] Step 2: Checking user in database...`);
     console.log(`[${requestId}] Query: SELECT id, usernm FROM user_infm WHERE usernm = '${userEmail}'`);
-    
+
     const dbQueryStart = Date.now();
     const userCheckSql = `SELECT id, usernm FROM user_infm WHERE usernm = $1;`;
     const userResult = await pool.query(userCheckSql, [userEmail]);
     const dbQueryDuration = Date.now() - dbQueryStart;
-    
+
     console.log(`[${requestId}] DB query completed in ${dbQueryDuration}ms`);
     console.log(`[${requestId}] User found:`, userResult.rows.length > 0);
-    
+
     if (userResult.rows.length === 0) {
       console.log(`[${requestId}] ❌ User not found in database`);
       return res.status(404).json({
@@ -564,31 +563,31 @@ router.post("/chatMobile", async (req, res) => {
       userId: userId,
       mobile: true
     };
-    
+
     console.log(`[${requestId}] Webhook URL: ${WEBHOOK_URL_MB}`);
     console.log(`[${requestId}] Webhook payload:`, JSON.stringify(webhookPayload, null, 2));
     console.log(`[${requestId}] Initiating fire-and-forget request at ${new Date().toISOString()}...`);
     console.log(`[${requestId}] Using IPv4-only connection`);
-    
+
     // Fire the request without awaiting (true background execution) - FORCED IPv4
     fetch(WEBHOOK_URL_MB, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(webhookPayload),
       agent: ipv4Agent, // Force IPv4
     })
-    .then(response => {
-      console.log(`[${requestId}] 🔥 Background webhook completed with status: ${response.status}`);
-    })
-    .catch(error => {
-      console.error(`[${requestId}] 🔥 Background webhook error:`, error.message);
-    });
-    
+      .then(response => {
+        console.log(`[${requestId}] 🔥 Background webhook completed with status: ${response.status}`);
+      })
+      .catch(error => {
+        console.error(`[${requestId}] 🔥 Background webhook error:`, error.message);
+      });
+
     console.log(`[${requestId}] ✓ Webhook request initiated in background`);
     console.log(`[${requestId}] Sending immediate response to client...`);
-    
+
     // Return immediately without waiting for webhook
     return res.json({
       status: true,
@@ -606,10 +605,10 @@ router.post("/chatMobile", async (req, res) => {
     console.error(`[${requestId}] Error message: ${err.message}`);
     console.error(`[${requestId}] Error stack:`, err.stack);
     console.error(`[${requestId}] Full error object:`, JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
-    
-    return res.status(500).json({ 
-      status: false, 
-      error: "Proxy failed", 
+
+    return res.status(500).json({
+      status: false,
+      error: "Proxy failed",
       message: err.message,
       requestId
     });

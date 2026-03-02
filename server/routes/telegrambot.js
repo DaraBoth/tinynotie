@@ -1,61 +1,34 @@
 import express from "express";
-import axios from "axios";
-import dotenv from "dotenv";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getBot } from "../services/telegramBotService.js";
 
-dotenv.config();
 const router = express.Router();
 
-const MYTOKEN = process.env.TELEGRAM_BOT_TOKEN3;
-const baseURL = `https://api.telegram.org/bot${MYTOKEN}`;
-
-const AxiosTelegramBotInstance = {
-  get(method, params) {
-    return axios.get(`/${method}`, {
-      baseURL: baseURL,
-      params,
-    });
-  },
-  post(method, data) {
-    return axios({
-      method: "POST",
-      baseURL: baseURL,
-      url: `/${method}`,
-      data,
-    });
-  },
-};
-
-const sendMessage = function (messageObj, messageText) {
-  return AxiosTelegramBotInstance.get("sendMessage", {
-    chat_id: messageObj.chat.id || "",
-    text: messageText,
-  });
-};
-
-const handleMessage = function (messageObj, messageText) {
-  const { id: Chat_ID } = messageObj.chat;
-  if (!messageText) messageText = messageObj.text || "";
-  switch (Chat_ID) {
-    case "-4189396924":
-      // send error message logic
-      break;
-    default:
-      if (messageText.charAt(0) === "/") {
-        const command = messageText.substr(1);
-        switch (command) {
-          case "start":
-            return sendMessage(messageObj, "Hi! bro");
-          default:
-            return sendMessage(
-              messageObj,
-              "Hey hi, I don't know that command."
-            );
-        }
-      } else {
-        return sendMessage(messageObj, messageText);
-      }
+// Webhook endpoint for Telegram
+router.post("/webhook", async (req, res) => {
+  const bot = getBot();
+  if (!bot) {
+    console.error("Bot not initialized");
+    return res.status(500).send("Bot not initialized");
   }
-};
+
+  try {
+    // Process the update from Telegram
+    await bot.handleUpdate(req.body);
+    res.send("OK");
+  } catch (err) {
+    console.error("Error handling Telegram update:", err);
+    res.status(500).send("Error");
+  }
+});
+
+// For testing or manual triggers
+router.get("/status", (req, res) => {
+  const bot = getBot();
+  res.json({
+    status: "ok",
+    botInitialized: !!bot,
+    webhookUrl: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/bot/webhook` : "local"
+  });
+});
 
 export default router;

@@ -283,9 +283,6 @@ export const initTelegramBot = (token) => {
         }
     });
 
-    bot.launch();
-    console.log('Telegram Bot launched successfully.');
-
     return bot;
 };
 
