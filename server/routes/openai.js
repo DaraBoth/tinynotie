@@ -2,7 +2,7 @@ import axios from "axios";
 import dotenv from "dotenv";
 import express from "express";
 import bcrypt from "bcrypt";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import webPush from "web-push";
 import moment from "moment";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -14,6 +14,7 @@ import { createTelegramBotClient, detectAndExtractPermission, getDateInSeoulTime
 import { callAI, AI_Database, getWeather, getTranslate, getKoreanWords, getCleaningProm } from "../utils/aiUtils.js";
 import { sendNotificationToUserEachDevice, sendBatchNotification, sendEmail } from "../utils/notificationUtils.js";
 import { handleInsertIntoExcel, callInsertIntoExcel, callRollBackExcel, getCleaningData, excel2002Url } from "../utils/excelUtils.js";
+import { tools, toolHandlers } from "../utils/aiTools.js";
 
 // Configure web push notifications
 const vapidKeys = {
@@ -28,11 +29,10 @@ webPush.setVapidDetails(
   vapidKeys.privateKey
 );
 
-/* OPEN AI CONFIGURATION */
-const configuration = new Configuration({
+/* OPEN AI CONFIGURATION (v4) */
+const openai = new OpenAI({
   apiKey: process.env.OPEN_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 // Load environment variables
 dotenv.config();
@@ -265,8 +265,8 @@ router.get("/receiptText", async (req, res) => {
                   "spend": [Price],
                   "mem_id": "[]",
                   "create_date": "[${moment()
-                    .add(9, "hours")
-                    .format("YYYY-MM-DD HH:mm:ss")} or Date from Receipt]"
+        .add(9, "hours")
+        .format("YYYY-MM-DD HH:mm:ss")} or Date from Receipt]"
               },
               ...
           ]
@@ -390,12 +390,122 @@ router.post("/receiptImage", async (req, res) => {
   }
 });
 
+/**
+ * NEW: Premium Streaming Agentic Chat
+ * Handles multi-turn tool calling and SSE streaming
+ */
+router.post("/chat/stream", authenticateToken, async (req, res) => {
+  const { message, groupId, history = [] } = req.body;
+
+  if (!groupId) {
+    return res.status(400).json({ error: "groupId is required" });
+  }
+
+  // Set headers for SSE
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  const sendEvent = (event, data) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    let messages = [
+      {
+        role: "system",
+        content: `You are a helpful and professional financial assistant for the TinyNotie app.
+Your goal is to help users manage their group expenses, members, and trips.
+The current Group ID is ${groupId}. ALWAYS use this ID for tool calls.
+You can:
+1. Get group data (members and trips) to answer questions.
+2. Add or update trips/expenses.
+3. Add or update members.
+Be precise with numbers. If you add a trip, confirm the members involved.
+Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise English.`
+      },
+      ...history,
+      { role: "user", content: message }
+    ];
+
+    let runLoop = true;
+    let loopCount = 0;
+
+    while (runLoop && loopCount < 5) {
+      loopCount++;
+      const runner = openai.beta.chat.completions.stream({
+        model: "gpt-4o",
+        messages,
+        tools,
+      });
+
+      let currentResponse = "";
+
+      for await (const chunk of runner) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) {
+          currentResponse += delta;
+          sendEvent("message", { delta });
+        }
+      }
+
+      const finalCompletion = await runner.finalChatCompletion();
+      const responseMessage = finalCompletion.choices[0].message;
+
+      if (responseMessage.tool_calls) {
+        messages.push(responseMessage);
+        sendEvent("status", { message: "Executing tools..." });
+
+        for (const toolCall of responseMessage.tool_calls) {
+          const handler = toolHandlers[toolCall.function.name];
+          if (handler) {
+            try {
+              const args = JSON.parse(toolCall.function.arguments);
+              // Security: Force the groupId from the session
+              if (args.groupId) args.groupId = parseInt(groupId);
+              if (args.group_id) args.group_id = parseInt(groupId);
+
+              const result = await handler(args);
+              sendEvent("tool_result", {
+                tool: toolCall.function.name,
+                result
+              });
+
+              messages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: JSON.stringify(result)
+              });
+            } catch (err) {
+              messages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: JSON.stringify({ error: err.message })
+              });
+            }
+          }
+        }
+        // Continue loop to let AI process tool results
+      } else {
+        runLoop = false;
+      }
+    }
+
+    sendEvent("done", { status: "complete" });
+    res.end();
+  } catch (error) {
+    console.error("Streaming error:", error);
+    sendEvent("error", { message: error.message });
+    res.end();
+  }
+});
+
 router.post("/code", async (req, res) => {
   try {
     const { text, activeChatId } = req.body;
 
-    const response = await openai.createCompletion({
-      model: "code-davinci-002",
+    const response = await openai.completions.create({
+      model: "gpt-3.5-turbo-instruct", // code-davinci-002 is deprecated
       prompt: text,
       temperature: 0.5,
       max_tokens: 2048,
@@ -407,7 +517,7 @@ router.post("/code", async (req, res) => {
     try {
       await axios.post(
         `https://api.chatengine.io/chats/${activeChatId}/messages/`,
-        { text: response.data.choices[0].text },
+        { text: response.choices[0].text },
         {
           headers: {
             "Project-ID": process.env.PROJECT_ID,
@@ -420,7 +530,7 @@ router.post("/code", async (req, res) => {
       console.log(e);
     }
 
-    res.status(200).json({ text: response.data.choices[0].text });
+    res.status(200).json({ text: response.choices[0].text });
   } catch (error) {
     console.error("error", error.response.data.error);
     res.status(500).json({ error: error.message });
@@ -431,8 +541,8 @@ router.post("/assist", async (req, res) => {
   try {
     const { text } = req.body;
 
-    const response = await openai.createCompletion({
-      model: "text-davinci-003",
+    const response = await openai.completions.create({
+      model: "gpt-3.5-turbo-instruct",
       prompt: `Finish my thought: ${text}`,
       temperature: 0.5,
       max_tokens: 1024,
@@ -441,7 +551,7 @@ router.post("/assist", async (req, res) => {
       presence_penalty: 0,
     });
 
-    res.status(200).json({ text: response.data.choices[0].text });
+    res.status(200).json({ text: response.choices[0].text });
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ error: error.message });
@@ -622,10 +732,10 @@ router.post("/b2bAlert", async (req, res) => {
 router.post("/sendMessageViaBot", async (req, res) => {
   let { telegramObjectRecord } = req.body; // telegramObjectRecord = [ { chatId: 123456, message: "Hello" } ]
   let response = [];
-  console.log("resquest: ",telegramObjectRecord);
-  console.log("type = ",typeof telegramObjectRecord);
-  console.log("more then 0 = ",telegramObjectRecord.length > 0);
-  if(Array.isArray(telegramObjectRecord) && telegramObjectRecord.length > 0) {
+  console.log("resquest: ", telegramObjectRecord);
+  console.log("type = ", typeof telegramObjectRecord);
+  console.log("more then 0 = ", telegramObjectRecord.length > 0);
+  if (Array.isArray(telegramObjectRecord) && telegramObjectRecord.length > 0) {
     for (const telegramObject of telegramObjectRecord) {
       try {
         const messageObj = { chat: { id: telegramObject?.chatId } };
@@ -637,8 +747,8 @@ router.post("/sendMessageViaBot", async (req, res) => {
       }
     }
     res.status(200).send({ response });
-  }else {
-    res.status(200).send({ status: false, message: "Incorrect data", telegramObjectRecord :[ { chatId: 123456, message: 'Hello' } ] });
+  } else {
+    res.status(200).send({ status: false, message: "Incorrect data", telegramObjectRecord: [{ chatId: 123456, message: 'Hello' }] });
   }
 });
 
@@ -647,13 +757,13 @@ router.post("/cleaningAlert", async (req, res) => {
   message = message || "Who is cleaning this week?";
   try {
     const chatIds = [485397124]; // Array of chat IDs to send messages to
-    if(!isNotAlert) {
+    if (!isNotAlert) {
       const data = await getCleaningData();
       res.status(200).send({ status: true, data });
-    }else {
+    } else {
       for (const chatId of chatIds) {
         const messageObj = { chat: { id: chatId } };
-        if(!data) {
+        if (!data) {
           data = await getCleaningData();
         }
         let resText = await getCleaningProm(data, message);
@@ -791,7 +901,7 @@ async function _getCleaningProm(data, msg) {
       `;
 
   const result = await model.generateContent(prompt);
-  const response =  result.response;
+  const response = result.response;
   console.log("response text : " + response.text());
 
   return response.text();
@@ -922,62 +1032,62 @@ const handleMessage = async function (messageObj) {
     } else if (command.startsWith("translate")) {
       const resText = await getTranslate(command.replace("translate", ""));
       return darabothSendMessage(messageObj, resText);
-    } else if(command.startsWith("getweather")) {
+    } else if (command.startsWith("getweather")) {
       const weatherText = await getWeather();
       return darabothSendMessage(messageObj, weatherText);
-    } else if(is2002Group) {
+    } else if (is2002Group) {
       const khDate = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩", "១០", "១១", "១២"];
       const memID = {
-        "l3oth":"Both",
-        "seudylim":"Seudy",
-        "hounhong":"Hong",
-        "sim_kimheang":"Kimheang",
-        "sovanthoeun88":"សុវណ្ណធឿន",
-        "cooconratha":"រដ្ឋា",
+        "l3oth": "Both",
+        "seudylim": "Seudy",
+        "hounhong": "Hong",
+        "sim_kimheang": "Kimheang",
+        "sovanthoeun88": "សុវណ្ណធឿន",
+        "cooconratha": "រដ្ឋា",
       }
-      if(command.startsWith("donetopup")) {
+      if (command.startsWith("donetopup")) {
         const date = moment(getDateInSeoulTime());
         const requestJsonData = {
           "operatingDate": date.format("YYYY-MM-DD"),
           "withdrawal": 0,
           "deposit": 10000,
           "operatingLocation": "",
-          "notes": "បង់លុយខែ"+ khDate[Number(date.format("MM"))],
+          "notes": "បង់លុយខែ" + khDate[Number(date.format("MM"))],
           "other": memID[messageObj.from.username]
         }
         const response = await callInsertIntoExcel(requestJsonData);
         const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
         return darabothSendMessage(messageObj, telegramResponse);
-      } else if(command.startsWith("buystuff")) {
+      } else if (command.startsWith("buystuff")) {
         const requestJson = await handleInsertIntoExcel({ messageObj, messageText: command.replace("buystuff", "") });
         try {
           const requestJsonData = JSON.parse(requestJson);
-          if(requestJsonData){
+          if (requestJsonData) {
             requestJsonData["operatingDate"] = momem(requestJsonData["operatingDate"]).format("YYYY-MM-DD");
             const response = await callInsertIntoExcel(requestJsonData);
             const telegramResponse = formatTelegramResponseKhmer(response, messageObj);
             return darabothSendMessage(messageObj, telegramResponse);
           }
-        }catch(e) {
+        } catch (e) {
           console.log(e);
           return darabothSendMessage(messageObj, requestJson)
         }
-      } else if(command.startsWith("rollback")) {
+      } else if (command.startsWith("rollback")) {
         const response = await callRollBackExcel();
-        if(response?.status) {
+        if (response?.status) {
           return darabothSendMessage(messageObj, response?.message);
-        }else {
+        } else {
           return darabothSendMessage(messageObj, "Rollback Failed");
         }
-      } else if(command.startsWith("whoclean")) {
+      } else if (command.startsWith("whoclean")) {
         // will send schedule of cleaning
         const cleaningData = await getCleaningData();
         const cleaningMessage = await getCleaningProm(cleaningData, command.replace("whoclean", "who clean"));
         return darabothSendMessage(messageObj, cleaningMessage);
-      } else if(command.startsWith("excel2002")) {
+      } else if (command.startsWith("excel2002")) {
         // will send the excel link
         return darabothSendMessage(messageObj, excel2002Url)
-      } else if(command.startsWith("guideline")) {
+      } else if (command.startsWith("guideline")) {
         return darabothSendMessage(messageObj, getGuideLineCommand());
       }
     } else if (chatType == "private") {
@@ -1116,7 +1226,7 @@ const handleMessage = async function (messageObj) {
             );
           }
         }
-      } 
+      }
       else {
         return darabothSendMessage(
           messageObj,
@@ -1124,7 +1234,7 @@ const handleMessage = async function (messageObj) {
         );
       }
     }
-  }else  {
+  } else {
     let ismention = false;
     const condition1 = chatType == "private";
     const condition2 = (chatType == "group" || chatType == "supergroup"); // -1002369402163
@@ -1145,7 +1255,7 @@ const handleMessage = async function (messageObj) {
       }
     }
     console.log(ismention);
-    console.log("Is ask for permission = ",condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText));
+    console.log("Is ask for permission = ", condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText));
     if (condition1 || (condition2 && ismention)) {
       if (condition2 && ismention) messageText = messageText.replace("@DarabothBot", "");
 
@@ -1174,15 +1284,15 @@ const handleMessage = async function (messageObj) {
         responseText: responseText.text(),
       });
       return await darabothSendMessage(messageObj, responseText.text());
-    }else if(condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)){  // 2024_B2B R&D
+    } else if (condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)) {  // 2024_B2B R&D
       // forward message when someone ask permission
-      const sendUserId = [485397124,5985950554]; // Array of chat IDs to send messages to
-      console.log("Workkk ",sendUserId);
+      const sendUserId = [485397124, 5985950554]; // Array of chat IDs to send messages to
+      console.log("Workkk ", sendUserId);
       let response
       for (const chatId of sendUserId) {
         const newMessageObj = { ...messageObj, chat: { id: chatId } };
         // Send message to each chat ID
-        console.log({newMessageObj});
+        console.log({ newMessageObj });
         response = await darabothSendMessage(newMessageObj, messageObj?.text);
       }
       return response;
@@ -1258,7 +1368,7 @@ router.post("/batchPush", async (req, res) => {
 });
 
 router.post("/push", async (req, res) => {
-  const { identifier, payload, appId=0 } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const { identifier, payload, appId = 0 } = req.body; // Extract identifier (username or deviceId) and payload from request body
   const client = await pool.connect();
 
   try {
@@ -1270,10 +1380,10 @@ router.post("/push", async (req, res) => {
     if (userResult.rows.length > 0) {
       // If a username is provided, retrieve the device_id from user_infm
       const { id } = userResult.rows[0];
-      console.log({payload});
-      res.send(await sendNotificationToUserEachDevice(id,payload));
+      console.log({ payload });
+      res.send(await sendNotificationToUserEachDevice(id, payload));
     } else {
-       return res.status(404).json({
+      return res.status(404).json({
         status: false,
         message: "No subscription found for the provided username",
       });
@@ -1461,10 +1571,10 @@ router.post("/subscribe", async (req, res) => {
 
     const userExistResult = await client.query(checkUserQuery, [userInfo]); // userinfo type = string
 
-    if(userExistResult.rowCount <= 0){
-       // Commit the transaction after all queries succeed
+    if (userExistResult.rowCount <= 0) {
+      // Commit the transaction after all queries succeed
       await client.query("COMMIT"); client.release();
-      
+
       res.status(500).json({
         status: false,
         message:
@@ -1545,4 +1655,3 @@ router.post("/subscribe", async (req, res) => {
 // These functions have been moved to utility modules
 
 export default router;
- 

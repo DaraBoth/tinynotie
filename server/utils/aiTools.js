@@ -1,0 +1,246 @@
+import { pool } from "./db.js";
+import moment from "moment";
+
+/**
+ * AI Tool: Get all data for a group (members and trips)
+ */
+export async function get_group_data({ groupId }) {
+    try {
+        // 1. Get group basic info
+        const groupSql = `SELECT id, grp_name, currency, description, visibility FROM grp_infm WHERE id = $1;`;
+        const groupRes = await pool.query(groupSql, [groupId]);
+        if (groupRes.rows.length === 0) return { error: "Group not found" };
+        const group = groupRes.rows[0];
+
+        // 2. Get members
+        const membersSql = `SELECT id, mem_name, paid FROM member_infm WHERE group_id = $1 ORDER BY id;`;
+        const membersRes = await pool.query(membersSql, [groupId]);
+        const members = membersRes.rows;
+
+        // 3. Get trips
+        const tripsSql = `SELECT id, trp_name, spend, mem_id, description, create_date, update_dttm, payer_id FROM trp_infm WHERE group_id = $1 ORDER BY create_date DESC;`;
+        const tripsRes = await pool.query(tripsSql, [groupId]);
+        const trips = tripsRes.rows;
+
+        return {
+            group,
+            members,
+            trips,
+            summary: `Found ${members.length} members and ${trips.length} trips in group "${group.grp_name}".`
+        };
+    } catch (error) {
+        console.error("get_group_data error:", error);
+        return { error: error.message };
+    }
+}
+
+/**
+ * AI Tool: Add a new trip/expense
+ */
+export async function add_trip({ trp_name, spend, mem_id, group_id, description, payer_id }) {
+    try {
+        const create_date = moment().format("YYYY-MM-DD HH:mm:ss");
+        const sql = `
+      INSERT INTO trp_infm (trp_name, spend, mem_id, description, group_id, create_date, payer_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id;
+    `;
+        const result = await pool.query(sql, [
+            trp_name,
+            spend,
+            mem_id, // This should be a JSON string like "[1, 2]"
+            description || "",
+            group_id,
+            create_date,
+            payer_id || null
+        ]);
+        return {
+            success: true,
+            id: result.rows[0].id,
+            message: `Trip "${trp_name}" added successfully with amount ${spend}.`
+        };
+    } catch (error) {
+        console.error("add_trip error:", error);
+        return { error: error.message };
+    }
+}
+
+/**
+ * AI Tool: Update an existing trip
+ */
+export async function update_trip({ id, group_id, trp_name, spend, mem_id, description, payer_id }) {
+    try {
+        const update_dttm = moment().format("YYYY-MM-DD HH:mm:ss");
+        // Verify trip belongs to group
+        const checkSql = `SELECT id FROM trp_infm WHERE id = $1 AND group_id = $2;`;
+        const checkRes = await pool.query(checkSql, [id, group_id]);
+        if (checkRes.rows.length === 0) return { error: "Trip not found or unauthorized" };
+
+        const sql = `
+      UPDATE trp_infm 
+      SET trp_name = COALESCE($1, trp_name),
+          spend = COALESCE($2, spend),
+          mem_id = COALESCE($3, mem_id),
+          description = COALESCE($4, description),
+          payer_id = COALESCE($5, payer_id),
+          update_dttm = $6
+      WHERE id = $7 AND group_id = $8;
+    `;
+        await pool.query(sql, [trp_name, spend, mem_id, description, payer_id, update_dttm, id, group_id]);
+        return { success: true, message: `Trip ${id} updated successfully.` };
+    } catch (error) {
+        console.error("update_trip error:", error);
+        return { error: error.message };
+    }
+}
+
+/**
+ * AI Tool: Add a new member to the group
+ */
+export async function add_member({ mem_name, group_id, paid = 0 }) {
+    try {
+        // Check if exists
+        const checkSql = `SELECT id FROM member_infm WHERE mem_name = $1 AND group_id = $2;`;
+        const checkRes = await pool.query(checkSql, [mem_name, group_id]);
+        if (checkRes.rows.length > 0) return { error: `Member "${mem_name}" already exists in this group.` };
+
+        const sql = `
+      INSERT INTO member_infm (mem_name, paid, group_id)
+      VALUES ($1, $2, $3)
+      RETURNING id;
+    `;
+        const result = await pool.query(sql, [mem_name, paid, group_id]);
+        return {
+            success: true,
+            id: result.rows[0].id,
+            message: `Member "${mem_name}" added to group.`
+        };
+    } catch (error) {
+        console.error("add_member error:", error);
+        return { error: error.message };
+    }
+}
+
+/**
+ * AI Tool: Update member information (e.g., payment)
+ */
+export async function update_member({ id, group_id, mem_name, paid }) {
+    try {
+        // Verify member belongs to group
+        const checkSql = `SELECT id FROM member_infm WHERE id = $1 AND group_id = $2;`;
+        const checkRes = await pool.query(checkSql, [id, group_id]);
+        if (checkRes.rows.length === 0) return { error: "Member not found or unauthorized" };
+
+        const sql = `
+      UPDATE member_infm 
+      SET mem_name = COALESCE($1, mem_name),
+          paid = COALESCE($2, paid)
+      WHERE id = $3 AND group_id = $4;
+    `;
+        await pool.query(sql, [mem_name, paid, id, group_id]);
+        return { success: true, message: `Member ${id} updated successfully.` };
+    } catch (error) {
+        console.error("update_member error:", error);
+        return { error: error.message };
+    }
+}
+
+/**
+ * Tool definitions for OpenAI
+ */
+export const tools = [
+    {
+        type: "function",
+        function: {
+            name: "get_group_data",
+            description: "Get all members and trips for the current group to analyze spending or balances.",
+            parameters: {
+                type: "object",
+                properties: {
+                    groupId: { type: "integer", description: "The ID of the group to fetch data for." }
+                },
+                required: ["groupId"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "add_trip",
+            description: "Add a new trip or expense item to the group.",
+            parameters: {
+                type: "object",
+                properties: {
+                    group_id: { type: "integer" },
+                    trp_name: { type: "string", description: "Name of the trip/item (e.g., Dinner, Gas, Tickets)" },
+                    spend: { type: "number", description: "Amount spent" },
+                    mem_id: { type: "string", description: "JSON array of member IDs who joined (e.g., '[1, 2, 3]')" },
+                    payer_id: { type: "integer", description: "ID of the member who paid for this trip" },
+                    description: { type: "string" }
+                },
+                required: ["group_id", "trp_name", "spend", "mem_id"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "update_trip",
+            description: "Update an existing trip's details.",
+            parameters: {
+                type: "object",
+                properties: {
+                    id: { type: "integer", description: "The trip ID to update" },
+                    group_id: { type: "integer" },
+                    trp_name: { type: "string" },
+                    spend: { type: "number" },
+                    mem_id: { type: "string", description: "JSON array of member IDs" },
+                    payer_id: { type: "integer" },
+                    description: { type: "string" }
+                },
+                required: ["id", "group_id"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "add_member",
+            description: "Add a new member to the group.",
+            parameters: {
+                type: "object",
+                properties: {
+                    group_id: { type: "integer" },
+                    mem_name: { type: "string", description: "Name of the new member" },
+                    paid: { type: "number", description: "Initial amount paid if any" }
+                },
+                required: ["group_id", "mem_name"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "update_member",
+            description: "Update a member's name or total paid amount.",
+            parameters: {
+                type: "object",
+                properties: {
+                    id: { type: "integer", description: "The member ID to update" },
+                    group_id: { type: "integer" },
+                    mem_name: { type: "string" },
+                    paid: { type: "number" }
+                },
+                required: ["id", "group_id"]
+            }
+        }
+    }
+];
+
+export const toolHandlers = {
+    get_group_data,
+    add_trip,
+    update_trip,
+    add_member,
+    update_member
+};

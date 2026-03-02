@@ -7,7 +7,10 @@ import {
   LayoutGrid, List, MessageSquare, Settings, ArrowLeft,
   Share2, UserPlus, Plus, Pencil, Trash2, Users,
   Wallet, TrendingUp, Clock, BadgeCheck, ScanLine, X, ChevronDown,
+  Download, FileStack,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 
 import { api } from '@/api/apiClient';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
@@ -20,11 +23,20 @@ import { Topbar } from '@/components/global/Topbar';
 import { EditMember } from '@/components/EditMember';
 import { EditTrip } from '@/components/EditTrip';
 import { DeleteMember } from '@/components/DeleteMember';
-import { ChatWithDatabase } from '@/components/ChatWithDatabase';
+import { StreamingChat } from '@/components/StreamingChat';
 import { ShareModal } from '@/components/ShareModal';
 import { GroupVisibilitySettings } from '@/components/GroupVisibilitySettings';
 import { ReceiptScanner } from '@/components/ReceiptScanner';
 import { calculateMoney, formatTimeDifference } from '@/utils/helpers';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+/* ─── avatar color helpers ────────────────────────────────────────────── */
+export const AVATAR_COLORS = [
+  'bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500',
+  'bg-rose-500', 'bg-cyan-500', 'bg-fuchsia-500', 'bg-lime-500',
+];
+export const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
+export const getAvatarInitials = (name = '') => name.slice(0, 2).toUpperCase();
 
 /* ─── tiny helper ────────────────────────────────────────────────────────── */
 function StatPill({ icon: Icon, label, value, color = 'text-foreground' }) {
@@ -144,15 +156,7 @@ export function GroupPageClient({ groupId }) {
 
   const tripColumns = trips.map((t) => t.trp_name);
 
-  /* ── avatar color helper ── */
-  const AVATAR_COLORS = [
-    'bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500',
-    'bg-rose-500', 'bg-cyan-500', 'bg-fuchsia-500', 'bg-lime-500',
-  ];
-  const avatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
-  const avatarInitials = (name = '') => name.slice(0, 2).toUpperCase();
-
-  /* ── sub-sections ── */
+  /* ─── main component ─────────────────────────────────────────────────────── */
 
   const ContributionsSection = (
     <div className="flex flex-col min-h-0">
@@ -265,10 +269,39 @@ export function GroupPageClient({ groupId }) {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
           <TrendingUp className="h-3.5 w-3.5" /> Trips
         </h2>
-        <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-          onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-          <Plus className="h-3.5 w-3.5" /> Add Trip
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              const data = sortedTrips.map(t => ({
+                'Trip Name': t.trp_name,
+                'Amount': parseFloat(t.spend || 0).toFixed(2),
+                'Payer': getPayerName(t),
+                'Members Joined': (() => {
+                  try {
+                    const ids = JSON.parse(t.mem_id);
+                    return members
+                      .filter(m => ids.includes(m.id))
+                      .map(m => m.mem_name)
+                      .join(', ');
+                  } catch { return 'All'; }
+                })(),
+                'Date': new Date(t.create_date).toLocaleDateString()
+              }));
+              const ws = XLSX.utils.json_to_sheet(data);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, "Trips");
+              XLSX.writeFile(wb, `${group.grp_name || 'Group'}_Trips.xlsx`);
+              toast.success('Excel file downloaded');
+            }}
+          >
+            <Download className="h-3.5 w-3.5" /> Export
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+            onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
+            <Plus className="h-3.5 w-3.5" /> Add Trip
+          </Button>
+        </div>
       </div>
       {sortedTrips.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/40 rounded-2xl">
@@ -287,7 +320,7 @@ export function GroupPageClient({ groupId }) {
                 <th className="text-left px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide">Name</th>
                 <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide">Amount</th>
                 <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide hidden sm:table-cell">Payer</th>
-                <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide hidden sm:table-cell">Mbrs</th>
+                <th className="text-left px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide hidden sm:table-cell">Joined By</th>
                 <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide">Updated</th>
               </tr>
             </thead>
@@ -298,8 +331,28 @@ export function GroupPageClient({ groupId }) {
                   onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
                   <td className="px-3 py-2.5 font-medium truncate max-w-[120px]" title={trip.trp_name}>{trip.trp_name}</td>
                   <td className="px-3 py-2.5 text-right text-green-400 font-semibold">{currency}{parseFloat(trip.spend || 0).toFixed(2)}</td>
-                  <td className="px-3 py-2.5 text-right text-muted-foreground hidden sm:table-cell">{getPayerName(trip)}</td>
-                  <td className="px-3 py-2.5 text-right text-muted-foreground hidden sm:table-cell">{getMemberCount(trip)}</td>
+                  <td className="px-3 py-2.5 text-right text-muted-foreground hidden sm:table-cell truncate max-w-[80px]">{getPayerName(trip)}</td>
+                  <td className="px-3 py-2.5 hidden sm:table-cell">
+                    <div className="flex -space-x-1.5 overflow-hidden">
+                      {(() => {
+                        try {
+                          const ids = JSON.parse(trip.mem_id);
+                          const joined = members.filter(m => ids.includes(m.id));
+                          return joined.slice(0, 3).map(m => (
+                            <Avatar key={m.id} className="h-5 w-5 border border-background ring-1 ring-border/20">
+                              <AvatarFallback className={`${getAvatarColor(m.mem_name)} text-[8px] text-white font-bold`}>
+                                {getAvatarInitials(m.mem_name)}
+                              </AvatarFallback>
+                            </Avatar>
+                          )).concat(joined.length > 3 ? (
+                            <div key="more" className="h-5 w-5 rounded-full bg-muted border border-background flex items-center justify-center text-[7px] font-bold text-muted-foreground">
+                              +{joined.length - 3}
+                            </div>
+                          ) : []);
+                        } catch { return null; }
+                      })()}
+                    </div>
+                  </td>
                   <td className="px-3 py-2.5 text-right text-muted-foreground text-xs">{formatTimeDifference(trip.update_dttm || trip.create_date)}</td>
                 </tr>
               ))}
@@ -488,8 +541,8 @@ export function GroupPageClient({ groupId }) {
                       return (
                         <div key={row.id || idx}
                           className={`rounded-2xl border transition-all overflow-hidden ${isExpanded
-                              ? 'border-primary/40 bg-background/50'
-                              : 'border-border/20 bg-background/30'
+                            ? 'border-primary/40 bg-background/50'
+                            : 'border-border/20 bg-background/30'
                             }`}
                         >
                           {/* Header row — always visible */}
@@ -498,15 +551,15 @@ export function GroupPageClient({ groupId }) {
                             onClick={() => setExpandedMemberId(isExpanded ? null : (row.id ?? idx))}
                           >
                             {/* Avatar */}
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm ${avatarColor(row.name)}`}>
-                              {avatarInitials(row.name)}
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm ${getAvatarColor(row.name)}`}>
+                              {getAvatarInitials(row.name)}
                             </div>
                             {/* Name + status */}
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm truncate">{row.name}</p>
                               <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md ${isPaid
-                                  ? 'bg-green-500/15 text-green-400'
-                                  : 'bg-red-500/15 text-red-400'
+                                ? 'bg-green-500/15 text-green-400'
+                                : 'bg-red-500/15 text-red-400'
                                 }`}>
                                 {isPaid ? 'PAID' : 'UNPAID'}
                               </span>
@@ -719,7 +772,7 @@ export function GroupPageClient({ groupId }) {
       <EditMember open={editMemberOpen} onClose={() => setEditMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />
       <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
       <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
-      <ChatWithDatabase open={chatOpen} onClose={() => setChatOpen(false)} groupId={groupId} />
+      <StreamingChat open={chatOpen} onClose={() => setChatOpen(false)} groupId={groupId} />
       <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} group={group} members={members} trips={trips} currency={currency} />
       <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} />
       <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />

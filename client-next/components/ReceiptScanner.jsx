@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import {
   Camera, Upload, X, ScanLine, Plus, Trash2,
   CheckCircle2, ImageIcon, Sparkles, CreditCard,
+  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useReceiptScan, useAddMultipleTrips } from '@/hooks/useQueries';
@@ -16,11 +17,19 @@ import {
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetBody,
 } from '@/components/ui/sheet';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { getAvatarColor } from '@/app/groups/[groupId]/GroupPageClient';
 
 const NONE_PAYER = '__none__';
 
-function defaultRow() {
-  return { id: Date.now() + Math.random(), trp_name: '', spend: '', payer_id: NONE_PAYER };
+function defaultRow(allMemberIds = []) {
+  return {
+    id: Date.now() + Math.random(),
+    trp_name: '',
+    spend: '',
+    payer_id: NONE_PAYER,
+    joined_ids: allMemberIds
+  };
 }
 
 export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
@@ -33,6 +42,8 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
 
   const scanMutation = useReceiptScan();
   const addMutation = useAddMultipleTrips(groupId);
+
+  const allMemberIds = members.map(m => m.id);
 
   const handleFile = (file) => {
     if (!file) return;
@@ -70,6 +81,7 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
         trp_name: t.trp_name || t.name || '',
         spend: String(t.spend || t.amount || ''),
         payer_id: NONE_PAYER,
+        joined_ids: allMemberIds,
       })));
       setScanned(true);
       toast.success(`Detected ${trips.length} item${trips.length !== 1 ? 's' : ''}`);
@@ -79,16 +91,34 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
   const updateRow = (id, field, value) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
 
+  const toggleMember = (rowId, memberId) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const joined = r.joined_ids.includes(memberId)
+        ? r.joined_ids.filter(id => id !== memberId)
+        : [...r.joined_ids, memberId];
+      return { ...r, joined_ids: joined };
+    }));
+  };
+
   const removeRow = (id) => setRows((prev) => prev.filter((r) => r.id !== id));
-  const addRow = () => setRows((prev) => [...prev, defaultRow()]);
+  const addRow = () => setRows((prev) => [...prev, defaultRow(allMemberIds)]);
 
   const handleAddAll = async () => {
     const valid = rows.filter((r) => r.trp_name.trim() && parseFloat(r.spend) > 0);
     if (valid.length === 0) { toast.error('No valid rows to add'); return; }
+
+    // Check if any row has no members selected
+    const missingMembers = valid.find(r => r.joined_ids.length === 0);
+    if (missingMembers) {
+      toast.error(`Please select at least one member for "${missingMembers.trp_name}"`);
+      return;
+    }
+
     const trips = valid.map((r) => ({
       trp_name: r.trp_name.trim(),
       spend: parseFloat(r.spend),
-      mem_id: JSON.stringify(members.map((m) => m.id)),
+      mem_id: JSON.stringify(r.joined_ids), // Use specific members for this row
       payer_id: r.payer_id !== NONE_PAYER ? Number(r.payer_id) : null,
       description: 'From receipt scan',
     }));
@@ -225,10 +255,10 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
                       </button>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {rows.map((row, i) => (
                         <div key={row.id}
-                          className="p-3 rounded-xl border border-border/30 bg-muted/20 space-y-2">
+                          className="p-3 rounded-xl border border-border/30 bg-muted/20 space-y-3">
                           {/* Row number + delete */}
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -266,6 +296,52 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
                                 ))}
                               </SelectContent>
                             </Select>
+                          </div>
+
+                          {/* Member multi-selection */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                                <Users className="h-3 w-3" /> Joined By ({row.joined_ids.length})
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => updateRow(row.id, 'joined_ids',
+                                  row.joined_ids.length === members.length ? [] : allMemberIds
+                                )}
+                                className="text-[10px] text-primary font-bold uppercase hover:underline"
+                              >
+                                {row.joined_ids.length === members.length ? 'Clear All' : 'Select All'}
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {members.map(m => {
+                                const isSelected = row.joined_ids.includes(m.id);
+                                return (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => toggleMember(row.id, m.id)}
+                                    className={`group relative flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all ${isSelected
+                                        ? 'bg-primary/10 border-primary/30 text-primary ring-1 ring-primary/20'
+                                        : 'bg-background border-border/50 text-muted-foreground hover:border-border'
+                                      }`}
+                                  >
+                                    <Avatar className="h-4 w-4">
+                                      <AvatarFallback className={`${getAvatarColor(m.mem_name)} text-[8px] text-white font-bold`}>
+                                        {m.mem_name?.charAt(0)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-[10px] font-medium leading-none">{m.mem_name}</span>
+                                    {isSelected && (
+                                      <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary text-white rounded-full flex items-center justify-center">
+                                        <CheckCircle2 className="h-1.5 w-1.5" />
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       ))}
