@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Users, Trash2, AlertTriangle, Search,
   Users2, TrendingUp, DollarSign, Calendar, Crown, Globe, Lock, ChevronRight,
-  ArrowUpRight, Wallet
+  ArrowUpRight, Wallet, Sparkles, Coins
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -29,12 +29,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 
-// Premium colour gradients for accent bars
+// Premium GenZ colour gradients
 const ACCENT_GRADIENTS = [
-  'from-violet-600 via-indigo-500 to-cyan-400',
-  'from-emerald-500 via-teal-400 to-sky-400',
-  'from-orange-500 via-amber-400 to-yellow-300',
-  'from-rose-500 via-pink-400 to-fuchsia-400',
+  'from-[#80ff00] via-[#00ff80] to-[#00ffff]', // Neon Green
+  'from-[#ff0080] via-[#ff00ff] to-[#8000ff]', // Hot Pink/Purple
+  'from-[#0080ff] via-[#00ffff] to-[#00ff80]', // Electric Blue
+  'from-[#ffff00] via-[#ff8000] to-[#ff0000]', // Cyber Yellow/Red
 ];
 
 function formatMoney(amount, currency) {
@@ -61,60 +61,59 @@ function GroupCard({ group, index, onDelete }) {
       className="relative group/card h-full"
     >
       <Link href={`/groups/${group.id}`} className="block relative h-full">
-        <div className="relative h-full glass-card border-white/5 overflow-hidden group-hover/card:border-white/20 p-6 flex flex-col justify-between">
+        <div className="relative h-full glass-card border-white/5 overflow-hidden group-hover/card:border-white/20 p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:-rotate-1">
 
           {/* Subtle Accent Glow */}
-          <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${accent} opacity-50 group-hover/card:opacity-100 transition-opacity`} />
-          <div className={`absolute -top-12 -right-12 w-24 h-24 bg-gradient-to-br ${accent} blur-3xl opacity-0 group-hover/card:opacity-20 transition-opacity duration-700`} />
+          <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${accent} opacity-80 group-hover/card:opacity-100 transition-opacity`} />
+          <div className={`absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br ${accent} blur-3xl opacity-0 group-hover/card:opacity-30 transition-opacity duration-700`} />
 
           <div>
             <div className="flex items-start justify-between mb-6">
-              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${accent} flex items-center justify-center text-white shadow-lg`}>
-                <Users2 className="h-6 w-6" />
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${accent} flex items-center justify-center text-black shadow-[0_0_20px_rgba(255,255,255,0.2)]`}>
+                <Users2 className="h-7 w-7" />
               </div>
-              <div className="flex gap-1.5 justify-end">
+              <div className="flex flex-col gap-2 items-end">
                 {group.isAdmin && (
-                  <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] py-0">
-                    <Crown className="h-3 w-3 mr-1" /> Admin
+                  <Badge className="bg-white text-black font-black border-none text-[10px] py-0 px-2 rounded-lg">
+                    CROWN
                   </Badge>
                 )}
-                <Badge variant="outline" className="border-white/10 text-white/50 text-[10px] py-0 backdrop-blur-md">
-                  {group.visibility === 'public' ? <Globe className="h-2.5 w-2.5 mr-1" /> : <Lock className="h-2.5 w-2.5 mr-1" />}
-                  {group.visibility === 'public' ? 'Public' : 'Private'}
+                <Badge variant="outline" className="border-white/20 text-white font-bold text-[9px] py-0 backdrop-blur-md uppercase tracking-tighter">
+                  {group.visibility === 'public' ? 'Public' : 'Solo'}
                 </Badge>
               </div>
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-1 line-clamp-1 tracking-tight">
+            <h3 className="text-2xl font-black text-white mb-1 line-clamp-1 tracking-tighter uppercase italic">
               {group.grp_name}
             </h3>
-            <p className="text-xs text-muted-foreground font-medium mb-6 uppercase tracking-wider">{currencyLabel}</p>
+            <p className="text-[10px] text-white/40 font-black mb-6 uppercase tracking-widest">{currencyLabel}</p>
 
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/5">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Spent</p>
-                <p className="text-sm font-bold text-white">{formatMoney(totalSpend, currencySymbol)}</p>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 group-hover/card:bg-white/10 transition-colors">
+                <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mb-1">Spent</p>
+                <p className="text-base font-black text-white italic">{formatMoney(totalSpend, currencySymbol)}</p>
               </div>
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/5">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Balance</p>
-                <p className={`text-sm font-bold ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {balance >= 0 ? '+' : ''}{formatMoney(balance, currencySymbol)}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 group-hover/card:bg-white/10 transition-colors">
+                <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mb-1">Status</p>
+                <p className={`text-base font-black italic ${balance >= 0 ? 'text-[#80ff00]' : 'text-[#ff0080]'}`}>
+                  {balance >= 0 ? 'WIN' : 'OUT'}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto">
-            <div className="flex items-center gap-4 text-white/40 text-xs">
+            <div className="flex items-center gap-4 text-white/40 text-[10px] font-black uppercase italic">
               <span className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" /> {memberCount}
+                <Users className="h-3 w-3" /> {memberCount} PPL
               </span>
               <span className="flex items-center gap-1.5">
-                <TrendingUp className="h-3.5 w-3.5" /> {tripCount}
+                <TrendingUp className="h-3 w-3" /> {tripCount} EVT
               </span>
             </div>
-            <div className="p-2 rounded-full bg-white/5 group-hover/card:bg-primary/20 transition-colors">
-              <ChevronRight className="h-4 w-4 text-white/50 group-hover/card:text-white" />
+            <div className={`p-2 rounded-xl bg-white/10 group-hover/card:bg-gradient-to-r group-hover/card:${accent} transition-all`}>
+              <ChevronRight className="h-4 w-4 text-white group-hover/card:scale-125" />
             </div>
           </div>
         </div>
@@ -123,7 +122,7 @@ function GroupCard({ group, index, onDelete }) {
       {group.isAdmin && (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete({ id: group.id, grp_name: group.grp_name }); }}
-          className="absolute top-4 right-4 z-20 opacity-0 group-hover/card:opacity-100 p-2 rounded-xl glass-button text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-all border-none"
+          className="absolute top-4 right-4 z-20 opacity-0 group-hover/card:opacity-100 p-2 rounded-xl glass-button text-[#ff0080] hover:bg-[#ff0080]/20 transition-all border-none"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -138,7 +137,6 @@ export default function HomePage() {
   const { hasHydrated, isAuthenticated, user } = useAuthGuard();
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('date-desc');
   const [filterBy, setFilterBy] = useState('all');
 
   const { data: groups, isLoading } = useQuery({
@@ -154,135 +152,150 @@ export default function HomePage() {
     mutationFn: (groupId) => api.deleteGroup(groupId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groupsWithDetails', user?._id] });
-      toast.success('Group deleted');
+      toast.success('PEACE OUT! Group deleted.');
       setDeleteTarget(null);
     },
   });
 
-  const filteredAndSorted = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!groups) return [];
     let result = [...groups];
     if (filterBy === 'admin') result = result.filter((g) => g.isAdmin);
     else if (filterBy === 'member') result = result.filter((g) => g.isMember && !g.isAdmin);
-    else if (filterBy === 'public') result = result.filter((g) => g.visibility === 'public');
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter((g) => g.grp_name.toLowerCase().includes(q));
     }
-    switch (sortBy) {
-      case 'date-asc': result.sort((a, b) => new Date(a.create_date) - new Date(b.create_date)); break;
-      case 'date-desc': result.sort((a, b) => new Date(b.create_date) - new Date(a.create_date)); break;
-      case 'name-asc': result.sort((a, b) => a.grp_name.localeCompare(b.grp_name)); break;
-      case 'name-desc': result.sort((a, b) => b.grp_name.localeCompare(a.grp_name)); break;
-    }
+    result.sort((a, b) => new Date(b.create_date) - new Date(a.create_date));
     return result;
-  }, [groups, search, sortBy, filterBy]);
+  }, [groups, search, filterBy]);
 
-  if (!hasHydrated || !isAuthenticated) return <Loading text="Authenticating..." />;
-  if (isLoading) return <Loading text="Waking up the server..." />;
+  // Group totals by currency
+  const currencyTotals = useMemo(() => {
+    if (!groups) return {};
+    return groups.reduce((acc, g) => {
+      const sym = g.currency || '$';
+      acc[sym] = (acc[sym] || 0) + Number(g.total_spend ?? 0);
+      return acc;
+    }, {});
+  }, [groups]);
 
-  const totalSpendAll = groups?.reduce((s, g) => s + Number(g.total_spend ?? 0), 0) ?? 0;
-  const totalGroups = groups?.length ?? 0;
+  if (!hasHydrated || !isAuthenticated) return <Loading text="CHECKING VIBES..." />;
+  if (isLoading) return <Loading text="WAKING UP THE SERVER... RELAX." />;
 
   return (
-    <div className="min-h-screen relative bg-[#050508] pb-20">
+    <div className="min-h-screen relative bg-[#020205] pb-24 selection:bg-[#ff0080] selection:text-white">
       <SpaceSky />
       <Topbar />
 
       <main className="relative z-10 w-full px-6 py-12 max-w-7xl mx-auto">
-        {/* Dashboard Header */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
-          <div className="lg:col-span-8 flex flex-col justify-center">
+        {/* ── GenZ Dashboard Header ───────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-20 items-end">
+          <div className="lg:col-span-7">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
+              className="space-y-4"
             >
-              <h1 className="text-4xl md:text-6xl font-black mb-3 tracking-tighter">
-                Hello, <span className="text-gradient-vibrant animate-gradient">{user?.usernm || 'Explorer'}</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-purple-400 uppercase tracking-widest backdrop-blur-md">
+                <Sparkles className="h-3 w-3" />
+                <span>Dashboard Multi-Verse</span>
+              </div>
+              <h1 className="text-6xl md:text-8xl font-black mb-3 tracking-tighter uppercase italic leading-[0.85]">
+                <span className="text-white">YO,</span><br />
+                <span className="text-gradient-vibrant animate-gradient">{user?.usernm || 'LEGEND'}</span>
               </h1>
-              <p className="text-muted-foreground text-lg font-medium max-w-md">
-                You're managing {totalGroups} active groups. Here's your financial overview.
+              <p className="text-white/40 text-xl font-black uppercase tracking-tighter max-w-sm italic">
+                Destroying debts in {groups?.length || 0} active squads.
               </p>
             </motion.div>
           </div>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-4 glass-card p-1 shadow-2xl overflow-hidden relative group"
+            className="lg:col-span-5 glass-card p-1 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden group"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50 pointer-events-none" />
-            <div className="relative z-10 p-8 space-y-6">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#80ff00]/10 to-transparent pointer-events-none group-hover:opacity-60 transition-opacity" />
+            <div className="relative z-10 p-10 space-y-8">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
-                  <Wallet className="h-6 w-6 text-white" />
+                <div className="w-16 h-16 rounded-[2rem] bg-white/10 flex items-center justify-center border border-white/20 group-hover:rotate-6 transition-transform">
+                  <Coins className="h-8 w-8 text-white" />
                 </div>
-                <ArrowUpRight className="h-5 w-5 text-white/30" />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-white/40 tracking-[0.2em] mb-1">Total Group Spend</p>
-                <h2 className="text-4xl font-black text-white tabular-nums tracking-tighter">
-                  ${totalSpendAll.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </h2>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="pt-4 border-t border-white/10">
-                  <p className="text-[9px] uppercase font-bold text-white/40 mb-1">Total Groups</p>
-                  <p className="text-xl font-black text-white">{totalGroups}</p>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase font-black text-white/40 tracking-[.3em]">Status</p>
+                  <p className="text-[#80ff00] font-black italic">OPTIMIZED</p>
                 </div>
-                <div className="pt-4 border-t border-white/10 text-right">
-                  <p className="text-[9px] uppercase font-bold text-white/40 mb-1">Trip Events</p>
-                  <p className="text-xl font-black text-white">
-                    {groups?.reduce((s, g) => s + Number(g.trip_count ?? 0), 0) ?? 0}
-                  </p>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-[10px] uppercase font-black text-white/40 tracking-[.3em] mb-2">Wealth Map (By Currency)</p>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                  {Object.entries(currencyTotals).length > 0 ? (
+                    Object.entries(currencyTotals).map(([sym, total]) => (
+                      <div key={sym} className="group/item">
+                        <p className="text-[11px] font-black text-white/60 mb-1 flex items-center gap-2 italic">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          {CURRENCY_NAMES[sym] || sym}
+                        </p>
+                        <h2 className="text-2xl font-black text-white tabular-nums tracking-tighter">
+                          {formatMoney(total, sym)}
+                        </h2>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-white/20 text-xs font-black italic uppercase">No Activity Detected</p>
+                  )}
                 </div>
               </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Control Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
-          <div className="relative w-full md:max-w-md group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 group-focus-within:text-primary transition-colors" />
+        {/* ── Control Bar ─────────────────────────────────────────────── */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
+          <div className="relative w-full md:max-w-xl group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-[#80ff00] transition-colors" />
             <Input
-              className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 backdrop-blur-md transition-all text-base"
-              placeholder="Search groups by name..."
+              className="pl-14 h-14 rounded-[1.5rem] bg-white/5 border-white/10 focus:border-[#80ff00]/50 backdrop-blur-xl transition-all text-lg font-bold placeholder:text-white/20 placeholder:uppercase placeholder:italic shadow-inner"
+              placeholder="Find your squad..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-4 w-full md:w-auto">
             <Select value={filterBy} onValueChange={setFilterBy}>
-              <SelectTrigger className="h-12 rounded-2xl glass-button text-white border-white/10 flex-1 md:w-44">
-                <SelectValue placeholder="All Activity" />
+              <SelectTrigger className="h-14 rounded-[1.5rem] glass-button text-white border-white/10 flex-1 md:w-56 font-black uppercase text-xs italic tracking-widest">
+                <SelectValue placeholder="Vibe Check" />
               </SelectTrigger>
-              <SelectContent className="bg-[#121218] border-white/10">
-                {FILTER_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} className="text-white hover:bg-white/5">{o.label}</SelectItem>)}
+              <SelectContent className="bg-[#121218] border-white/10 rounded-2xl">
+                <SelectItem value="all" className="text-white/70 focus:text-white focus:bg-white/5 uppercase font-black text-[10px] italic">All Vibes</SelectItem>
+                <SelectItem value="admin" className="text-white/70 focus:text-white focus:bg-white/5 uppercase font-black text-[10px] italic">Owned by Me</SelectItem>
+                <SelectItem value="member" className="text-white/70 focus:text-white focus:bg-white/5 uppercase font-black text-[10px] italic">Guest List</SelectItem>
               </SelectContent>
             </Select>
-            <Button asChild className="h-12 w-12 md:w-auto md:px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold gap-2">
-              <Link href="/groups/create">
-                <Plus className="h-5 w-5" />
-                <span className="hidden md:inline">Create Group</span>
+            <Button asChild className="h-14 w-14 md:w-auto md:px-8 rounded-[1.5rem] bg-white hover:bg-white/90 text-black font-black uppercase italic tracking-tighter gap-3 shadow-[0_0_30px_rgba(255,255,255,0.15)] group">
+              <Link href="/groups/create" className="flex items-center">
+                <Plus className="h-6 w-6 group-hover:rotate-90 transition-transform" />
+                <span className="hidden md:inline">Spawn Group</span>
               </Link>
             </Button>
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {/* ── The Grid ───────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           <AnimatePresence mode="popLayout">
-            {filteredAndSorted.map((group, i) => (
+            {filtered.map((group, i) => (
               <motion.div
                 key={group.id}
                 layout
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                initial={{ opacity: 0, scale: 0.8, y: 40 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.4) }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20, delay: Math.min(i * 0.05, 0.5) }}
               >
                 <GroupCard group={group} index={i} onDelete={setDeleteTarget} />
               </motion.div>
@@ -290,43 +303,45 @@ export default function HomePage() {
           </AnimatePresence>
 
           {/* Create Shortcut Card */}
-          <Link href="/groups/create" className="h-full min-h-[260px]">
+          <Link href="/groups/create" className="h-full min-h-[300px]">
             <motion.div
-              whileHover={{ y: -5 }}
-              className="h-full rounded-3xl border-2 border-dashed border-white/10 hover:border-primary/50 hover:bg-white/5 transition-all flex flex-col items-center justify-center p-8 group/new"
+              whileHover={{ scale: 0.98, rotate: 1 }}
+              whileTap={{ scale: 0.95 }}
+              className="h-full rounded-[2.5rem] border-4 border-dashed border-white/5 hover:border-[#80ff00]/30 hover:bg-[#80ff00]/5 transition-all flex flex-col items-center justify-center p-10 group/new relative overflow-hidden"
             >
-              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 group-hover/new:scale-110 group-hover/new:bg-primary/20 transition-all border border-white/10">
-                <Plus className="h-8 w-8 text-white/40 group-hover/new:text-white" />
+              <div className="absolute inset-0 bg-white/0 group-hover/new:bg-white/[0.02] transition-colors" />
+              <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mb-6 group-hover/new:rotate-12 group-hover/new:bg-[#80ff00]/20 transition-all border border-white/10">
+                <Plus className="h-10 w-10 text-white/20 group-hover/new:text-[#80ff00]" />
               </div>
-              <p className="font-bold text-white uppercase tracking-widest text-xs">New Group</p>
+              <p className="font-black text-white uppercase tracking-[0.2em] text-[10px] italic">Level Up / Create</p>
             </motion.div>
           </Link>
         </div>
 
-        {/* Empty States */}
-        {totalGroups > 0 && filteredAndSorted.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 text-center">
-            <p className="text-xl font-bold text-white/20">No matching projects found.</p>
+        {/* Empty State */}
+        {groups?.length > 0 && filtered.length === 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-32 text-center">
+            <p className="text-3xl font-black text-white/10 uppercase italic">Zero vibes found.</p>
           </motion.div>
         )}
       </main>
 
       {/* Delete Confirmation */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <DialogContent className="max-w-md bg-[#121218] border-white/10 text-white rounded-3xl">
+        <DialogContent className="max-w-md bg-[#08080a] border border-white/10 text-white rounded-[2.5rem] p-10">
           <DialogHeader>
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center mb-4">
-              <AlertTriangle className="h-6 w-6 text-rose-500" />
+            <div className="w-16 h-16 rounded-[2rem] bg-[#ff0080]/20 flex items-center justify-center mb-6 border border-[#ff0080]/30">
+              <AlertTriangle className="h-8 w-8 text-[#ff0080]" />
             </div>
-            <DialogTitle className="text-2xl font-black tracking-tight">Destructive Action</DialogTitle>
-            <DialogDescription className="text-white/50 text-base">
-              You are about to permanently delete <span className="text-white font-bold">{deleteTarget?.grp_name}</span>. This cannot be undone.
+            <DialogTitle className="text-3xl font-black tracking-tighter uppercase italic italic">EXTERMINATE?</DialogTitle>
+            <DialogDescription className="text-white/40 text-lg font-bold">
+              Deleting <span className="text-white">{deleteTarget?.grp_name}</span> is forever. No regerts?
             </DialogDescription>
           </DialogHeader>
-          <div className="flex gap-3 pt-6">
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} className="flex-1 h-12 rounded-2xl border-white/10 hover:bg-white/5">Cancel</Button>
-            <Button variant="destructive" className="flex-1 h-12 rounded-2xl bg-rose-600 hover:bg-rose-700 font-bold" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteTarget.id)}>
-              {deleteMutation.isPending ? 'Processing...' : 'Delete Permanently'}
+          <div className="flex flex-col gap-4 pt-8">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} className="h-16 rounded-2xl border-white/10 hover:bg-white/5 font-black uppercase italic tracking-widest">Nah, back out</Button>
+            <Button variant="destructive" className="h-16 rounded-2xl bg-[#ff0080] hover:bg-[#cc0066] font-black uppercase italic tracking-widest" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteTarget.id)}>
+              {deleteMutation.isPending ? 'CRUNCHING...' : 'YES, DELETE'}
             </Button>
           </div>
         </DialogContent>
@@ -336,7 +351,7 @@ export default function HomePage() {
 }
 
 const FILTER_OPTIONS = [
-  { value: 'all', label: 'All Activity' },
-  { value: 'admin', label: 'My Groups' },
-  { value: 'member', label: 'Shared with Me' },
+  { value: 'all', label: 'All Vibes' },
+  { value: 'admin', label: 'My Squads' },
+  { value: 'member', label: 'Vibe Guest List' },
 ];

@@ -236,10 +236,8 @@ export const CURRENCY_NAMES = {
   'W': 'Korean Won',
   'R': 'Khmer Riel',
   'AUD': 'Australian Dollar',
-  '€': 'Euro',
-  '£': 'British Pound',
   '¥': 'Japanese Yen',
-  '฿': 'Thai Baht',
+  'CNY': 'Chinese Yuan',
 };
 
 export const CURRENCY_OPTIONS = [
@@ -247,8 +245,6 @@ export const CURRENCY_OPTIONS = [
   { value: 'W', label: 'W – Korean Won' },
   { value: 'R', label: 'R – Khmer Riel' },
   { value: 'AUD', label: 'AUD – Australian Dollar' },
-  { value: '€', label: '€ – Euro' },
-  { value: '£', label: '£ – British Pound' },
   { value: '¥', label: '¥ – Japanese Yen' },
-  { value: '฿', label: '฿ – Thai Baht' },
+  { value: 'CNY', label: 'CNY – Chinese Yuan' },
 ];
