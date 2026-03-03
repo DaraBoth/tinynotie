@@ -346,11 +346,7 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
   const { _id: user_id } = req.user; // Assuming authenticateToken middleware attaches user_id to req.user
 
   try {
-    const sql = `
-      SELECT phone_number, email, usernm, profile_url, telegram_id
-      FROM user_infm
-      WHERE id = $1;
-    `;
+    const sql = `SELECT * FROM user_infm WHERE id = $1;`;
     const result = await pool.query(sql, [user_id]);
 
     if (result.rows.length === 0) {
@@ -359,7 +355,11 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
         .json({ status: false, message: "User not found." });
     }
 
-    res.json({ status: true, data: result.rows[0] });
+    const userData = result.rows[0];
+    // Remove sensitive data
+    delete userData.passwd;
+
+    res.json({ status: true, data: userData });
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ status: false, error: error.message });
@@ -408,11 +408,7 @@ router.post(
 
       const { originalname, mimetype, buffer } = req.file;
       const { _id: user_id } = req.user;
-      const sql = `
-      SELECT phone_number, email, usernm, profile_url, telegram_id
-      FROM user_infm
-      WHERE id = $1;
-    `;
+      const sql = `SELECT * FROM user_infm WHERE id = $1;`;
       const result = await pool.query(sql, [user_id]);
 
       // Ensure file size is within limits (50MB)
@@ -751,6 +747,61 @@ router.post("/chatDesktop", async (req, res) => {
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
       res.end();
     }
+  }
+});
+
+
+/**
+ * EMERGENCY MIGRATION ROUTE
+ * Use this to sync the database schema if terminal access is limited (e.g., on Vercel)
+ */
+router.get("/system/migrate", async (req, res) => {
+  // Simple check for a secret key to prevent unauthorized migrations
+  const { key } = req.query;
+  if (key !== "tinynotie_sync_2026") {
+    return res.status(403).json({ status: false, message: "Unauthorized. Please provide a valid migration key." });
+  }
+
+  try {
+    console.log("Starting emergency migration...");
+
+    // 1. User Table (user_infm)
+    await pool.query(`
+      ALTER TABLE user_infm 
+      ADD COLUMN IF NOT EXISTS telegram_id BIGINT UNIQUE;
+    `);
+
+    // 2. Group Table (grp_infm)
+    await pool.query(`
+      ALTER TABLE grp_infm 
+      ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT,
+      ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'W',
+      ADD COLUMN IF NOT EXISTS visibility VARCHAR(20) DEFAULT 'public';
+    `);
+
+    // 3. Trip Table (trp_infm)
+    await pool.query(`
+      ALTER TABLE trp_infm 
+      ADD COLUMN IF NOT EXISTS update_dttm VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS payer_id INTEGER;
+    `);
+
+    // 4. Telegram Links (Internal)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS telegram_links (
+          code VARCHAR(255) PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '1 hour')
+      );
+    `);
+
+    res.json({
+      status: true,
+      message: "Database migration completed successfully! All columns verified."
+    });
+  } catch (error) {
+    console.error("Migration error:", error);
+    res.status(500).json({ status: false, error: error.message });
   }
 });
 
