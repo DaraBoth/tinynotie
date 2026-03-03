@@ -2,6 +2,7 @@ import express from "express";
 import { authenticateToken } from "../middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
 import moment from "moment";
+import { notifyGroup } from "../services/telegramBotService.js";
 
 const router = express.Router();
 
@@ -1050,6 +1051,74 @@ router.post("/askDatabase", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("AI chat error:", error);
     res.status(500).json({ status: false, message: "Failed to get AI response.", error: error.message });
+  }
+});
+
+
+// Share member summary to linked Telegram group
+router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
+  const { groupId } = req.body;
+  const { _id: user_id } = req.user;
+
+  if (!groupId) {
+    return res.status(400).json({ status: false, message: "groupId is required." });
+  }
+
+  try {
+    // 1. Double check access
+    const accessSql = `
+      SELECT g.grp_name, g.currency,
+             (g.admin_id = $2 OR EXISTS(SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $2)) as has_access
+      FROM grp_infm g
+      WHERE g.id = $1;
+    `;
+    const accessRes = await pool.query(accessSql, [groupId, user_id]);
+
+    if (accessRes.rows.length === 0 || !accessRes.rows[0].has_access) {
+      return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
+    }
+
+    const group = accessRes.rows[0];
+
+    // 2. Fetch members and calculate status
+    // Note: We'll use a simplified version of the calculation logic logic here since we need raw data
+    const membersSql = `
+      SELECT m.id, m.mem_name, m.paid,
+             (SELECT COALESCE(SUM(t.spend / (SELECT COUNT(*) FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(t.mem_id) = 'array' THEN t.mem_id ELSE '[]'::jsonb END))), 0)
+              FROM trp_infm t
+              WHERE t.group_id = $1 AND t.mem_id ? m.id::text) as spend
+      FROM member_infm m
+      WHERE m.group_id = $1;
+    `;
+    const membersRes = await pool.query(membersSql, [groupId]);
+    const members = membersRes.rows;
+
+    if (members.length === 0) {
+      return res.json({ status: true, message: "No members to share." });
+    }
+
+    // 3. Format message
+    let message = `📊 *Member Settlement Status: ${group.grp_name}*\n\n`;
+    members.forEach(m => {
+      const balance = (parseFloat(m.paid) || 0) - (parseFloat(m.spend) || 0);
+      const status = balance >= 0 ? '🟢 +' : '🔴 ';
+      message += `${status} *${m.mem_name}*\n   Paid: ${parseFloat(m.paid).toLocaleString()} ${group.currency}\n   Spend: ${parseFloat(m.spend).toLocaleString()} ${group.currency}\n   Balance: *${balance.toLocaleString()}* ${group.currency}\n\n`;
+    });
+
+    message += `_Generated via TinyNotie Portal_`;
+
+    // 4. Send to Telegram
+    const sent = await notifyGroup(groupId, message);
+
+    if (sent) {
+      res.json({ status: true, message: "Summary shared to Telegram group!" });
+    } else {
+      res.status(400).json({ status: false, message: "Failed to share. Is this group linked to an active Telegram chat? Use /link_group in Telegram." });
+    }
+
+  } catch (error) {
+    console.error("shareMembersToTelegram error:", error);
+    res.status(500).json({ status: false, message: "Server error during sharing.", error: error.message });
   }
 });
 

@@ -159,17 +159,22 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 via-transparent to-purple-500/5 -z-10" />
             <div className="absolute top-[-50%] left-[-20%] w-[100%] h-[200%] bg-[radial-gradient(circle,rgba(var(--primary-rgb),0.05)_0%,transparent_70%)] -z-10" />
 
-            <DialogHeader className="space-y-2">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner group-hover:scale-105 transition-transform">
-                  <Share2 className="h-7 w-7 text-primary animate-pulse" />
+            <DialogHeader className="space-y-4">
+              <div className="flex items-center gap-5 relative">
+                <div className="absolute -inset-4 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border border-primary/30 shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)] group-hover:scale-105 transition-transform relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  <Share2 className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <DialogTitle className="text-3xl font-black tracking-tighter text-foreground uppercase italic leading-none">
+                  <DialogTitle className="text-4xl font-black tracking-tighter text-foreground uppercase italic leading-[0.8]">
                     Share <br />
-                    <span className="text-primary italic-none">Invoice.</span>
+                    <span className="text-primary italic-none tracking-normal">Invoice.</span>
                   </DialogTitle>
-                  <p className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-[0.2em] italic mt-1">Generate tactical summaries.</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="h-1 w-1 rounded-full bg-primary animate-ping" />
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.3em] italic">Tactical Summary</p>
+                  </div>
                 </div>
               </div>
             </DialogHeader>
@@ -267,14 +272,24 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
                 </button>
               </div>
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-2xl -z-10 group-hover:opacity-100 opacity-0 transition-opacity" />
-                <Textarea
-                  value={isEditing ? editText : invoiceText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  readOnly={!isEditing}
-                  rows={10}
-                  className="font-mono text-[11px] leading-relaxed resize-none bg-muted/40 border-border/30 rounded-2xl p-5 focus:ring-0 focus:border-border/50 custom-scrollbar"
-                />
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-purple-500/20 to-primary/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative bg-muted/20 border border-border/30 rounded-2xl overflow-hidden backdrop-blur-md">
+                  <div className="flex items-center justify-between px-4 py-2 bg-foreground/5 border-b border-border/20">
+                    <div className="flex gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/40" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/40" />
+                    </div>
+                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic">receipt_v2.0</span>
+                  </div>
+                  <Textarea
+                    value={isEditing ? editText : invoiceText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    readOnly={!isEditing}
+                    rows={10}
+                    className="font-mono text-[11px] leading-relaxed resize-none bg-transparent border-none rounded-none p-5 focus:ring-0 custom-scrollbar whitespace-pre-wrap select-all"
+                  />
+                </div>
               </div>
             </div>
 

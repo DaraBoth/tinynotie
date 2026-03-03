@@ -489,7 +489,7 @@ export function GroupPageClient({ groupId }) {
       <div className="relative z-10 flex flex-col flex-1 w-full">
 
         {/* Sticky Header Section */}
-        <div className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-md border-b border-border/30">
+        <div className="sticky top-0 z-30 w-full  border-b border-border/30">
           <header className="w-full px-4 sm:px-6 lg:px-8 pt-4 pb-3">
             <div className="flex items-center gap-3 mb-4">
               <button
@@ -792,14 +792,14 @@ export function GroupPageClient({ groupId }) {
         className={`md:hidden fixed left-0 right-0 z-50 transition-all duration-300 ease-out ${fabOpen ? 'bottom-0' : '-bottom-full'
           }`}
       >
-        <div className="bg-background/98 backdrop-blur-xl rounded-t-3xl border-t border-border/30 shadow-2xl pb-safe">
+        <div className="bg-background/75 backdrop-blur-xl rounded-t-3xl border-t border-border/30 shadow-2xl pb-safe">
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/25" />
           </div>
 
           {/* Sheet title */}
-          <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground px-6 pb-4 pt-2">
+          <p className="text-center text-xs font-semibold uppercase tracking-widest px-6 pb-4 pt-2">
             Actions
           </p>
 
