@@ -90,14 +90,14 @@ function generateInvoice(trips, members, currency, lang, bankName, bankAccount) 
 }
 
 export function ShareModal({ open, onClose, group, members = [], trips = [], currency = '$' }) {
-  const [bankName,    setBankName]    = useState('');
+  const [bankName, setBankName] = useState('');
   const [bankAccount, setBankAccount] = useState('');
-  const [lang,        setLang]        = useState('EN');
+  const [lang, setLang] = useState('EN');
   const [selectedIds, setSelectedIds] = useState([]);
   const [invoiceText, setInvoiceText] = useState('');
-  const [editText,    setEditText]    = useState('');
-  const [isEditing,   setIsEditing]   = useState(false);
-  const [copied,      setCopied]      = useState(false);
+  const [editText, setEditText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Load bank details from localStorage on mount
   useEffect(() => {
@@ -152,149 +152,168 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[520px] p-0 overflow-hidden max-h-[90dvh] overflow-y-auto">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/30 sticky top-0 bg-background z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Share2 className="h-5 w-5 text-primary" />
-            </div>
-            <DialogTitle className="text-lg font-bold">Share &amp; Invoice</DialogTitle>
-          </div>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden border-border/20 bg-background/95 backdrop-blur-2xl shadow-2xl rounded-3xl">
+        <div className="relative overflow-y-auto max-h-[90dvh]">
+          {/* Header with decorative background */}
+          <div className="relative px-6 pt-10 pb-6 overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 via-transparent to-purple-500/5 -z-10" />
+            <div className="absolute top-[-50%] left-[-20%] w-[100%] h-[200%] bg-[radial-gradient(circle,rgba(var(--primary-rgb),0.05)_0%,transparent_70%)] -z-10" />
 
-        <div className="px-6 py-5 space-y-5">
-          {/* Bank details */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Bank Name
-              </Label>
-              <Input
-                placeholder="e.g. KBank"
-                value={bankName}
-                onChange={(e) => handleBankName(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Account No.
-              </Label>
-              <Input
-                placeholder="123-456-789"
-                value={bankAccount}
-                onChange={(e) => handleBankAccount(e.target.value)}
-                className="h-10"
-              />
-            </div>
+            <DialogHeader className="space-y-2">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner group-hover:scale-105 transition-transform">
+                  <Share2 className="h-7 w-7 text-primary animate-pulse" />
+                </div>
+                <div>
+                  <DialogTitle className="text-3xl font-black tracking-tighter text-foreground uppercase italic leading-none">
+                    Share <br />
+                    <span className="text-primary italic-none">Invoice.</span>
+                  </DialogTitle>
+                  <p className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-[0.2em] italic mt-1">Generate tactical summaries.</p>
+                </div>
+              </div>
+            </DialogHeader>
           </div>
 
-          {/* Language selector */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-              <Globe className="h-3.5 w-3.5" /> Language
-            </Label>
-            <div className="flex gap-2">
-              {Object.keys(LANG_LABELS).map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => setLang(l)}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                    lang === l
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-muted/60 border-border/40 hover:bg-muted'
-                  }`}
-                >
-                  {LANG_LABELS[l]}
-                </button>
-              ))}
+          <div className="px-6 pb-8 space-y-8">
+            {/* Bank details - Refined */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 px-1">
+                  Bank Name
+                </Label>
+                <Input
+                  placeholder="e.g. KBank"
+                  value={bankName}
+                  onChange={(e) => handleBankName(e.target.value)}
+                  className="h-11 bg-muted/20 border-border/30 rounded-xl focus:ring-1 focus:ring-primary/50 transition-all font-medium"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 px-1">
+                  Account No.
+                </Label>
+                <Input
+                  placeholder="123-456-789"
+                  value={bankAccount}
+                  onChange={(e) => handleBankAccount(e.target.value)}
+                  className="h-11 bg-muted/20 border-border/30 rounded-xl focus:ring-1 focus:ring-primary/50 transition-all font-medium"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Trip selector */}
-          {trips.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Include Trips
+            {/* Language selector - Modern Pills */}
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 flex items-center gap-2 px-1">
+                <Globe className="h-3 w-3 text-primary" /> Language Mode
               </Label>
-              <div className="flex flex-wrap gap-1.5 p-3 rounded-xl border border-border/40 bg-muted/20">
-                {trips.map((t) => (
+              <div className="flex gap-2 p-2 bg-secondary/20 border border-primary/10 rounded-2xl">
+                {Object.keys(LANG_LABELS).map((l) => (
                   <button
-                    key={t.id}
+                    key={l}
                     type="button"
-                    onClick={() => toggleTrip(t.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                      selectedIds.includes(t.id)
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-muted/60 border-border/40 hover:bg-muted'
-                    }`}
+                    onClick={() => setLang(l)}
+                    className={`flex-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase tracking-[0.2em] ${lang === l
+                      ? 'bg-background text-primary shadow-xl border border-primary/20 scale-[1.02]'
+                      : 'text-muted-foreground/60 hover:text-foreground hover:bg-foreground/5'
+                      }`}
                   >
-                    {t.trp_name}
+                    {l}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {selectedIds.length} of {trips.length} trips selected
-              </p>
             </div>
-          )}
 
-          {/* Invoice preview / editor */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Invoice
-              </Label>
-              <button
-                type="button"
-                onClick={handleEditToggle}
-                className="flex items-center gap-1 text-xs text-primary font-medium hover:text-primary/80 transition-colors"
-              >
-                {isEditing ? (
-                  <><Save className="h-3 w-3" /> Save</>
-                ) : (
-                  <><Edit2 className="h-3 w-3" /> Edit</>
-                )}
-              </button>
+            {/* Trip selector - Clean list */}
+            {trips.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 px-1">
+                  Select Trips ({selectedIds.length}/{trips.length})
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {trips.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => toggleTrip(t.id)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${selectedIds.includes(t.id)
+                        ? 'bg-primary/20 text-primary border-primary/50 shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)]'
+                        : 'bg-muted/10 border-border/30 text-muted-foreground hover:border-border/60'
+                        }`}
+                    >
+                      {t.trp_name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Invoice preview / editor - Code Block Style */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80">
+                  Digital Invoice
+                </Label>
+                <button
+                  type="button"
+                  onClick={handleEditToggle}
+                  className="flex items-center gap-1.5 text-[10px] text-primary font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+                >
+                  {isEditing ? (
+                    <><Save className="h-3 w-3" /> Save Changes</>
+                  ) : (
+                    <><Edit2 className="h-3 w-3" /> Manual Edit</>
+                  )}
+                </button>
+              </div>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-2xl -z-10 group-hover:opacity-100 opacity-0 transition-opacity" />
+                <Textarea
+                  value={isEditing ? editText : invoiceText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  readOnly={!isEditing}
+                  rows={10}
+                  className="font-mono text-[11px] leading-relaxed resize-none bg-muted/40 border-border/30 rounded-2xl p-5 focus:ring-0 focus:border-border/50 custom-scrollbar"
+                />
+              </div>
             </div>
-            <Textarea
-              value={isEditing ? editText : invoiceText}
-              onChange={(e) => setEditText(e.target.value)}
-              readOnly={!isEditing}
-              rows={10}
-              className="font-mono text-xs resize-none bg-muted/30"
-            />
+
+            {/* External Links & Actions */}
+            <div className="pt-4 space-y-4">
+              <div className="grid grid-cols-1 gap-3">
+                <div className="p-4 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-between gap-4">
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Direct Link</span>
+                    <span className="text-xs font-medium truncate opacity-80">{shareUrl}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-xl shrink-0 hover:bg-background/50"
+                    onClick={() => {
+                      navigator.clipboard.writeText(shareUrl);
+                      toast.success('Link copied!');
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleCopy}
+                  className="w-full h-14 rounded-2xl gap-3 text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  {copied ? <Check className="h-5 w-5" /> : <Save className="h-5 w-5" />}
+                  {copied ? 'Copied!' : 'Copy to Clipboard'}
+                </Button>
+              </div>
+            </div>
           </div>
-
-          {/* Share link */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Group Link
-            </Label>
-            <div className="flex gap-2">
-              <Input value={shareUrl} readOnly className="flex-1 text-xs" />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  navigator.clipboard.writeText(shareUrl);
-                  toast.success('Link copied!');
-                }}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Copy invoice button */}
-          <Button type="button" onClick={handleCopy} className="w-full gap-2">
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            Copy Invoice
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
+
   );
 }

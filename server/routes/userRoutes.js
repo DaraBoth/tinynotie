@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer"; // Import multer for file uploads
 import path from "path"; // Import path for file handling
-import { authenticateToken } from "./middleware/auth.js";
+import { authenticateToken } from "../middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
 import { put } from "@vercel/blob"; // Import the put function from Vercel Blob
 import { promisify } from "util";

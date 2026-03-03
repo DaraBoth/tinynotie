@@ -73,7 +73,14 @@ export function StreamingChat({ open, onClose, groupId }) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${(() => {
+                        try {
+                            const auth = JSON.parse(localStorage.getItem('auth-storage'));
+                            return auth?.state?.token;
+                        } catch (e) {
+                            return null;
+                        }
+                    })()}`
                 },
                 body: JSON.stringify({
                     message: currentInput,

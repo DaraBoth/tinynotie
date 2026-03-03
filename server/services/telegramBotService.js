@@ -146,7 +146,7 @@ export const initTelegramBot = (token) => {
             if (groups.length === 0) return ctx.reply('❌ This chat is not linked to any group. Use /link_group first.');
 
             const groupId = groups[0].id;
-            await pool.query('INSERT INTO mem_infm (mem_name, group_id, paid) VALUES ($1, $2, 0)', [memName, groupId]);
+            await pool.query('INSERT INTO member_infm (mem_name, group_id, paid) VALUES ($1, $2, 0)', [memName, groupId]);
             ctx.reply(`✅ Member *${memName}* added to the group!`, { parse_mode: 'Markdown' });
         } catch (err) {
             console.error('Add member TG error:', err);
@@ -182,7 +182,7 @@ export const initTelegramBot = (token) => {
             if (groups.length === 0) return ctx.reply('❌ This chat is not linked to any group.');
 
             const group = groups[0];
-            const { rows: members } = await pool.query('SELECT COUNT(*) as count FROM mem_infm WHERE group_id = $1', [group.id]);
+            const { rows: members } = await pool.query('SELECT COUNT(*) as count FROM member_infm WHERE group_id = $1', [group.id]);
             const { rows: trips } = await pool.query('SELECT COUNT(*) as count, SUM(spend) as total FROM trp_infm WHERE group_id = $1', [group.id]);
 
             const summary = `
@@ -290,14 +290,19 @@ export const initTelegramBot = (token) => {
  * Send a notification to a linked Telegram group
  */
 export const notifyGroup = async (groupId, message) => {
-    if (!bot) return;
+    if (!bot) return false;
     try {
         const { rows } = await pool.query('SELECT telegram_chat_id FROM grp_infm WHERE id = $1', [groupId]);
         if (rows.length > 0 && rows[0].telegram_chat_id) {
             await bot.telegram.sendMessage(rows[0].telegram_chat_id, message, { parse_mode: 'Markdown' });
+            console.log(`[Telegram] Notification sent successfully to group ${groupId} (chat_id: ${rows[0].telegram_chat_id})`);
+            return true;
         }
+        console.warn(`[Telegram] No telegram_chat_id found for group ${groupId}`);
+        return false;
     } catch (err) {
-        console.error('TG Notification error:', err);
+        console.error(`[Telegram] Notification error for group ${groupId}:`, err.message);
+        return false;
     }
 };
 

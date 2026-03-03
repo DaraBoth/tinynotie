@@ -1,13 +1,13 @@
 'use client';
 
-import { Plus, Edit, Trash2, User } from 'lucide-react';
+import { Plus, Edit, Trash2, User, FileDown, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, calculateMemberBalance } from '@/utils/helpers';
 import { useWindowDimensions } from '@/hooks/useWindowDimensions';
 
-export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onDelete, members, trips }) {
+export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onDelete, onExport, onShare, members, trips }) {
   const { isMobile } = useWindowDimensions();
   const isMembersTable = type === 'members';
 
@@ -189,10 +189,24 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl">{title}</CardTitle>
-          <Button onClick={onAdd} size={isMobile ? 'icon' : 'default'}>
-            <Plus className="h-4 w-4" />
-            {!isMobile && <span className="ml-2">Add {isMembersTable ? 'Member' : 'Trip'}</span>}
-          </Button>
+          <div className="flex items-center gap-2">
+            {isMembersTable && (
+              <>
+                <Button variant="outline" size={isMobile ? 'icon' : 'sm'} onClick={() => data.length > 0 && onExport?.()} className="border-primary/20 hover:bg-primary/5 text-primary">
+                  <FileDown className="h-4 w-4" />
+                  {!isMobile && <span className="ml-2">Export</span>}
+                </Button>
+                <Button variant="outline" size={isMobile ? 'icon' : 'sm'} onClick={() => data.length > 0 && onShare?.()} className="border-[#0088cc]/20 hover:bg-[#0088cc]/5 text-[#0088cc]">
+                  <Send className="h-4 w-4" />
+                  {!isMobile && <span className="ml-2">Share</span>}
+                </Button>
+              </>
+            )}
+            <Button onClick={onAdd} size={isMobile ? 'icon' : 'default'}>
+              <Plus className="h-4 w-4" />
+              {!isMobile && <span className="ml-2">Add {isMembersTable ? 'Member' : 'Trip'}</span>}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

@@ -41,14 +41,14 @@ export const getAvatarInitials = (name = '') => name.slice(0, 2).toUpperCase();
 /* ─── tiny helper ────────────────────────────────────────────────────────── */
 function StatPill({ icon: Icon, label, value, color = 'text-foreground' }) {
   const bgMap = {
-    'text-green-400': 'bg-green-500/10',
-    'text-orange-400': 'bg-orange-500/10',
-    'text-red-400': 'bg-red-500/10',
-    'text-blue-400': 'bg-blue-500/10',
+    'text-emerald-600 dark:text-emerald-400': 'bg-emerald-500/10 dark:bg-emerald-500/20',
+    'text-orange-600 dark:text-orange-400': 'bg-orange-500/10 dark:bg-orange-500/20',
+    'text-rose-600 dark:text-rose-400': 'bg-rose-500/10 dark:bg-rose-500/20',
+    'text-sky-600 dark:text-sky-400': 'bg-sky-500/10 dark:bg-sky-500/20',
   };
   const bg = bgMap[color] || 'bg-primary/10';
   return (
-    <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-background/30 dark:bg-white/5 border border-border/30 backdrop-blur-sm shrink-0">
+    <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-background/50 border border-border/30 backdrop-blur-sm shrink-0">
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bg}`}>
         <Icon className={`h-4 w-4 ${color}`} />
       </div>
@@ -130,11 +130,25 @@ export function GroupPageClient({ groupId }) {
       if (res.data.status) {
         toast.success('Shared to Telegram!');
       } else {
-        toast.error('Failed to share to Telegram');
+        toast.error(res.data.message || 'Failed to share to Telegram');
       }
     } catch (err) {
       console.error('Share error:', err);
       toast.error('Error sharing to Telegram');
+    }
+  };
+
+  const handleShareMembers = async () => {
+    try {
+      const res = await api.shareMembersToTelegram({ group_id: groupId });
+      if (res.data.status) {
+        toast.success('Member summary shared to Telegram!');
+      } else {
+        toast.error(res.data.message || 'Failed to share to Telegram');
+      }
+    } catch (err) {
+      console.error('Share error:', err);
+      toast.error('Error sharing member summary');
     }
   };
 
@@ -194,25 +208,59 @@ export function GroupPageClient({ groupId }) {
 
   const ContributionsSection = (
     <div className="flex flex-col min-h-0">
-      <div className="flex items-center justify-between mb-3 px-1">
+      <div className="flex items-center justify-between mb-3 px-1 border-b border-border/10 pb-2">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-          <Users className="h-3.5 w-3.5" /> Member Contributions
+          <Users className="h-3.5 w-3.5" /> Contributions
         </h2>
-        <div className="flex gap-0.5 bg-muted/60 p-1 rounded-lg">
-          <button
-            onClick={() => setViewMode('table')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'table' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-foreground uppercase tracking-widest font-bold"
+            onClick={() => {
+              const data = newData.map((row, idx) => {
+                const item = {
+                  '#': idx + 1,
+                  'Member Name': row.name,
+                  'Paid': row.paid,
+                  'Remain': row.remain,
+                  'Unpaid': row.unpaid
+                };
+                // Add trip columns
+                tripColumns.forEach(tripName => {
+                  item[tripName] = row[tripName] ?? '—';
+                });
+                return item;
+              });
+              const ws = XLSX.utils.json_to_sheet(data);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, "Members");
+              XLSX.writeFile(wb, `${group.grp_name || 'Group'}_Members.xlsx`);
+              toast.success('Members export downloaded');
+            }}
           >
-            <LayoutGrid className="h-3 w-3" />
-            <span className="hidden sm:inline">Table</span>
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            <Download className="h-3.5 w-3.5" /> Export
+          </Button>
+          <Button
+            size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-sky-400 uppercase tracking-widest font-bold"
+            onClick={handleShareMembers}
           >
-            <List className="h-3 w-3" />
-            <span className="hidden sm:inline">List</span>
-          </button>
+            <Send className="h-3.5 w-3.5" /> Telegram
+          </Button>
+          <div className="flex gap-0.5 bg-muted/60 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'table' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <LayoutGrid className="h-3 w-3" />
+              <span className="hidden sm:inline">Table</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <List className="h-3 w-3" />
+              <span className="hidden sm:inline">List</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -247,12 +295,12 @@ export function GroupPageClient({ groupId }) {
                 <tr key={row.id || idx} className="border-b border-border/20 hover:bg-muted/20 transition-colors">
                   <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
                   <td className="px-4 py-3 font-semibold">{row.name}</td>
-                  <td className="px-4 py-3 text-right text-green-400 font-medium">{row.paid}</td>
+                  <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">{row.paid}</td>
                   {tripColumns.map((name) => (
-                    <td key={name} className="px-4 py-3 text-right text-orange-400 text-sm">{row[name] ?? '—'}</td>
+                    <td key={name} className="px-4 py-3 text-right text-orange-600 dark:text-orange-400 text-sm">{row[name] ?? '—'}</td>
                   ))}
-                  <td className={`px-4 py-3 text-right font-semibold ${String(row.remain).startsWith('-') ? 'text-red-400' : 'text-green-400'}`}>{row.remain}</td>
-                  <td className="px-4 py-3 text-right text-red-400">{row.unpaid}</td>
+                  <td className={`px-4 py-3 text-right font-semibold ${String(row.remain).startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{row.remain}</td>
+                  <td className="px-4 py-3 text-right text-rose-600 dark:text-rose-400">{row.unpaid}</td>
                 </tr>
               ))}
             </tbody>
@@ -269,15 +317,15 @@ export function GroupPageClient({ groupId }) {
               <div className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Paid</span>
-                  <span className="text-green-400 font-semibold">{row.paid}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{row.paid}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Remain</span>
-                  <span className={`font-semibold ${String(row.remain).startsWith('-') ? 'text-red-400' : 'text-green-400'}`}>{row.remain}</span>
+                  <span className={`font-semibold ${String(row.remain).startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{row.remain}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Unpaid</span>
-                  <span className="text-red-400 font-semibold">{row.unpaid}</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-semibold">{row.unpaid}</span>
                 </div>
               </div>
               {tripColumns.length > 0 && (
@@ -285,7 +333,7 @@ export function GroupPageClient({ groupId }) {
                   {tripColumns.map((name) => (
                     <span key={name} className="text-xs bg-muted/60 rounded-lg px-2 py-1">
                       <span className="text-muted-foreground">{name}:</span>{' '}
-                      <span className="text-orange-400 font-medium">{row[name] ?? '—'}</span>
+                      <span className="text-orange-600 dark:text-orange-400 font-medium">{row[name] ?? '—'}</span>
                     </span>
                   ))}
                 </div>
@@ -364,7 +412,7 @@ export function GroupPageClient({ groupId }) {
                   className="border-b border-border/20 hover:bg-muted/20 transition-colors cursor-pointer"
                   onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
                   <td className="px-3 py-2.5 font-medium truncate max-w-[120px]" title={trip.trp_name}>{trip.trp_name}</td>
-                  <td className="px-3 py-2.5 text-right text-green-400 font-semibold">{currency}{parseFloat(trip.spend || 0).toFixed(2)}</td>
+                  <td className="px-3 py-2.5 text-right text-emerald-600 dark:text-emerald-400 font-semibold">{currency}{parseFloat(trip.spend || 0).toFixed(2)}</td>
                   <td className="px-3 py-2.5 text-right text-muted-foreground hidden sm:table-cell truncate max-w-[80px]">{getPayerName(trip)}</td>
                   <td className="px-3 py-2.5 hidden sm:table-cell">
                     <div className="flex -space-x-1.5 overflow-hidden">
@@ -392,7 +440,7 @@ export function GroupPageClient({ groupId }) {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                        className="h-7 w-7 text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 hover:bg-sky-500/10"
                         onClick={(e) => handleShareTrip(e, trip)}
                         title="Share to Telegram"
                       >
@@ -418,10 +466,10 @@ export function GroupPageClient({ groupId }) {
       <div className="rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm overflow-hidden">
         {[
           { label: 'Total Members', value: info.totalMember, color: 'text-foreground' },
-          { label: 'Total Paid', value: info.totalPaid, color: 'text-green-400' },
-          { label: 'Total Spend', value: info.totalSpend, color: 'text-orange-400' },
-          { label: 'Total Remain', value: info.totalRemain, color: 'text-blue-400' },
-          { label: 'Total Unpaid', value: info.totalUnPaid, color: 'text-red-400' },
+          { label: 'Total Paid', value: info.totalPaid, color: 'text-emerald-600 dark:text-emerald-400' },
+          { label: 'Total Spend', value: info.totalSpend, color: 'text-orange-600 dark:text-orange-400' },
+          { label: 'Total Remain', value: info.totalRemain, color: 'text-sky-600 dark:text-sky-400' },
+          { label: 'Total Unpaid', value: info.totalUnPaid, color: 'text-rose-600 dark:text-rose-400' },
         ].map(({ label, value, color }, i, arr) => (
           <div key={label} className={`flex justify-between items-center px-4 py-3.5 ${i < arr.length - 1 ? 'border-b border-border/20' : ''} hover:bg-muted/20 transition-colors`}>
             <span className="text-muted-foreground text-sm">{label}</span>
@@ -466,7 +514,7 @@ export function GroupPageClient({ groupId }) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-8 w-8 ${telegramLoading ? 'animate-pulse' : ''} text-blue-400 hover:text-blue-300 hover:bg-blue-500/10`}
+                  className={`h-8 w-8 ${telegramLoading ? 'animate-pulse' : ''} text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 hover:bg-sky-500/10`}
                   onClick={handleTelegramLink}
                   disabled={telegramLoading}
                   title="Link Telegram"
@@ -509,10 +557,10 @@ export function GroupPageClient({ groupId }) {
           <div className="hidden md:block w-full px-4 sm:px-6 lg:px-8 py-3 border-t border-border/10">
             <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
               <StatPill icon={Users} label="Members" value={info.totalMember} />
-              <StatPill icon={BadgeCheck} label="Total Paid" value={info.totalPaid} color="text-green-400" />
-              <StatPill icon={TrendingUp} label="Total Spend" value={info.totalSpend} color="text-orange-400" />
-              <StatPill icon={Wallet} label="Remain" value={info.totalRemain} color="text-blue-400" />
-              <StatPill icon={Clock} label="Unpaid" value={info.totalUnPaid} color="text-red-400" />
+              <StatPill icon={BadgeCheck} label="Total Paid" value={info.totalPaid} color="text-emerald-600 dark:text-emerald-400" />
+              <StatPill icon={TrendingUp} label="Total Spend" value={info.totalSpend} color="text-orange-600 dark:text-orange-400" />
+              <StatPill icon={Wallet} label="Remain" value={info.totalRemain} color="text-sky-600 dark:text-sky-400" />
+              <StatPill icon={Clock} label="Unpaid" value={info.totalUnPaid} color="text-rose-600 dark:text-rose-400" />
             </div>
           </div>
         </div>
@@ -521,25 +569,25 @@ export function GroupPageClient({ groupId }) {
 
         {/* Mobile Hero Balance Card */}
         <div className="md:hidden px-4 pt-4 pb-2">
-          <div className="relative overflow-hidden rounded-2xl p-5"
-            style={{ background: 'linear-gradient(135deg, #312e81 0%, #4c1d95 50%, #1e1b4b 100%)' }}>
+          <div className="relative overflow-hidden rounded-2xl p-5 shadow-lg"
+            style={{ background: 'linear-gradient(135deg, var(--hero-start, #312e81) 0%, var(--hero-mid, #4c1d95) 50%, var(--hero-end, #1e1b4b) 100%)' }}>
             {/* Decorative blur orbs */}
-            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/5 blur-2xl" />
-            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-violet-400/10 blur-xl" />
-            <p className="text-white/60 text-[10px] uppercase tracking-widest font-semibold mb-1">Total Spend</p>
-            <p className="text-white text-4xl font-extrabold tracking-tight mb-4">{info.totalSpend}</p>
+            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10 blur-2xl" />
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-violet-400/20 blur-xl" />
+            <p className="text-white/80 text-[10px] uppercase tracking-widest font-bold mb-1">Total Spend</p>
+            <p className="text-white text-4xl font-extrabold tracking-tight mb-4 drop-shadow-sm">{info.totalSpend}</p>
             <div className="flex gap-2">
-              <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-3 py-2 text-center">
-                <p className="text-[9px] uppercase tracking-widest text-white/50 mb-0.5">Paid</p>
-                <p className="text-green-300 font-bold text-sm">{info.totalPaid}</p>
+              <div className="flex-1 rounded-xl bg-white/10 dark:bg-white/15 backdrop-blur-md px-3 py-2 text-center border border-white/10">
+                <p className="text-[9px] uppercase tracking-widest text-white/70 mb-0.5 font-bold">Paid</p>
+                <p className="text-emerald-300 font-black text-sm">{info.totalPaid}</p>
               </div>
-              <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-3 py-2 text-center">
-                <p className="text-[9px] uppercase tracking-widest text-white/50 mb-0.5">Remain</p>
-                <p className="text-blue-300 font-bold text-sm">{info.totalRemain}</p>
+              <div className="flex-1 rounded-xl bg-white/10 dark:bg-white/15 backdrop-blur-md px-3 py-2 text-center border border-white/10">
+                <p className="text-[9px] uppercase tracking-widest text-white/70 mb-0.5 font-bold">Remain</p>
+                <p className="text-sky-300 font-black text-sm">{info.totalRemain}</p>
               </div>
-              <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-3 py-2 text-center">
-                <p className="text-[9px] uppercase tracking-widest text-white/50 mb-0.5">Unpaid</p>
-                <p className="text-red-300 font-bold text-sm">{info.totalUnPaid}</p>
+              <div className="flex-1 rounded-xl bg-white/10 dark:bg-white/15 backdrop-blur-md px-3 py-2 text-center border border-white/10">
+                <p className="text-[9px] uppercase tracking-widest text-white/70 mb-0.5 font-bold">Unpaid</p>
+                <p className="text-rose-300 font-black text-sm">{info.totalUnPaid}</p>
               </div>
             </div>
           </div>
@@ -615,8 +663,8 @@ export function GroupPageClient({ groupId }) {
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm truncate">{row.name}</p>
                               <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md ${isPaid
-                                ? 'bg-green-500/15 text-green-400'
-                                : 'bg-red-500/15 text-red-400'
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
                                 }`}>
                                 {isPaid ? 'PAID' : 'UNPAID'}
                               </span>
@@ -624,8 +672,8 @@ export function GroupPageClient({ groupId }) {
                             {/* Amount + chevron */}
                             <div className="text-right shrink-0 flex items-center gap-2">
                               <div>
-                                <p className="text-sm font-bold text-green-400">{row.paid}</p>
-                                {!isPaid && <p className="text-xs text-red-400">{row.unpaid} due</p>}
+                                <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{row.paid}</p>
+                                {!isPaid && <p className="text-xs text-rose-600 dark:text-rose-400">{row.unpaid} due</p>}
                               </div>
                               <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''
                                 }`} />
@@ -650,7 +698,7 @@ export function GroupPageClient({ groupId }) {
                                         <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />
                                         <span className="text-sm truncate max-w-[160px]">{t.name}</span>
                                       </div>
-                                      <span className="text-sm font-semibold text-orange-400">{t.amount}</span>
+                                      <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">{t.amount}</span>
                                     </div>
                                   ))}
                                   {/* Totals row */}
@@ -665,13 +713,13 @@ export function GroupPageClient({ groupId }) {
 
                               {/* Quick stats row */}
                               <div className="grid grid-cols-2 gap-2 mb-3">
-                                <div className="rounded-xl bg-green-500/10 border border-green-500/20 px-3 py-2">
-                                  <p className="text-[9px] uppercase tracking-widest text-green-400/70 mb-0.5">Paid</p>
-                                  <p className="text-sm font-bold text-green-400">{row.paid}</p>
+                                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2">
+                                  <p className="text-[9px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400/70 mb-0.5">Paid</p>
+                                  <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{row.paid}</p>
                                 </div>
-                                <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 px-3 py-2">
-                                  <p className="text-[9px] uppercase tracking-widest text-blue-400/70 mb-0.5">Remain</p>
-                                  <p className="text-sm font-bold text-blue-400">{row.remain}</p>
+                                <div className="rounded-xl bg-sky-500/10 border border-sky-500/20 px-3 py-2">
+                                  <p className="text-[9px] uppercase tracking-widest text-sky-600 dark:text-sky-400/70 mb-0.5">Remain</p>
+                                  <p className="text-sm font-bold text-sky-600 dark:text-sky-400">{row.remain}</p>
                                 </div>
                               </div>
 
@@ -701,10 +749,10 @@ export function GroupPageClient({ groupId }) {
                 <div className="rounded-2xl border border-border/30 bg-background/30 overflow-hidden">
                   {[
                     { label: 'Total Members', value: info.totalMember, color: 'text-foreground' },
-                    { label: 'Total Paid', value: info.totalPaid, color: 'text-green-400' },
-                    { label: 'Total Spend', value: info.totalSpend, color: 'text-orange-400' },
-                    { label: 'Total Remain', value: info.totalRemain, color: 'text-blue-400' },
-                    { label: 'Total Unpaid', value: info.totalUnPaid, color: 'text-red-400' },
+                    { label: 'Total Paid', value: info.totalPaid, color: 'text-emerald-600 dark:text-emerald-400' },
+                    { label: 'Total Spend', value: info.totalSpend, color: 'text-orange-600 dark:text-orange-400' },
+                    { label: 'Total Remain', value: info.totalRemain, color: 'text-sky-600 dark:text-sky-400' },
+                    { label: 'Total Unpaid', value: info.totalUnPaid, color: 'text-rose-600 dark:text-rose-400' },
                   ].map(({ label, value, color }, i, arr) => (
                     <div key={label} className={`flex justify-between items-center px-5 py-4 ${i < arr.length - 1 ? 'border-b border-border/20' : ''
                       }`}>

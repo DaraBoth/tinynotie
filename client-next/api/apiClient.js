@@ -105,9 +105,11 @@ export const api = {
   deleteTrip: (tripId, groupId) => apiClient.delete('/api/deleteTripById', { data: { trip_id: tripId, group_id: groupId } }),
   getTripsByGroupId: (groupId) => apiClient.get('/api/getTripByGroupId', { params: { group_id: groupId } }),
   shareTripToTelegram: (data) => apiClient.post('/api/shareTripToTelegram', data),
+  shareMembersToTelegram: (data) => apiClient.post('/api/shareMembersToTelegram', data),
 
   // AI & Utilities
   askDatabase: (data) => apiClient.post('/api/askDatabase', data),
+  chatWithDatabase: (data) => apiClient.post('/api/askDatabase', data),
   translateText: (data) => apiClient.post('/api/translate', data),
   receiptImage: (formData) => apiClient.post('/openai/receiptImage', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

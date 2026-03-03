@@ -1,5 +1,8 @@
 import axios from "axios";
 import dotenv from "dotenv";
+dotenv.config();
+
+
 import express from "express";
 import bcrypt from "bcrypt";
 import OpenAI from "openai";
@@ -149,7 +152,7 @@ router.get("/text", async (req, res) => {
   try {
     let { text, random } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     if (random == "true") {
       const prompt = `
@@ -221,7 +224,7 @@ router.post("/text", async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(`${text}`);
     const response = result.response;
     saveChat({ chat_id: chatId, chat_history: chatHistory });
@@ -251,7 +254,7 @@ router.get("/receiptText", async (req, res) => {
   try {
     let { text } = req.query;
     const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
       You are an API endpoint that processes receipt data.
@@ -678,7 +681,7 @@ async function _getKoreanWords(messageObj) {
   });
 
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
   You are a Korean language tutor.
@@ -739,7 +742,7 @@ async function _getKoreanWords(messageObj) {
 // This function has been moved to aiUtils.js
 async function _getCleaningProm(data, msg) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = `
       This data is about cleaning schedule in a house.
       And it's a trigger when there is change updated in excel.
@@ -769,7 +772,7 @@ async function _getCleaningProm(data, msg) {
 // This function has been moved to aiUtils.js
 async function _getTranslate(str) {
   const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = `
       Instruction
       Translate the following text based on its original language:

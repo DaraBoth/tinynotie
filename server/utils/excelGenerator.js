@@ -11,34 +11,50 @@ export const generateGroupExcelBuffer = async (groupId) => {
     const { rows: trips } = await pool.query(
         `SELECT t.*, m.mem_name as payer_name 
      FROM trp_infm t 
-     LEFT JOIN mem_infm m ON t.payer_id = m.id 
+     LEFT JOIN member_infm m ON t.payer_id = m.id 
      WHERE t.group_id = $1 
-     ORDER BY t.operating_date DESC`,
+     ORDER BY t.create_date DESC`,
         [groupId]
     );
 
     // Fetch all members for participant mapping
     const { rows: members } = await pool.query(
-        'SELECT id, mem_name FROM mem_infm WHERE group_id = $1',
+        'SELECT id, mem_name FROM member_infm WHERE group_id = $1',
         [groupId]
     );
     const memberMap = Object.fromEntries(members.map(m => [m.id, m.mem_name]));
 
     // Process data for Excel
     const data = trips.map((t, index) => {
-        const participants = (t.joined_ids || [])
+        let participants = [];
+        try {
+            if (typeof t.mem_id === 'string') {
+                if (t.mem_id.startsWith('[')) {
+                    participants = JSON.parse(t.mem_id);
+                } else {
+                    participants = t.mem_id.split(',').map(id => id.trim());
+                }
+            } else if (Array.isArray(t.mem_id)) {
+                participants = t.mem_id;
+            } else if (t.mem_id) {
+                participants = [String(t.mem_id)];
+            }
+        } catch (e) {
+            participants = [];
+        }
+
+        const participantNames = participants
             .map(id => memberMap[id] || 'Unknown')
             .join(', ');
 
         return {
             '#': index + 1,
-            'Date': t.operating_date ? new Date(t.operating_date).toLocaleDateString() : 'N/A',
+            'Date': t.create_date ? new Date(t.create_date).toLocaleDateString() : 'N/A',
             'Trip Name': t.trp_name,
-            'Location': t.operating_location || '',
             'Amount': t.spend,
             'Payer': t.payer_name || 'N/A',
-            'Members Joined': participants,
-            'Notes': t.notes || ''
+            'Members Joined': participantNames,
+            'Description': t.description || ''
         };
     });
 

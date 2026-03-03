@@ -1,5 +1,7 @@
-import express from "express"
 import dotenv from "dotenv"
+dotenv.config();
+
+import express from "express"
 import cors from "cors"
 import helmet from "helmet"
 import morgan from "morgan"
@@ -10,9 +12,9 @@ import apiRoutes from "./routes/api.js"
 import openAiRoutes from "./routes/openai.js";
 import telegrambotRoutes from "./routes/telegrambot.js";
 import { initTelegramBot } from "./services/telegramBotService.js";
-dotenv.config();
+
 // Initialize Telegram Bot early for serverless support
-initTelegramBot(process.env.TELEGRAM_BOT_TOKEN3);
+initTelegramBot(process.env.TELEGRAM_BOT_TOKEN_NEW);
 
 import daraboth from "./routes/daraboth.js";
 import swaggerUi from "swagger-ui-express";

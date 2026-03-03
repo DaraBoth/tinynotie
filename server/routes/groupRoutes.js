@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateToken } from "./middleware/auth.js";
+import { authenticateToken } from "../middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
 import moment from "moment";
 
@@ -1028,6 +1028,67 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("error", error);
     res.json({ status: false, error: error.message });
+  }
+});
+// AI Chat with group database
+router.post("/askDatabase", authenticateToken, async (req, res) => {
+  const { groupId, message } = req.body;
+  const userId = req.user._id;
+
+  if (!groupId || !message) {
+    return res.status(400).json({ status: false, message: "groupId and message are required." });
+  }
+
+  try {
+    // Gather group context for the AI
+    const groupResult = await pool.query(
+      `SELECT g.grp_name, g.description, g.currency
+       FROM grp_infm g
+       WHERE g.id = $1`,
+      [groupId]
+    );
+    if (groupResult.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    const group = groupResult.rows[0];
+
+    const membersResult = await pool.query(
+      `SELECT mem_name, paid FROM member_infm WHERE grp_id = $1`,
+      [groupId]
+    );
+
+    const tripsResult = await pool.query(
+      `SELECT trp_name, spend, description FROM trp_infm WHERE grp_id = $1 ORDER BY create_date DESC LIMIT 20`,
+      [groupId]
+    );
+
+    const systemPrompt = `You are a helpful AI assistant for the expense tracking app TinyNotie.
+You help users understand their group finances.
+
+Group: ${group.grp_name}
+Currency: ${group.currency || "USD"}
+${group.description ? `Description: ${group.description}` : ""}
+
+Members:
+${membersResult.rows.map(m => `- ${m.mem_name}: paid ${group.currency || ""}${m.paid || 0}`).join("\n")}
+
+Recent trips/expenses:
+${tripsResult.rows.map(t => `- ${t.trp_name}: ${group.currency || ""}${t.spend}${t.description ? ` (${t.description})` : ""}`).join("\n")}
+
+Answer the user's question concisely and helpfully based on this data.`;
+
+    const { streamAiAgent } = await import("../services/aiAgentService.js");
+    const response = await streamAiAgent({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message }
+      ]
+    });
+
+    res.json({ status: true, response });
+  } catch (error) {
+    console.error("AI chat error:", error);
+    res.status(500).json({ status: false, message: "Failed to get AI response.", error: error.message });
   }
 });
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateToken } from "./middleware/auth.js";
+import { authenticateToken } from "../middleware/auth.js";
 import { pool, handleError, sanitizeIntegerField } from "../utils/db.js";
 import moment from "moment";
 import { notifyGroup } from "../services/telegramBotService.js";
@@ -524,7 +524,6 @@ router.delete("/deleteTripById", authenticateToken, async (req, res) => {
     }
 
     await client.query("COMMIT");
-
     res.json({ status: true, message: "Trip deleted successfully" });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -536,6 +535,86 @@ router.delete("/deleteTripById", authenticateToken, async (req, res) => {
     });
   } finally {
     if (client) client.release();
+  }
+});
+
+/**
+ * @swagger
+ * /trips/shareMembersToTelegram:
+ *   post:
+ *     summary: Share member contribution summary to linked Telegram group
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               group_id:
+ *                 type: integer
+ */
+router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
+  const { group_id } = req.body;
+  const username = req.user.usernm;
+
+  try {
+    // Get group info
+    const groupResult = await pool.query("SELECT grp_name, currency FROM grp_infm WHERE id = $1", [group_id]);
+    if (groupResult.rows.length === 0) return res.status(404).json({ status: false, message: "Group not found" });
+    const { grp_name, currency } = groupResult.rows[0];
+
+    // Get members and trips to calculate
+    const membersResult = await pool.query("SELECT id, mem_name, paid FROM member_infm WHERE group_id = $1", [group_id]);
+    const tripsResult = await pool.query("SELECT spend, mem_id FROM trp_infm WHERE group_id = $1", [group_id]);
+
+    const members = membersResult.rows;
+    const trips = tripsResult.rows;
+
+    // Basic summary calculation
+    let summary = `📊 *Member Contributions: ${grp_name}*\n\n`;
+
+    members.forEach(m => {
+      let spent = 0;
+      trips.forEach(t => {
+        let participants = [];
+        try {
+          if (typeof t.mem_id === 'string') {
+            if (t.mem_id.startsWith('[')) {
+              participants = JSON.parse(t.mem_id);
+            } else {
+              participants = t.mem_id.split(',').map(id => id.trim());
+            }
+          } else if (Array.isArray(t.mem_id)) {
+            participants = t.mem_id;
+          } else if (t.mem_id) {
+            participants = [String(t.mem_id)];
+          }
+        } catch (e) {
+          participants = [];
+        }
+
+        if (participants.includes(String(m.id))) {
+          spent += t.spend / (participants.length || 1);
+        }
+      });
+      const balance = m.paid - spent;
+      summary += `👤 *${m.mem_name}*\n   Paid: ${currency}${m.paid.toLocaleString()}\n   Spent: ${currency}${spent.toLocaleString()}\n   Balance: ${balance >= 0 ? '✅' : '🔴'} ${currency}${balance.toLocaleString()}\n\n`;
+    });
+
+    summary += `👤 Shared by: *${username}*`;
+
+    const success = await notifyGroup(group_id, summary);
+    if (success) {
+      res.send({ status: true, message: "Member summary shared to Telegram!" });
+    } else {
+      res.send({ status: false, message: "Failed to share. Is the Telegram group linked?" });
+    }
+  } catch (error) {
+    console.error("Share members error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -577,8 +656,12 @@ router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
     const trip = tripResult.rows[0];
     const message = `📢 *Sharing Expense*\n\n*${trip.trp_name}*\n💰 Amount: ${trip.spend.toLocaleString()}\n📝 Description: ${trip.description || 'N/A'}\n\n👤 Shared by: *${username}*`;
 
-    await notifyGroup(group_id, message);
-    res.send({ status: true, message: "Shared to Telegram!" });
+    const success = await notifyGroup(group_id, message);
+    if (success) {
+      res.send({ status: true, message: "Shared to Telegram!" });
+    } else {
+      res.send({ status: false, message: "Failed to share. Is the Telegram group linked?" });
+    }
   } catch (error) {
     console.error("Share to Telegram error:", error);
     res.status(500).json({ error: error.message });
