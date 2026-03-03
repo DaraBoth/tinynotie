@@ -84,36 +84,36 @@ function GroupCard({ group, index, onDelete }) {
               </div>
             </div>
 
-            <h3 className="text-2xl font-black text-white mb-1 line-clamp-1 tracking-tighter uppercase italic">
+            <h3 className="text-xl font-black text-white mb-1 line-clamp-1 tracking-tighter uppercase italic">
               {group.grp_name}
             </h3>
-            <p className="text-[10px] text-white/40 font-black mb-6 uppercase tracking-widest">{currencyLabel}</p>
+            <p className="text-[9px] text-white/30 font-bold mb-5 uppercase tracking-[0.2em]">{currencyLabel}</p>
 
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 group-hover/card:bg-white/10 transition-colors">
-                <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mb-1">Spent</p>
-                <p className="text-base font-black text-white italic">{formatMoney(totalSpend, currencySymbol)}</p>
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 group-hover/card:bg-white/10 transition-colors">
+                <p className="text-[8px] text-white/30 font-black uppercase tracking-widest mb-1">Spent</p>
+                <p className="text-sm font-black text-white italic">{formatMoney(totalSpend, currencySymbol)}</p>
               </div>
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 group-hover/card:bg-white/10 transition-colors">
-                <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mb-1">Status</p>
-                <p className={`text-base font-black italic ${balance >= 0 ? 'text-[#80ff00]' : 'text-[#ff0080]'}`}>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 group-hover/card:bg-white/10 transition-colors">
+                <p className="text-[8px] text-white/30 font-black uppercase tracking-widest mb-1">Status</p>
+                <p className={`text-sm font-black italic ${balance >= 0 ? 'text-[#80ff00]' : 'text-[#ff0080]'}`}>
                   {balance >= 0 ? 'WIN' : 'OUT'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto">
-            <div className="flex items-center gap-4 text-white/40 text-[10px] font-black uppercase italic">
-              <span className="flex items-center gap-1.5">
-                <Users className="h-3 w-3" /> {memberCount} PPL
+          <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
+            <div className="flex items-center gap-3 text-white/30 text-[9px] font-black uppercase italic">
+              <span className="flex items-center gap-1">
+                <Users className="h-3 w-3 opacity-50" /> {memberCount}
               </span>
-              <span className="flex items-center gap-1.5">
-                <TrendingUp className="h-3 w-3" /> {tripCount} EVT
+              <span className="flex items-center gap-1">
+                <TrendingUp className="h-3 w-3 opacity-50" /> {tripCount}
               </span>
             </div>
-            <div className={`p-2 rounded-xl bg-white/10 group-hover/card:bg-gradient-to-r group-hover/card:${accent} transition-all`}>
-              <ChevronRight className="h-4 w-4 text-white group-hover/card:scale-125" />
+            <div className={`p-1.5 rounded-lg bg-white/5 border border-white/5 group-hover/card:bg-gradient-to-r group-hover/card:${accent} transition-all`}>
+              <ChevronRight className="h-3.5 w-3.5 text-white/40 group-hover/card:text-white" />
             </div>
           </div>
         </div>
@@ -198,55 +198,54 @@ export default function HomePage() {
               transition={{ delay: 0.1 }}
               className="space-y-4"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-purple-400 uppercase tracking-widest backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#80ff00]/10 border border-[#80ff00]/20 text-[9px] font-black text-[#80ff00] uppercase tracking-widest backdrop-blur-md">
                 <Sparkles className="h-3 w-3" />
-                <span>Dashboard Multi-Verse</span>
+                <span>Vault Overview</span>
               </div>
-              <h1 className="text-6xl md:text-8xl font-black mb-3 tracking-tighter uppercase italic leading-[0.85]">
-                <span className="text-white">YO,</span><br />
+              <h1 className="text-5xl md:text-7xl font-black mb-3 tracking-tighter uppercase italic leading-[0.9]">
+                <span className="text-white/40">WELCOME,</span><br />
                 <span className="text-gradient-vibrant animate-gradient">{user?.usernm || 'LEGEND'}</span>
               </h1>
-              <p className="text-white/40 text-xl font-black uppercase tracking-tighter max-w-sm italic">
-                Destroying debts in {groups?.length || 0} active squads.
+              <p className="text-white/30 text-base font-black uppercase tracking-tight max-w-sm italic">
+                Leading <span className="text-white hover:text-[#80ff00] transition-colors">{groups?.length || 0} active squads</span> to perfection.
               </p>
             </motion.div>
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-5 glass-card p-1 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden group"
+            className="lg:col-span-5 relative group"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-[#80ff00]/10 to-transparent pointer-events-none group-hover:opacity-60 transition-opacity" />
-            <div className="relative z-10 p-10 space-y-8">
-              <div className="flex items-center justify-between">
-                <div className="w-16 h-16 rounded-[2rem] bg-white/10 flex items-center justify-center border border-white/20 group-hover:rotate-6 transition-transform">
-                  <Coins className="h-8 w-8 text-white" />
+            <div className="absolute inset-0 bg-[#80ff00]/5 blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-1000" />
+            <div className="relative glass-card border-white/5 p-8 overflow-hidden">
+              <div className="flex items-center justify-between mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:rotate-6 transition-transform">
+                  <Coins className="h-6 w-6 text-[#80ff00]" />
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] uppercase font-black text-white/40 tracking-[.3em]">Status</p>
-                  <p className="text-[#80ff00] font-black italic">OPTIMIZED</p>
+                  <p className="text-[8px] uppercase font-black text-white/20 tracking-[.3em] mb-1">Status</p>
+                  <Badge className="bg-[#80ff00]/10 text-[#80ff00] border-none text-[9px] px-2">PERFECT VIBE</Badge>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <p className="text-[10px] uppercase font-black text-white/40 tracking-[.3em] mb-2">Wealth Map (By Currency)</p>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                <p className="text-[9px] uppercase font-black text-white/30 tracking-[.3em] mb-4">Currency Vaults</p>
+                <div className="grid grid-cols-2 gap-6">
                   {Object.entries(currencyTotals).length > 0 ? (
                     Object.entries(currencyTotals).map(([sym, total]) => (
-                      <div key={sym} className="group/item">
-                        <p className="text-[11px] font-black text-white/60 mb-1 flex items-center gap-2 italic">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      <div key={sym} className="group/item border-l border-white/5 pl-4 py-1">
+                        <p className="text-[10px] font-black text-white/40 mb-1 flex items-center gap-2 italic uppercase tracking-tighter">
                           {CURRENCY_NAMES[sym] || sym}
                         </p>
-                        <h2 className="text-2xl font-black text-white tabular-nums tracking-tighter">
+                        <h2 className="text-xl font-black text-white tabular-nums tracking-tighter">
                           {formatMoney(total, sym)}
                         </h2>
                       </div>
                     ))
                   ) : (
-                    <p className="text-white/20 text-xs font-black italic uppercase">No Activity Detected</p>
+                    <p className="text-white/20 text-[9px] font-black italic uppercase">No Data Found</p>
                   )}
                 </div>
               </div>
@@ -255,31 +254,31 @@ export default function HomePage() {
         </div>
 
         {/* ── Control Bar ─────────────────────────────────────────────── */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
-          <div className="relative w-full md:max-w-xl group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-[#80ff00] transition-colors" />
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
+          <div className="relative w-full md:max-w-md group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20 group-focus-within:text-[#80ff00] transition-colors" />
             <Input
-              className="pl-14 h-14 rounded-[1.5rem] bg-white/5 border-white/10 focus:border-[#80ff00]/50 backdrop-blur-xl transition-all text-lg font-bold placeholder:text-white/20 placeholder:uppercase placeholder:italic shadow-inner"
-              placeholder="Find your squad..."
+              className="pl-12 h-12 rounded-2xl bg-white/5 border-white/5 focus:border-[#80ff00]/40 backdrop-blur-3xl transition-all text-sm font-bold placeholder:text-white/10 placeholder:uppercase placeholder:italic"
+              placeholder="Search Squads..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <Select value={filterBy} onValueChange={setFilterBy}>
-              <SelectTrigger className="h-14 rounded-[1.5rem] glass-button text-white border-white/10 flex-1 md:w-56 font-black uppercase text-xs italic tracking-widest">
+              <SelectTrigger className="h-12 rounded-2xl bg-white/5 text-white/60 border-white/5 flex-1 md:w-48 font-black uppercase text-[10px] italic tracking-widest hover:text-white transition-colors">
                 <SelectValue placeholder="Vibe Check" />
               </SelectTrigger>
-              <SelectContent className="bg-[#121218] border-white/10 rounded-2xl">
-                <SelectItem value="all" className="text-white/70 focus:text-white focus:bg-white/5 uppercase font-black text-[10px] italic">All Vibes</SelectItem>
-                <SelectItem value="admin" className="text-white/70 focus:text-white focus:bg-white/5 uppercase font-black text-[10px] italic">Owned by Me</SelectItem>
-                <SelectItem value="member" className="text-white/70 focus:text-white focus:bg-white/5 uppercase font-black text-[10px] italic">Guest List</SelectItem>
+              <SelectContent className="bg-[#08080a] border-white/10 rounded-2xl">
+                <SelectItem value="all" className="text-white/40 focus:text-white focus:bg-white/5 uppercase font-black text-[9px] italic">Show All</SelectItem>
+                <SelectItem value="admin" className="text-white/40 focus:text-white focus:bg-white/5 uppercase font-black text-[9px] italic">Owner Mode</SelectItem>
+                <SelectItem value="member" className="text-white/40 focus:text-white focus:bg-white/5 uppercase font-black text-[9px] italic">Guest Mode</SelectItem>
               </SelectContent>
             </Select>
-            <Button asChild className="h-14 w-14 md:w-auto md:px-8 rounded-[1.5rem] bg-white hover:bg-white/90 text-black font-black uppercase italic tracking-tighter gap-3 shadow-[0_0_30px_rgba(255,255,255,0.15)] group">
+            <Button asChild className="h-12 w-12 md:w-auto md:px-6 rounded-2xl bg-[#80ff00] hover:bg-[#80ff00]/90 text-black font-black uppercase italic tracking-tighter gap-2 shadow-[0_0_20px_rgba(128,255,0,0.2)] group">
               <Link href="/groups/create" className="flex items-center">
-                <Plus className="h-6 w-6 group-hover:rotate-90 transition-transform" />
-                <span className="hidden md:inline">Spawn Group</span>
+                <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" />
+                <span className="hidden md:inline text-[11px]">Spawn</span>
               </Link>
             </Button>
           </div>

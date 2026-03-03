@@ -261,10 +261,7 @@ router.put("/updateUserInfo", authenticateToken, async (req, res) => {
   const allowedFields = [
     "phone_number",
     "email",
-    "first_name",
-    "last_name",
     "profile_url",
-    "device_id",
   ];
 
   // Filter out any fields that are not in the allowed list
@@ -350,7 +347,7 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
 
   try {
     const sql = `
-      SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_id
+      SELECT phone_number, email, usernm, profile_url, telegram_id
       FROM user_infm
       WHERE id = $1;
     `;
@@ -412,7 +409,7 @@ router.post(
       const { originalname, mimetype, buffer } = req.file;
       const { _id: user_id } = req.user;
       const sql = `
-      SELECT phone_number, email, first_name, last_name, usernm, profile_url, device_id, telegram_id
+      SELECT phone_number, email, usernm, profile_url, telegram_id
       FROM user_infm
       WHERE id = $1;
     `;
