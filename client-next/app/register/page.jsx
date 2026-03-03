@@ -58,7 +58,7 @@ function RegisterForm() {
           onClick={() => window.open('https://t.me/tinynotie_bot', '_blank')}
         >
           <Send className="mr-2 h-4 w-4" />
-          Open @DarabothBot
+          Open @TinyNotie
         </Button>
       ),
     },
