@@ -28,6 +28,7 @@ import { ShareModal } from '@/components/ShareModal';
 import { GroupVisibilitySettings } from '@/components/GroupVisibilitySettings';
 import { ReceiptScanner } from '@/components/ReceiptScanner';
 import { AddUserToGroup } from '@/components/AddUserToGroup';
+import { SelectTripDialog } from '@/components/SelectTripDialog';
 import { calculateMoney, formatTimeDifference } from '@/utils/helpers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -73,6 +74,7 @@ export function GroupPageClient({ groupId }) {
   const [editMemberOpen, setEditMemberOpen] = useState(false);
   const [editMemberMode, setEditMemberMode] = useState(false); // false=add, true=edit
   const [addUserOpen, setAddUserOpen] = useState(false);
+  const [selectTripOpen, setSelectTripOpen] = useState(false);
   const [editTripOpen, setEditTripOpen] = useState(false);
   const [deleteMemberOpen, setDeleteMemberOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -196,7 +198,12 @@ export function GroupPageClient({ groupId }) {
       toast.error('No trips to edit');
       return;
     }
-    setSelectedTrip(sortedTrips[0]);
+    // Open trip selection dialog instead of directly opening edit
+    setSelectTripOpen(true);
+  };
+
+  const handleTripSelected = (trip) => {
+    setSelectedTrip(trip);
     setEditTripOpen(true);
   };
 
@@ -919,6 +926,7 @@ export function GroupPageClient({ groupId }) {
       {/* Panels & Dialogs */}
       <EditMember open={editMemberOpen} onClose={() => setEditMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />
       <AddUserToGroup open={addUserOpen} onClose={() => setAddUserOpen(false)} groupId={groupId} existingMembers={members} />
+      <SelectTripDialog open={selectTripOpen} onClose={() => setSelectTripOpen(false)} trips={sortedTrips} onSelectTrip={handleTripSelected} currency={currency} />
       <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
       <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
       <StreamingChat open={chatOpen} onClose={() => setChatOpen(false)} groupId={groupId} />
