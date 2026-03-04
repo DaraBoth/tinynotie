@@ -41,8 +41,8 @@ export function SelectTripDialog({ open, onClose, trips = [], onSelectTrip, curr
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 px-6 py-4">
-          <div className="space-y-3">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-6 py-4 space-y-3">
             {trips.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <FileText className="h-12 w-12 mb-3 opacity-30" />

@@ -165,7 +165,7 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="px-6 py-4 space-y-6">
             {/* Bank details */}
             <div className="grid grid-cols-2 gap-4">
