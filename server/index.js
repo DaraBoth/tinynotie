@@ -14,8 +14,8 @@ import telegrambotRoutes from "./routes/telegrambot.js";
 import { initTelegramBot } from "./services/telegramBotService.js";
 
 // Initialize Telegram Bot early for serverless support
-initTelegramBot(process.env.TELEGRAM_BOT_TOKEN_NEW);
-
+const bot = initTelegramBot(process.env.TELEGRAM_BOT_TOKEN_NEW);
+bot.launch();
 import daraboth from "./routes/daraboth.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
