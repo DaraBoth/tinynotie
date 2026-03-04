@@ -61,7 +61,7 @@ function GroupCard({ group, index, onDelete }) {
       className="relative group/card h-full"
     >
       <Link href={`/groups/${group.id}`} className="block relative h-full">
-        <div className="relative h-full glass-card border-border/10 overflow-hidden group-hover/card:border-border/30 p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:-rotate-1">
+        <div className="relative h-full glass-card border-border/10 overflow-hidden group-hover/card:border-border/30 p-6 flex flex-col justify-between transition-all duration-300 md:hover:scale-[1.02] md:hover:-rotate-1">
 
           {/* Subtle Accent Glow */}
           <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${accent} opacity-80 group-hover/card:opacity-100 transition-opacity`} />
