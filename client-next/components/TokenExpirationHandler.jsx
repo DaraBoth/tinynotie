@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
@@ -9,9 +9,17 @@ export function TokenExpirationHandler() {
   const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
   const token = useAuthStore((state) => state.token);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const hasShownExpirationToast = useRef(false);
 
   useEffect(() => {
-    if (!token) return;
+    // Wait for store to hydrate before checking token
+    if (!hasHydrated) return;
+    
+    if (!token) {
+      hasShownExpirationToast.current = false;
+      return;
+    }
 
     // Check token expiration
     try {
@@ -20,8 +28,11 @@ export function TokenExpirationHandler() {
       const currentTime = Date.now();
       const timeUntilExpiration = expirationTime - currentTime;
 
+      console.log('[Auth] Token will expire in', Math.floor(timeUntilExpiration / 1000 / 60), 'minutes');
+
       if (timeUntilExpiration <= 0) {
         // Token already expired
+        console.warn('[Auth] Token has expired');
         handleTokenExpiration();
         return;
       }
@@ -48,12 +59,16 @@ export function TokenExpirationHandler() {
 
       return () => clearTimeout(timeoutId);
     } catch (error) {
-      console.error('Error parsing token:', error);
-      handleTokenExpiration();
+      console.error('[Auth] Error parsing token:', error);
+      // Don't logout on parse error - might be a malformed token but still valid
+      // handleTokenExpiration();
     }
-  }, [token]);
+  }, [token, hasHydrated]);
 
   const handleTokenExpiration = () => {
+    if (hasShownExpirationToast.current) return;
+    hasShownExpirationToast.current = true;
+    
     logout();
     toast.error('Your session has expired. Please login again.');
     router.push('/login');

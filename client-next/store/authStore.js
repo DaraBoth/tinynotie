@@ -67,14 +67,25 @@ export const useAuthStore = create(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
         // Called once localStorage has been read and the store is hydrated.
-        // Also re-sync cookie in case it expired while localStorage still has data.
+        // ALWAYS set hydration flag, even if there's no persisted state or an error.
+        if (error) {
+          console.warn('[Auth] Hydration error:', error);
+        }
+        
         if (state) {
+          // Re-sync cookie when valid auth data is restored from localStorage
           if (state.token && state.isAuthenticated) {
             setCookie(AUTH_COOKIE, state.token);
+            console.log('[Auth] Session restored from localStorage');
           }
           state.setHasHydrated(true);
+        } else {
+          // No persisted state found — initialize an empty auth store
+          // We need to manually trigger setHasHydrated for the initial empty state
+          useAuthStore.setState({ _hasHydrated: true });
+          console.log('[Auth] No persisted session found');
         }
       },
     }

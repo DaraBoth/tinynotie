@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
@@ -28,12 +28,21 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/home';
   const setAuth = useAuthStore((state) => state.setAuth);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const [showPassword, setShowPassword] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [formData, setFormData] = useState({
     usernm: '',
     passwd: '',
   });
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (hasHydrated && isAuthenticated) {
+      router.replace(redirectTo);
+    }
+  }, [hasHydrated, isAuthenticated, router, redirectTo]);
 
   const loginMutation = useMutation({
     mutationFn: (credentials) => api.login(credentials),
@@ -70,8 +79,8 @@ function LoginForm() {
     }));
   };
 
-  if (loginMutation.isPending || isRedirecting) {
-    return <Loading text={isRedirecting ? 'Redirecting...' : 'Logging in...'} />;
+  if (!hasHydrated || loginMutation.isPending || isRedirecting) {
+    return <Loading text={isRedirecting ? 'Redirecting...' : !hasHydrated ? 'Loading...' : 'Logging in...'} />;
   }
 
   return (

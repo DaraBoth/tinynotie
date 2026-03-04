@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -37,7 +38,16 @@ export default function RegisterPage() {
 
 function RegisterForm() {
   const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const [copiedCommand, setCopiedCommand] = useState(null);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (hasHydrated && isAuthenticated) {
+      router.replace('/home');
+    }
+  }, [hasHydrated, isAuthenticated, router]);
 
   const copyToClipboard = (text, commandType) => {
     navigator.clipboard.writeText(text);

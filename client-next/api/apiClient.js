@@ -36,6 +36,7 @@ apiClient.interceptors.request.use(
     const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // console.log('[API] Request with auth:', config.url);
     }
     return config;
   },
@@ -47,16 +48,20 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      console.warn('[API] 401 Unauthorized:', error.config?.url);
       // Only clear auth + redirect when we're NOT already on the login page.
       // Avoids infinite redirect loops when a stale/unauthenticated request
       // fires before the store is fully hydrated.
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
         // Check if we actually have a token — if we do, it's genuinely expired;
         // if we don't, it was a request fired before hydration, so just ignore.
         const token = getToken();
         if (token) {
+          console.warn('[API] Token expired or invalid, logging out');
           useAuthStore.getState().logout();
           window.location.href = '/login';
+        } else {
+          console.log('[API] 401 but no token found, ignoring');
         }
       }
     }
