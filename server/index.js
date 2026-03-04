@@ -11,11 +11,23 @@ import authRoutes from "./routes/auth.js"
 import apiRoutes from "./routes/api.js"
 import openAiRoutes from "./routes/openai.js";
 import telegrambotRoutes from "./routes/telegrambot.js";
-import { initTelegramBot } from "./services/telegramBotService.js";
+import { initTelegramBot, setupWebhook } from "./services/telegramBotService.js";
 
-// Initialize Telegram Bot early for serverless support
+// Initialize Telegram Bot for webhook mode (no polling)
 const bot = initTelegramBot(process.env.TELEGRAM_BOT_TOKEN_NEW);
-bot.launch();
+
+// Setup webhook if running on Vercel or with webhook URL configured
+const setupWebhookOnStart = async () => {
+  if (process.env.TELEGRAM_WEBHOOK_URL) {
+    try {
+      await setupWebhook(process.env.TELEGRAM_WEBHOOK_URL);
+      console.log('[Telegram] Webhook configured:', process.env.TELEGRAM_WEBHOOK_URL);
+    } catch (err) {
+      console.error('[Telegram] Failed to setup webhook:', err.message);
+    }
+  }
+};
+
 import daraboth from "./routes/daraboth.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsDoc from "swagger-jsdoc";
@@ -142,8 +154,11 @@ app.use("/daraboth", daraboth);
 
 /* SERVER SETUP */
 const PORT = process.env.PORT || 9000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`Example app listening at http://localhost:${PORT}`);
+  
+  // Setup Telegram webhook on startup
+  await setupWebhookOnStart();
 });
 
 export default app;

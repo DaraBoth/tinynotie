@@ -9,7 +9,7 @@ import axios from 'axios';
 let bot;
 
 /**
- * Initialize the Telegram Bot
+ * Initialize the Telegram Bot with webhook mode
  */
 export const initTelegramBot = (token) => {
     if (!token) {
@@ -17,6 +17,7 @@ export const initTelegramBot = (token) => {
         return;
     }
 
+    // Initialize Telegraf without launching (no polling)
     bot = new Telegraf(token);
 
     // Middleware to attach TinyNotie user info to ctx
@@ -284,6 +285,46 @@ export const initTelegramBot = (token) => {
     });
 
     return bot;
+};
+
+/**
+ * Setup Telegram Webhook
+ * Call this after your Express server is running
+ */
+export const setupWebhook = async (webhookUrl) => {
+    if (!bot) {
+        console.error('[Telegram] Bot not initialized. Cannot setup webhook.');
+        return false;
+    }
+
+    try {
+        // Remove any existing webhook first
+        await bot.telegram.deleteWebhook();
+        
+        // Set the new webhook
+        await bot.telegram.setWebhook(webhookUrl, {
+            allowed_updates: ['message', 'callback_query', 'my_chat_member']
+        });
+        
+        console.log(`[Telegram] Webhook set successfully to: ${webhookUrl}`);
+        return true;
+    } catch (err) {
+        console.error('[Telegram] Error setting webhook:', err.message);
+        return false;
+    }
+};
+
+/**
+ * Get webhook info (useful for debugging)
+ */
+export const getWebhookInfo = async () => {
+    if (!bot) return null;
+    try {
+        return await bot.telegram.getWebhookInfo();
+    } catch (err) {
+        console.error('[Telegram] Error getting webhook info:', err);
+        return null;
+    }
 };
 
 /**
