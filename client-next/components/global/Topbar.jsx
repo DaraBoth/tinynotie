@@ -114,18 +114,6 @@ export function Topbar() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 bg-popover border-border rounded-[2rem] p-4 shadow-2xl backdrop-blur-xl">
-                <DropdownMenuLabel className="px-4 pb-4">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-xs font-black text-white/40 uppercase tracking-widest mb-1 italic">User Profile</p>
-                    <p className="text-lg font-black text-white uppercase italic leading-none tracking-tighter">
-                      {user?.usernm || 'Anonymous'}
-                    </p>
-                    <p className="text-[10px] font-bold text-foreground/30 uppercase tracking-tighter">
-                      {user?.email || ''}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/5 mx-2 my-2" />
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center gap-4 p-4 rounded-2xl cursor-pointer hover:bg-foreground/5 group">
                     <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center group-hover:bg-[#80ff00]/20 transition-all">
