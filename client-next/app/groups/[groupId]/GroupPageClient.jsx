@@ -191,6 +191,15 @@ export function GroupPageClient({ groupId }) {
     (a, b) => new Date(b.update_dttm || b.create_date) - new Date(a.update_dttm || a.create_date)
   );
 
+  const openEditTripFromAction = () => {
+    if (sortedTrips.length === 0) {
+      toast.error('No trips to edit');
+      return;
+    }
+    setSelectedTrip(sortedTrips[0]);
+    setEditTripOpen(true);
+  };
+
   const getPayerName = (trip) => {
     if (!trip.payer_id) return '—';
     const m = members.find((m) => m.id === Number(trip.payer_id));
@@ -540,6 +549,12 @@ export function GroupPageClient({ groupId }) {
                 onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
                 <Plus className="h-3.5 w-3.5" /> Add Trip
               </Button>
+              {sortedTrips.length > 0 && (
+                <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
+                  onClick={openEditTripFromAction}>
+                  <FileStack className="h-3.5 w-3.5" /> Edit Trip
+                </Button>
+              )}
               <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
                 onClick={() => setScannerOpen(true)}>
                 <ScanLine className="h-3.5 w-3.5" /> Scan Receipt
@@ -840,6 +855,18 @@ export function GroupPageClient({ groupId }) {
               </div>
               <span className="text-xs font-semibold text-center leading-tight">Add Trip</span>
             </button>
+
+            {/* Edit Trip */}
+            {sortedTrips.length > 0 && (
+              <button
+                onClick={() => openPanel(() => openEditTripFromAction())}
+                className="flex flex-col items-center gap-2.5 py-4 px-2 rounded-2xl active:bg-muted/60 transition-colors">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+                  <FileStack className="h-6 w-6 text-amber-400" />
+                </div>
+                <span className="text-xs font-semibold text-center leading-tight">Edit Trip</span>
+              </button>
+            )}
 
             {/* Scan Receipt */}
             <button
