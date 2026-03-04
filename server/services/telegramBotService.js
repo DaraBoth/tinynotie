@@ -81,6 +81,15 @@ export const initTelegramBot = (token) => {
         );
     });
 
+    // /chat_id command - helps users discover the current Telegram chat ID
+    bot.command('chat_id', async (ctx) => {
+        const chatTitle = ctx.chat?.title || ctx.chat?.username || 'this chat';
+        return ctx.reply(
+            `🆔 Chat ID for *${chatTitle}*: \`${ctx.chat.id}\`\n\nUse this ID in TinyNotie to link Telegram group chat.`,
+            { parse_mode: 'Markdown' }
+        );
+    });
+
     // /link_group command - links a Telegram chat (group) to a TinyNotie group
     bot.command('link_group', async (ctx) => {
         if (!ctx.user) return ctx.reply('Please link your account first via private message to the bot.');
@@ -200,7 +209,12 @@ export const initTelegramBot = (token) => {
 
     // Handle natural language messages (Agentic AI)
     bot.on('text', async (ctx) => {
-        if (!ctx.user) return; // Ignore if not linked
+        if (!ctx.user) {
+            if (ctx.chat?.type === 'private') {
+                return ctx.reply('Please link your TinyNotie account first from the web app, then send /start again.');
+            }
+            return;
+        }
         if (ctx.message.text.startsWith('/')) return; // Ignore commands
 
         // Find if this group is linked
@@ -284,6 +298,26 @@ export const initTelegramBot = (token) => {
         }
     });
 
+    // When bot is added to a group, provide setup instructions with chat ID
+    bot.on('new_chat_members', async (ctx) => {
+        try {
+            const me = await bot.telegram.getMe();
+            const addedBot = (ctx.message?.new_chat_members || []).some((m) => m.id === me.id);
+            if (!addedBot) return;
+
+            await ctx.reply(
+                `👋 Thanks for adding TinyNotie bot!\n\n` +
+                `🆔 This group chat ID is: \`${ctx.chat.id}\`\n\n` +
+                `Next steps:\n` +
+                `1) Link your TinyNotie account in private chat with this bot\n` +
+                `2) In TinyNotie group settings, paste this chat ID to link this group`,
+                { parse_mode: 'Markdown' }
+            );
+        } catch (err) {
+            console.error('[Telegram] new_chat_members handler error:', err.message);
+        }
+    });
+
     return bot;
 };
 
@@ -324,6 +358,20 @@ export const getWebhookInfo = async () => {
     } catch (err) {
         console.error('[Telegram] Error getting webhook info:', err);
         return null;
+    }
+};
+
+/**
+ * Send a Telegram message to any chat_id (group or personal)
+ */
+export const sendTelegramMessageToChat = async (chatId, message, options = { parse_mode: 'Markdown' }) => {
+    if (!bot) return false;
+    try {
+        await bot.telegram.sendMessage(chatId, message, options);
+        return true;
+    } catch (err) {
+        console.error(`[Telegram] sendMessage failed for chat ${chatId}:`, err.message);
+        return false;
     }
 };
 

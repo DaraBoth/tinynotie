@@ -96,6 +96,8 @@ export const api = {
   getGroupById: (groupId, userId) => apiClient.get('/api/getGroupDetail', { params: { group_id: groupId, user_id: userId } }),
   updateGroupVisibility: (data) => apiClient.post('/api/updateGroupVisibility', data),
   deleteGroup: (groupId) => apiClient.delete('/api/deleteGroupById', { params: { group_id: groupId } }),
+  getTelegramLinkStatus: (groupId) => apiClient.get('/api/getTelegramLinkStatus', { params: { group_id: groupId } }),
+  linkTelegramGroupChat: (data) => apiClient.post('/api/linkTelegramGroupChat', data),
 
   // Members
   getAllMembers: () => apiClient.get('/api/getAllMember'),

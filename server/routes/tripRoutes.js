@@ -2,7 +2,7 @@ import express from "express";
 import { authenticateToken } from "../middleware/auth.js";
 import { pool, handleError, sanitizeIntegerField } from "../utils/db.js";
 import moment from "moment";
-import { notifyGroup } from "../services/telegramBotService.js";
+import { getBot, notifyGroup } from "../services/telegramBotService.js";
 
 const router = express.Router();
 
@@ -557,8 +557,9 @@ router.delete("/deleteTripById", authenticateToken, async (req, res) => {
  *                 type: integer
  */
 router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
-  const { group_id } = req.body;
+  const { group_id, targetType = 'group' } = req.body;
   const username = req.user.usernm;
+  const userId = req.user._id;
 
   try {
     // Get group info
@@ -606,11 +607,31 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
 
     summary += `👤 Shared by: *${username}*`;
 
-    const success = await notifyGroup(group_id, summary);
-    if (success) {
-      res.send({ status: true, message: "Member summary shared to Telegram!" });
+    let success = false;
+    if (targetType === 'personal') {
+      const userRes = await pool.query("SELECT telegram_id FROM user_infm WHERE id = $1", [userId]);
+      const chatId = userRes.rows?.[0]?.telegram_id;
+      if (!chatId) {
+        return res.send({ status: false, message: "Your personal Telegram is not linked yet." });
+      }
+      const bot = getBot();
+      if (!bot) {
+        return res.status(500).json({ status: false, message: "Telegram bot is not initialized." });
+      }
+      try {
+        await bot.telegram.sendMessage(chatId, summary, { parse_mode: 'Markdown' });
+        success = true;
+      } catch {
+        success = false;
+      }
     } else {
-      res.send({ status: false, message: "Failed to share. Is the Telegram group linked?" });
+      success = await notifyGroup(group_id, summary);
+    }
+
+    if (success) {
+      res.send({ status: true, message: targetType === 'personal' ? "Member summary sent to your personal Telegram!" : "Member summary shared to Telegram!" });
+    } else {
+      res.send({ status: false, message: targetType === 'personal' ? "Failed to send to your personal Telegram." : "Failed to share. Is the Telegram group linked?" });
     }
   } catch (error) {
     console.error("Share members error:", error);
@@ -642,8 +663,9 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
  *         description: Trip shared successfully
  */
 router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
-  const { trip_id, group_id } = req.body;
+  const { trip_id, group_id, targetType = 'group' } = req.body;
   const username = req.user.usernm;
+  const userId = req.user._id;
 
   try {
     const tripSql = `SELECT trp_name, spend, description FROM trp_infm WHERE id = $1 AND group_id = $2;`;
@@ -656,11 +678,31 @@ router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
     const trip = tripResult.rows[0];
     const message = `📢 *Sharing Expense*\n\n*${trip.trp_name}*\n💰 Amount: ${trip.spend.toLocaleString()}\n📝 Description: ${trip.description || 'N/A'}\n\n👤 Shared by: *${username}*`;
 
-    const success = await notifyGroup(group_id, message);
-    if (success) {
-      res.send({ status: true, message: "Shared to Telegram!" });
+    let success = false;
+    if (targetType === 'personal') {
+      const userRes = await pool.query("SELECT telegram_id FROM user_infm WHERE id = $1", [userId]);
+      const chatId = userRes.rows?.[0]?.telegram_id;
+      if (!chatId) {
+        return res.send({ status: false, message: "Your personal Telegram is not linked yet." });
+      }
+      const bot = getBot();
+      if (!bot) {
+        return res.status(500).json({ status: false, message: "Telegram bot is not initialized." });
+      }
+      try {
+        await bot.telegram.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        success = true;
+      } catch {
+        success = false;
+      }
     } else {
-      res.send({ status: false, message: "Failed to share. Is the Telegram group linked?" });
+      success = await notifyGroup(group_id, message);
+    }
+
+    if (success) {
+      res.send({ status: true, message: targetType === 'personal' ? "Shared to your personal Telegram!" : "Shared to Telegram!" });
+    } else {
+      res.send({ status: false, message: targetType === 'personal' ? "Failed to share to personal Telegram." : "Failed to share. Is the Telegram group linked?" });
     }
   } catch (error) {
     console.error("Share to Telegram error:", error);

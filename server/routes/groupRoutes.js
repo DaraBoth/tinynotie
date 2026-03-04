@@ -2,7 +2,7 @@ import express from "express";
 import { authenticateToken } from "../middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
 import moment from "moment";
-import { notifyGroup } from "../services/telegramBotService.js";
+import { getBot, notifyGroup } from "../services/telegramBotService.js";
 
 const router = express.Router();
 
@@ -1072,17 +1072,178 @@ router.post("/askDatabase", authenticateToken, async (req, res) => {
   }
 });
 
+// Get Telegram link status for a TinyNotie group + current user
+router.get("/getTelegramLinkStatus", authenticateToken, async (req, res) => {
+  const { group_id } = req.query;
+  const { _id: user_id } = req.user;
+
+  if (!group_id) {
+    return res.status(400).json({ status: false, message: "group_id is required." });
+  }
+
+  try {
+    const accessSql = `
+      SELECT g.id, g.telegram_chat_id,
+             (g.admin_id = $2 OR EXISTS(
+                SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $2
+             )) AS has_access
+      FROM grp_infm g
+      WHERE g.id = $1
+    `;
+    const accessRes = await pool.query(accessSql, [group_id, user_id]);
+
+    if (accessRes.rows.length === 0 || !accessRes.rows[0].has_access) {
+      return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
+    }
+
+    const userRes = await pool.query(
+      "SELECT telegram_id FROM user_infm WHERE id = $1",
+      [user_id]
+    );
+
+    let linkedChat = null;
+    const chatId = accessRes.rows[0].telegram_chat_id;
+    if (chatId) {
+      const bot = getBot();
+      if (bot) {
+        try {
+          const chat = await bot.telegram.getChat(chatId);
+          linkedChat = {
+            id: chat.id,
+            title: chat.title || chat.username || null,
+            type: chat.type,
+          };
+        } catch {
+          linkedChat = { id: chatId, title: null, type: null };
+        }
+      } else {
+        linkedChat = { id: chatId, title: null, type: null };
+      }
+    }
+
+    return res.json({
+      status: true,
+      data: {
+        personal_chat_linked: !!userRes.rows?.[0]?.telegram_id,
+        personal_chat_id: userRes.rows?.[0]?.telegram_id || null,
+        group_chat_linked: !!chatId,
+        linked_group_chat: linkedChat,
+      },
+    });
+  } catch (error) {
+    console.error("getTelegramLinkStatus error:", error);
+    return res.status(500).json({ status: false, message: "Server error.", error: error.message });
+  }
+});
+
+// Link a TinyNotie group with a Telegram group chat ID entered by user
+router.post("/linkTelegramGroupChat", authenticateToken, async (req, res) => {
+  const { group_id, group_chat_id } = req.body;
+  const { _id: user_id } = req.user;
+
+  if (!group_id || group_chat_id === undefined || group_chat_id === null) {
+    return res.status(400).json({ status: false, message: "group_id and group_chat_id are required." });
+  }
+
+  const parsedChatId = Number(group_chat_id);
+  if (!Number.isFinite(parsedChatId)) {
+    return res.status(400).json({ status: false, message: "group_chat_id must be a valid number." });
+  }
+
+  try {
+    const accessSql = `
+      SELECT g.id,
+             (g.admin_id = $2 OR EXISTS(
+                SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $2
+             )) AS has_access
+      FROM grp_infm g
+      WHERE g.id = $1
+    `;
+    const accessRes = await pool.query(accessSql, [group_id, user_id]);
+
+    if (accessRes.rows.length === 0 || !accessRes.rows[0].has_access) {
+      return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
+    }
+
+    const userRes = await pool.query(
+      "SELECT telegram_id FROM user_infm WHERE id = $1",
+      [user_id]
+    );
+    const userTelegramId = Number(userRes.rows?.[0]?.telegram_id);
+
+    if (!Number.isFinite(userTelegramId)) {
+      return res.status(400).json({
+        status: false,
+        message: "Your personal Telegram account is not linked yet. Please link it first from TinyNotie.",
+      });
+    }
+
+    const bot = getBot();
+    if (!bot) {
+      return res.status(500).json({ status: false, message: "Telegram bot is not initialized." });
+    }
+
+    let chat;
+    try {
+      chat = await bot.telegram.getChat(parsedChatId);
+    } catch {
+      return res.status(400).json({
+        status: false,
+        message: "Bot cannot access this chat ID. Add bot to that group and send /chat_id there first.",
+      });
+    }
+
+    if (!['group', 'supergroup'].includes(chat.type)) {
+      return res.status(400).json({ status: false, message: "Provided chat ID is not a Telegram group chat." });
+    }
+
+    try {
+      const member = await bot.telegram.getChatMember(parsedChatId, userTelegramId);
+      const allowed = ['creator', 'administrator', 'member'];
+      if (!allowed.includes(member.status)) {
+        return res.status(403).json({
+          status: false,
+          message: "Your Telegram account is not a member of that group.",
+        });
+      }
+    } catch {
+      return res.status(403).json({
+        status: false,
+        message: "Unable to verify your membership in that Telegram group.",
+      });
+    }
+
+    await pool.query(
+      "UPDATE grp_infm SET telegram_chat_id = $1 WHERE id = $2",
+      [parsedChatId, group_id]
+    );
+
+    return res.json({
+      status: true,
+      message: "Telegram group chat linked successfully.",
+      data: {
+        telegram_chat_id: parsedChatId,
+        chat_title: chat.title || null,
+        chat_type: chat.type,
+      },
+    });
+  } catch (error) {
+    console.error("linkTelegramGroupChat error:", error);
+    return res.status(500).json({ status: false, message: "Server error during linking.", error: error.message });
+  }
+});
+
 
 // Share member summary to linked Telegram group
 router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
-  const { groupId, group_id } = req.body;
+  const { groupId, group_id, targetType = 'group' } = req.body;
   const { _id: user_id } = req.user;
 
   if (!groupId && !group_id) {
     return res.status(400).json({ status: false, message: "groupId is required." });
   }
 
-  let groupid = groupId || group_id
+  const groupid = groupId || group_id;
 
   try {
     // 1. Double check access
@@ -1110,7 +1271,7 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
       FROM member_infm m
       WHERE m.group_id = $1;
     `;
-    const membersRes = await pool.query(membersSql, [groupId]);
+    const membersRes = await pool.query(membersSql, [groupid]);
     const members = membersRes.rows;
 
     if (members.length === 0) {
@@ -1127,13 +1288,32 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
 
     message += `_Generated via TinyNotie Portal_`;
 
-    // 4. Send to Telegram
-    const sent = await notifyGroup(groupId, message);
+    // 4. Send to Telegram (group or personal)
+    let sent = false;
+    if (targetType === 'personal') {
+      const userRes = await pool.query('SELECT telegram_id FROM user_infm WHERE id = $1', [user_id]);
+      const personalChatId = userRes.rows?.[0]?.telegram_id;
+      if (!personalChatId) {
+        return res.status(400).json({ status: false, message: 'Your personal Telegram is not linked yet. Link your Telegram account first.' });
+      }
+      const bot = getBot();
+      if (!bot) {
+        return res.status(500).json({ status: false, message: 'Telegram bot is not initialized.' });
+      }
+      try {
+        await bot.telegram.sendMessage(personalChatId, message, { parse_mode: 'Markdown' });
+        sent = true;
+      } catch (err) {
+        console.error('shareMembersToTelegram personal send error:', err.message);
+      }
+    } else {
+      sent = await notifyGroup(groupid, message);
+    }
 
     if (sent) {
-      res.json({ status: true, message: "Summary shared to Telegram group!" });
+      res.json({ status: true, message: targetType === 'personal' ? 'Summary sent to your personal Telegram chat!' : 'Summary shared to Telegram group!' });
     } else {
-      res.status(400).json({ status: false, message: "Failed to share. Is this group linked to an active Telegram chat? Use /link_group in Telegram." });
+      res.status(400).json({ status: false, message: targetType === 'personal' ? 'Failed to send to your personal Telegram chat.' : 'Failed to share. Is this group linked to an active Telegram chat? Use /chat_id then link by group chat ID in app settings.' });
     }
 
   } catch (error) {

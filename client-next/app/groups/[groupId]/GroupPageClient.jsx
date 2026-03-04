@@ -85,15 +85,37 @@ export function GroupPageClient({ groupId }) {
   const [fabOpen, setFabOpen] = useState(false);
   const [expandedMemberId, setExpandedMemberId] = useState(null);
   const [telegramLoading, setTelegramLoading] = useState(false);
+  const [telegramTargetType, setTelegramTargetType] = useState('group');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = window.localStorage.getItem(`telegram-target-${groupId}`);
+    if (saved === 'group' || saved === 'personal') {
+      setTelegramTargetType(saved);
+    }
+  }, [groupId]);
+
+  const handleChangeTelegramTarget = (target) => {
+    setTelegramTargetType(target);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(`telegram-target-${groupId}`, target);
+    }
+  };
 
   const handleTelegramLink = async () => {
     try {
       setTelegramLoading(true);
+      const newWindow = window.open('', '_blank');
       const res = await api.getTelegramLink();
       if (res.data.status && res.data.link) {
-        window.open(res.data.link, '_blank');
+        if (newWindow) {
+          newWindow.location.href = res.data.link;
+        } else {
+          window.location.href = res.data.link;
+        }
         toast.success('Opening Telegram Bot...');
       } else {
+        if (newWindow) newWindow.close();
         toast.error('Failed to generate Telegram link');
       }
     } catch (err) {
@@ -130,7 +152,11 @@ export function GroupPageClient({ groupId }) {
   const handleShareTrip = async (e, trip) => {
     e.stopPropagation(); // Don't open edit modal
     try {
-      const res = await api.shareTripToTelegram({ trip_id: trip.id, group_id: groupId });
+      const res = await api.shareTripToTelegram({
+        trip_id: trip.id,
+        group_id: groupId,
+        targetType: telegramTargetType,
+      });
       if (res.data.status) {
         toast.success('Shared to Telegram!');
       } else {
@@ -144,7 +170,10 @@ export function GroupPageClient({ groupId }) {
 
   const handleShareMembers = async () => {
     try {
-      const res = await api.shareMembersToTelegram({ group_id: groupId });
+      const res = await api.shareMembersToTelegram({
+        group_id: groupId,
+        targetType: telegramTargetType,
+      });
       if (res.data.status) {
         toast.success('Member summary shared to Telegram!');
       } else {
@@ -231,6 +260,20 @@ export function GroupPageClient({ groupId }) {
           <Users className="h-3.5 w-3.5" /> Contributions
         </h2>
         <div className="flex items-center gap-2">
+          <div className="hidden sm:flex gap-1 bg-muted/60 p-1 rounded-lg">
+            <button
+              onClick={() => handleChangeTelegramTarget('group')}
+              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'group' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Group
+            </button>
+            <button
+              onClick={() => handleChangeTelegramTarget('personal')}
+              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'personal' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Personal
+            </button>
+          </div>
           <Button
             size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-foreground uppercase tracking-widest font-bold"
             onClick={() => {
@@ -370,6 +413,20 @@ export function GroupPageClient({ groupId }) {
           <TrendingUp className="h-3.5 w-3.5" /> Trips
         </h2>
         <div className="flex gap-1">
+          <div className="hidden sm:flex gap-1 bg-muted/60 p-1 rounded-lg mr-1">
+            <button
+              onClick={() => handleChangeTelegramTarget('group')}
+              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'group' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Group
+            </button>
+            <button
+              onClick={() => handleChangeTelegramTarget('personal')}
+              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'personal' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Personal
+            </button>
+          </div>
           <Button
             size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
             onClick={() => {
