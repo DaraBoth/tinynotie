@@ -682,13 +682,25 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
 
   try {
     // Check if the member already exists in the group
-    const checkSql = `SELECT id FROM member_infm WHERE mem_name = $1 AND group_id = $2;`;
-    const checkResult = await pool.query(checkSql, [mem_name, group_id]);
+    // If user_id is provided, check by user_id (prevents duplicate user accounts)
+    // Otherwise, check by mem_name (for manual member creation)
+    let checkSql, checkParams;
+    if (user_id) {
+      checkSql = `SELECT id FROM member_infm WHERE user_id = $1 AND group_id = $2;`;
+      checkParams = [user_id, group_id];
+    } else {
+      checkSql = `SELECT id FROM member_infm WHERE mem_name = $1 AND group_id = $2;`;
+      checkParams = [mem_name, group_id];
+    }
+    
+    const checkResult = await pool.query(checkSql, checkParams);
 
     if (checkResult.rows.length > 0) {
       return res.json({
         status: false,
-        message: `Member ${mem_name} already exists in this group!`
+        message: user_id 
+          ? `This user is already a member of this group!`
+          : `Member ${mem_name} already exists in this group!`
       });
     }
 
