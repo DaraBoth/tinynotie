@@ -4,15 +4,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { Share2, Copy, Check, Edit2, Save, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const LANG_LABELS = { EN: 'English', KH: 'Khmer', KR: 'Korean' };
 
@@ -151,76 +153,56 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden border-border/20 bg-background/95 backdrop-blur-2xl shadow-2xl rounded-3xl">
-        <div className="relative overflow-y-auto max-h-[90dvh]">
-          {/* Header with decorative background */}
-          <div className="relative px-6 pt-10 pb-6 overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/10 via-transparent to-purple-500/5 -z-10" />
-            <div className="absolute top-[-50%] left-[-20%] w-[100%] h-[200%] bg-[radial-gradient(circle,rgba(var(--primary-rgb),0.05)_0%,transparent_70%)] -z-10" />
+    <Sheet open={open} onOpenChange={onClose}>
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b">
+          <SheetTitle className="flex items-center gap-2">
+            <Share2 className="h-5 w-5" />
+            Share Invoice
+          </SheetTitle>
+          <SheetDescription>
+            Generate and share expense invoice with group members
+          </SheetDescription>
+        </SheetHeader>
 
-            <DialogHeader className="space-y-4">
-              <div className="flex items-center gap-5 relative">
-                <div className="absolute -inset-4 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center border border-primary/30 shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)] group-hover:scale-105 transition-transform relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                  <Share2 className="h-8 w-8 text-primary" />
-                </div>
-                <div>
-                  <DialogTitle className="text-4xl font-black tracking-tighter text-foreground uppercase italic leading-[0.8]">
-                    Share <br />
-                    <span className="text-primary italic-none tracking-normal">Invoice.</span>
-                  </DialogTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="h-1 w-1 rounded-full bg-primary animate-ping" />
-                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.3em] italic">Tactical Summary</p>
-                  </div>
-                </div>
-              </div>
-            </DialogHeader>
-          </div>
-
-          <div className="px-6 pb-8 space-y-8">
-            {/* Bank details - Refined */}
+        <ScrollArea className="flex-1">
+          <div className="px-6 py-4 space-y-6">
+            {/* Bank details */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 px-1">
-                  Bank Name
-                </Label>
+                <Label className="text-xs font-semibold">Bank Name</Label>
                 <Input
                   placeholder="e.g. KBank"
                   value={bankName}
                   onChange={(e) => handleBankName(e.target.value)}
-                  className="h-11 bg-muted/20 border-border/30 rounded-xl focus:ring-1 focus:ring-primary/50 transition-all font-medium"
+                  className="h-10 text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 px-1">
-                  Account No.
-                </Label>
+                <Label className="text-xs font-semibold">Account No.</Label>
                 <Input
                   placeholder="123-456-789"
                   value={bankAccount}
                   onChange={(e) => handleBankAccount(e.target.value)}
-                  className="h-11 bg-muted/20 border-border/30 rounded-xl focus:ring-1 focus:ring-primary/50 transition-all font-medium"
+                  className="h-10 text-sm"
                 />
               </div>
             </div>
 
-            {/* Language selector - Modern Pills */}
+            {/* Language selector */}
             <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 flex items-center gap-2 px-1">
-                <Globe className="h-3 w-3 text-primary" /> Language Mode
+              <Label className="text-xs font-semibold flex items-center gap-2">
+                <Globe className="h-3.5 w-3.5" /> Language
               </Label>
-              <div className="flex gap-2 p-2 bg-secondary/20 border border-primary/10 rounded-2xl">
+              <div className="flex gap-2">
                 {Object.keys(LANG_LABELS).map((l) => (
                   <button
                     key={l}
                     type="button"
                     onClick={() => setLang(l)}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black transition-all uppercase tracking-[0.2em] ${lang === l
-                      ? 'bg-background text-primary shadow-xl border border-primary/20 scale-[1.02]'
-                      : 'text-muted-foreground/60 hover:text-foreground hover:bg-foreground/5'
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${lang === l
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'bg-muted hover:bg-muted/80 text-muted-foreground'
                       }`}
                   >
                     {l}
@@ -229,11 +211,11 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
               </div>
             </div>
 
-            {/* Trip selector - Clean list */}
+            {/* Trip selector */}
             {trips.length > 0 && (
-              <div className="space-y-3">
-                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 px-1">
-                  Select Trips ({selectedIds.length}/{trips.length})
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">
+                  Trips ({selectedIds.length}/{trips.length})
                 </Label>
                 <div className="flex flex-wrap gap-2">
                   {trips.map((t) => (
@@ -241,9 +223,9 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
                       key={t.id}
                       type="button"
                       onClick={() => toggleTrip(t.id)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${selectedIds.includes(t.id)
-                        ? 'bg-primary/20 text-primary border-primary/50 shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)]'
-                        : 'bg-muted/10 border-border/30 text-muted-foreground hover:border-border/60'
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedIds.includes(t.id)
+                        ? 'bg-primary/20 text-primary border border-primary/30'
+                        : 'bg-muted border border-border/30 text-muted-foreground hover:bg-muted/80'
                         }`}
                     >
                       {t.trp_name}
@@ -253,82 +235,81 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
               </div>
             )}
 
-            {/* Invoice preview / editor - Code Block Style */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80">
-                  Digital Invoice
-                </Label>
+            {/* Invoice preview */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold">Invoice Preview</Label>
                 <button
                   type="button"
                   onClick={handleEditToggle}
-                  className="flex items-center gap-1.5 text-[10px] text-primary font-bold uppercase tracking-widest hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-1.5 text-xs text-primary font-medium hover:opacity-80 transition-opacity"
                 >
                   {isEditing ? (
-                    <><Save className="h-3 w-3" /> Save Changes</>
+                    <><Save className="h-3 w-3" /> Save</>
                   ) : (
-                    <><Edit2 className="h-3 w-3" /> Manual Edit</>
+                    <><Edit2 className="h-3 w-3" /> Edit</>
                   )}
                 </button>
               </div>
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-purple-500/20 to-primary/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative bg-muted/20 border border-border/30 rounded-2xl overflow-hidden backdrop-blur-md">
-                  <div className="flex items-center justify-between px-4 py-2 bg-foreground/5 border-b border-border/20">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/40" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/40" />
-                    </div>
-                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest italic">receipt_v2.0</span>
-                  </div>
-                  <Textarea
-                    value={isEditing ? editText : invoiceText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    readOnly={!isEditing}
-                    rows={10}
-                    className="font-mono text-[11px] leading-relaxed resize-none bg-transparent border-none rounded-none p-5 focus:ring-0 custom-scrollbar whitespace-pre-wrap select-all"
-                  />
-                </div>
+              <div className="relative rounded-lg border border-border/30 bg-muted/20 overflow-hidden">
+                <Textarea
+                  value={isEditing ? editText : invoiceText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  readOnly={!isEditing}
+                  rows={8}
+                  className="font-mono text-xs leading-relaxed resize-none bg-transparent border-none rounded-none p-3 focus:ring-0"
+                />
               </div>
             </div>
 
-            {/* External Links & Actions */}
-            <div className="pt-4 space-y-4">
-              <div className="grid grid-cols-1 gap-3">
-                <div className="p-4 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-between gap-4">
-                  <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Direct Link</span>
-                    <span className="text-xs font-medium truncate opacity-80">{shareUrl}</span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-xl shrink-0 hover:bg-background/50"
-                    onClick={() => {
-                      navigator.clipboard.writeText(shareUrl);
-                      toast.success('Link copied!');
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-
+            {/* Share link */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Share Link</Label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={shareUrl}
+                  className="text-xs h-10"
+                />
                 <Button
                   type="button"
-                  onClick={handleCopy}
-                  className="w-full h-14 rounded-2xl gap-3 text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareUrl);
+                    toast.success('Link copied!');
+                  }}
                 >
-                  {copied ? <Check className="h-5 w-5" /> : <Save className="h-5 w-5" />}
-                  {copied ? 'Copied!' : 'Copy to Clipboard'}
+                  <Copy className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           </div>
+        </ScrollArea>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t bg-background flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="flex-1"
+          >
+            Close
+          </Button>
+          <Button
+            onClick={handleCopy}
+            className="flex-1"
+          >
+            {copied ? (
+              <><Check className="mr-2 h-4 w-4" /> Copied!</>
+            ) : (
+              <><Copy className="mr-2 h-4 w-4" /> Copy Invoice</>
+            )}
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
 
   );
 }

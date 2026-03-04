@@ -27,6 +27,7 @@ import { StreamingChat } from '@/components/StreamingChat';
 import { ShareModal } from '@/components/ShareModal';
 import { GroupVisibilitySettings } from '@/components/GroupVisibilitySettings';
 import { ReceiptScanner } from '@/components/ReceiptScanner';
+import { AddUserToGroup } from '@/components/AddUserToGroup';
 import { calculateMoney, formatTimeDifference } from '@/utils/helpers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -71,6 +72,7 @@ export function GroupPageClient({ groupId }) {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [editMemberOpen, setEditMemberOpen] = useState(false);
   const [editMemberMode, setEditMemberMode] = useState(false); // false=add, true=edit
+  const [addUserOpen, setAddUserOpen] = useState(false);
   const [editTripOpen, setEditTripOpen] = useState(false);
   const [deleteMemberOpen, setDeleteMemberOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -531,6 +533,10 @@ export function GroupPageClient({ groupId }) {
                 <UserPlus className="h-3.5 w-3.5" /> Add Member
               </Button>
               <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
+                onClick={() => setAddUserOpen(true)}>
+                <Users className="h-3.5 w-3.5" /> Add User
+              </Button>
+              <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
                 onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
                 <Plus className="h-3.5 w-3.5" /> Add Trip
               </Button>
@@ -815,6 +821,16 @@ export function GroupPageClient({ groupId }) {
               <span className="text-xs font-semibold text-center leading-tight">Add Member</span>
             </button>
 
+            {/* Add User */}
+            <button
+              onClick={() => openPanel(() => setAddUserOpen(true))}
+              className="flex flex-col items-center gap-2.5 py-4 px-2 rounded-2xl active:bg-muted/60 transition-colors">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
+                <Users className="h-6 w-6 text-emerald-400" />
+              </div>
+              <span className="text-xs font-semibold text-center leading-tight">Add User</span>
+            </button>
+
             {/* Add Trip */}
             <button
               onClick={() => openPanel(() => { setSelectedTrip(null); setEditTripOpen(true); })}
@@ -875,6 +891,7 @@ export function GroupPageClient({ groupId }) {
 
       {/* Panels & Dialogs */}
       <EditMember open={editMemberOpen} onClose={() => setEditMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />
+      <AddUserToGroup open={addUserOpen} onClose={() => setAddUserOpen(false)} groupId={groupId} existingMembers={members} />
       <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
       <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
       <StreamingChat open={chatOpen} onClose={() => setChatOpen(false)} groupId={groupId} />

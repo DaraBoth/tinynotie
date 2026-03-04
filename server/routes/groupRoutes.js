@@ -678,7 +678,7 @@ router.get("/getGroupDetail", async (req, res) => {
  */
 // Add member by group ID
 router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
-  const { mem_name, paid, group_id } = req.body;
+  const { mem_name, paid, group_id, user_id } = req.body;
 
   try {
     // Check if the member already exists in the group
@@ -692,13 +692,13 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
       });
     }
 
-    // Insert the new member
+    // Insert the new member (with optional user_id for linking to user_infm)
     const insertSql = `
-      INSERT INTO member_infm (mem_name, paid, group_id)
-      VALUES ($1, $2, $3)
+      INSERT INTO member_infm (mem_name, paid, group_id, user_id)
+      VALUES ($1, $2, $3, $4)
       RETURNING id;
     `;
-    const result = await pool.query(insertSql, [mem_name, paid || 0, group_id]);
+    const result = await pool.query(insertSql, [mem_name, paid || 0, group_id, user_id || null]);
 
     res.json({
       status: true,
