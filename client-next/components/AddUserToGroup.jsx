@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Search, UserPlus, X, Loader2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,9 +31,10 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
   const queryClient = useQueryClient();
 
   // Get existing member user IDs to exclude from search
-  const existingUserIds = existingMembers
-    .filter(m => m.user_id)
-    .map(m => m.user_id);
+  const existingUserIds = useMemo(
+    () => existingMembers.filter((m) => m.user_id).map((m) => m.user_id),
+    [existingMembers]
+  );
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -47,7 +48,9 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
   // Search users with debounce
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
-      setSearchResults([]);
+      if (searchResults.length > 0) {
+        setSearchResults([]);
+      }
       return;
     }
 
@@ -74,7 +77,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, existingUserIds]);
+  }, [searchQuery, existingUserIds, searchResults.length]);
 
   const addUsersMutation = useMutation({
     mutationFn: async (users) => {
@@ -90,7 +93,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
       return Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['group', groupId]);
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       toast.success(`${selectedUsers.length} user(s) added to group!`);
       onClose();
     },
