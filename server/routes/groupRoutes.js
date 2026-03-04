@@ -680,6 +680,8 @@ router.get("/getGroupDetail", async (req, res) => {
 router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
   const { mem_name, paid, group_id, user_id } = req.body;
 
+  console.log('[AddMember] Request:', { mem_name, paid, group_id, user_id });
+
   try {
     // Check if the member already exists in the group
     // If user_id is provided, check by user_id (prevents duplicate user accounts)
@@ -694,13 +696,16 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
     }
     
     const checkResult = await pool.query(checkSql, checkParams);
+    console.log('[AddMember] Check result:', checkResult.rows);
 
     if (checkResult.rows.length > 0) {
+      const errorMsg = user_id 
+        ? `This user is already a member of this group!`
+        : `Member ${mem_name} already exists in this group!`;
+      console.log('[AddMember] Duplicate found:', errorMsg);
       return res.json({
         status: false,
-        message: user_id 
-          ? `This user is already a member of this group!`
-          : `Member ${mem_name} already exists in this group!`
+        message: errorMsg
       });
     }
 
@@ -711,6 +716,7 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
       RETURNING id;
     `;
     const result = await pool.query(insertSql, [mem_name, paid || 0, group_id, user_id || null]);
+    console.log('[AddMember] Success:', result.rows[0]);
 
     res.json({
       status: true,
@@ -718,7 +724,7 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
       data: { id: result.rows[0].id }
     });
   } catch (error) {
-    console.error("error", error);
+    console.error("[AddMember] Error:", error);
     res.status(500).json({ status: false, error: error.message });
   }
 });

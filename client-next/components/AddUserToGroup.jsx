@@ -58,11 +58,14 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
       setIsSearching(true);
       try {
         const response = await api.searchUsers(searchQuery, 'ALL');
+        console.log('[AddUser] Search response:', response.data);
         if (response.data.status) {
           // Filter out existing members
           const filtered = response.data.data.filter(
             user => !existingUserIds.includes(user.id)
           );
+          console.log('[AddUser] Filtered results:', filtered);
+          console.log('[AddUser] Existing user IDs:', existingUserIds);
           setSearchResults(filtered);
         } else {
           setSearchResults([]);
@@ -81,15 +84,18 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
 
   const addUsersMutation = useMutation({
     mutationFn: async (users) => {
+      console.log('[AddUser] Adding users:', users);
       // Add each user as a member to the group
-      const promises = users.map(user =>
-        api.addMember({
+      const promises = users.map(user => {
+        const payload = {
           mem_name: user.usernm,
           paid: 0,
           group_id: groupId,
           user_id: user.id, // Include user_id for linking
-        })
-      );
+        };
+        console.log('[AddUser] Adding member payload:', payload);
+        return api.addMember(payload);
+      });
       return Promise.all(promises);
     },
     onSuccess: () => {
@@ -98,7 +104,9 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
       onClose();
     },
     onError: (error) => {
-      const message = error.response?.data?.message || 'Failed to add users';
+      console.error('[AddUser] Error adding users:', error);
+      console.error('[AddUser] Error response:', error.response?.data);
+      const message = error.response?.data?.message || 'Failed to add users. Please check console for details.';
       toast.error(message);
     },
   });
