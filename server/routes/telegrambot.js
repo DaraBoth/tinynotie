@@ -1,5 +1,5 @@
 import express from "express";
-import { getBot, getWebhookInfo } from "../services/telegramBotService.js";
+import { getBot, getWebhookInfo, setupWebhook } from "../services/telegramBotService.js";
 
 const router = express.Router();
 
@@ -76,6 +76,42 @@ router.get("/webhook-info", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /bot/setup-webhook
+ * Configure webhook on Telegram using current deployed host
+ */
+router.post("/setup-webhook", async (req, res) => {
+  try {
+    const host = req.get("x-forwarded-host") || req.get("host");
+    const proto = req.get("x-forwarded-proto") || req.protocol || "https";
+    const webhookUrl = req.body?.webhookUrl || `${proto}://${host}/bot/webhook`;
+
+    const ok = await setupWebhook(webhookUrl);
+    const info = await getWebhookInfo();
+
+    if (!ok) {
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to setup webhook",
+        webhookUrl,
+        webhookInfo: info,
+      });
+    }
+
+    return res.json({
+      status: "ok",
+      message: "Webhook configured",
+      webhookUrl,
+      webhookInfo: info,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
   }
 });
 
