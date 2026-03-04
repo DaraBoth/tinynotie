@@ -13,5 +13,5 @@ COPY . .
 RUN chown -R node /app/node_modules
 
 USER node
-EXPOSE 4545
+EXPOSE 8080
 CMD ["node", "index.js"]
