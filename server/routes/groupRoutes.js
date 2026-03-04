@@ -1057,12 +1057,14 @@ router.post("/askDatabase", authenticateToken, async (req, res) => {
 
 // Share member summary to linked Telegram group
 router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
-  const { groupId } = req.body;
+  const { groupId, group_id } = req.body;
   const { _id: user_id } = req.user;
 
-  if (!groupId) {
+  if (!groupId && !group_id) {
     return res.status(400).json({ status: false, message: "groupId is required." });
   }
+
+  let groupid = groupId || group_id
 
   try {
     // 1. Double check access
@@ -1072,7 +1074,7 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
       FROM grp_infm g
       WHERE g.id = $1;
     `;
-    const accessRes = await pool.query(accessSql, [groupId, user_id]);
+    const accessRes = await pool.query(accessSql, [groupid, user_id]);
 
     if (accessRes.rows.length === 0 || !accessRes.rows[0].has_access) {
       return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
