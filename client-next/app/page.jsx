@@ -1,9 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { SpaceSky } from '@/components/SpaceSky';
+import { useAuthStore } from '@/store/authStore';
+import { Loading } from '@/components/Loading';
 import { ArrowRight, Share2, Calculator, MessageSquare, Zap, Shield, Sparkles, TrendingUp, ChevronRight } from 'lucide-react';
 
 const container = {
@@ -23,6 +27,27 @@ const item = {
 };
 
 export default function WelcomePage() {
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+
+  // Redirect to home if already logged in
+  useEffect(() => {
+    if (hasHydrated && isAuthenticated) {
+      router.replace('/home');
+    }
+  }, [hasHydrated, isAuthenticated, router]);
+
+  // Show loading while checking auth state
+  if (!hasHydrated) {
+    return <Loading text="Loading..." />;
+  }
+
+  // If authenticated, router will redirect, so show loading
+  if (isAuthenticated) {
+    return <Loading text="Redirecting..." />;
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
       {/* Animated background */}
