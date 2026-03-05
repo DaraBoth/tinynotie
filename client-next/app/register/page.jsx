@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, CheckCircle2, Link2, MessageSquare, ShieldCheck, Zap } from 'lucide-react';
@@ -11,6 +11,9 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { SpaceSky } from '@/components/SpaceSky';
 import { Loading } from '@/components/Loading';
+
+const TELEGRAM_BOT_NAME = 'TinyNotie';
+const TELEGRAM_BOT_URL = 'https://t.me/tinynotie_bot';
 
 export default function RegisterPage() {
   return (
@@ -24,7 +27,6 @@ function RegisterGuide() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
-  const botUsername = useMemo(() => process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'TinyNotieBot', []);
 
   useEffect(() => {
     if (hasHydrated && isAuthenticated) {
@@ -34,10 +36,10 @@ function RegisterGuide() {
 
   const openTelegramBot = () => {
     try {
-      const link = `https://t.me/${botUsername}`;
+      const link = TELEGRAM_BOT_URL;
       const popup = window.open(link, '_blank');
       if (!popup) window.location.href = link;
-      toast.success('Opening TinyNotie Telegram bot...');
+      toast.success(`Opening ${TELEGRAM_BOT_NAME} Telegram bot...`);
     } catch {
       toast.error('Failed to open Telegram bot');
     }
@@ -74,7 +76,7 @@ function RegisterGuide() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-primary to-blue-500 bg-[length:200%_auto] animate-gradient">via Telegram</span>
             </h1>
             <p className="text-xl text-muted-foreground/60 font-medium leading-relaxed max-w-md italic border-l-2 border-primary/20 pl-6">
-              For security, every TinyNotie account must be created and linked through Telegram bot.
+              For security, every TinyNotie account must be created and linked through {TELEGRAM_BOT_NAME} Telegram bot.
             </p>
           </div>
 
