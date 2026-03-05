@@ -17,6 +17,7 @@ router.post("/webhook", async (req, res) => {
   try {
     // Process the update from Telegram
     // Telegraf's handleUpdate method processes the update through all middlewares and handlers
+    console.log(req.body);
     await bot.handleUpdate(req.body);
     
     // Always return 200 OK to Telegram immediately
