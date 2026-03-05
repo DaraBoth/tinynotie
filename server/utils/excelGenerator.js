@@ -1,12 +1,61 @@
 import * as XLSX from 'xlsx';
 import { pool } from './dbUtils.js';
 
+const safeText = (value, fallback = '—') => {
+    if (value === null || value === undefined) return fallback;
+    const text = String(value).trim();
+    return text || fallback;
+};
+
+const safeNumber = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+};
+
+const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+
+const formatDate = (value) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString();
+};
+
+const parseParticipantIds = (memId) => {
+    if (!memId) return [];
+    try {
+        if (typeof memId === 'string') {
+            if (memId.trim().startsWith('[')) {
+                const parsed = JSON.parse(memId);
+                return Array.isArray(parsed) ? parsed.map((id) => String(id)) : [];
+            }
+            return memId.split(',').map((id) => id.trim()).filter(Boolean);
+        }
+
+        if (Array.isArray(memId)) return memId.map((id) => String(id));
+        return [String(memId)];
+    } catch {
+        return [];
+    }
+};
+
 /**
  * Generates an Excel buffer for a given group
  * @param {number} groupId 
  * @returns {Promise<Buffer>}
  */
 export const generateGroupExcelBuffer = async (groupId) => {
+    const { rows: groupRows } = await pool.query(
+        'SELECT grp_name, currency FROM grp_infm WHERE id = $1',
+        [groupId]
+    );
+    const groupInfo = groupRows[0] || {};
+    const groupName = safeText(groupInfo.grp_name, 'Untitled Group');
+    const currency = safeText(groupInfo.currency, '$');
+
     // Fetch trips
     const { rows: trips } = await pool.query(
         `SELECT t.*, m.mem_name as payer_name 
@@ -24,57 +73,53 @@ export const generateGroupExcelBuffer = async (groupId) => {
     );
     const memberMap = Object.fromEntries(members.map(m => [m.id, m.mem_name]));
 
-    // Process data for Excel
-    const data = trips.map((t, index) => {
-        let participants = [];
-        try {
-            if (typeof t.mem_id === 'string') {
-                if (t.mem_id.startsWith('[')) {
-                    participants = JSON.parse(t.mem_id);
-                } else {
-                    participants = t.mem_id.split(',').map(id => id.trim());
-                }
-            } else if (Array.isArray(t.mem_id)) {
-                participants = t.mem_id;
-            } else if (t.mem_id) {
-                participants = [String(t.mem_id)];
-            }
-        } catch (e) {
-            participants = [];
-        }
-
-        const participantNames = participants
-            .map(id => memberMap[id] || 'Unknown')
+    const rows = trips.map((trip, index) => {
+        const participantNames = parseParticipantIds(trip.mem_id)
+            .map((id) => safeText(memberMap[id], 'Unknown'))
             .join(', ');
 
-        return {
-            '#': index + 1,
-            'Date': t.create_date ? new Date(t.create_date).toLocaleDateString() : 'N/A',
-            'Trip Name': t.trp_name,
-            'Amount': t.spend,
-            'Payer': t.payer_name || 'N/A',
-            'Members Joined': participantNames,
-            'Description': t.description || ''
-        };
+        return [
+            index + 1,
+            formatDate(trip.create_date),
+            safeText(trip.trp_name, 'Untitled Expense'),
+            formatAmount(trip.spend),
+            currency,
+            safeText(trip.payer_name, '—'),
+            participantNames || '—',
+            safeText(trip.description, '—'),
+        ];
     });
 
+    const reportTitle = `TinyNotie Expense Report - ${groupName}`;
+    const generatedAt = new Date().toLocaleString();
+
+    const sheetData = [
+        [reportTitle],
+        ['Generated At', generatedAt],
+        ['Total Records', rows.length],
+        [],
+        ['No.', 'Date', 'Expense', 'Amount', 'Currency', 'Payer', 'Participants', 'Description'],
+        ...rows,
+    ];
+
     // Create Workbook
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Trips');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Expense Report');
 
     // Set column widths
     const wscols = [
-        { wch: 5 },  // #
-        { wch: 12 }, // Date
-        { wch: 25 }, // Name
-        { wch: 20 }, // Location
-        { wch: 10 }, // Amount
-        { wch: 15 }, // Payer
-        { wch: 40 }, // Members
-        { wch: 30 }  // Notes
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 28 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 20 },
+        { wch: 40 },
+        { wch: 36 },
     ];
     worksheet['!cols'] = wscols;
+    worksheet['!autofilter'] = { ref: `A5:H${Math.max(sheetData.length, 5)}` };
 
     // Generate buffer
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });

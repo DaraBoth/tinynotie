@@ -113,6 +113,10 @@ export const api = {
   getTripsByGroupId: (groupId) => apiClient.get('/api/getTripByGroupId', { params: { group_id: groupId } }),
   shareTripToTelegram: (data) => apiClient.post('/api/shareTripToTelegram', data),
   shareMembersToTelegram: (data) => apiClient.post('/api/shareMembersToTelegram', data),
+  downloadGroupExcelReport: (groupId) => apiClient.get('/api/downloadGroupExcelReport', {
+    params: { group_id: groupId },
+    responseType: 'blob',
+  }),
 
   // AI & Utilities
   askDatabase: (data) => apiClient.post('/api/askDatabase', data),

@@ -86,6 +86,8 @@ export function GroupPageClient({ groupId }) {
   const [expandedMemberId, setExpandedMemberId] = useState(null);
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [telegramTargetType, setTelegramTargetType] = useState('group');
+  const [selectedMemberIds, setSelectedMemberIds] = useState([]);
+  const [selectedTripIds, setSelectedTripIds] = useState([]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -170,9 +172,12 @@ export function GroupPageClient({ groupId }) {
 
   const handleShareMembers = async () => {
     try {
+      const allMemberIds = newData.map((row) => row._memberId).filter(Boolean);
+      const memberIds = selectedMemberIds.length > 0 ? selectedMemberIds : allMemberIds;
       const res = await api.shareMembersToTelegram({
         group_id: groupId,
         targetType: telegramTargetType,
+        member_ids: memberIds,
       });
       if (res.data.status) {
         toast.success('Member summary shared to Telegram!');
@@ -242,6 +247,137 @@ export function GroupPageClient({ groupId }) {
     return m ? m.mem_name : '—';
   };
 
+  const parseTripMemberIds = (memId) => {
+    try {
+      if (Array.isArray(memId)) return memId.map((id) => Number(id));
+      if (typeof memId === 'string') {
+        const parsed = JSON.parse(memId);
+        if (Array.isArray(parsed)) return parsed.map((id) => Number(id));
+      }
+      const num = Number(memId);
+      return Number.isFinite(num) ? [num] : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const toggleMemberSelection = (memberId) => {
+    setSelectedMemberIds((prev) => prev.includes(memberId)
+      ? prev.filter((id) => id !== memberId)
+      : [...prev, memberId]);
+  };
+
+  const toggleTripSelection = (tripId) => {
+    setSelectedTripIds((prev) => prev.includes(tripId)
+      ? prev.filter((id) => id !== tripId)
+      : [...prev, tripId]);
+  };
+
+  const toggleAllMembers = () => {
+    const allMemberIds = newData.map((row) => row._memberId).filter(Boolean);
+    const allSelected = allMemberIds.length > 0 && allMemberIds.every((id) => selectedMemberIds.includes(id));
+    setSelectedMemberIds(allSelected ? [] : allMemberIds);
+  };
+
+  const toggleAllTrips = () => {
+    const allTripIds = sortedTrips.map((trip) => trip.id).filter(Boolean);
+    const allSelected = allTripIds.length > 0 && allTripIds.every((id) => selectedTripIds.includes(id));
+    setSelectedTripIds(allSelected ? [] : allTripIds);
+  };
+
+  const handleExportMembers = () => {
+    const selectedRows = selectedMemberIds.length > 0
+      ? newData.filter((row) => selectedMemberIds.includes(row._memberId))
+      : newData;
+
+    const data = selectedRows.map((row, idx) => {
+      const item = {
+        '#': idx + 1,
+        'Member Name': row.name || '—',
+        'Paid': row.paid || '0.00',
+        'Remain': row.remain || '0.00',
+        'Unpaid': row.unpaid || '0.00'
+      };
+      tripColumns.forEach((tripName) => {
+        item[tripName] = row[tripName] ?? '—';
+      });
+      return item;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 24 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+      ...tripColumns.map(() => ({ wch: 14 })),
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Members');
+    XLSX.writeFile(wb, `${group.grp_name || 'Group'}_Members.xlsx`);
+    toast.success(`Members export downloaded (${selectedRows.length} row${selectedRows.length === 1 ? '' : 's'})`);
+  };
+
+  const handleExportTrips = () => {
+    const selectedTrips = selectedTripIds.length > 0
+      ? sortedTrips.filter((trip) => selectedTripIds.includes(trip.id))
+      : sortedTrips;
+
+    const data = selectedTrips.map((trip, idx) => {
+      const ids = parseTripMemberIds(trip.mem_id);
+      const joinedBy = members
+        .filter((member) => ids.includes(Number(member.id)))
+        .map((member) => member.mem_name)
+        .join(', ') || '—';
+
+      return {
+        '#': idx + 1,
+        'Trip Name': trip.trp_name || '—',
+        'Amount': `${currency}${parseFloat(trip.spend || 0).toFixed(2)}`,
+        'Payer': getPayerName(trip),
+        'Joined By': joinedBy,
+        'Updated': formatTimeDifference(trip.update_dttm || trip.create_date),
+        'Description': trip.description || '—',
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 24 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 34 },
+      { wch: 16 },
+      { wch: 36 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Trips');
+    XLSX.writeFile(wb, `${group.grp_name || 'Group'}_Trips.xlsx`);
+    toast.success(`Trips export downloaded (${selectedTrips.length} row${selectedTrips.length === 1 ? '' : 's'})`);
+  };
+
+  const handleShareSelectedTrips = async () => {
+    try {
+      const tripIds = selectedTripIds.length > 0 ? selectedTripIds : sortedTrips.map((trip) => trip.id).filter(Boolean);
+      const res = await api.shareTripToTelegram({
+        group_id: groupId,
+        trip_ids: tripIds,
+        targetType: telegramTargetType,
+      });
+
+      if (res.data.status) {
+        toast.success('Trip data shared to Telegram!');
+      } else {
+        toast.error(res.data.message || 'Failed to share trip data');
+      }
+    } catch (err) {
+      console.error('Bulk trip share error:', err);
+      toast.error('Error sharing trips to Telegram');
+    }
+  };
+
   const getMemberCount = (trip) => {
     try {
       const ids = JSON.parse(trip.mem_id);
@@ -260,6 +396,14 @@ export function GroupPageClient({ groupId }) {
           <Users className="h-3.5 w-3.5" /> Contributions
         </h2>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-foreground uppercase tracking-widest font-bold"
+            onClick={toggleAllMembers}
+          >
+            {selectedMemberIds.length > 0 ? 'Clear' : 'Select All'}
+          </Button>
           <div className="hidden sm:flex gap-1 bg-muted/60 p-1 rounded-lg">
             <button
               onClick={() => handleChangeTelegramTarget('group')}
@@ -276,35 +420,15 @@ export function GroupPageClient({ groupId }) {
           </div>
           <Button
             size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-foreground uppercase tracking-widest font-bold"
-            onClick={() => {
-              const data = newData.map((row, idx) => {
-                const item = {
-                  '#': idx + 1,
-                  'Member Name': row.name,
-                  'Paid': row.paid,
-                  'Remain': row.remain,
-                  'Unpaid': row.unpaid
-                };
-                // Add trip columns
-                tripColumns.forEach(tripName => {
-                  item[tripName] = row[tripName] ?? '—';
-                });
-                return item;
-              });
-              const ws = XLSX.utils.json_to_sheet(data);
-              const wb = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(wb, ws, "Members");
-              XLSX.writeFile(wb, `${group.grp_name || 'Group'}_Members.xlsx`);
-              toast.success('Members export downloaded');
-            }}
+            onClick={handleExportMembers}
           >
-            <Download className="h-3.5 w-3.5" /> Export
+            <Download className="h-3.5 w-3.5" /> Export {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
           </Button>
           <Button
             size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-sky-400 uppercase tracking-widest font-bold"
             onClick={handleShareMembers}
           >
-            <Send className="h-3.5 w-3.5" /> Telegram
+            <Send className="h-3.5 w-3.5" /> Telegram {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
           </Button>
           <div className="flex gap-0.5 bg-muted/60 p-1 rounded-lg">
             <button
@@ -339,6 +463,7 @@ export function GroupPageClient({ groupId }) {
           <table className="w-full text-sm min-w-[500px]">
             <thead>
               <tr className="border-b border-border/50 bg-muted/30">
+                <th className="text-left px-3 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide w-10">Sel</th>
                 <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide w-8">#</th>
                 <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Name</th>
                 <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Paid</th>
@@ -354,6 +479,14 @@ export function GroupPageClient({ groupId }) {
             <tbody>
               {newData.map((row, idx) => (
                 <tr key={row.id || idx} className="border-b border-border/20 hover:bg-muted/20 transition-colors">
+                  <td className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedMemberIds.includes(row._memberId)}
+                      onChange={() => toggleMemberSelection(row._memberId)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
                   <td className="px-4 py-3 font-semibold">{row.name}</td>
                   <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">{row.paid}</td>
@@ -413,6 +546,12 @@ export function GroupPageClient({ groupId }) {
           <TrendingUp className="h-3.5 w-3.5" /> Trips
         </h2>
         <div className="flex gap-1">
+          <Button
+            size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+            onClick={toggleAllTrips}
+          >
+            {selectedTripIds.length > 0 ? 'Clear' : 'Select All'}
+          </Button>
           <div className="hidden sm:flex gap-1 bg-muted/60 p-1 rounded-lg mr-1">
             <button
               onClick={() => handleChangeTelegramTarget('group')}
@@ -429,30 +568,15 @@ export function GroupPageClient({ groupId }) {
           </div>
           <Button
             size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              const data = sortedTrips.map(t => ({
-                'Trip Name': t.trp_name,
-                'Amount': parseFloat(t.spend || 0).toFixed(2),
-                'Payer': getPayerName(t),
-                'Members Joined': (() => {
-                  try {
-                    const ids = JSON.parse(t.mem_id);
-                    return members
-                      .filter(m => ids.includes(m.id))
-                      .map(m => m.mem_name)
-                      .join(', ');
-                  } catch { return 'All'; }
-                })(),
-                'Date': new Date(t.create_date).toLocaleDateString()
-              }));
-              const ws = XLSX.utils.json_to_sheet(data);
-              const wb = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(wb, ws, "Trips");
-              XLSX.writeFile(wb, `${group.grp_name || 'Group'}_Trips.xlsx`);
-              toast.success('Excel file downloaded');
-            }}
+            onClick={handleExportTrips}
           >
-            <Download className="h-3.5 w-3.5" /> Export
+            <Download className="h-3.5 w-3.5" /> Export {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
+          </Button>
+          <Button
+            size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-sky-400"
+            onClick={handleShareSelectedTrips}
+          >
+            <Send className="h-3.5 w-3.5" /> Telegram {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
           </Button>
           <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
             onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
@@ -474,6 +598,7 @@ export function GroupPageClient({ groupId }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-muted/30">
+                <th className="text-left px-2 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide w-8">Sel</th>
                 <th className="text-left px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide">Name</th>
                 <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide">Amount</th>
                 <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide hidden sm:table-cell">Payer</th>
@@ -486,6 +611,14 @@ export function GroupPageClient({ groupId }) {
                 <tr key={trip.id || idx}
                   className="border-b border-border/20 hover:bg-muted/20 transition-colors cursor-pointer"
                   onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
+                  <td className="px-2 py-2.5" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedTripIds.includes(trip.id)}
+                      onChange={() => toggleTripSelection(trip.id)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                  </td>
                   <td className="px-3 py-2.5 font-medium truncate max-w-[120px]" title={trip.trp_name}>{trip.trp_name}</td>
                   <td className="px-3 py-2.5 text-right text-emerald-600 dark:text-emerald-400 font-semibold">{currency}{parseFloat(trip.spend || 0).toFixed(2)}</td>
                   <td className="px-3 py-2.5 text-right text-muted-foreground hidden sm:table-cell truncate max-w-[80px]">{getPayerName(trip)}</td>
@@ -708,6 +841,17 @@ export function GroupPageClient({ groupId }) {
             {/* Members tab — expandable accordion cards */}
             {mobileTab === 'members' && (
               <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={toggleAllMembers}>
+                    {selectedMemberIds.length > 0 ? 'Clear' : 'Select All'}
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleExportMembers}>
+                    <Download className="h-3.5 w-3.5 mr-1" /> Export {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleShareMembers}>
+                    <Send className="h-3.5 w-3.5 mr-1" /> Telegram {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
+                  </Button>
+                </div>
                 {members.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border/40 rounded-2xl">
                     <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
@@ -740,6 +884,13 @@ export function GroupPageClient({ groupId }) {
                             className="w-full flex items-center gap-3.5 px-4 py-3.5 active:bg-muted/30 transition-colors text-left"
                             onClick={() => setExpandedMemberId(isExpanded ? null : (row.id ?? idx))}
                           >
+                            <input
+                              type="checkbox"
+                              checked={selectedMemberIds.includes(row._memberId)}
+                              onChange={() => toggleMemberSelection(row._memberId)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-4 w-4 accent-primary shrink-0"
+                            />
                             {/* Avatar */}
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm ${getAvatarColor(row.name)}`}>
                               {getAvatarInitials(row.name)}

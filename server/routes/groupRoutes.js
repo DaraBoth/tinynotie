@@ -6,6 +6,22 @@ import { getBot, notifyGroup } from "../services/telegramBotService.js";
 
 const router = express.Router();
 
+const safeText = (value, fallback = "N/A") => {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+};
+
+const safeNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 /**
  * @swagger
  * /groups/getGroupByUserId:
@@ -1236,7 +1252,7 @@ router.post("/linkTelegramGroupChat", authenticateToken, async (req, res) => {
 
 // Share member summary to linked Telegram group
 router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
-  const { groupId, group_id, targetType = 'group' } = req.body;
+  const { groupId, group_id, targetType = 'group', member_ids = [] } = req.body;
   const { _id: user_id } = req.user;
 
   if (!groupId && !group_id) {
@@ -1263,15 +1279,20 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
 
     // 2. Fetch members and calculate status
     // Note: We'll use a simplified version of the calculation logic logic here since we need raw data
+    const selectedMemberIds = Array.isArray(member_ids)
+      ? member_ids.map((id) => Number(id)).filter(Number.isFinite)
+      : [];
+
     const membersSql = `
       SELECT m.id, m.mem_name, m.paid,
              (SELECT COALESCE(SUM(t.spend / (SELECT COUNT(*) FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(t.mem_id::jsonb) = 'array' THEN t.mem_id::jsonb ELSE '[]'::jsonb END))), 0)
               FROM trp_infm t
               WHERE t.group_id = $1 AND t.mem_id::jsonb ? m.id::text) as spend
       FROM member_infm m
-      WHERE m.group_id = $1;
+      WHERE m.group_id = $1
+        AND ($2::int[] IS NULL OR array_length($2::int[], 1) IS NULL OR m.id = ANY($2::int[]));
     `;
-    const membersRes = await pool.query(membersSql, [groupid]);
+    const membersRes = await pool.query(membersSql, [groupid, selectedMemberIds.length > 0 ? selectedMemberIds : null]);
     const members = membersRes.rows;
 
     if (members.length === 0) {
@@ -1279,11 +1300,15 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
     }
 
     // 3. Format message
-    let message = `📊 *Member Settlement Status: ${group.grp_name}*\n\n`;
+    const groupName = safeText(group.grp_name, `Group ${groupid}`);
+    const currency = safeText(group.currency, '$');
+    let message = `📊 *Member Settlement Status: ${groupName}*\n\n`;
     members.forEach(m => {
-      const balance = (parseFloat(m.paid) || 0) - (parseFloat(m.spend) || 0);
+      const paid = safeNumber(m.paid);
+      const spent = safeNumber(m.spend);
+      const balance = paid - spent;
       const status = balance >= 0 ? '🟢 +' : '🔴 ';
-      message += `${status} *${m.mem_name}*\n   Paid: ${parseFloat(m.paid).toLocaleString()} ${group.currency}\n   Spend: ${parseFloat(m.spend).toLocaleString()} ${group.currency}\n   Balance: *${balance.toLocaleString()}* ${group.currency}\n\n`;
+      message += `${status} *${safeText(m.mem_name, 'Unknown Member')}*\n   Paid: ${formatAmount(paid)} ${currency}\n   Spend: ${formatAmount(spent)} ${currency}\n   Balance: *${formatAmount(balance)}* ${currency}\n\n`;
     });
 
     message += `_Generated via TinyNotie Portal_`;

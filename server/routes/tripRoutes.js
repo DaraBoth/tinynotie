@@ -3,8 +3,25 @@ import { authenticateToken } from "../middleware/auth.js";
 import { pool, handleError, sanitizeIntegerField } from "../utils/db.js";
 import moment from "moment";
 import { getBot, notifyGroup } from "../services/telegramBotService.js";
+import { generateGroupExcelBuffer } from "../utils/excelGenerator.js";
 
 const router = express.Router();
+
+const safeText = (value, fallback = "N/A") => {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+};
+
+const safeNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 /**
  * @swagger
@@ -196,7 +213,10 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
       ]);
 
       // Notify Telegram Group if linked
-      notifyGroup(group_id, `🆕 *New Expense Added*\n\n*${trp_name}*\n💰 Amount: ${spend.toLocaleString()}\n📝 Description: ${description || 'N/A'}`);
+      notifyGroup(
+        group_id,
+        `🆕 *New Expense Added*\n\n*${safeText(trp_name, 'Untitled Expense')}*\n💰 Amount: ${formatAmount(spend)}\n📝 Description: ${safeText(description)}`
+      );
 
       res.send({ status: true, message: "Add trip success!" });
     } else {
@@ -275,7 +295,7 @@ router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) =>
     const successTrips = results.filter(r => r.status);
     if (successTrips.length > 0) {
       const groupId = trips[0].group_id; // Assuming all trips belong to the same group
-      const tripList = successTrips.map(r => `• *${r.trp_name}*`).join('\n');
+      const tripList = successTrips.map(r => `• *${safeText(r.trp_name, 'Untitled Expense')}*`).join('\n');
       notifyGroup(groupId, `🆕 *${successTrips.length} New Expenses Added*\n\n${tripList}`);
     }
 
@@ -601,11 +621,12 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
           spent += t.spend / (participants.length || 1);
         }
       });
-      const balance = m.paid - spent;
-      summary += `👤 *${m.mem_name}*\n   Paid: ${currency}${m.paid.toLocaleString()}\n   Spent: ${currency}${spent.toLocaleString()}\n   Balance: ${balance >= 0 ? '✅' : '🔴'} ${currency}${balance.toLocaleString()}\n\n`;
+      const paid = safeNumber(m.paid);
+      const balance = paid - spent;
+      summary += `👤 *${safeText(m.mem_name, 'Unknown Member')}*\n   Paid: ${currency}${formatAmount(paid)}\n   Spent: ${currency}${formatAmount(spent)}\n   Balance: ${balance >= 0 ? '✅' : '🔴'} ${currency}${formatAmount(balance)}\n\n`;
     });
 
-    summary += `👤 Shared by: *${username}*`;
+    summary += `👤 Shared by: *${safeText(username, 'Unknown User')}*`;
 
     let success = false;
     if (targetType === 'personal') {
@@ -663,20 +684,44 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
  *         description: Trip shared successfully
  */
 router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
-  const { trip_id, group_id, targetType = 'group' } = req.body;
+  const { trip_id, trip_ids = [], group_id, targetType = 'group' } = req.body;
   const username = req.user.usernm;
   const userId = req.user._id;
 
   try {
-    const tripSql = `SELECT trp_name, spend, description FROM trp_infm WHERE id = $1 AND group_id = $2;`;
-    const tripResult = await pool.query(tripSql, [trip_id, group_id]);
+    const normalizedTripIds = [
+      ...(Array.isArray(trip_ids) ? trip_ids : []),
+      ...(trip_id ? [trip_id] : []),
+    ]
+      .map((id) => Number(id))
+      .filter(Number.isFinite);
+
+    if (normalizedTripIds.length === 0) {
+      return res.status(400).json({ status: false, message: "trip_id or trip_ids is required" });
+    }
+
+    const tripSql = `
+      SELECT id, trp_name, spend, description
+      FROM trp_infm
+      WHERE group_id = $1
+        AND id = ANY($2::int[])
+      ORDER BY id DESC;
+    `;
+    const tripResult = await pool.query(tripSql, [group_id, normalizedTripIds]);
 
     if (tripResult.rows.length === 0) {
       return res.status(404).json({ status: false, message: "Trip not found" });
     }
 
-    const trip = tripResult.rows[0];
-    const message = `📢 *Sharing Expense*\n\n*${trip.trp_name}*\n💰 Amount: ${trip.spend.toLocaleString()}\n📝 Description: ${trip.description || 'N/A'}\n\n👤 Shared by: *${username}*`;
+    const message = tripResult.rows.length === 1
+      ? `📢 *Sharing Expense*\n\n*${safeText(tripResult.rows[0].trp_name, 'Untitled Expense')}*\n💰 Amount: ${formatAmount(tripResult.rows[0].spend)}\n📝 Description: ${safeText(tripResult.rows[0].description)}\n\n👤 Shared by: *${safeText(username, 'Unknown User')}*`
+      : [
+        `📢 *Sharing ${tripResult.rows.length} Expenses*`,
+        '',
+        ...tripResult.rows.map((trip) => `• *${safeText(trip.trp_name, 'Untitled Expense')}* — ${formatAmount(trip.spend)} (${safeText(trip.description)})`),
+        '',
+        `👤 Shared by: *${safeText(username, 'Unknown User')}*`,
+      ].join('\n');
 
     let success = false;
     if (targetType === 'personal') {
@@ -707,6 +752,42 @@ router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Share to Telegram error:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/downloadGroupExcelReport", authenticateToken, async (req, res) => {
+  const { group_id } = req.query;
+  const userId = req.user._id;
+
+  if (!group_id) {
+    return res.status(400).json({ status: false, message: "group_id is required." });
+  }
+
+  try {
+    const accessSql = `
+      SELECT g.id, g.grp_name,
+             (g.admin_id = $2 OR EXISTS(
+               SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $2
+             )) AS has_access
+      FROM grp_infm g
+      WHERE g.id = $1
+    `;
+    const accessRes = await pool.query(accessSql, [group_id, userId]);
+
+    if (accessRes.rows.length === 0 || !accessRes.rows[0].has_access) {
+      return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
+    }
+
+    const buffer = await generateGroupExcelBuffer(group_id);
+    const groupName = safeText(accessRes.rows[0].grp_name, `Group_${group_id}`);
+    const fileName = `${groupName.replace(/\s+/g, "_")}_Report.xlsx`;
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    return res.send(buffer);
+  } catch (error) {
+    console.error("downloadGroupExcelReport error:", error);
+    return res.status(500).json({ status: false, message: "Failed to generate report." });
   }
 });
 

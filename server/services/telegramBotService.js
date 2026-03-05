@@ -261,12 +261,13 @@ export const initTelegramBot = (token) => {
             if (groups.length === 0) return ctx.reply('❌ This chat is not linked to any group.');
 
             const group = groups[0];
+            const groupName = (group.grp_name || `Group_${group.id}`).trim();
             ctx.reply('⏳ Generating report...');
 
             const buffer = await generateGroupExcelBuffer(group.id);
-            const filename = `${group.grp_name.replace(/\s+/g, '_')}_Report.xlsx`;
+            const filename = `${groupName.replace(/\s+/g, '_')}_Report.xlsx`;
 
-            await ctx.replyWithDocument({ source: buffer, filename: filename }, { caption: `📊 Here is the financial report for *${group.grp_name}*`, parse_mode: 'Markdown' });
+            await ctx.replyWithDocument({ source: buffer, filename: filename }, { caption: `📊 Here is the financial report for *${groupName}*`, parse_mode: 'Markdown' });
         } catch (err) {
             console.error('Export TG error:', err);
             ctx.reply('❌ Failed to generate report.');
@@ -274,7 +275,7 @@ export const initTelegramBot = (token) => {
     });
 
     // /status command - summary
-    bot.command('export', async (ctx) => {
+    bot.command('status', async (ctx) => {
         try {
             const { rows: groups } = await pool.query('SELECT id, grp_name, currency FROM grp_infm WHERE telegram_chat_id = $1', [ctx.chat.id]);
             if (groups.length === 0) return ctx.reply('❌ This chat is not linked to any group.');
@@ -282,12 +283,17 @@ export const initTelegramBot = (token) => {
             const group = groups[0];
             const { rows: members } = await pool.query('SELECT COUNT(*) as count FROM member_infm WHERE group_id = $1', [group.id]);
             const { rows: trips } = await pool.query('SELECT COUNT(*) as count, SUM(spend) as total FROM trp_infm WHERE group_id = $1', [group.id]);
+            const groupName = group.grp_name || `Group ${group.id}`;
+            const memberCount = Number(members?.[0]?.count || 0);
+            const tripCount = Number(trips?.[0]?.count || 0);
+            const totalSpend = Number(trips?.[0]?.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const currency = group.currency || '';
 
             const summary = `
-📊 *Group Status: ${group.grp_name}*
-👥 Members: ${members[0].count}
-✈️ Total Trips: ${trips[0].count}
-💰 Total Spend: ${parseFloat(trips[0].total || 0).toLocaleString()} ${group.currency}
+📊 *Group Status: ${groupName}*
+👥 Members: ${memberCount}
+✈️ Total Trips: ${tripCount}
+💰 Total Spend: ${totalSpend} ${currency}
       `;
             ctx.reply(summary, { parse_mode: 'Markdown' });
         } catch (err) {
