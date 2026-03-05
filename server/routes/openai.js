@@ -1137,15 +1137,15 @@ const handleMessage = async function (messageObj) {
         },
       });
 
-      const responseText = await callAI(messageText, chatHistory);
-      await templateSaveChat({
-        Chat_ID,
-        user_id: `${username}, ${first_name} ${last_name}`,
-        chatHistory,
-        messageText,
-        responseText: responseText.text(),
-      });
-      return await darabothSendMessage(messageObj, responseText.text());
+      // const responseText = await callAI(messageText, chatHistory);
+      // await templateSaveChat({
+      //   Chat_ID,
+      //   user_id: `${username}, ${first_name} ${last_name}`,
+      //   chatHistory,
+      //   messageText,
+      //   responseText: responseText.text(),
+      // });
+      return await darabothSendMessage(messageObj, "Response text placeholder");
     } else if (condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)) {  // 2024_B2B R&D
       // forward message when someone ask permission
       const sendUserId = [485397124, 5985950554]; // Array of chat IDs to send messages to
