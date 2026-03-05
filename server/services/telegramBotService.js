@@ -41,8 +41,11 @@ export const initTelegramBot = (token) => {
     });
 
     // /start command - handles deep linking for account linking
-    bot.command('start',async (ctx) => {
-        const payload = ctx.startPayload; // From /start XXXX
+    bot.start(async (ctx) => {
+        const payloadFromStart = ctx.startPayload; // Preferred, when available
+        const text = ctx.message?.text || '';
+        const payloadFromText = text.startsWith('/start ') ? text.replace('/start ', '').trim() : '';
+        const payload = payloadFromStart || payloadFromText;
 
         if (payload && payload.startsWith('link_')) {
             const code = payload.replace('link_', '');
