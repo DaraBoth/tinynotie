@@ -48,10 +48,11 @@ function formatMoney(amount, currency) {
 function GroupCard({ group, index, onDelete }) {
   const currencySymbol = group.currency || '';
   const currencyLabel = CURRENCY_NAMES[currencySymbol] || currencySymbol;
+  const isPublicPreview = group.visibility === 'public' && !group.isMember && !group.isAdmin;
   const memberCount = Number(group.member_count ?? 0);
   const tripCount = Number(group.trip_count ?? 0);
-  const totalSpend = Number(group.total_spend ?? 0);
-  const totalPaid = Number(group.total_paid ?? 0);
+  const totalSpend = isPublicPreview ? 0 : Number(group.total_spend ?? 0);
+  const totalPaid = isPublicPreview ? 0 : Number(group.total_paid ?? 0);
   const balance = totalPaid - totalSpend;
   const accent = ACCENT_GRADIENTS[index % ACCENT_GRADIENTS.length];
 
@@ -92,12 +93,12 @@ function GroupCard({ group, index, onDelete }) {
             <div className="grid grid-cols-2 gap-3 mb-5">
               <div className="p-3 rounded-xl bg-foreground/5 border border-border/10 group-hover/card:bg-foreground/10 transition-colors">
                 <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-1">Spent</p>
-                <p className="text-sm font-black text-foreground italic">{formatMoney(totalSpend, currencySymbol)}</p>
+                <p className="text-sm font-black text-foreground italic">{isPublicPreview ? '—' : formatMoney(totalSpend, currencySymbol)}</p>
               </div>
               <div className="p-3 rounded-xl bg-foreground/5 border border-border/10 group-hover/card:bg-foreground/10 transition-colors">
                 <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-1">Status</p>
-                <p className={`text-sm font-black italic ${balance >= 0 ? 'text-[#80ff00]' : 'text-[#ff0080]'}`}>
-                  {balance >= 0 ? 'WIN' : 'OUT'}
+                <p className={`text-sm font-black italic ${isPublicPreview ? 'text-muted-foreground' : balance >= 0 ? 'text-[#80ff00]' : 'text-[#ff0080]'}`}>
+                  {isPublicPreview ? 'PUBLIC' : balance >= 0 ? 'WIN' : 'OUT'}
                 </p>
               </div>
             </div>
@@ -174,6 +175,8 @@ export default function HomePage() {
   const currencyTotals = useMemo(() => {
     if (!groups) return {};
     return groups.reduce((acc, g) => {
+      const isPublicPreview = g.visibility === 'public' && !g.isMember && !g.isAdmin;
+      if (isPublicPreview) return acc;
       const sym = g.currency || '$';
       acc[sym] = (acc[sym] || 0) + Number(g.total_spend ?? 0);
       return acc;

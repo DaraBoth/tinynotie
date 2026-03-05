@@ -77,6 +77,7 @@ export function GroupPageClient({ groupId }) {
 
   const [viewMode, setViewMode] = useState('table');
   const [mobileTab, setMobileTab] = useState('members');
+  const [desktopTab, setDesktopTab] = useState('members');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [editMemberOpen, setEditMemberOpen] = useState(false);
   const [editMemberMode, setEditMemberMode] = useState(false); // false=add, true=edit
@@ -95,6 +96,8 @@ export function GroupPageClient({ groupId }) {
   const [telegramTargetType, setTelegramTargetType] = useState('group');
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [selectedTripIds, setSelectedTripIds] = useState([]);
+  const [memberPinnedRows, setMemberPinnedRows] = useState([]);
+  const [tripPinnedRows, setTripPinnedRows] = useState([]);
   const [memberPinnedColumns, setMemberPinnedColumns] = useState({ name: 'left' });
   const [tripPinnedColumns, setTripPinnedColumns] = useState({ name: 'left' });
 
@@ -236,6 +239,32 @@ export function GroupPageClient({ groupId }) {
     (a, b) => new Date(b.update_dttm || b.create_date) - new Date(a.update_dttm || a.create_date)
   );
 
+  const togglePinnedMemberRow = (memberId) => {
+    setMemberPinnedRows((prev) => prev.includes(memberId)
+      ? prev.filter((id) => id !== memberId)
+      : [...prev, memberId]);
+  };
+
+  const togglePinnedTripRow = (tripId) => {
+    setTripPinnedRows((prev) => prev.includes(tripId)
+      ? prev.filter((id) => id !== tripId)
+      : [...prev, tripId]);
+  };
+
+  const orderedMembers = [...newData].sort((a, b) => {
+    const aPinned = memberPinnedRows.includes(a._memberId);
+    const bPinned = memberPinnedRows.includes(b._memberId);
+    if (aPinned === bPinned) return 0;
+    return aPinned ? -1 : 1;
+  });
+
+  const orderedTrips = [...sortedTrips].sort((a, b) => {
+    const aPinned = tripPinnedRows.includes(a.id);
+    const bPinned = tripPinnedRows.includes(b.id);
+    if (aPinned === bPinned) return 0;
+    return aPinned ? -1 : 1;
+  });
+
   const openEditTripFromAction = () => {
     if (sortedTrips.length === 0) {
       toast.error('No trips to edit');
@@ -254,6 +283,11 @@ export function GroupPageClient({ groupId }) {
     if (!trip.payer_id) return '—';
     const m = members.find((m) => m.id === Number(trip.payer_id));
     return m ? m.mem_name : '—';
+  };
+
+  const getJoinedMembers = (trip) => {
+    const ids = parseTripMemberIds(trip.mem_id);
+    return members.filter((member) => ids.includes(Number(member.id)));
   };
 
   const parseTripMemberIds = (memId) => {
@@ -388,10 +422,8 @@ export function GroupPageClient({ groupId }) {
   };
 
   const getMemberCount = (trip) => {
-    try {
-      const ids = JSON.parse(trip.mem_id);
-      return Array.isArray(ids) ? ids.length : 1;
-    } catch { return 1; }
+    const ids = parseTripMemberIds(trip.mem_id);
+    return ids.length || 1;
   };
 
   const tripColumns = trips.map((t) => t.trp_name);
@@ -476,9 +508,10 @@ export function GroupPageClient({ groupId }) {
     const stickyStyle = {
       ...baseStyle,
       position: 'sticky',
-      zIndex: isHeader ? 30 : 20,
+      zIndex: isHeader ? 35 : 20,
       background: 'rgba(9, 12, 40, 0.96)',
       backdropFilter: 'blur(2px)',
+      ...(isHeader ? { top: '0px' } : {}),
     };
 
     if (side === 'left') {
@@ -571,9 +604,9 @@ export function GroupPageClient({ groupId }) {
           </Button>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="overflow-auto max-h-[68vh] rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm">
+        <div className="overflow-auto scrollbar-hide max-h-[68vh] rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm">
           <table className="w-full text-sm min-w-[980px]">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="border-b border-border/50 bg-muted/30">
                 {memberTableColumns.map((column) => (
                   <th
@@ -663,11 +696,33 @@ export function GroupPageClient({ groupId }) {
         </div>
       ) : (
         <div className="space-y-2">
-          {newData.map((row, idx) => (
-            <div key={row.id || idx} className="border border-border/30 rounded-xl p-4 bg-background/20 backdrop-blur-sm hover:bg-muted/20 transition-colors">
+          {orderedMembers.map((row, idx) => {
+            const member = members.find((m) => Number(m.id) === Number(row._memberId)) || members[idx];
+            const isPinned = memberPinnedRows.includes(row._memberId);
+            return (
+            <div key={row._memberId || row.id || idx} className={`border rounded-xl p-4 backdrop-blur-sm hover:bg-muted/20 transition-colors ${isPinned ? 'border-primary/40 bg-primary/5' : 'border-border/30 bg-background/20'}`}>
               <div className="flex justify-between items-center mb-3">
-                <span className="font-semibold">{row.name}</span>
-                <Badge variant="outline" className="text-xs font-normal">#{idx + 1}</Badge>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedMemberIds.includes(row._memberId)}
+                    onChange={() => toggleMemberSelection(row._memberId)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="font-semibold">{row.name}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={() => togglePinnedMemberRow(row._memberId)}
+                    title="Pin member"
+                  >
+                    <Pin className={`h-3.5 w-3.5 ${isPinned ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </Button>
+                  <Badge variant="outline" className="text-xs font-normal">#{idx + 1}</Badge>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-3 text-sm">
                 <div>
@@ -693,8 +748,24 @@ export function GroupPageClient({ groupId }) {
                   ))}
                 </div>
               )}
+              {member && (
+                <div className="mt-3 pt-3 border-t border-border/20">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    onClick={() => {
+                      setSelectedMember(member);
+                      setEditMemberMode(true);
+                      setEditMemberOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                  </Button>
+                </div>
+              )}
             </div>
-          ))}
+          )})}
         </div>
       )}
     </div>
@@ -739,6 +810,22 @@ export function GroupPageClient({ groupId }) {
           >
             <Send className="h-3.5 w-3.5" /> Telegram {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
           </Button>
+          <div className="hidden md:flex gap-0.5 bg-muted/60 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'table' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <LayoutGrid className="h-3 w-3" />
+              <span>Table</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <List className="h-3 w-3" />
+              <span>List</span>
+            </button>
+          </div>
           <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
             onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
             <Plus className="h-3.5 w-3.5" /> Add Trip
@@ -754,10 +841,77 @@ export function GroupPageClient({ groupId }) {
             <Plus className="h-4 w-4 mr-1.5" /> Add First Trip
           </Button>
         </div>
-      ) : (
-        <div className="rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm overflow-auto max-h-[68vh]">
+      ) : isMobile ? (
+        <div className="space-y-2">
+          {orderedTrips.map((trip, idx) => {
+            const isPinned = tripPinnedRows.includes(trip.id);
+            const joinedMembers = getJoinedMembers(trip);
+            return (
+              <div key={trip.id || idx} className={`rounded-2xl border p-4 transition-colors ${isPinned ? 'border-primary/40 bg-primary/5' : 'border-border/30 bg-background/30'}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={selectedTripIds.includes(trip.id)}
+                      onChange={() => toggleTripSelection(trip.id)}
+                      className="h-4 w-4 accent-primary mt-1"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm leading-tight break-words">{trip.trp_name || 'Untitled Trip'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{formatTimeDifference(trip.update_dttm || trip.create_date)}</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => togglePinnedTripRow(trip.id)}
+                    title="Pin trip"
+                  >
+                    <Pin className={`h-3.5 w-3.5 ${isPinned ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div className="rounded-lg border border-border/20 bg-muted/20 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Amount</p>
+                    <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{currency}{parseFloat(trip.spend || 0).toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/20 bg-muted/20 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Payer</p>
+                    <p className="text-sm font-semibold truncate">{getPayerName(trip)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Joined By ({getMemberCount(trip)})</p>
+                  {joinedMembers.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {joinedMembers.map((member) => (
+                        <span key={member.id} className="text-xs rounded-md bg-muted/50 px-2 py-1 max-w-full break-all">{member.mem_name}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No participants</p>
+                  )}
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-border/20 flex gap-2">
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
+                    <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={(e) => handleShareTrip(e, trip)}>
+                    <Send className="h-3.5 w-3.5 mr-1" /> Telegram
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : viewMode === 'table' ? (
+        <div className="rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm overflow-auto scrollbar-hide max-h-[68vh]">
           <table className="w-full text-sm min-w-[860px]">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="border-b border-border/50 bg-muted/30">
                 {tripTableColumns.map((column) => (
                   <th
@@ -783,7 +937,7 @@ export function GroupPageClient({ groupId }) {
               </tr>
             </thead>
             <tbody>
-              {sortedTrips.map((trip, idx) => (
+              {orderedTrips.map((trip, idx) => (
                 <tr key={trip.id || idx}
                   className="border-b border-border/20 hover:bg-muted/20 transition-colors cursor-pointer"
                   onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
@@ -820,23 +974,18 @@ export function GroupPageClient({ groupId }) {
                         <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={baseClass}>
                           <div className="flex -space-x-1.5 overflow-hidden">
                             {(() => {
-                              try {
-                                const ids = JSON.parse(trip.mem_id);
-                                const joined = members.filter((member) => ids.includes(member.id));
-                                return joined.slice(0, 3).map((member) => (
-                                  <Avatar key={member.id} className="h-5 w-5 border border-background ring-1 ring-border/20">
-                                    <AvatarFallback className={`${getAvatarColor(member.mem_name)} text-[8px] text-white font-bold`}>
-                                      {getAvatarInitials(member.mem_name)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                )).concat(joined.length > 3 ? (
-                                  <div key="more" className="h-5 w-5 rounded-full bg-muted border border-background flex items-center justify-center text-[7px] font-bold text-muted-foreground">
-                                    +{joined.length - 3}
-                                  </div>
-                                ) : []);
-                              } catch {
-                                return null;
-                              }
+                              const joined = getJoinedMembers(trip);
+                              return joined.slice(0, 3).map((member) => (
+                                <Avatar key={member.id} className="h-5 w-5 border border-background ring-1 ring-border/20">
+                                  <AvatarFallback className={`${getAvatarColor(member.mem_name)} text-[8px] text-white font-bold`}>
+                                    {getAvatarInitials(member.mem_name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                              )).concat(joined.length > 3 ? (
+                                <div key="more" className="h-5 w-5 rounded-full bg-muted border border-background flex items-center justify-center text-[7px] font-bold text-muted-foreground">
+                                  +{joined.length - 3}
+                                </div>
+                              ) : []);
                             })()}
                           </div>
                         </td>
@@ -868,6 +1017,55 @@ export function GroupPageClient({ groupId }) {
               ))}
             </tbody>
           </table>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {orderedTrips.map((trip, idx) => {
+            const isPinned = tripPinnedRows.includes(trip.id);
+            const joinedMembers = getJoinedMembers(trip);
+            return (
+              <div key={trip.id || idx} className={`rounded-xl border p-4 transition-colors ${isPinned ? 'border-primary/40 bg-primary/5' : 'border-border/30 bg-background/20'}`}>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={selectedTripIds.includes(trip.id)}
+                      onChange={() => toggleTripSelection(trip.id)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    <p className="font-semibold truncate" title={trip.trp_name}>{trip.trp_name}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => togglePinnedTripRow(trip.id)} title="Pin trip">
+                      <Pin className={`h-3.5 w-3.5 ${isPinned ? 'text-primary' : 'text-muted-foreground'}`} />
+                    </Button>
+                    <Badge variant="outline" className="text-xs">{formatTimeDifference(trip.update_dttm || trip.create_date)}</Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Amount</p>
+                    <p className="font-semibold text-emerald-600 dark:text-emerald-400">{currency}{parseFloat(trip.spend || 0).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Payer</p>
+                    <p className="truncate">{getPayerName(trip)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Members</p>
+                    <p>{getMemberCount(trip)}</p>
+                  </div>
+                </div>
+                {joinedMembers.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border/20 flex flex-wrap gap-1.5">
+                    {joinedMembers.map((member) => (
+                      <span key={member.id} className="text-xs bg-muted/60 rounded-lg px-2 py-1">{member.mem_name}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -904,7 +1102,7 @@ export function GroupPageClient({ groupId }) {
       <div className="relative z-10 flex flex-col flex-1 w-full">
 
         {/* Sticky Header Section */}
-        <div className="sticky top-0 z-30 w-full  border-b border-border/30">
+        <div className="sticky top-14 sm:top-16 z-30 w-full border-b border-border/30">
           <header className="w-full px-4 sm:px-6 lg:px-8 pt-4 pb-3">
             <div className="flex items-center gap-3 mb-4">
               <button
@@ -1222,14 +1420,30 @@ export function GroupPageClient({ groupId }) {
             )}
           </div>
 
-          {/* Desktop two-column */}
-          <div className="hidden md:grid md:grid-cols-12 gap-6">
-            <div className="md:col-span-8 space-y-6">
-              {ContributionsSection}
+          {/* Desktop tabbed view */}
+          <div className="hidden md:block">
+            <div className="mb-4 border-b border-border/20">
+              <div className="flex gap-1">
+                {[
+                  { key: 'members', label: 'Members', icon: Users },
+                  { key: 'trips', label: 'Trips', icon: TrendingUp },
+                  { key: 'summary', label: 'Summary', icon: Wallet },
+                ].map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => setDesktopTab(key)}
+                    className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${desktopTab === key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="md:col-span-4 space-y-6">
-              {TripsSection}
-            </div>
+
+            {desktopTab === 'members' && ContributionsSection}
+            {desktopTab === 'trips' && TripsSection}
+            {desktopTab === 'summary' && SummarySection}
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, User, Home, Plus, Menu, Sparkles } from 'lucide-react';
+import { LogOut, User, Plus, Menu, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
@@ -44,9 +44,7 @@ export function Topbar() {
     router.push('/login');
   };
 
-  const navLinks = [
-    { href: '/home', label: 'Home', icon: Home },
-  ];
+  const navLinks = [];
 
   return (
     <>
