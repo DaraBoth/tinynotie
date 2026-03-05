@@ -1,6 +1,7 @@
 import { Telegraf, Markup } from 'telegraf';
 import { message } from 'telegraf/filters';
 import { pool } from '../utils/dbUtils.js';
+import bcrypt from 'bcrypt';
 import { runAiAgent } from './aiAgentService.js';
 import { generateGroupExcelBuffer } from '../utils/excelGenerator.js';
 import { processReceiptImage } from './receiptService.js';
@@ -8,6 +9,7 @@ import moment from 'moment';
 import axios from 'axios';
 
 let bot;
+const pendingRegistrations = new Map();
 
 /**
  * Initialize the Telegram Bot with webhook mode
@@ -80,9 +82,91 @@ export const initTelegramBot = (token) => {
             `👋 Welcome to TinyNotie Assistant!\n\nI can help you manage your group expenses, members, and trips directly from Telegram.\n\n${ctx.user
                 ? `Logged in as: *${ctx.user.usernm}*`
                 : 'To get started, please link your account from the TinyNotie web app settings.'
-            }\n\n*Available Commands:*\n/link_group [id] - Link this chat to a group\n/create_group [name] - Create a new group\n/add_member [name] - Add member to group\n/export - Get Excel report\n/status - Group summary`,
+            }\n\n*Available Commands:*\n/register [username] - Create account via Telegram\n/password [your_password] - Set password after /register\n/link_group [id] - Link this chat to a group\n/chat_id - Get current chat ID\n/create_group [name] - Create a new group\n/add_member [name] - Add member to group\n/export - Get Excel report\n/status - Group summary`,
             { parse_mode: 'Markdown' }
         );
+    });
+
+    // /register command - create account flow from Telegram
+    bot.command('register', async (ctx) => {
+        if (!ctx.from) return;
+
+        try {
+            const existingByTelegram = await pool.query(
+                'SELECT id, usernm FROM user_infm WHERE telegram_id = $1',
+                [ctx.from.id]
+            );
+
+            if (existingByTelegram.rows.length > 0) {
+                return ctx.reply(`✅ This Telegram is already linked to account: *${existingByTelegram.rows[0].usernm}*`, { parse_mode: 'Markdown' });
+            }
+
+            const args = (ctx.message?.text || '').split(' ').slice(1).join(' ').trim();
+            const baseUsername = (args || ctx.from.username || `tg_${ctx.from.id}`).toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 40);
+            let candidate = baseUsername || `tg_${ctx.from.id}`;
+
+            const usernameCheck = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [candidate]);
+            if (usernameCheck.rows.length > 0) {
+                candidate = `${candidate}_${String(ctx.from.id).slice(-4)}`;
+            }
+
+            pendingRegistrations.set(ctx.from.id, {
+                username: candidate,
+                expiresAt: Date.now() + 10 * 60 * 1000,
+            });
+
+            return ctx.reply(
+                `🧾 Registration initialized!\n\nUsername: *${candidate}*\n\nNow send:\n\`/password YourNewPassword\`\n\n(Expires in 10 minutes)`,
+                { parse_mode: 'Markdown' }
+            );
+        } catch (err) {
+            console.error('Telegram register error:', err);
+            return ctx.reply('❌ Failed to initialize registration. Please try again.');
+        }
+    });
+
+    // /password command - finalize Telegram registration
+    bot.command('password', async (ctx) => {
+        if (!ctx.from) return;
+
+        try {
+            const pending = pendingRegistrations.get(ctx.from.id);
+            if (!pending) {
+                return ctx.reply('❌ No active registration found. Please run /register first.');
+            }
+
+            if (Date.now() > pending.expiresAt) {
+                pendingRegistrations.delete(ctx.from.id);
+                return ctx.reply('⌛ Registration session expired. Please run /register again.');
+            }
+
+            const pwd = (ctx.message?.text || '').split(' ').slice(1).join(' ').trim();
+            if (!pwd || pwd.length < 6) {
+                return ctx.reply('❌ Password must be at least 6 characters. Example: /password MySecurePass123');
+            }
+
+            const usernameTaken = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [pending.username]);
+            if (usernameTaken.rows.length > 0) {
+                pendingRegistrations.delete(ctx.from.id);
+                return ctx.reply('❌ Username is no longer available. Please run /register again.');
+            }
+
+            const hashed = await bcrypt.hash(pwd, 10);
+            const insert = await pool.query(
+                'INSERT INTO user_infm (usernm, passwd, telegram_id) VALUES ($1, $2, $3) RETURNING id, usernm',
+                [pending.username, hashed, ctx.from.id]
+            );
+
+            pendingRegistrations.delete(ctx.from.id);
+
+            return ctx.reply(
+                `✅ Registration successful!\n\nAccount: *${insert.rows[0].usernm}*\n\nYou can now use TinyNotie app login with this username and your password.`,
+                { parse_mode: 'Markdown' }
+            );
+        } catch (err) {
+            console.error('Telegram password/register finalize error:', err);
+            return ctx.reply('❌ Failed to complete registration. Please try /register again.');
+        }
     });
 
     // /chat_id command - helps users discover the current Telegram chat ID
