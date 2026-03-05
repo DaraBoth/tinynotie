@@ -6,27 +6,27 @@ import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import {
   ArrowLeft,
-  Send,
-  LogIn,
-  Copy,
+  Eye,
+  EyeOff,
   CheckCircle2,
-  MessageSquare,
-  KeyRound,
+  Link2,
+  User,
+  Lock,
   Zap,
-  Wallet,
-  TrendingUp,
   ShieldCheck,
   ArrowRight,
-  Info,
-  Lock,
-  UserPlus
+  UserPlus,
+  MessageSquare,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useMutation } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { SpaceSky } from '@/components/SpaceSky';
 import { Loading } from '@/components/Loading';
+import { api } from '@/api/apiClient';
 
 export default function RegisterPage() {
   return (
@@ -38,9 +38,18 @@ export default function RegisterPage() {
 
 function RegisterForm() {
   const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
-  const [copiedCommand, setCopiedCommand] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [telegramLinking, setTelegramLinking] = useState(false);
+  const [telegramLinked, setTelegramLinked] = useState(false);
+  const [formData, setFormData] = useState({
+    usernm: '',
+    passwd: '',
+    confirmPasswd: '',
+  });
 
   // Redirect if already logged in
   useEffect(() => {
@@ -49,80 +58,81 @@ function RegisterForm() {
     }
   }, [hasHydrated, isAuthenticated, router]);
 
-  const copyToClipboard = (text, commandType) => {
-    navigator.clipboard.writeText(text);
-    setCopiedCommand(commandType);
-    toast.success('Copied to clipboard!');
-    setTimeout(() => setCopiedCommand(null), 2000);
+  const registerMutation = useMutation({
+    mutationFn: (payload) => api.register(payload),
+    onSuccess: (response) => {
+      const { status, token, _id, usernm, message } = response.data;
+      if (status && token) {
+        setAuth(token, { _id, usernm: usernm || formData.usernm });
+        toast.success(message || 'Account created successfully!');
+      } else {
+        toast.error('Registration failed');
+      }
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Registration failed');
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const username = formData.usernm.trim().toLowerCase();
+    const password = formData.passwd;
+
+    if (!username || !password || !formData.confirmPasswd) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== formData.confirmPasswd) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    registerMutation.mutate({ usernm: username, passwd: password });
   };
 
-  const steps = [
-    {
-      number: 1,
-      icon: MessageSquare,
-      label: 'Open Telegram Bot',
-      description: 'Click the button below to start your journey with our bot',
-      action: (
-        <Button
-          className="w-full h-12 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-2xl font-bold transition-all hover:scale-[1.02]"
-          onClick={() => window.open('https://t.me/tinynotie_bot', '_blank')}
-        >
-          <Send className="mr-2 h-4 w-4" />
-          Open @TinyNotie
-        </Button>
-      ),
-    },
-    {
-      number: 2,
-      icon: Send,
-      label: 'Send Command',
-      description: 'Send this command to the bot to create your account',
-      action: (
-        <div className="relative group">
-          <div className="flex items-center gap-2 p-4 bg-muted/20 border border-border/40 rounded-2xl font-mono text-sm group-focus-within:border-primary/50 transition-all">
-            <code className="flex-1 text-primary font-bold">/register</code>
-            <button
-              onClick={() => copyToClipboard('/register', 'register')}
-              className="p-2 hover:bg-background/40 rounded-lg transition-colors"
-            >
-              {copiedCommand === 'register' ? (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4 text-muted-foreground" />
-              )}
-            </button>
-          </div>
-        </div>
-      ),
-    },
-    {
-      number: 3,
-      icon: KeyRound,
-      label: 'Set Password',
-      description: 'Secure your account with a personal secret key',
-      action: (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 p-4 bg-muted/20 border border-border/40 rounded-2xl font-mono text-xs overflow-hidden">
-            <code className="flex-1 text-primary font-bold truncate">/password YourNewPassword</code>
-            <button
-              onClick={() => copyToClipboard('/password YourNewPassword', 'password')}
-              className="p-2 hover:bg-background/40 rounded-lg transition-colors shrink-0"
-            >
-              {copiedCommand === 'password' ? (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4 text-muted-foreground" />
-              )}
-            </button>
-          </div>
-          <div className="flex items-start gap-2 p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
-            <Info className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
-            <p className="text-[10px] text-red-500/80 font-medium">Use a strong password (min 6 chars) that you don't use elsewhere.</p>
-          </div>
-        </div>
-      ),
-    },
-  ];
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleLinkTelegram = async () => {
+    try {
+      setTelegramLinking(true);
+      const newWindow = window.open('', '_blank');
+      const res = await api.getTelegramLink();
+      if (res.data?.status && res.data?.link) {
+        if (newWindow) {
+          newWindow.location.href = res.data.link;
+        } else {
+          window.location.href = res.data.link;
+        }
+        setTelegramLinked(true);
+        toast.success('Opening Telegram bot for linking...');
+      } else {
+        if (newWindow) newWindow.close();
+        toast.error('Failed to generate Telegram link');
+      }
+    } catch (error) {
+      toast.error('Failed to open Telegram linking');
+    } finally {
+      setTelegramLinking(false);
+    }
+  };
+
+  if (!hasHydrated || registerMutation.isPending || isRedirecting) {
+    return <Loading text={isRedirecting ? 'Redirecting...' : !hasHydrated ? 'Loading...' : 'Creating account...'} />;
+  }
+
+  const registered = isAuthenticated;
 
   return (
     <main className="relative min-h-screen flex flex-col md:flex-row overflow-hidden bg-background">
@@ -160,16 +170,16 @@ function RegisterForm() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-primary to-blue-500 bg-[length:200%_auto] animate-gradient">Elite Squad</span>
             </h1>
             <p className="text-xl text-muted-foreground/60 font-medium leading-relaxed max-w-md italic border-l-2 border-primary/20 pl-6">
-              Create your identity in seconds via Telegram. The smartest financial move you'll make today.
+              Create account directly in-app, then optionally link Telegram in one tap.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-4 pt-4">
             {[
-              { icon: MessageSquare, label: "Bot Ops" },
+              { icon: User, label: "App Signup" },
               { icon: ShieldCheck, label: "Verified" },
-              { icon: Zap, label: "Instant" },
-              { icon: Wallet, label: "Always Free" }
+              { icon: Zap, label: "Fast" },
+              { icon: MessageSquare, label: "Telegram Optional" }
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -203,51 +213,141 @@ function RegisterForm() {
             </Link>
             <div className="h-1 w-12 bg-primary rounded-full mb-8" />
             <h2 className="text-5xl font-black tracking-tighter uppercase italic text-foreground leading-none">
-              Deploy <br />
+              Create <br />
               <span className="text-primary tracking-normal">Account.</span>
             </h2>
             <p className="text-muted-foreground/60 font-bold text-sm uppercase tracking-widest italic">
-              Execute registration steps.
+              Register in app. Link Telegram anytime.
             </p>
           </div>
 
-          {/* Steps List */}
-          <div className="space-y-10">
-            {steps.map((step, idx) => (
-              <motion.div
-                key={step.number}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + (idx * 0.1) }}
-                className="relative pl-12 group"
-              >
-                {/* Step Line */}
-                {idx < steps.length - 1 && (
-                  <div className="absolute left-[15px] top-10 bottom-[-30px] w-[2px] bg-border/20 group-hover:bg-primary/20 transition-colors" />
-                )}
-
-                {/* Step Number */}
-                <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-foreground/5 border-2 border-border/20 flex items-center justify-center text-[10px] font-black group-hover:border-primary/40 group-hover:text-primary transition-all z-10">
-                  {step.number}
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-foreground">{step.label}</h3>
-                    <p className="text-[10px] text-muted-foreground/60 font-bold uppercase italic">{step.description}</p>
+          {/* Register Form */}
+          {!registered ? (
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="space-y-6">
+                <div className="space-y-3 group/field">
+                  <Label htmlFor="usernm" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 group-focus-within/field:text-primary transition-colors px-1">
+                    Username
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within/field:text-primary transition-colors">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <Input
+                      id="usernm"
+                      name="usernm"
+                      placeholder="USERNAME"
+                      value={formData.usernm}
+                      onChange={handleChange}
+                      className="h-14 pl-10 bg-transparent border-0 border-b-2 border-border/20 rounded-none focus-visible:ring-0 focus:border-primary transition-all font-black tracking-tighter text-xl placeholder:text-muted-foreground/20 placeholder:italic"
+                      required
+                    />
                   </div>
-                  {step.action}
                 </div>
-              </motion.div>
-            ))}
-          </div>
+
+                <div className="space-y-3 group/field">
+                  <Label htmlFor="passwd" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 group-focus-within/field:text-primary transition-colors px-1">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within/field:text-primary transition-colors">
+                      <Lock className="h-5 w-5" />
+                    </div>
+                    <Input
+                      id="passwd"
+                      name="passwd"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={formData.passwd}
+                      onChange={handleChange}
+                      className="h-14 pl-10 pr-12 bg-transparent border-0 border-b-2 border-border/20 rounded-none focus-visible:ring-0 focus:border-primary transition-all font-black tracking-tighter text-xl placeholder:text-muted-foreground/20"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:text-primary transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5 text-muted-foreground/40" />
+                      ) : (
+                        <Eye className="h-5 w-5 text-muted-foreground/40" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 group/field">
+                  <Label htmlFor="confirmPasswd" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50 group-focus-within/field:text-primary transition-colors px-1">
+                    Confirm Password
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within/field:text-primary transition-colors">
+                      <Lock className="h-5 w-5" />
+                    </div>
+                    <Input
+                      id="confirmPasswd"
+                      name="confirmPasswd"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={formData.confirmPasswd}
+                      onChange={handleChange}
+                      className="h-14 pl-10 bg-transparent border-0 border-b-2 border-border/20 rounded-none focus-visible:ring-0 focus:border-primary transition-all font-black tracking-tighter text-xl placeholder:text-muted-foreground/20"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-16 rounded-[2rem] text-sm font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-1 active:translate-y-0.5 transition-all group overflow-hidden relative"
+              >
+                <span className="relative z-10 flex items-center justify-center gap-3">
+                  Create Account
+                  <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform" />
+                </span>
+              </Button>
+            </form>
+          ) : (
+            <div className="space-y-6">
+              <div className="p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10">
+                <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" /> Account created successfully.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Telegram linking is optional. You can do it now or later in group settings.
+                </p>
+              </div>
+
+              <Button
+                onClick={handleLinkTelegram}
+                disabled={telegramLinking}
+                className="w-full h-14 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-2xl font-bold"
+              >
+                <Link2 className="mr-2 h-4 w-4" />
+                {telegramLinking ? 'Opening Telegram...' : telegramLinked ? 'Open Telegram Again' : 'Link Telegram (Optional)'}
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full h-14 rounded-2xl"
+                onClick={() => {
+                  setIsRedirecting(true);
+                  router.replace('/home');
+                }}
+              >
+                Continue to App
+              </Button>
+            </div>
+          )}
 
           {/* Footer Info */}
           <div className="pt-8 space-y-8">
             <div className="p-6 rounded-3xl bg-secondary/20 border border-primary/10 flex items-start gap-4">
               <Lock className="h-5 w-5 text-primary mt-1 shrink-0" />
               <p className="text-xs text-muted-foreground/80 leading-relaxed font-medium italic">
-                Secure deployment via Telegram bot ensures encrypted identity linking. Your vaults remain private.
+                Secure registration starts in-app. Telegram link is one-tap and optional.
               </p>
             </div>
 
