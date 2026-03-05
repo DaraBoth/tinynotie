@@ -42,13 +42,6 @@ const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
   maximumFractionDigits: 2,
 });
 
-const formatDateTime = (value) => {
-  if (!value) return 'N/A';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return safeText(value);
-  return date.toLocaleString();
-};
-
 /**
  * @swagger
  * /groups/getGroupByUserId:
@@ -1338,9 +1331,7 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
       if (member.joinedTrips.length > 0) {
         message += `• Joined Trips:\n`;
         member.joinedTrips.forEach((trip) => {
-          const matchedTrip = reportData.trips.find((t) => t.id === trip.id);
-          const updated = matchedTrip ? formatDateTime(matchedTrip.updatedAt) : 'N/A';
-          message += `   - ${safeText(trip.name)}: ${currency}${formatAmount(trip.cost)} (${updated})\n`;
+          message += `   - ${safeText(trip.name)}: ${currency}${formatAmount(trip.cost)}\n`;
         });
       } else {
         message += `• Joined Trips: -\n`;
