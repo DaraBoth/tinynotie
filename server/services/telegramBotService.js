@@ -1,4 +1,5 @@
 import { Telegraf, Markup } from 'telegraf';
+import { message } from 'telegraf/filters';
 import { pool } from '../utils/dbUtils.js';
 import { runAiAgent } from './aiAgentService.js';
 import { generateGroupExcelBuffer } from '../utils/excelGenerator.js';
@@ -208,7 +209,7 @@ export const initTelegramBot = (token) => {
     });
 
     // Handle natural language messages (Agentic AI)
-    bot.on('text', async (ctx) => {
+    bot.on(message('text'), async (ctx) => {
         if (!ctx.user) {
             if (ctx.chat?.type === 'private') {
                 return ctx.reply('Please link your TinyNotie account first from the web app, then send /start again.');
@@ -254,7 +255,7 @@ export const initTelegramBot = (token) => {
     });
 
     // Handle Photos (Receipt Tracking)
-    bot.on('photo', async (ctx) => {
+    bot.on(message('photo'), async (ctx) => {
         if (!ctx.user) return;
 
         // Find linked group
@@ -299,7 +300,7 @@ export const initTelegramBot = (token) => {
     });
 
     // When bot is added to a group, provide setup instructions with chat ID
-    bot.on('new_chat_members', async (ctx) => {
+    bot.on(message('new_chat_members'), async (ctx) => {
         try {
             const me = await bot.telegram.getMe();
             const addedBot = (ctx.message?.new_chat_members || []).some((m) => m.id === me.id);
