@@ -7,7 +7,7 @@ import {
   LayoutGrid, List, MessageSquare, Settings, ArrowLeft,
   Share2, UserPlus, Plus, Pencil, Trash2, Users,
   Wallet, TrendingUp, Clock, BadgeCheck, ScanLine, X, ChevronDown,
-  Download, FileStack, Send, ExternalLink,
+  Download, FileStack, Send, ExternalLink, Pin, MoreHorizontal,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
@@ -31,6 +31,13 @@ import { AddUserToGroup } from '@/components/AddUserToGroup';
 import { SelectTripDialog } from '@/components/SelectTripDialog';
 import { calculateMoney, formatTimeDifference } from '@/utils/helpers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 /* ─── avatar color helpers ────────────────────────────────────────────── */
 export const AVATAR_COLORS = [
@@ -88,6 +95,8 @@ export function GroupPageClient({ groupId }) {
   const [telegramTargetType, setTelegramTargetType] = useState('group');
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [selectedTripIds, setSelectedTripIds] = useState([]);
+  const [memberPinnedColumns, setMemberPinnedColumns] = useState({ name: 'left' });
+  const [tripPinnedColumns, setTripPinnedColumns] = useState({ name: 'left' });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -387,6 +396,109 @@ export function GroupPageClient({ groupId }) {
 
   const tripColumns = trips.map((t) => t.trp_name);
 
+  const memberTableColumns = [
+    { key: 'sel', label: 'Sel', width: 64, align: 'left' },
+    { key: 'index', label: '#', width: 56, align: 'left' },
+    { key: 'name', label: 'Name', width: 160, align: 'left' },
+    { key: 'paid', label: 'Paid', width: 120, align: 'right' },
+    ...tripColumns.map((name) => ({ key: `trip:${name}`, label: name, width: 140, align: 'right' })),
+    { key: 'remain', label: 'Remain', width: 120, align: 'right' },
+    { key: 'unpaid', label: 'Unpaid', width: 120, align: 'right' },
+  ];
+
+  const tripTableColumns = [
+    { key: 'sel', label: 'Sel', width: 64, align: 'left' },
+    { key: 'name', label: 'Name', width: 190, align: 'left' },
+    { key: 'amount', label: 'Amount', width: 120, align: 'right' },
+    { key: 'payer', label: 'Payer', width: 130, align: 'right', hideOnSmall: true },
+    { key: 'joined', label: 'Joined By', width: 180, align: 'left', hideOnSmall: true },
+    { key: 'updated', label: 'Updated', width: 150, align: 'right' },
+  ];
+
+  const cyclePinSide = (current) => {
+    if (current === 'left') return 'right';
+    if (current === 'right') return null;
+    return 'left';
+  };
+
+  const togglePinColumn = (table, key) => {
+    if (table === 'members') {
+      setMemberPinnedColumns((prev) => {
+        const next = cyclePinSide(prev[key]);
+        const updated = { ...prev };
+        if (!next) delete updated[key];
+        else updated[key] = next;
+        return updated;
+      });
+      return;
+    }
+
+    setTripPinnedColumns((prev) => {
+      const next = cyclePinSide(prev[key]);
+      const updated = { ...prev };
+      if (!next) delete updated[key];
+      else updated[key] = next;
+      return updated;
+    });
+  };
+
+  const getPinnedMeta = (columns, pinnedMap) => {
+    const leftColumns = columns.filter((col) => pinnedMap[col.key] === 'left');
+    const rightColumns = columns.filter((col) => pinnedMap[col.key] === 'right');
+
+    const leftOffsets = {};
+    let leftSum = 0;
+    leftColumns.forEach((col) => {
+      leftOffsets[col.key] = leftSum;
+      leftSum += col.width;
+    });
+
+    const rightOffsets = {};
+    let rightSum = 0;
+    [...rightColumns].reverse().forEach((col) => {
+      rightOffsets[col.key] = rightSum;
+      rightSum += col.width;
+    });
+
+    return { leftOffsets, rightOffsets };
+  };
+
+  const getPinnedCellStyle = (column, pinnedMap, pinnedMeta, isHeader = false) => {
+    const side = pinnedMap[column.key];
+    const baseStyle = {
+      minWidth: `${column.width}px`,
+      width: `${column.width}px`,
+      maxWidth: `${column.width}px`,
+    };
+
+    if (!side) return baseStyle;
+
+    const stickyStyle = {
+      ...baseStyle,
+      position: 'sticky',
+      zIndex: isHeader ? 30 : 20,
+      background: 'rgba(9, 12, 40, 0.96)',
+      backdropFilter: 'blur(2px)',
+    };
+
+    if (side === 'left') {
+      return {
+        ...stickyStyle,
+        left: `${pinnedMeta.leftOffsets[column.key] || 0}px`,
+        boxShadow: '1px 0 0 rgba(255,255,255,0.08)',
+      };
+    }
+
+    return {
+      ...stickyStyle,
+      right: `${pinnedMeta.rightOffsets[column.key] || 0}px`,
+      boxShadow: '-1px 0 0 rgba(255,255,255,0.08)',
+    };
+  };
+
+  const memberPinnedMeta = getPinnedMeta(memberTableColumns, memberPinnedColumns);
+  const tripPinnedMeta = getPinnedMeta(tripTableColumns, tripPinnedColumns);
+
   /* ─── main component ─────────────────────────────────────────────────────── */
 
   const ContributionsSection = (
@@ -459,42 +571,91 @@ export function GroupPageClient({ groupId }) {
           </Button>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="overflow-x-auto rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm">
-          <table className="w-full text-sm min-w-[500px]">
+        <div className="overflow-auto max-h-[68vh] rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm">
+          <table className="w-full text-sm min-w-[980px]">
             <thead>
               <tr className="border-b border-border/50 bg-muted/30">
-                <th className="text-left px-3 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide w-10">Sel</th>
-                <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide w-8">#</th>
-                <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Name</th>
-                <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Paid</th>
-                {tripColumns.map((name) => (
-                  <th key={name} className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide max-w-[100px]">
-                    <span className="block truncate" title={name}>{name}</span>
+                {memberTableColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta, true)}
+                    className={`${column.align === 'right' ? 'text-right' : 'text-left'} px-3 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide`}
+                  >
+                    <div className={`flex items-center gap-1 ${column.align === 'right' ? 'justify-end' : 'justify-start'}`}>
+                      <span className="truncate" title={column.label}>{column.label}</span>
+                      {column.key !== 'sel' && (
+                        <button
+                          type="button"
+                          onClick={() => togglePinColumn('members', column.key)}
+                          className="inline-flex items-center justify-center rounded p-0.5 hover:bg-muted/70 text-muted-foreground hover:text-foreground"
+                          title={`Pin ${column.label} (left/right)`}
+                        >
+                          <Pin className={`h-3 w-3 ${memberPinnedColumns[column.key] ? 'text-primary' : ''}`} />
+                        </button>
+                      )}
+                    </div>
                   </th>
                 ))}
-                <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Remain</th>
-                <th className="text-right px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Unpaid</th>
               </tr>
             </thead>
             <tbody>
               {newData.map((row, idx) => (
                 <tr key={row.id || idx} className="border-b border-border/20 hover:bg-muted/20 transition-colors">
-                  <td className="px-3 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedMemberIds.includes(row._memberId)}
-                      onChange={() => toggleMemberSelection(row._memberId)}
-                      className="h-4 w-4 accent-primary"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
-                  <td className="px-4 py-3 font-semibold">{row.name}</td>
-                  <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">{row.paid}</td>
-                  {tripColumns.map((name) => (
-                    <td key={name} className="px-4 py-3 text-right text-orange-600 dark:text-orange-400 text-sm">{row[name] ?? '—'}</td>
-                  ))}
-                  <td className={`px-4 py-3 text-right font-semibold ${String(row.remain).startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{row.remain}</td>
-                  <td className="px-4 py-3 text-right text-rose-600 dark:text-rose-400">{row.unpaid}</td>
+                  {memberTableColumns.map((column) => {
+                    const baseClass = `${column.align === 'right' ? 'text-right' : 'text-left'} px-3 py-3`;
+
+                    if (column.key === 'sel') {
+                      return (
+                        <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={baseClass}>
+                          <input
+                            type="checkbox"
+                            checked={selectedMemberIds.includes(row._memberId)}
+                            onChange={() => toggleMemberSelection(row._memberId)}
+                            className="h-4 w-4 accent-primary"
+                          />
+                        </td>
+                      );
+                    }
+
+                    if (column.key === 'index') {
+                      return <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={`${baseClass} text-muted-foreground text-xs`}>{idx + 1}</td>;
+                    }
+
+                    if (column.key === 'name') {
+                      return <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={`${baseClass} font-semibold truncate`}>{row.name}</td>;
+                    }
+
+                    if (column.key === 'paid') {
+                      return <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={`${baseClass} text-emerald-600 dark:text-emerald-400 font-medium`}>{row.paid}</td>;
+                    }
+
+                    if (column.key === 'remain') {
+                      return (
+                        <td
+                          key={`${row.id || idx}-${column.key}`}
+                          style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)}
+                          className={`${baseClass} font-semibold ${String(row.remain).startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+                        >
+                          {row.remain}
+                        </td>
+                      );
+                    }
+
+                    if (column.key === 'unpaid') {
+                      return <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={`${baseClass} text-rose-600 dark:text-rose-400`}>{row.unpaid}</td>;
+                    }
+
+                    if (column.key.startsWith('trip:')) {
+                      const tripName = column.key.replace('trip:', '');
+                      return (
+                        <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={`${baseClass} text-orange-600 dark:text-orange-400 text-sm truncate`}>
+                          {row[tripName] ?? '—'}
+                        </td>
+                      );
+                    }
+
+                    return <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={baseClass}>—</td>;
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -594,16 +755,31 @@ export function GroupPageClient({ groupId }) {
           </Button>
         </div>
       ) : (
-        <div className="rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm overflow-auto max-h-[68vh]">
+          <table className="w-full text-sm min-w-[860px]">
             <thead>
               <tr className="border-b border-border/50 bg-muted/30">
-                <th className="text-left px-2 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide w-8">Sel</th>
-                <th className="text-left px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide">Name</th>
-                <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide">Amount</th>
-                <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide hidden sm:table-cell">Payer</th>
-                <th className="text-left px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide hidden sm:table-cell">Joined By</th>
-                <th className="text-right px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide">Updated</th>
+                {tripTableColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta, true)}
+                    className={`${column.align === 'right' ? 'text-right' : 'text-left'} px-3 py-2 text-muted-foreground font-medium text-[11px] uppercase tracking-wide ${column.hideOnSmall ? 'hidden sm:table-cell' : ''}`}
+                  >
+                    <div className={`flex items-center gap-1 ${column.align === 'right' ? 'justify-end' : 'justify-start'}`}>
+                      <span className="truncate" title={column.label}>{column.label}</span>
+                      {column.key !== 'sel' && (
+                        <button
+                          type="button"
+                          onClick={() => togglePinColumn('trips', column.key)}
+                          className="inline-flex items-center justify-center rounded p-0.5 hover:bg-muted/70 text-muted-foreground hover:text-foreground"
+                          title={`Pin ${column.label} (left/right)`}
+                        >
+                          <Pin className={`h-3 w-3 ${tripPinnedColumns[column.key] ? 'text-primary' : ''}`} />
+                        </button>
+                      )}
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -611,52 +787,83 @@ export function GroupPageClient({ groupId }) {
                 <tr key={trip.id || idx}
                   className="border-b border-border/20 hover:bg-muted/20 transition-colors cursor-pointer"
                   onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
-                  <td className="px-2 py-2.5" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedTripIds.includes(trip.id)}
-                      onChange={() => toggleTripSelection(trip.id)}
-                      className="h-4 w-4 accent-primary"
-                    />
-                  </td>
-                  <td className="px-3 py-2.5 font-medium truncate max-w-[120px]" title={trip.trp_name}>{trip.trp_name}</td>
-                  <td className="px-3 py-2.5 text-right text-emerald-600 dark:text-emerald-400 font-semibold">{currency}{parseFloat(trip.spend || 0).toFixed(2)}</td>
-                  <td className="px-3 py-2.5 text-right text-muted-foreground hidden sm:table-cell truncate max-w-[80px]">{getPayerName(trip)}</td>
-                  <td className="px-3 py-2.5 hidden sm:table-cell">
-                    <div className="flex -space-x-1.5 overflow-hidden">
-                      {(() => {
-                        try {
-                          const ids = JSON.parse(trip.mem_id);
-                          const joined = members.filter(m => ids.includes(m.id));
-                          return joined.slice(0, 3).map(m => (
-                            <Avatar key={m.id} className="h-5 w-5 border border-background ring-1 ring-border/20">
-                              <AvatarFallback className={`${getAvatarColor(m.mem_name)} text-[8px] text-white font-bold`}>
-                                {getAvatarInitials(m.mem_name)}
-                              </AvatarFallback>
-                            </Avatar>
-                          )).concat(joined.length > 3 ? (
-                            <div key="more" className="h-5 w-5 rounded-full bg-muted border border-background flex items-center justify-center text-[7px] font-bold text-muted-foreground">
-                              +{joined.length - 3}
-                            </div>
-                          ) : []);
-                        } catch { return null; }
-                      })()}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2.5 text-right text-muted-foreground text-xs">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 hover:bg-sky-500/10"
-                        onClick={(e) => handleShareTrip(e, trip)}
-                        title="Share to Telegram"
-                      >
-                        <Send className="h-3.5 w-3.5" />
-                      </Button>
-                      <span>{formatTimeDifference(trip.update_dttm || trip.create_date)}</span>
-                    </div>
-                  </td>
+                  {tripTableColumns.map((column) => {
+                    const baseClass = `${column.align === 'right' ? 'text-right' : 'text-left'} px-3 py-2.5 ${column.hideOnSmall ? 'hidden sm:table-cell' : ''}`;
+
+                    if (column.key === 'sel') {
+                      return (
+                        <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={baseClass} onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTripIds.includes(trip.id)}
+                            onChange={() => toggleTripSelection(trip.id)}
+                            className="h-4 w-4 accent-primary"
+                          />
+                        </td>
+                      );
+                    }
+
+                    if (column.key === 'name') {
+                      return <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} font-medium truncate`} title={trip.trp_name}>{trip.trp_name}</td>;
+                    }
+
+                    if (column.key === 'amount') {
+                      return <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} text-emerald-600 dark:text-emerald-400 font-semibold`}>{currency}{parseFloat(trip.spend || 0).toFixed(2)}</td>;
+                    }
+
+                    if (column.key === 'payer') {
+                      return <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} text-muted-foreground truncate`}>{getPayerName(trip)}</td>;
+                    }
+
+                    if (column.key === 'joined') {
+                      return (
+                        <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={baseClass}>
+                          <div className="flex -space-x-1.5 overflow-hidden">
+                            {(() => {
+                              try {
+                                const ids = JSON.parse(trip.mem_id);
+                                const joined = members.filter((member) => ids.includes(member.id));
+                                return joined.slice(0, 3).map((member) => (
+                                  <Avatar key={member.id} className="h-5 w-5 border border-background ring-1 ring-border/20">
+                                    <AvatarFallback className={`${getAvatarColor(member.mem_name)} text-[8px] text-white font-bold`}>
+                                      {getAvatarInitials(member.mem_name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                )).concat(joined.length > 3 ? (
+                                  <div key="more" className="h-5 w-5 rounded-full bg-muted border border-background flex items-center justify-center text-[7px] font-bold text-muted-foreground">
+                                    +{joined.length - 3}
+                                  </div>
+                                ) : []);
+                              } catch {
+                                return null;
+                              }
+                            })()}
+                          </div>
+                        </td>
+                      );
+                    }
+
+                    if (column.key === 'updated') {
+                      return (
+                        <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} text-muted-foreground text-xs`}>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 hover:bg-sky-500/10"
+                              onClick={(e) => handleShareTrip(e, trip)}
+                              title="Share to Telegram"
+                            >
+                              <Send className="h-3.5 w-3.5" />
+                            </Button>
+                            <span>{formatTimeDifference(trip.update_dttm || trip.create_date)}</span>
+                          </div>
+                        </td>
+                      );
+                    }
+
+                    return <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={baseClass}>—</td>;
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -710,12 +917,6 @@ export function GroupPageClient({ groupId }) {
                 {group.grp_name || 'Group'}
               </h1>
               <div className="flex items-center gap-1.5 shrink-0">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setShareOpen(true)} title="Share">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setChatOpen(true)} title="AI Chat">
-                  <MessageSquare className="h-4 w-4" />
-                </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSettingsOpen(true)} title="Settings">
                   <Settings className="h-4 w-4" />
                 </Button>
@@ -729,6 +930,21 @@ export function GroupPageClient({ groupId }) {
                 >
                   <Send className="h-4 w-4" />
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="More">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44 rounded-xl">
+                    <DropdownMenuItem onClick={() => setShareOpen(true)} className="cursor-pointer">
+                      <Share2 className="mr-2 h-4 w-4" /> Share Group
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setChatOpen(true)} className="cursor-pointer">
+                      <MessageSquare className="mr-2 h-4 w-4" /> AI Chat
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -739,35 +955,40 @@ export function GroupPageClient({ groupId }) {
                 <UserPlus className="h-3.5 w-3.5" /> Add Member
               </Button>
               <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
-                onClick={() => setAddUserOpen(true)}>
-                <Users className="h-3.5 w-3.5" /> Add User
-              </Button>
-              <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
                 onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
                 <Plus className="h-3.5 w-3.5" /> Add Trip
               </Button>
-              {sortedTrips.length > 0 && (
-                <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
-                  onClick={openEditTripFromAction}>
-                  <FileStack className="h-3.5 w-3.5" /> Edit Trip
-                </Button>
-              )}
-              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
-                onClick={() => setScannerOpen(true)}>
-                <ScanLine className="h-3.5 w-3.5" /> Scan Receipt
-              </Button>
-              {members.length > 0 && (
-                <>
-                  <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
-                    onClick={() => { setEditMemberMode(true); setSelectedMember(null); setEditMemberOpen(true); }}>
-                    <Pencil className="h-3.5 w-3.5" /> Edit Member
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
+                    <MoreHorizontal className="h-3.5 w-3.5" /> More
                   </Button>
-                  <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                    onClick={() => { setSelectedMember(null); setDeleteMemberOpen(true); }}>
-                    <Trash2 className="h-3.5 w-3.5" /> Delete
-                  </Button>
-                </>
-              )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-52 rounded-xl">
+                  <DropdownMenuItem onClick={() => setAddUserOpen(true)} className="cursor-pointer">
+                    <Users className="mr-2 h-4 w-4" /> Add User
+                  </DropdownMenuItem>
+                  {sortedTrips.length > 0 && (
+                    <DropdownMenuItem onClick={openEditTripFromAction} className="cursor-pointer">
+                      <FileStack className="mr-2 h-4 w-4" /> Edit Trip
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => setScannerOpen(true)} className="cursor-pointer">
+                    <ScanLine className="mr-2 h-4 w-4" /> Scan Receipt
+                  </DropdownMenuItem>
+                  {members.length > 0 && (
+                    <>
+                      <DropdownMenuItem onClick={() => { setEditMemberMode(true); setSelectedMember(null); setEditMemberOpen(true); }} className="cursor-pointer">
+                        <Pencil className="mr-2 h-4 w-4" /> Edit Member
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => { setSelectedMember(null); setDeleteMemberOpen(true); }} className="cursor-pointer text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
 
