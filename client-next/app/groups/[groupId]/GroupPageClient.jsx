@@ -8,6 +8,7 @@ import {
   Share2, UserPlus, Plus, Pencil, Trash2, Users,
   Wallet, TrendingUp, Clock, BadgeCheck, ScanLine, X, ChevronDown,
   Download, FileStack, Send, ExternalLink, Pin, MoreHorizontal,
+  Loader2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
@@ -93,6 +94,9 @@ export function GroupPageClient({ groupId }) {
   const [fabOpen, setFabOpen] = useState(false);
   const [expandedMemberId, setExpandedMemberId] = useState(null);
   const [telegramLoading, setTelegramLoading] = useState(false);
+  const [shareMembersLoading, setShareMembersLoading] = useState(false);
+  const [shareTripsLoading, setShareTripsLoading] = useState(false);
+  const [shareTripIdLoading, setShareTripIdLoading] = useState(null);
   const [telegramTargetType, setTelegramTargetType] = useState('group');
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [selectedTripIds, setSelectedTripIds] = useState([]);
@@ -166,6 +170,7 @@ export function GroupPageClient({ groupId }) {
   const handleShareTrip = async (e, trip) => {
     e.stopPropagation(); // Don't open edit modal
     try {
+      setShareTripIdLoading(trip.id);
       const res = await api.shareTripToTelegram({
         trip_id: trip.id,
         group_id: groupId,
@@ -179,11 +184,14 @@ export function GroupPageClient({ groupId }) {
     } catch (err) {
       console.error('Share error:', err);
       toast.error('Error sharing to Telegram');
+    } finally {
+      setShareTripIdLoading(null);
     }
   };
 
   const handleShareMembers = async () => {
     try {
+      setShareMembersLoading(true);
       const allMemberIds = newData.map((row) => row._memberId).filter(Boolean);
       const memberIds = selectedMemberIds.length > 0 ? selectedMemberIds : allMemberIds;
       const res = await api.shareMembersToTelegram({
@@ -199,6 +207,8 @@ export function GroupPageClient({ groupId }) {
     } catch (err) {
       console.error('Share error:', err);
       toast.error('Error sharing member summary');
+    } finally {
+      setShareMembersLoading(false);
     }
   };
 
@@ -403,6 +413,7 @@ export function GroupPageClient({ groupId }) {
 
   const handleShareSelectedTrips = async () => {
     try {
+      setShareTripsLoading(true);
       const tripIds = selectedTripIds.length > 0 ? selectedTripIds : sortedTrips.map((trip) => trip.id).filter(Boolean);
       const res = await api.shareTripToTelegram({
         group_id: groupId,
@@ -418,6 +429,8 @@ export function GroupPageClient({ groupId }) {
     } catch (err) {
       console.error('Bulk trip share error:', err);
       toast.error('Error sharing trips to Telegram');
+    } finally {
+      setShareTripsLoading(false);
     }
   };
 
@@ -572,8 +585,10 @@ export function GroupPageClient({ groupId }) {
           <Button
             size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-sky-400 uppercase tracking-widest font-bold"
             onClick={handleShareMembers}
+            disabled={shareMembersLoading}
           >
-            <Send className="h-3.5 w-3.5" /> Telegram {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
+            {shareMembersLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            {shareMembersLoading ? 'Sending...' : `Telegram ${selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}`}
           </Button>
           <div className="flex gap-0.5 bg-muted/60 p-1 rounded-lg">
             <button
@@ -792,8 +807,9 @@ export function GroupPageClient({ groupId }) {
               <Download className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
             <Button size="sm" variant="outline" className="h-8 text-xs"
-              onClick={handleShareSelectedTrips}>
-              <Send className="h-3.5 w-3.5 mr-1" /> Telegram
+              onClick={handleShareSelectedTrips}
+              disabled={shareTripsLoading}>
+              {shareTripsLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />} {shareTripsLoading ? 'Sending...' : 'Telegram'}
             </Button>
           </div>
         ) : (
@@ -827,8 +843,9 @@ export function GroupPageClient({ groupId }) {
             <Button
               size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-sky-400"
               onClick={handleShareSelectedTrips}
+              disabled={shareTripsLoading}
             >
-              <Send className="h-3.5 w-3.5" /> Telegram {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
+              {shareTripsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} {shareTripsLoading ? 'Sending...' : `Telegram ${selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}`}
             </Button>
             <div className="hidden md:flex gap-0.5 bg-muted/60 p-1 rounded-lg">
               <button
@@ -911,8 +928,10 @@ export function GroupPageClient({ groupId }) {
                   <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
                     <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                   </Button>
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={(e) => handleShareTrip(e, trip)}>
-                    <Send className="h-3.5 w-3.5 mr-1" /> Telegram
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={(e) => handleShareTrip(e, trip)} disabled={shareTripIdLoading === trip.id}>
+                    
+                    {shareTripIdLoading === trip.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                    {shareTripIdLoading === trip.id ? 'Sending...' : 'Telegram'}
                   </Button>
                 </div>
               </div>
@@ -1012,9 +1031,10 @@ export function GroupPageClient({ groupId }) {
                               variant="ghost"
                               className="h-7 w-7 text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 hover:bg-sky-500/10"
                               onClick={(e) => handleShareTrip(e, trip)}
+                              disabled={shareTripIdLoading === trip.id}
                               title="Share to Telegram"
                             >
-                              <Send className="h-3.5 w-3.5" />
+                              {shareTripIdLoading === trip.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                             </Button>
                             <span>{formatTimeDifference(trip.update_dttm || trip.create_date)}</span>
                           </div>
@@ -1278,8 +1298,9 @@ export function GroupPageClient({ groupId }) {
                   <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleExportMembers}>
                     <Download className="h-3.5 w-3.5 mr-1" /> Export {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
                   </Button>
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleShareMembers}>
-                    <Send className="h-3.5 w-3.5 mr-1" /> Telegram {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleShareMembers} disabled={shareMembersLoading}>
+                    {shareMembersLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                    {shareMembersLoading ? 'Sending...' : `Telegram ${selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}`}
                   </Button>
                 </div>
                 {members.length === 0 ? (

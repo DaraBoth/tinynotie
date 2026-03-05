@@ -49,6 +49,10 @@ export function StreamingChat({ open, onClose, groupId }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!input.trim() || isLoading) return;
+        if (!groupId) {
+            toast.error('Group context missing. Please reopen the group page.');
+            return;
+        }
 
         const userMessage = {
             role: 'user',
@@ -104,44 +108,52 @@ export function StreamingChat({ open, onClose, groupId }) {
 
             setMessages(prev => [...prev, currentAiMessage]);
 
+            let buffered = '';
+
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
+                buffered += decoder.decode(value, { stream: true });
+                const events = buffered.split('\n\n');
+                buffered = events.pop() || '';
 
-                for (const line of lines) {
-                    if (line.startsWith('event: ')) {
-                        const event = line.slice(7);
-                        const nextLine = lines[lines.indexOf(line) + 1];
-                        if (nextLine && nextLine.startsWith('data: ')) {
-                            const data = JSON.parse(nextLine.slice(6));
+                for (const block of events) {
+                    const eventLine = block.split('\n').find((line) => line.startsWith('event: '));
+                    const dataLine = block.split('\n').find((line) => line.startsWith('data: '));
+                    if (!eventLine || !dataLine) continue;
 
-                            if (event === 'message') {
-                                aiResponseContent += data.delta;
-                                setMessages(prev => {
-                                    const last = [...prev];
-                                    last[last.length - 1].content = aiResponseContent;
-                                    return last;
-                                });
-                                setStatus(null);
-                            } else if (event === 'status') {
-                                setStatus(data.message);
-                            } else if (event === 'tool_result') {
-                                setMessages(prev => {
-                                    const last = [...prev];
-                                    const currentMsg = last[last.length - 1];
-                                    currentMsg.tools = [...(currentMsg.tools || []), {
-                                        name: data.tool,
-                                        result: data.result
-                                    }];
-                                    return last;
-                                });
-                            } else if (event === 'error') {
-                                toast.error(data.message);
-                            }
-                        }
+                    const event = eventLine.slice(7).trim();
+                    let data;
+
+                    try {
+                        data = JSON.parse(dataLine.slice(6));
+                    } catch {
+                        continue;
+                    }
+
+                    if (event === 'message') {
+                        aiResponseContent += data.delta || '';
+                        setMessages(prev => {
+                            const last = [...prev];
+                            last[last.length - 1].content = aiResponseContent;
+                            return last;
+                        });
+                        setStatus(null);
+                    } else if (event === 'status') {
+                        setStatus(data.message || null);
+                    } else if (event === 'tool_result') {
+                        setMessages(prev => {
+                            const last = [...prev];
+                            const currentMsg = last[last.length - 1];
+                            currentMsg.tools = [...(currentMsg.tools || []), {
+                                name: data.tool,
+                                result: data.result
+                            }];
+                            return last;
+                        });
+                    } else if (event === 'error') {
+                        toast.error(data.message || 'Streaming error');
                     }
                 }
             }
@@ -155,7 +167,7 @@ export function StreamingChat({ open, onClose, groupId }) {
     };
 
     return (
-        <Sheet open={open} onOpenChange={onClose}>
+        <Sheet open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
             <SheetContent
                 className="flex flex-col p-0 bg-background/95 backdrop-blur-xl border-l border-border/40 sm:max-w-xl"
                 title="AI Financial Assistant"
