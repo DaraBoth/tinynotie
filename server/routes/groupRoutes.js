@@ -1265,9 +1265,9 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
     // Note: We'll use a simplified version of the calculation logic logic here since we need raw data
     const membersSql = `
       SELECT m.id, m.mem_name, m.paid,
-             (SELECT COALESCE(SUM(t.spend / (SELECT COUNT(*) FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(t.mem_id) = 'array' THEN t.mem_id ELSE '[]'::jsonb END))), 0)
+             (SELECT COALESCE(SUM(t.spend / (SELECT COUNT(*) FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(t.mem_id::jsonb) = 'array' THEN t.mem_id ELSE '[]'::jsonb END))), 0)
               FROM trp_infm t
-              WHERE t.group_id = $1 AND t.mem_id ? m.id::text) as spend
+              WHERE t.group_id = $1 AND t.mem_id::jsonb ? m.id::text) as spend
       FROM member_infm m
       WHERE m.group_id = $1;
     `;
