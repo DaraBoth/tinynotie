@@ -40,6 +40,17 @@ webPush.setVapidDetails(
 dotenv.config();
 const router = express.Router();
 
+const sendAiTextResponse = (req, res, text) => {
+  const aiText = String(text || "");
+  const format = String(req.query?.format || req.body?.format || "json").toLowerCase();
+
+  if (format === "text" || format === "plain") {
+    return res.status(200).type("text/plain; charset=utf-8").send(aiText);
+  }
+
+  return res.status(200).json({ text: aiText });
+};
+
 // Telegram bot configuration
 const DARABOTH_AI_TOKEN = process.env.TELEGRAM_BOT_TOKEN3;
 const baseURL2 = `https://api.telegram.org/bot${DARABOTH_AI_TOKEN}`;
@@ -186,12 +197,11 @@ router.get("/text", async (req, res) => {
 
     const result = await model.generateContent(`${text}`);
     const response = result.response;
+    const responseText = response.text();
     console.log({ text });
-    console.log({ res: response.text() });
-    // res.status(200).json({ text: response.text() });
-    // res.status(200).json({
-    //   text: "My name is Daraboth. May I ask who are you? Please reply in my AskMore tap.",
-    // });
+    console.log({ res: responseText });
+
+    return sendAiTextResponse(req, res, responseText);
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
@@ -224,9 +234,10 @@ router.post("/text", async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(`${text}`);
     const response = result.response;
+    const responseText = response.text();
     saveChat({ chat_id: chatId, chat_history: chatHistory });
 
-    res.status(200).json({ text: response.text() });
+    return sendAiTextResponse(req, res, responseText);
   } catch (error) {
     console.error("error", error.message);
     res.status(500).json({ error: error.message });
@@ -1135,14 +1146,14 @@ const handleMessage = async function (messageObj) {
         },
       });
 
-      // const responseText = await callAI(messageText, chatHistory);
-      // await templateSaveChat({
-      //   Chat_ID,
-      //   user_id: `${username}, ${first_name} ${last_name}`,
-      //   chatHistory,
-      //   messageText,
-      //   responseText: responseText.text(),
-      // });
+      const responseText = await callAI(messageText, chatHistory);
+      await templateSaveChat({
+        Chat_ID,
+        user_id: `${username}, ${first_name} ${last_name}`,
+        chatHistory,
+        messageText,
+        responseText: responseText.text(),
+      });
       return await darabothSendMessage(messageObj, "Response text placeholder");
     } else if (condition2 && (Chat_ID == "-861143107") && detectAndExtractPermission(messageText)) {  // 2024_B2B R&D
       // forward message when someone ask permission

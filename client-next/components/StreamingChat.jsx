@@ -17,6 +17,11 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
+const shouldRefreshFromTool = (toolName) => {
+    const name = String(toolName || '').toLowerCase();
+    return ['add_member', 'update_member', 'add_trip', 'update_trip'].includes(name);
+};
+
 export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
     const [messages, setMessages] = useState([
         {
@@ -100,7 +105,7 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
             const decoder = new TextDecoder();
 
             let aiResponseContent = '';
-            let hasToolChanges = false;
+            let hasMutatingToolChanges = false;
             let currentAiMessage = {
                 role: 'assistant',
                 content: '',
@@ -145,7 +150,9 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                     } else if (event === 'status') {
                         setStatus(data.message || null);
                     } else if (event === 'tool_result') {
-                        hasToolChanges = true;
+                        if (shouldRefreshFromTool(data.tool)) {
+                            hasMutatingToolChanges = true;
+                        }
                         setMessages(prev => {
                             const last = [...prev];
                             const currentMsg = last[last.length - 1];
@@ -161,7 +168,7 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                 }
             }
 
-            if (hasToolChanges && typeof onDataChanged === 'function') {
+            if (hasMutatingToolChanges && typeof onDataChanged === 'function') {
                 onDataChanged();
             }
         } catch (error) {
