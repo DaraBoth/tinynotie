@@ -1,4 +1,4 @@
-import { openai } from '../routes/openai.js'; // We'll need to export openai client from openai.js if possible, or create a shared one
+import { openai, OPENAI_CHAT_MODEL } from './openaiClient.js';
 import { tools, handlers } from '../utils/aiTools.js';
 
 /**
@@ -6,6 +6,10 @@ import { tools, handlers } from '../utils/aiTools.js';
  * Handles multi-turn tool calling logic for both Web and Telegram
  */
 export const runAiAgent = async ({ message, groupId, history = [], onToken, onStatus, onToolCall }) => {
+    if (!openai?.chat?.completions) {
+        throw new Error("OpenAI client is not configured. Missing OPENAI_API_KEY or OPEN_API_KEY.");
+    }
+
     let messages = [
         {
             role: "system",
@@ -32,7 +36,7 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
         onStatus?.(`Thinking (Step ${loopCount})...`);
 
         const chatCompletion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: OPENAI_CHAT_MODEL,
             messages,
             tools,
             tool_choice: "auto",
@@ -86,6 +90,10 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
  * (Designed for SSE)
  */
 export const streamAiAgent = async ({ message, groupId, history = [], sendEvent }) => {
+    if (!openai?.chat?.completions) {
+        throw new Error("OpenAI client is not configured. Missing OPENAI_API_KEY or OPEN_API_KEY.");
+    }
+
     let messages = [
         {
             role: "system",
@@ -109,25 +117,14 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
     while (runLoop && loopCount < 5) {
         loopCount++;
 
-        // For tool calling with streaming, we use the stream directly
-        const runner = openai.beta.chat.completions.stream({
-            model: "gpt-4o",
+        const chatCompletion = await openai.chat.completions.create({
+            model: OPENAI_CHAT_MODEL,
             messages,
             tools,
+            tool_choice: "auto",
         });
 
-        let currentResponse = "";
-
-        for await (const chunk of runner) {
-            const delta = chunk.choices[0]?.delta?.content;
-            if (delta) {
-                currentResponse += delta;
-                sendEvent("message", { delta });
-            }
-        }
-
-        const finalChatCompletion = await runner.finalChatCompletion();
-        const responseMessage = finalChatCompletion.choices[0].message;
+        const responseMessage = chatCompletion.choices?.[0]?.message || { role: "assistant", content: "" };
         messages.push(responseMessage);
 
         if (responseMessage.tool_calls) {
@@ -159,6 +156,9 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
                 });
             }
         } else {
+            if (responseMessage.content) {
+                sendEvent("message", { delta: responseMessage.content });
+            }
             runLoop = false;
         }
     }

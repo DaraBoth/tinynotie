@@ -5,7 +5,6 @@ dotenv.config();
 
 import express from "express";
 import bcrypt from "bcrypt";
-import OpenAI from "openai";
 import webPush from "web-push";
 import moment from "moment";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -20,6 +19,7 @@ import { handleInsertIntoExcel, callInsertIntoExcel, callRollBackExcel, getClean
 import { tools, handlers } from "../utils/aiTools.js";
 import { streamAiAgent } from "../services/aiAgentService.js";
 import { processReceiptImage } from "../services/receiptService.js";
+import { openai, OPENAI_CHAT_MODEL } from "../services/openaiClient.js";
 
 // Configure web push notifications
 const vapidKeys = {
@@ -34,10 +34,7 @@ webPush.setVapidDetails(
   vapidKeys.privateKey
 );
 
-/* OPEN AI CONFIGURATION (v4) */
-export const openai = new OpenAI({
-  apiKey: process.env.OPEN_API_KEY,
-});
+/* OPEN AI CONFIGURATION (shared client from services/openaiClient.js) */
 
 // Load environment variables
 dotenv.config();
@@ -366,20 +363,21 @@ router.post("/code", async (req, res) => {
   try {
     const { text, activeChatId } = req.body;
 
-    const response = await openai.completions.create({
-      model: "gpt-3.5-turbo-instruct", // code-davinci-002 is deprecated
-      prompt: text,
+    const response = await openai.chat.completions.create({
+      model: OPENAI_CHAT_MODEL,
+      messages: [
+        { role: "system", content: "You are a coding assistant. Provide concise and accurate code help." },
+        { role: "user", content: text },
+      ],
       temperature: 0.5,
       max_tokens: 2048,
-      top_p: 1,
-      frequency_penalty: 0.5,
-      presence_penalty: 0,
     });
+    const responseText = response.choices?.[0]?.message?.content || "";
 
     try {
       await axios.post(
         `https://api.chatengine.io/chats/${activeChatId}/messages/`,
-        { text: response.choices[0].text },
+        { text: responseText },
         {
           headers: {
             "Project-ID": process.env.PROJECT_ID,
@@ -392,7 +390,7 @@ router.post("/code", async (req, res) => {
       console.log(e);
     }
 
-    res.status(200).json({ text: response.choices[0].text });
+    res.status(200).json({ text: responseText });
   } catch (error) {
     console.error("error", error.response.data.error);
     res.status(500).json({ error: error.message });
@@ -403,17 +401,17 @@ router.post("/assist", async (req, res) => {
   try {
     const { text } = req.body;
 
-    const response = await openai.completions.create({
-      model: "gpt-3.5-turbo-instruct",
-      prompt: `Finish my thought: ${text}`,
+    const response = await openai.chat.completions.create({
+      model: OPENAI_CHAT_MODEL,
+      messages: [
+        { role: "system", content: "You are an assistant that helps continue user thoughts naturally." },
+        { role: "user", content: `Finish my thought: ${text}` },
+      ],
       temperature: 0.5,
       max_tokens: 1024,
-      top_p: 1,
-      frequency_penalty: 0.5,
-      presence_penalty: 0,
     });
 
-    res.status(200).json({ text: response.choices[0].text });
+    res.status(200).json({ text: response.choices?.[0]?.message?.content || "" });
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ error: error.message });

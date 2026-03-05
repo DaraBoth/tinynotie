@@ -2,6 +2,7 @@ import axios from "axios";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import moment from "moment";
 import { getDateInSeoulTime } from "./telegramUtils.js";
+import { openai, OPENAI_CHAT_MODEL } from "../services/openaiClient.js";
 
 // Excel API endpoints
 const insertExcelEndpoint = "https://script.google.com/macros/s/AKfycbyBE2iov4vm_iT4Pm9cC0p3VUj1QeT5GhWeJnISJMfVQlhkTPB-acz1uT25HcTEpGzUrw/exec";
@@ -16,10 +17,6 @@ export const excel2002Url = "https://docs.google.com/spreadsheets/d/1gnAloerX4kp
  * @returns {Promise<string>} - A promise that resolves with the AI message
  */
 export const handleInsertIntoExcel = async ({ messageObj, messageText }) => {
-  // Initialize the AI with your API key
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY3);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
   const today = moment(getDateInSeoulTime()).format("YYYY-MM-DD");
 
   const prompt = `
@@ -69,11 +66,28 @@ export const handleInsertIntoExcel = async ({ messageObj, messageText }) => {
  ${messageText}
   `;
 
-  // Generate content using the AI
-  const result = await model.generateContent(prompt);
-  const aiMessage = result.response.text();
-  console.log({ aiMessage });
-  return aiMessage;
+  try {
+    const response = await openai.chat.completions.create({
+      model: OPENAI_CHAT_MODEL,
+      messages: [
+        { role: "system", content: "Extract structured financial fields and return valid JSON only." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.1,
+      max_tokens: 600,
+    });
+    const aiMessage = response.choices?.[0]?.message?.content || "";
+    console.log({ aiMessage });
+    return aiMessage;
+  } catch (openAiError) {
+    console.warn("handleInsertIntoExcel OpenAI failed, fallback to Gemini:", openAiError.message);
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY3);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent(prompt);
+    const aiMessage = result.response.text();
+    console.log({ aiMessage });
+    return aiMessage;
+  }
 };
 
 /**

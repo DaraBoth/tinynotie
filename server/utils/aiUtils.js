@@ -1,6 +1,43 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import moment from "moment";
 import axios from "axios";
+import { openai, OPENAI_CHAT_MODEL } from "../services/openaiClient.js";
+
+const toResponseObject = (text = "") => ({ text: () => text });
+
+const geminiHistoryToOpenAIMessages = (history = []) => {
+  if (!Array.isArray(history)) return [];
+  return history
+    .map((item) => {
+      const role = item?.role === "model" ? "assistant" : "user";
+      const content = Array.isArray(item?.parts)
+        ? item.parts.map((part) => part?.text || "").join("\n").trim()
+        : "";
+      if (!content) return null;
+      return { role, content };
+    })
+    .filter(Boolean);
+};
+
+const askOpenAIText = async ({ prompt, history = [], systemPrompt, maxTokens = 700, temperature = 0.7 }) => {
+  if (!openai?.chat?.completions) {
+    throw new Error("OpenAI client unavailable");
+  }
+
+  const messages = [];
+  if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
+  messages.push(...geminiHistoryToOpenAIMessages(history));
+  messages.push({ role: "user", content: prompt });
+
+  const response = await openai.chat.completions.create({
+    model: OPENAI_CHAT_MODEL,
+    messages,
+    max_tokens: maxTokens,
+    temperature,
+  });
+
+  return response.choices?.[0]?.message?.content?.trim() || "";
+};
 
 /**
  * Human-readable response from AI based on database results
@@ -9,11 +46,6 @@ import axios from "axios";
  * @returns {Promise} - A promise that resolves with the AI response
  */
 export const AI_Human_readable = async (prompt, chatHistory = []) => {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY || process.env.API_KEY2 || process.env.API_KEY3);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-  });
-
   const template = `
     Instruction
     You are tasked with generating a human-readable text response based on the following parameters:
@@ -86,6 +118,24 @@ export const AI_Human_readable = async (prompt, chatHistory = []) => {
     combinedHistory = defaultChatHistory;
   }
 
+  try {
+    const text = await askOpenAIText({
+      prompt,
+      history: combinedHistory,
+      systemPrompt: "Convert database outputs into concise, natural user-facing answers.",
+      maxTokens: 500,
+      temperature: 0.4,
+    });
+    return toResponseObject(text);
+  } catch (openAiError) {
+    console.warn("AI_Human_readable OpenAI failed, fallback to Gemini:", openAiError.message);
+  }
+
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY || process.env.API_KEY2 || process.env.API_KEY3);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+  });
+
   const result = model.startChat({
     history: combinedHistory,
     generationConfig: {
@@ -107,6 +157,35 @@ export const AI_Human_readable = async (prompt, chatHistory = []) => {
  * @returns {Promise} - A promise that resolves with the AI response
  */
 export const callAI = async (text, chatHistory, defaultChatHistory = []) => {
+  let preparedHistory;
+
+  if (!chatHistory || !Array.isArray(chatHistory) || chatHistory.length === 0) {
+    preparedHistory = [...defaultChatHistory];
+  } else {
+    const combinedHistory = [...defaultChatHistory];
+    for (const message of chatHistory) {
+      if (!defaultChatHistory.some(m =>
+        m.role === message.role &&
+        m.parts[0]?.text === message.parts[0]?.text
+      )) {
+        combinedHistory.push(message);
+      }
+    }
+    preparedHistory = combinedHistory;
+  }
+
+  try {
+    const responseText = await askOpenAIText({
+      prompt: text,
+      history: preparedHistory,
+      maxTokens: 500,
+      temperature: 0.7,
+    });
+    return toResponseObject(responseText);
+  } catch (openAiError) {
+    console.warn("callAI OpenAI failed, fallback to Gemini:", openAiError.message);
+  }
+
   let genAI = null, model = null;
 
   // Try different API keys in case one fails
@@ -134,25 +213,7 @@ export const callAI = async (text, chatHistory, defaultChatHistory = []) => {
   }
 
   // Initialize chat history if not provided
-  if (!chatHistory || !Array.isArray(chatHistory) || chatHistory.length === 0) {
-    chatHistory = [...defaultChatHistory];
-  } else {
-    // Prepend default chat history to the provided chat history
-    // Make a deep copy to avoid modifying the original
-    const combinedHistory = [...defaultChatHistory];
-
-    // Add the user's chat history after the default history
-    for (const message of chatHistory) {
-      if (!defaultChatHistory.some(m =>
-        m.role === message.role &&
-        m.parts[0]?.text === message.parts[0]?.text
-      )) {
-        combinedHistory.push(message);
-      }
-    }
-
-    chatHistory = combinedHistory;
-  }
+  chatHistory = preparedHistory;
 
   // Start a chat with the AI
   const result = model.startChat({
@@ -177,9 +238,6 @@ export const callAI = async (text, chatHistory, defaultChatHistory = []) => {
  * @returns {Promise} - A promise that resolves with the AI response
  */
 export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY || process.env.API_KEY2 || process.env.API_KEY3);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
   const prompt = `
   Instruction:
   You are tasked with analyzing user input and generating a complex SQL solution for a PostgreSQL database. Your response must always be in JSON format with the following fields:
@@ -331,19 +389,34 @@ export const AI_Database = async (userAsk, userAskID, chatHistory = []) => {
   [${userAsk}]
   `;
 
-  const result = model.startChat({
-    history: chatHistory,
-    generationConfig: {
-      maxOutputTokens: 250,
-    },
-    maxTokens: 150,
-    temperature: 0.7,
-  });
+  let cleanedResponse = "";
 
-  const chat = await result.sendMessage(prompt);
-  const response = chat.response;
+  try {
+    const openAiText = await askOpenAIText({
+      prompt,
+      history: chatHistory,
+      systemPrompt: "Return only valid JSON. No markdown fences.",
+      maxTokens: 1500,
+      temperature: 0.2,
+    });
+    cleanedResponse = openAiText.replace(/```json|```/g, "");
+  } catch (openAiError) {
+    console.warn("AI_Database OpenAI failed, fallback to Gemini:", openAiError.message);
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY || process.env.API_KEY2 || process.env.API_KEY3);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = model.startChat({
+      history: chatHistory,
+      generationConfig: {
+        maxOutputTokens: 250,
+      },
+      maxTokens: 150,
+      temperature: 0.7,
+    });
 
-  const cleanedResponse = response.text().replace(/```json|```/g, "");
+    const chat = await result.sendMessage(prompt);
+    const response = chat.response;
+    cleanedResponse = response.text().replace(/```json|```/g, "");
+  }
 
   try {
     const jsonData = JSON.parse(cleanedResponse);
@@ -504,15 +577,21 @@ export const getWeather = async () => {
       Use emojis sparingly to keep it engaging and friendly.
     `;
 
-    // Initialize the AI with your API key
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    // Generate content using the AI
-    const result = await model.generateContent(prompt);
-    const aiMessage = result.response.text(); // AI-generated weather notification
-
-    return aiMessage;
+    try {
+      const aiMessage = await askOpenAIText({
+        prompt,
+        systemPrompt: "Generate a concise daily weather push notification.",
+        maxTokens: 250,
+        temperature: 0.5,
+      });
+      return aiMessage;
+    } catch (openAiError) {
+      console.warn("getWeather OpenAI failed, fallback to Gemini:", openAiError.message);
+      const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+    }
   } catch (error) {
     console.error("Error in getWeather function:", error);
     return `Error: Unable to fetch weather data or generate notification. Please try again later.`;
@@ -525,8 +604,6 @@ export const getWeather = async () => {
  * @returns {Promise<string>} - A promise that resolves with the translated string
  */
 export const getTranslate = async (str) => {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = `
     You are a translation assistant for a Software Engineer who is learning Korean.
     Your job is to translate between English and Korean.
@@ -567,11 +644,24 @@ export const getTranslate = async (str) => {
     [${str}]
   `;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  console.log("response text : " + response.text());
-
-  return response.text();
+  try {
+    const translated = await askOpenAIText({
+      prompt,
+      systemPrompt: "You are a translation assistant for English and Korean with beginner-friendly Korean output.",
+      maxTokens: 500,
+      temperature: 0.3,
+    });
+    console.log("response text : " + translated);
+    return translated;
+  } catch (openAiError) {
+    console.warn("getTranslate OpenAI failed, fallback to Gemini:", openAiError.message);
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    console.log("response text : " + response.text());
+    return response.text();
+  }
 };
 
 /**
@@ -609,9 +699,6 @@ export const getKoreanWords = async (messageObj, defaultChatHistory = []) => {
       });
     });
 
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     const prompt = `
     You are a Korean language tutor.
 
@@ -646,26 +733,41 @@ export const getKoreanWords = async (messageObj, defaultChatHistory = []) => {
     Try creating your own sentence using one or both of today's words.
     `;
 
-    const result = model.startChat({
-      history: chatHistory,
-      generationConfig: {
-        maxOutputTokens: 250,
-      },
-    });
+    let responseText = "";
 
-    const chat = await result.sendMessage(prompt);
-    const response = chat.response;
-    console.log("response text : " + response.text());
+    try {
+      responseText = await askOpenAIText({
+        prompt,
+        history: chatHistory,
+        systemPrompt: "You are a Korean tutor. Keep outputs plain text for Telegram.",
+        maxTokens: 600,
+        temperature: 0.6,
+      });
+    } catch (openAiError) {
+      console.warn("getKoreanWords OpenAI failed, fallback to Gemini:", openAiError.message);
+      const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = model.startChat({
+        history: chatHistory,
+        generationConfig: {
+          maxOutputTokens: 250,
+        },
+      });
 
-    // Save the chat
+      const chat = await result.sendMessage(prompt);
+      responseText = chat.response.text();
+    }
+
+    console.log("response text : " + responseText);
+
     await templateSaveChat({
       Chat_ID,
       chatHistory,
       messageText: "Let's start learning today!",
-      responseText: response.text(),
+      responseText,
     });
 
-    return response.text();
+    return responseText;
   } catch (error) {
     console.error("Error getting Korean words:", error);
     return "Error getting Korean words. Please try again later.";
@@ -679,8 +781,6 @@ export const getKoreanWords = async (messageObj, defaultChatHistory = []) => {
  * @returns {Promise<string>} - A promise that resolves with the cleaning information
  */
 export const getCleaningProm = async (data, msg) => {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = `
     This data is about cleaning schedule in a house.
     And it's a trigger when there is change updated in excel.
@@ -700,9 +800,22 @@ export const getCleaningProm = async (data, msg) => {
     Please response back to user as report text.
   `;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  console.log("response text : " + response.text());
-
-  return response.text();
+  try {
+    const responseText = await askOpenAIText({
+      prompt,
+      systemPrompt: "Generate a clear, concise cleaning schedule report.",
+      maxTokens: 500,
+      temperature: 0.4,
+    });
+    console.log("response text : " + responseText);
+    return responseText;
+  } catch (openAiError) {
+    console.warn("getCleaningProm OpenAI failed, fallback to Gemini:", openAiError.message);
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY2);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    console.log("response text : " + response.text());
+    return response.text();
+  }
 };
