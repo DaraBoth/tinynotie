@@ -9,7 +9,15 @@ import moment from 'moment';
 import axios from 'axios';
 
 let bot;
-const pendingRegistrations = new Map();
+const pendingInputs = new Map();
+let botUsernameCache = null;
+
+const getPendingInput = (telegramUserId) => pendingInputs.get(telegramUserId);
+const setPendingInput = (telegramUserId, state) => pendingInputs.set(telegramUserId, {
+    ...state,
+    expiresAt: Date.now() + (state.ttlMs || 10 * 60 * 1000),
+});
+const clearPendingInput = (telegramUserId) => pendingInputs.delete(telegramUserId);
 
 /**
  * Initialize the Telegram Bot with webhook mode
@@ -41,6 +49,50 @@ export const initTelegramBot = (token) => {
         }
         return next();
     });
+
+    const getBotUsername = async () => {
+        if (botUsernameCache) return botUsernameCache;
+        try {
+            const me = await bot.telegram.getMe();
+            botUsernameCache = (me.username || '').toLowerCase();
+            return botUsernameCache;
+        } catch {
+            return '';
+        }
+    };
+
+    const isGroupChat = (ctx) => ['group', 'supergroup'].includes(ctx.chat?.type);
+
+    const isTriggeredForBotInGroup = async (ctx, text = '') => {
+        if (!isGroupChat(ctx)) return true;
+
+        const lower = (text || '').toLowerCase();
+        const username = await getBotUsername();
+        const mention = username ? `@${username}` : null;
+
+        const isReplyToBot = !!ctx.message?.reply_to_message?.from?.is_bot;
+        const hasMention = mention ? lower.includes(mention) : false;
+
+        return isReplyToBot || hasMention;
+    };
+
+    const readCommandArg = (ctx) => (ctx.message?.text || '').split(' ').slice(1).join(' ').trim();
+
+    const sanitizeUsername = (raw, fallbackId) => {
+        const base = (raw || `tg_${fallbackId}`)
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '_')
+            .slice(0, 40);
+        return base || `tg_${fallbackId}`;
+    };
+
+    const ensurePrivateLinkedUser = (ctx) => {
+        if (!ctx.user && ctx.chat?.type === 'private') {
+            ctx.reply('❌ You are not registered yet. Use /register to create your TinyNotie account via Telegram.');
+            return false;
+        }
+        return true;
+    };
 
     // /start command - handles deep linking for account linking
     bot.start(async (ctx) => {
@@ -81,13 +133,13 @@ export const initTelegramBot = (token) => {
         ctx.reply(
             `👋 Welcome to TinyNotie Assistant!\n\nI can help you manage your group expenses, members, and trips directly from Telegram.\n\n${ctx.user
                 ? `Logged in as: *${ctx.user.usernm}*`
-                : 'To get started, please link your account from the TinyNotie web app settings.'
-            }\n\n*Available Commands:*\n/register [username] - Create account via Telegram\n/password [your_password] - Set password after /register\n/link_group [id] - Link this chat to a group\n/chat_id - Get current chat ID\n/create_group [name] - Create a new group\n/add_member [name] - Add member to group\n/export - Get Excel report\n/status - Group summary`,
+                : 'To get started, register directly here by sending /register'
+            }\n\n*Available Commands:*\n/register - Create account via Telegram\n/reset_password - Change your account password\n/link_group - Link this chat to a group\n/chat_id - Get current chat ID\n/create_group - Create a new group\n/add_member - Add member to group\n/export - Get Excel report\n/status - Group summary`,
             { parse_mode: 'Markdown' }
         );
     });
 
-    // /register command - create account flow from Telegram
+    // /register command - conversational account creation
     bot.command('register', async (ctx) => {
         if (!ctx.from) return;
 
@@ -98,74 +150,100 @@ export const initTelegramBot = (token) => {
             );
 
             if (existingByTelegram.rows.length > 0) {
-                return ctx.reply(`✅ This Telegram is already linked to account: *${existingByTelegram.rows[0].usernm}*`, { parse_mode: 'Markdown' });
+                return ctx.reply(`✅ This Telegram is already linked to account: *${existingByTelegram.rows[0].usernm}*\nUse /reset_password if you want a new password.`, { parse_mode: 'Markdown' });
             }
 
-            const args = (ctx.message?.text || '').split(' ').slice(1).join(' ').trim();
-            const baseUsername = (args || ctx.from.username || `tg_${ctx.from.id}`).toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 40);
-            let candidate = baseUsername || `tg_${ctx.from.id}`;
+            const argUsername = readCommandArg(ctx);
+            if (argUsername) {
+                const candidate = sanitizeUsername(argUsername, ctx.from.id);
+                const usernameCheck = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [candidate]);
+                if (usernameCheck.rows.length > 0) {
+                    return ctx.reply('❌ Username already exists. Send /register and choose another username.');
+                }
 
-            const usernameCheck = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [candidate]);
-            if (usernameCheck.rows.length > 0) {
-                candidate = `${candidate}_${String(ctx.from.id).slice(-4)}`;
+                setPendingInput(ctx.from.id, { type: 'register_password', username: candidate });
+                return ctx.reply(`✅ Username reserved: *${candidate}*\nNow send your password in the next message (min 6 characters).`, { parse_mode: 'Markdown' });
             }
 
-            pendingRegistrations.set(ctx.from.id, {
-                username: candidate,
-                expiresAt: Date.now() + 10 * 60 * 1000,
-            });
-
-            return ctx.reply(
-                `🧾 Registration initialized!\n\nUsername: *${candidate}*\n\nNow send:\n\`/password YourNewPassword\`\n\n(Expires in 10 minutes)`,
-                { parse_mode: 'Markdown' }
-            );
+            setPendingInput(ctx.from.id, { type: 'register_username' });
+            return ctx.reply('📝 Send your desired username in your next message.');
         } catch (err) {
             console.error('Telegram register error:', err);
             return ctx.reply('❌ Failed to initialize registration. Please try again.');
         }
     });
 
-    // /password command - finalize Telegram registration
-    bot.command('password', async (ctx) => {
+    // /reset_password command - conversational password reset for linked users
+    bot.command('reset_password', async (ctx) => {
         if (!ctx.from) return;
 
         try {
-            const pending = pendingRegistrations.get(ctx.from.id);
-            if (!pending) {
-                return ctx.reply('❌ No active registration found. Please run /register first.');
-            }
-
-            if (Date.now() > pending.expiresAt) {
-                pendingRegistrations.delete(ctx.from.id);
-                return ctx.reply('⌛ Registration session expired. Please run /register again.');
-            }
-
-            const pwd = (ctx.message?.text || '').split(' ').slice(1).join(' ').trim();
-            if (!pwd || pwd.length < 6) {
-                return ctx.reply('❌ Password must be at least 6 characters. Example: /password MySecurePass123');
-            }
-
-            const usernameTaken = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [pending.username]);
-            if (usernameTaken.rows.length > 0) {
-                pendingRegistrations.delete(ctx.from.id);
-                return ctx.reply('❌ Username is no longer available. Please run /register again.');
-            }
-
-            const hashed = await bcrypt.hash(pwd, 10);
-            const insert = await pool.query(
-                'INSERT INTO user_infm (usernm, passwd, telegram_id) VALUES ($1, $2, $3) RETURNING id, usernm',
-                [pending.username, hashed, ctx.from.id]
+            const existingByTelegram = await pool.query(
+                'SELECT id, usernm FROM user_infm WHERE telegram_id = $1',
+                [ctx.from.id]
             );
 
-            pendingRegistrations.delete(ctx.from.id);
+            if (existingByTelegram.rows.length === 0) {
+                return ctx.reply('❌ No linked account found for this Telegram. Please /register first.');
+            }
 
-            return ctx.reply(
-                `✅ Registration successful!\n\nAccount: *${insert.rows[0].usernm}*\n\nYou can now use TinyNotie app login with this username and your password.`,
-                { parse_mode: 'Markdown' }
-            );
+            const pwd = readCommandArg(ctx);
+            if (pwd) {
+                if (pwd.length < 6) return ctx.reply('❌ Password must be at least 6 characters.');
+                const hashed = await bcrypt.hash(pwd, 10);
+                await pool.query('UPDATE user_infm SET passwd = $1 WHERE telegram_id = $2', [hashed, ctx.from.id]);
+                return ctx.reply('✅ Password updated successfully.');
+            }
+
+            setPendingInput(ctx.from.id, { type: 'reset_password' });
+            return ctx.reply('🔐 Send your new password in your next message (min 6 characters).');
         } catch (err) {
-            console.error('Telegram password/register finalize error:', err);
-            return ctx.reply('❌ Failed to complete registration. Please try /register again.');
+            console.error('Telegram reset password error:', err);
+            return ctx.reply('❌ Failed to reset password. Please try again.');
+        }
+    });
+
+    // /password command kept for backward compatibility
+    bot.command('password', async (ctx) => {
+        if (!ctx.from) return;
+        const pwd = readCommandArg(ctx);
+        const pending = getPendingInput(ctx.from.id);
+        if (!pwd) return ctx.reply('Use /reset_password then send your password in the next message.');
+
+        if (pending?.type === 'register_password') {
+            if (pwd.length < 6) return ctx.reply('❌ Password must be at least 6 characters.');
+            try {
+                const usernameTaken = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [pending.username]);
+                if (usernameTaken.rows.length > 0) {
+                    clearPendingInput(ctx.from.id);
+                    return ctx.reply('❌ Username is no longer available. Please /register again.');
+                }
+
+                const hashed = await bcrypt.hash(pwd, 10);
+                const insert = await pool.query(
+                    'INSERT INTO user_infm (usernm, passwd, telegram_id) VALUES ($1, $2, $3) RETURNING id, usernm',
+                    [pending.username, hashed, ctx.from.id]
+                );
+                clearPendingInput(ctx.from.id);
+                return ctx.reply(`✅ Registration successful!\nAccount: *${insert.rows[0].usernm}*`, { parse_mode: 'Markdown' });
+            } catch (err) {
+                console.error('Telegram password/register finalize error:', err);
+                return ctx.reply('❌ Failed to complete registration. Please try /register again.');
+            }
+        }
+
+        try {
+            const existingByTelegram = await pool.query('SELECT id FROM user_infm WHERE telegram_id = $1', [ctx.from.id]);
+            if (existingByTelegram.rows.length === 0) {
+                return ctx.reply('❌ No linked account found. Use /register first.');
+            }
+            if (pwd.length < 6) return ctx.reply('❌ Password must be at least 6 characters.');
+            const hashed = await bcrypt.hash(pwd, 10);
+            await pool.query('UPDATE user_infm SET passwd = $1 WHERE telegram_id = $2', [hashed, ctx.from.id]);
+            return ctx.reply('✅ Password updated successfully.');
+        } catch (err) {
+            console.error('Telegram password update error:', err);
+            return ctx.reply('❌ Failed to update password.');
         }
     });
 
@@ -183,10 +261,14 @@ export const initTelegramBot = (token) => {
         if (!ctx.user) return ctx.reply('Please link your account first via private message to the bot.');
         if (ctx.chat.type === 'private') return ctx.reply('Please use this command inside a Telegram group.');
 
-        const args = ctx.message.text.split(' ');
-        if (args.length < 2) return ctx.reply('Usage: /link_group [groupId]');
+        const argText = readCommandArg(ctx);
+        if (!argText) {
+            setPendingInput(ctx.from.id, { type: 'link_group_id', chatId: ctx.chat.id });
+            return ctx.reply('Send the TinyNotie group ID you want to link in your next message.');
+        }
 
-        const groupId = parseInt(args[1]);
+        const groupId = parseInt(argText, 10);
+        if (!Number.isFinite(groupId)) return ctx.reply('❌ Invalid group ID. Please send a numeric group ID.');
 
         try {
             // Verification: is user owner or member?
@@ -214,8 +296,12 @@ export const initTelegramBot = (token) => {
     // /create_group command
     bot.command('create_group', async (ctx) => {
         if (!ctx.user) return ctx.reply('Please link your account first.');
-        const args = ctx.message.text.split(' ').slice(1);
-        const grpName = args.join(' ') || `TG Group ${ctx.chat.id}`;
+        const grpNameArg = readCommandArg(ctx);
+        if (!grpNameArg) {
+            setPendingInput(ctx.from.id, { type: 'create_group_name', chatId: ctx.chat.id });
+            return ctx.reply('Send the new group name in your next message.');
+        }
+        const grpName = grpNameArg || `TG Group ${ctx.chat.id}`;
 
         try {
             const { rows } = await pool.query(
@@ -233,10 +319,12 @@ export const initTelegramBot = (token) => {
     // /add_member command
     bot.command('add_member', async (ctx) => {
         if (!ctx.user) return ctx.reply('Please link your account first.');
-        const args = ctx.message.text.split(' ').slice(1);
-        const memName = args.join(' ');
+        const memName = readCommandArg(ctx);
 
-        if (!memName) return ctx.reply('Usage: /add_member [name]');
+        if (!memName) {
+            setPendingInput(ctx.from.id, { type: 'add_member_name', chatId: ctx.chat.id });
+            return ctx.reply('Send the member name in your next message.');
+        }
 
         try {
             // Find linked group for this chat
@@ -303,13 +391,131 @@ export const initTelegramBot = (token) => {
 
     // Handle natural language messages (Agentic AI)
     bot.on(message('text'), async (ctx) => {
+        if (ctx.message.text.startsWith('/')) return; // Ignore commands
+
+        const fromId = ctx.from?.id;
+        const text = (ctx.message?.text || '').trim();
+        const pending = fromId ? getPendingInput(fromId) : null;
+
+        if (pending) {
+            if (Date.now() > pending.expiresAt) {
+                clearPendingInput(fromId);
+                return ctx.reply('⌛ Session expired. Please run the command again.');
+            }
+
+            try {
+                if (pending.type === 'register_username') {
+                    const candidate = sanitizeUsername(text, fromId);
+                    const usernameCheck = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [candidate]);
+                    if (usernameCheck.rows.length > 0) {
+                        return ctx.reply('❌ Username already exists. Send another username.');
+                    }
+
+                    setPendingInput(fromId, { type: 'register_password', username: candidate });
+                    return ctx.reply(`✅ Username set: *${candidate}*\nNow send your password in next message (min 6 chars).`, { parse_mode: 'Markdown' });
+                }
+
+                if (pending.type === 'register_password') {
+                    if (text.length < 6) return ctx.reply('❌ Password must be at least 6 characters. Send again.');
+
+                    const existingByTelegram = await pool.query('SELECT id FROM user_infm WHERE telegram_id = $1', [fromId]);
+                    if (existingByTelegram.rows.length > 0) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('✅ This Telegram is already linked. Use /reset_password to change your password.');
+                    }
+
+                    const usernameTaken = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [pending.username]);
+                    if (usernameTaken.rows.length > 0) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('❌ Username is no longer available. Please /register again.');
+                    }
+
+                    const hashed = await bcrypt.hash(text, 10);
+                    const insert = await pool.query(
+                        'INSERT INTO user_infm (usernm, passwd, telegram_id) VALUES ($1, $2, $3) RETURNING id, usernm',
+                        [pending.username, hashed, fromId]
+                    );
+                    clearPendingInput(fromId);
+                    return ctx.reply(`✅ Registration successful!\nAccount: *${insert.rows[0].usernm}*`, { parse_mode: 'Markdown' });
+                }
+
+                if (pending.type === 'reset_password') {
+                    if (text.length < 6) return ctx.reply('❌ Password must be at least 6 characters. Send again.');
+                    const hashed = await bcrypt.hash(text, 10);
+                    await pool.query('UPDATE user_infm SET passwd = $1 WHERE telegram_id = $2', [hashed, fromId]);
+                    clearPendingInput(fromId);
+                    return ctx.reply('✅ Password updated successfully.');
+                }
+
+                if (pending.type === 'create_group_name') {
+                    if (!ctx.user) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('Please register via /register first.');
+                    }
+                    const grpName = text || `TG Group ${ctx.chat.id}`;
+                    const { rows } = await pool.query(
+                        'INSERT INTO grp_infm (grp_name, admin_id, telegram_chat_id, currency) VALUES ($1, $2, $3, $4) RETURNING id',
+                        [grpName, ctx.user.id, pending.chatId || ctx.chat.id, 'W']
+                    );
+                    clearPendingInput(fromId);
+                    return ctx.reply(`✅ Group *${grpName}* created successfully!\nID: \`${rows[0].id}\``, { parse_mode: 'Markdown' });
+                }
+
+                if (pending.type === 'add_member_name') {
+                    if (!ctx.user) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('Please register via /register first.');
+                    }
+                    const { rows: groups } = await pool.query('SELECT id FROM grp_infm WHERE telegram_chat_id = $1', [pending.chatId || ctx.chat.id]);
+                    if (groups.length === 0) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('❌ This chat is not linked to any group. Use /link_group first.');
+                    }
+                    await pool.query('INSERT INTO member_infm (mem_name, group_id, paid) VALUES ($1, $2, 0)', [text, groups[0].id]);
+                    clearPendingInput(fromId);
+                    return ctx.reply(`✅ Member *${text}* added to the group!`, { parse_mode: 'Markdown' });
+                }
+
+                if (pending.type === 'link_group_id') {
+                    if (!ctx.user) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('Please register via /register first.');
+                    }
+                    const groupId = parseInt(text, 10);
+                    if (!Number.isFinite(groupId)) return ctx.reply('❌ Invalid group ID. Send numeric group ID.');
+
+                    const { rows: accessCheck } = await pool.query(
+                        'SELECT 1 FROM grp_infm g LEFT JOIN grp_users gu ON g.id = gu.group_id WHERE g.id = $1 AND (g.admin_id = $2 OR gu.user_id = $2)',
+                        [groupId, ctx.user.id]
+                    );
+
+                    if (accessCheck.length === 0) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('❌ You do not have permission to link this group or the group does not exist.');
+                    }
+
+                    await pool.query('UPDATE grp_infm SET telegram_chat_id = $1 WHERE id = $2', [pending.chatId || ctx.chat.id, groupId]);
+                    clearPendingInput(fromId);
+                    return ctx.reply(`✅ Success! This Telegram group is now linked to TinyNotie group: *${groupId}*`, { parse_mode: 'Markdown' });
+                }
+            } catch (pendingErr) {
+                console.error('Pending input handling error:', pendingErr);
+                clearPendingInput(fromId);
+                return ctx.reply('❌ Failed to process your input. Please run the command again.');
+            }
+        }
+
         if (!ctx.user) {
             if (ctx.chat?.type === 'private') {
-                return ctx.reply('Please link your TinyNotie account first from the web app, then send /start again.');
+                return ctx.reply('Please register via /register to start using TinyNotie bot.');
             }
             return;
         }
-        if (ctx.message.text.startsWith('/')) return; // Ignore commands
+
+        if (isGroupChat(ctx)) {
+            const triggered = await isTriggeredForBotInGroup(ctx, text);
+            if (!triggered) return;
+        }
 
         // Find if this group is linked
         let groupId;
@@ -321,7 +527,18 @@ export const initTelegramBot = (token) => {
             if (rows.length > 0) {
                 groupId = rows[0].id;
             } else if (ctx.chat.type === 'private') {
-                return ctx.reply('Please specify which group you are talking about, or use this bot inside a linked Telegram group.');
+                const { rows: personalGroups } = await pool.query(
+                    `SELECT g.id FROM grp_infm g
+                     LEFT JOIN grp_users gu ON gu.group_id = g.id
+                     WHERE g.admin_id = $1 OR gu.user_id = $1
+                     ORDER BY g.create_date DESC
+                     LIMIT 1`,
+                    [ctx.user.id]
+                );
+                if (personalGroups.length === 0) {
+                    return ctx.reply('No group found for your account yet. Create one with /create_group.');
+                }
+                groupId = personalGroups[0].id;
             } else {
                 return; // Group not linked, ignore
             }
@@ -349,14 +566,44 @@ export const initTelegramBot = (token) => {
 
     // Handle Photos (Receipt Tracking)
     bot.on(message('photo'), async (ctx) => {
-        if (!ctx.user) return;
+        if (!ctx.user) {
+            if (ctx.chat?.type === 'private') {
+                return ctx.reply('Please register via /register before sending receipts.');
+            }
+            return;
+        }
 
-        // Find linked group
+        if (isGroupChat(ctx)) {
+            const captionText = ctx.message?.caption || '';
+            const triggered = await isTriggeredForBotInGroup(ctx, captionText);
+            if (!triggered) {
+                return;
+            }
+        }
+
+        let group = null;
         const { rows: groups } = await pool.query('SELECT id, grp_name FROM grp_infm WHERE telegram_chat_id = $1', [ctx.chat.id]);
-        if (groups.length === 0) return; // Not linked
+        if (groups.length > 0) {
+            group = groups[0];
+        } else if (ctx.chat.type === 'private') {
+            const { rows: personalGroups } = await pool.query(
+                `SELECT g.id, g.grp_name FROM grp_infm g
+                 LEFT JOIN grp_users gu ON gu.group_id = g.id
+                 WHERE g.admin_id = $1 OR gu.user_id = $1
+                 ORDER BY g.create_date DESC
+                 LIMIT 1`,
+                [ctx.user.id]
+            );
 
-        const group = groups[0];
-        ctx.sendChatAction('typing');
+            if (personalGroups.length === 0) {
+                return ctx.reply('No group found for your account. Create one with /create_group first.');
+            }
+            group = personalGroups[0];
+        } else {
+            return;
+        }
+
+        await ctx.sendChatAction('typing');
 
         try {
             const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
@@ -396,6 +643,7 @@ export const initTelegramBot = (token) => {
     bot.on(message('new_chat_members'), async (ctx) => {
         try {
             const me = await bot.telegram.getMe();
+            botUsernameCache = (me.username || '').toLowerCase();
             const addedBot = (ctx.message?.new_chat_members || []).some((m) => m.id === me.id);
             if (!addedBot) return;
 
