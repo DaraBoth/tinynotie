@@ -163,12 +163,12 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
+    <Sheet open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
       <SheetContent
         side="right"
         title="Group Settings"
         description="Manage group details, visibility, and Telegram linking"
-        className="w-full sm:max-w-lg p-0 flex flex-col"
+        className="w-full sm:max-w-lg p-0 flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden"
       >
         <SheetHeader className="px-6 pt-6 pb-4 border-b">
           <SheetTitle className="flex items-center gap-2">
@@ -180,8 +180,8 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1">
-          <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y">
+          <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6 pb-24">
             {/* Group Name */}
             <div className="space-y-2">
               <Label htmlFor="grp_name" className="text-xs font-semibold">
@@ -352,7 +352,7 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
               )}
             </div>
           </form>
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t bg-background flex gap-3">

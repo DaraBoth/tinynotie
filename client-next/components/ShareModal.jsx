@@ -153,8 +153,8 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
+    <Sheet open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden">
         <SheetHeader className="px-6 pt-6 pb-4 border-b">
           <SheetTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5" />
@@ -165,8 +165,8 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="px-6 py-4 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y">
+          <div className="px-6 py-4 space-y-6 pb-24">
             {/* Bank details */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -286,7 +286,7 @@ export function ShareModal({ open, onClose, group, members = [], trips = [], cur
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t bg-background flex gap-3">

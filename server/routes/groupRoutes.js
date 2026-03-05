@@ -17,6 +17,25 @@ const safeNumber = (value) => {
   return Number.isFinite(num) ? num : 0;
 };
 
+const parseTripMemberIds = (memId) => {
+  try {
+    if (Array.isArray(memId)) return memId.map((id) => Number(id)).filter(Number.isFinite);
+    if (typeof memId === "string") {
+      const trimmed = memId.trim();
+      if (!trimmed) return [];
+      if (trimmed.startsWith("[")) {
+        const parsed = JSON.parse(trimmed);
+        return Array.isArray(parsed) ? parsed.map((id) => Number(id)).filter(Number.isFinite) : [];
+      }
+      return trimmed.split(",").map((id) => Number(id.trim())).filter(Number.isFinite);
+    }
+    const asNum = Number(memId);
+    return Number.isFinite(asNum) ? [asNum] : [];
+  } catch {
+    return [];
+  }
+};
+
 const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -1277,43 +1296,89 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
 
     const group = accessRes.rows[0];
 
-    // 2. Fetch members and calculate status
-    // Note: We'll use a simplified version of the calculation logic logic here since we need raw data
+    // 2. Resolve sharer name from DB (token may not contain usernm in older tokens)
+    const actorRes = await pool.query('SELECT usernm FROM user_infm WHERE id = $1', [user_id]);
+    const actorName = safeText(actorRes.rows?.[0]?.usernm, 'Unknown User');
+
+    // 3. Fetch members and trip details
     const selectedMemberIds = Array.isArray(member_ids)
       ? member_ids.map((id) => Number(id)).filter(Number.isFinite)
       : [];
 
     const membersSql = `
-      SELECT m.id, m.mem_name, m.paid,
-             (SELECT COALESCE(SUM(t.spend / (SELECT COUNT(*) FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(t.mem_id::jsonb) = 'array' THEN t.mem_id::jsonb ELSE '[]'::jsonb END))), 0)
-              FROM trp_infm t
-              WHERE t.group_id = $1 AND t.mem_id::jsonb ? m.id::text) as spend
+      SELECT m.id, m.mem_name, m.paid
       FROM member_infm m
       WHERE m.group_id = $1
-        AND ($2::int[] IS NULL OR array_length($2::int[], 1) IS NULL OR m.id = ANY($2::int[]));
+        AND ($2::int[] IS NULL OR array_length($2::int[], 1) IS NULL OR m.id = ANY($2::int[]))
+      ORDER BY m.id;
     `;
-    const membersRes = await pool.query(membersSql, [groupid, selectedMemberIds.length > 0 ? selectedMemberIds : null]);
+    const tripsSql = `
+      SELECT id, trp_name, spend, mem_id
+      FROM trp_infm
+      WHERE group_id = $1
+      ORDER BY id DESC;
+    `;
+
+    const [membersRes, tripsRes] = await Promise.all([
+      pool.query(membersSql, [groupid, selectedMemberIds.length > 0 ? selectedMemberIds : null]),
+      pool.query(tripsSql, [groupid]),
+    ]);
+
     const members = membersRes.rows;
+    const trips = tripsRes.rows;
 
     if (members.length === 0) {
       return res.json({ status: true, message: "No members to share." });
     }
 
-    // 3. Format message
+    // 4. Format message
     const groupName = safeText(group.grp_name, `Group ${groupid}`);
     const currency = safeText(group.currency, '$');
     let message = `📊 *Member Settlement Status: ${groupName}*\n\n`;
-    members.forEach(m => {
-      const paid = safeNumber(m.paid);
-      const spent = safeNumber(m.spend);
+
+    members.forEach((member) => {
+      const paid = safeNumber(member.paid);
+      const joinedTrips = [];
+      let spent = 0;
+
+      trips.forEach((trip) => {
+        const participantIds = parseTripMemberIds(trip.mem_id);
+        if (participantIds.length === 0) return;
+        if (!participantIds.includes(Number(member.id))) return;
+
+        const perMemberCost = safeNumber(trip.spend) / participantIds.length;
+        spent += perMemberCost;
+        joinedTrips.push({
+          name: safeText(trip.trp_name, 'Untitled Expense'),
+          cost: perMemberCost,
+        });
+      });
+
       const balance = paid - spent;
-      const status = balance >= 0 ? '🟢 +' : '🔴 ';
-      message += `${status} *${safeText(m.mem_name, 'Unknown Member')}*\n   Paid: ${formatAmount(paid)} ${currency}\n   Spend: ${formatAmount(spent)} ${currency}\n   Balance: *${formatAmount(balance)}* ${currency}\n\n`;
+      const remain = balance > 0 ? balance : 0;
+      const unpaid = balance < 0 ? Math.abs(balance) : 0;
+
+      message += `👤 *${safeText(member.mem_name, 'Unknown Member')}*\n`;
+      message += `• Paid: ${currency}${formatAmount(paid)}\n`;
+      message += `• Spent: ${currency}${formatAmount(spent)}\n`;
+      message += `• Remain: ${currency}${formatAmount(remain)}\n`;
+      message += `• Unpaid: ${currency}${formatAmount(unpaid)}\n`;
+
+      if (joinedTrips.length > 0) {
+        message += `• Joined Trips:\n`;
+        joinedTrips.forEach((trip) => {
+          message += `   - ${safeText(trip.name)}: ${currency}${formatAmount(trip.cost)}\n`;
+        });
+      } else {
+        message += `• Joined Trips: -\n`;
+      }
+
+      message += `\n`;
     });
 
-    message += `_Generated via TinyNotie Portal_`;
+    message += `👤 Shared by: *${actorName}*\n_Generated via TinyNotie Portal_`;
 
-    // 4. Send to Telegram (group or personal)
+    // 5. Send to Telegram (group or personal)
     let sent = false;
     if (targetType === 'personal') {
       const userRes = await pool.query('SELECT telegram_id FROM user_infm WHERE id = $1', [user_id]);

@@ -578,10 +578,12 @@ router.delete("/deleteTripById", authenticateToken, async (req, res) => {
  */
 router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
   const { group_id, targetType = 'group' } = req.body;
-  const username = req.user.usernm;
   const userId = req.user._id;
 
   try {
+    const actorRes = await pool.query("SELECT usernm FROM user_infm WHERE id = $1", [userId]);
+    const username = safeText(actorRes.rows?.[0]?.usernm, req.user.usernm || 'Unknown User');
+
     // Get group info
     const groupResult = await pool.query("SELECT grp_name, currency FROM grp_infm WHERE id = $1", [group_id]);
     if (groupResult.rows.length === 0) return res.status(404).json({ status: false, message: "Group not found" });
@@ -685,10 +687,12 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
  */
 router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
   const { trip_id, trip_ids = [], group_id, targetType = 'group' } = req.body;
-  const username = req.user.usernm;
   const userId = req.user._id;
 
   try {
+    const actorRes = await pool.query("SELECT usernm FROM user_infm WHERE id = $1", [userId]);
+    const username = safeText(actorRes.rows?.[0]?.usernm, req.user.usernm || 'Unknown User');
+
     const normalizedTripIds = [
       ...(Array.isArray(trip_ids) ? trip_ids : []),
       ...(trip_id ? [trip_id] : []),
