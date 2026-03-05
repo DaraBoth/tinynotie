@@ -777,60 +777,81 @@ export function GroupPageClient({ groupId }) {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
           <TrendingUp className="h-3.5 w-3.5" /> Trips
         </h2>
-        <div className="flex gap-1">
-          <Button
-            size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-            onClick={toggleAllTrips}
-          >
-            {selectedTripIds.length > 0 ? 'Clear' : 'Select All'}
-          </Button>
-          <div className="hidden sm:flex gap-1 bg-muted/60 p-1 rounded-lg mr-1">
-            <button
-              onClick={() => handleChangeTelegramTarget('group')}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'group' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Group
-            </button>
-            <button
-              onClick={() => handleChangeTelegramTarget('personal')}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'personal' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Personal
-            </button>
+        {isMobile ? (
+          <div className="grid grid-cols-2 gap-1.5 w-full max-w-[260px]">
+            <Button size="sm" variant="outline" className="h-8 text-xs"
+              onClick={toggleAllTrips}>
+              {selectedTripIds.length > 0 ? 'Clear' : 'Select'}
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs"
+              onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
+              <Plus className="h-3.5 w-3.5 mr-1" /> Add
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs"
+              onClick={handleExportTrips}>
+              <Download className="h-3.5 w-3.5 mr-1" /> Export
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs"
+              onClick={handleShareSelectedTrips}>
+              <Send className="h-3.5 w-3.5 mr-1" /> Telegram
+            </Button>
           </div>
-          <Button
-            size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-            onClick={handleExportTrips}
-          >
-            <Download className="h-3.5 w-3.5" /> Export {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
-          </Button>
-          <Button
-            size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-sky-400"
-            onClick={handleShareSelectedTrips}
-          >
-            <Send className="h-3.5 w-3.5" /> Telegram {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
-          </Button>
-          <div className="hidden md:flex gap-0.5 bg-muted/60 p-1 rounded-lg">
-            <button
-              onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'table' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+        ) : (
+          <div className="flex gap-1">
+            <Button
+              size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+              onClick={toggleAllTrips}
             >
-              <LayoutGrid className="h-3 w-3" />
-              <span>Table</span>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              {selectedTripIds.length > 0 ? 'Clear' : 'Select All'}
+            </Button>
+            <div className="hidden sm:flex gap-1 bg-muted/60 p-1 rounded-lg mr-1">
+              <button
+                onClick={() => handleChangeTelegramTarget('group')}
+                className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'group' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Group
+              </button>
+              <button
+                onClick={() => handleChangeTelegramTarget('personal')}
+                className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'personal' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Personal
+              </button>
+            </div>
+            <Button
+              size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+              onClick={handleExportTrips}
             >
-              <List className="h-3 w-3" />
-              <span>List</span>
-            </button>
+              <Download className="h-3.5 w-3.5" /> Export {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
+            </Button>
+            <Button
+              size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-sky-400"
+              onClick={handleShareSelectedTrips}
+            >
+              <Send className="h-3.5 w-3.5" /> Telegram {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
+            </Button>
+            <div className="hidden md:flex gap-0.5 bg-muted/60 p-1 rounded-lg">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'table' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <LayoutGrid className="h-3 w-3" />
+                <span>Table</span>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <List className="h-3 w-3" />
+                <span>List</span>
+              </button>
+            </div>
+            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+              onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
+              <Plus className="h-3.5 w-3.5" /> Add Trip
+            </Button>
           </div>
-          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-            onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-            <Plus className="h-3.5 w-3.5" /> Add Trip
-          </Button>
-        </div>
+        )}
       </div>
       {sortedTrips.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/40 rounded-2xl">
@@ -843,11 +864,10 @@ export function GroupPageClient({ groupId }) {
         </div>
       ) : isMobile ? (
         <div className="space-y-2">
-          {orderedTrips.map((trip, idx) => {
-            const isPinned = tripPinnedRows.includes(trip.id);
+          {sortedTrips.map((trip, idx) => {
             const joinedMembers = getJoinedMembers(trip);
             return (
-              <div key={trip.id || idx} className={`rounded-2xl border p-4 transition-colors ${isPinned ? 'border-primary/40 bg-primary/5' : 'border-border/30 bg-background/30'}`}>
+              <div key={trip.id || idx} className="rounded-2xl border border-border/30 bg-background/30 p-4 transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 min-w-0">
                     <input
@@ -861,15 +881,6 @@ export function GroupPageClient({ groupId }) {
                       <p className="text-xs text-muted-foreground mt-1">{formatTimeDifference(trip.update_dttm || trip.create_date)}</p>
                     </div>
                   </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 shrink-0"
-                    onClick={() => togglePinnedTripRow(trip.id)}
-                    title="Pin trip"
-                  >
-                    <Pin className={`h-3.5 w-3.5 ${isPinned ? 'text-primary' : 'text-muted-foreground'}`} />
-                  </Button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mt-3">
