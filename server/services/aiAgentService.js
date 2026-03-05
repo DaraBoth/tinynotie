@@ -113,6 +113,7 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
 
     let runLoop = true;
     let loopCount = 0;
+    let finalResponseText = "";
 
     while (runLoop && loopCount < 5) {
         loopCount++;
@@ -157,9 +158,12 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
             }
         } else {
             if (responseMessage.content) {
+                finalResponseText = responseMessage.content;
                 sendEvent("message", { delta: responseMessage.content });
             }
             runLoop = false;
         }
     }
+
+    return finalResponseText;
 };

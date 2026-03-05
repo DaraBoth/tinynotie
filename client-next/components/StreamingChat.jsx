@@ -23,13 +23,7 @@ const shouldRefreshFromTool = (toolName) => {
 };
 
 export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
-    const [messages, setMessages] = useState([
-        {
-            role: 'assistant',
-            content: 'Hello! I am your AI financial assistant. I can help you manage trips, members, and analyze spending patterns. How can I help you today?',
-            timestamp: new Date(),
-        }
-    ]);
+    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState(null); // 'Thinking...', 'Executing tools...', etc.
@@ -37,6 +31,12 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
 
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
+
+    const defaultWelcomeMessage = {
+        role: 'assistant',
+        content: 'Hello! I am your AI financial assistant. I can help you manage trips, members, and analyze spending patterns. How can I help you today?',
+        timestamp: new Date(),
+    };
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -51,6 +51,54 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
             setTimeout(() => inputRef.current?.focus(), 300);
         }
     }, [open]);
+
+    useEffect(() => {
+        if (!open || !groupId) return;
+
+        const loadHistory = async () => {
+            try {
+                const token = (() => {
+                    try {
+                        const auth = JSON.parse(localStorage.getItem('auth-storage'));
+                        return auth?.state?.token;
+                    } catch {
+                        return null;
+                    }
+                })();
+
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/openai/chat/history?groupId=${groupId}`,
+                    {
+                        headers: {
+                            'Authorization': token ? `Bearer ${token}` : '',
+                        },
+                    }
+                );
+
+                if (!response.ok) {
+                    setMessages([defaultWelcomeMessage]);
+                    return;
+                }
+
+                const payload = await response.json();
+                const history = Array.isArray(payload?.data) ? payload.data : [];
+                if (history.length === 0) {
+                    setMessages([defaultWelcomeMessage]);
+                    return;
+                }
+
+                setMessages(history.map((item) => ({
+                    role: item.role,
+                    content: item.content,
+                    timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
+                })));
+            } catch {
+                setMessages([defaultWelcomeMessage]);
+            }
+        };
+
+        loadHistory();
+    }, [open, groupId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

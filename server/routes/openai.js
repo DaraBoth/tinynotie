@@ -40,6 +40,21 @@ webPush.setVapidDetails(
 dotenv.config();
 const router = express.Router();
 
+const buildAiChatId = (userId, groupId) => `ai_chat:user:${userId}:group:${groupId}`;
+
+const toStoredHistoryItem = (message = {}) => ({
+  role: message.role === "assistant" ? "model" : "user",
+  parts: [{ text: String(message.content || "") }],
+});
+
+const fromStoredHistoryItem = (item = {}) => ({
+  role: item?.role === "model" ? "assistant" : "user",
+  content: Array.isArray(item?.parts)
+    ? item.parts.map((part) => part?.text || "").join("\n").trim()
+    : "",
+  timestamp: new Date().toISOString(),
+});
+
 const sendAiTextResponse = (req, res, text) => {
   const aiText = String(text || "");
   const format = String(req.query?.format || req.body?.format || "json").toLowerCase();
@@ -345,6 +360,7 @@ router.post("/receiptImage", async (req, res) => {
  */
 router.post("/chat/stream", authenticateToken, async (req, res) => {
   const { message, groupId, history = [] } = req.body;
+  const userId = req.user?._id;
 
   if (!groupId) {
     return res.status(400).json({ error: "groupId is required" });
@@ -360,13 +376,53 @@ router.post("/chat/stream", authenticateToken, async (req, res) => {
   };
 
   try {
-    await streamAiAgent({ message, groupId, history, sendEvent });
+    const finalResponseText = await streamAiAgent({ message, groupId, history, sendEvent });
+
+    if (userId && groupId && message && finalResponseText) {
+      const chatId = buildAiChatId(userId, groupId);
+      const chatEntries = [
+        toStoredHistoryItem({ role: "user", content: message }),
+        toStoredHistoryItem({ role: "assistant", content: finalResponseText }),
+      ];
+
+      try {
+        await saveChat({ chat_id: chatId, chat_history: chatEntries, user_id: String(userId) });
+      } catch (persistErr) {
+        console.error("Failed to persist AI chat history:", persistErr.message);
+      }
+    }
+
     sendEvent("done", { status: "complete" });
     res.end();
   } catch (error) {
     console.error("Streaming error:", error);
     sendEvent("error", { message: error.message });
     res.end();
+  }
+});
+
+router.get("/chat/history", authenticateToken, async (req, res) => {
+  const { groupId } = req.query;
+  const userId = req.user?._id;
+
+  if (!groupId) {
+    return res.status(400).json({ status: false, message: "groupId is required" });
+  }
+
+  try {
+    const chatId = buildAiChatId(userId, groupId);
+    const sql = `SELECT chat_history FROM json_data WHERE chat_id = $1 LIMIT 1;`;
+    const result = await pool.query(sql, [chatId]);
+    const stored = result.rows?.[0]?.chat_history?.chat || [];
+
+    const messages = Array.isArray(stored)
+      ? stored.map(fromStoredHistoryItem).filter((m) => m.content)
+      : [];
+
+    return res.status(200).json({ status: true, data: messages });
+  } catch (error) {
+    console.error("chat/history error:", error.message);
+    return res.status(500).json({ status: false, message: error.message });
   }
 });
 
