@@ -1460,7 +1460,7 @@ export function GroupPageClient({ groupId }) {
 
       {/* Bottom Action Sheet */}
       <div
-        className={`md:hidden fixed left-0 right-0 z-50 transition-all duration-300 ease-out ${fabOpen ? 'bottom-0' : '-bottom-full'
+        className={`md:hidden fixed inset-x-0 w-screen max-w-none z-50 transition-all duration-300 ease-out ${fabOpen ? 'bottom-0' : '-bottom-full'
           }`}
       >
         <div className="bg-background/75 backdrop-blur-xl rounded-t-3xl border-t border-border/30 shadow-2xl pb-safe">
