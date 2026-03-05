@@ -4,6 +4,7 @@ import { pool, handleError, sanitizeIntegerField } from "../utils/db.js";
 import moment from "moment";
 import { getBot, notifyGroup } from "../services/telegramBotService.js";
 import { generateGroupExcelBuffer } from "../utils/excelGenerator.js";
+import { buildGroupReportData } from "../utils/groupReportData.js";
 
 const router = express.Router();
 
@@ -730,60 +731,35 @@ router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
       return res.status(400).json({ status: false, message: "trip_id or trip_ids is required" });
     }
 
-    const [groupRes, membersRes] = await Promise.all([
-      pool.query("SELECT grp_name, currency FROM grp_infm WHERE id = $1", [group_id]),
-      pool.query("SELECT id, mem_name FROM member_infm WHERE group_id = $1", [group_id]),
-    ]);
-
-    if (groupRes.rows.length === 0) {
+    const reportData = await buildGroupReportData(group_id, { tripIds: normalizedTripIds });
+    if (!reportData) {
       return res.status(404).json({ status: false, message: "Group not found" });
     }
 
-    const groupName = safeText(groupRes.rows[0].grp_name, `Group ${group_id}`);
-    const currency = safeText(groupRes.rows[0].currency, '$');
-    const memberMap = new Map(membersRes.rows.map((m) => [Number(m.id), safeText(m.mem_name, `Member ${m.id}`)]));
-
-    const tripSql = `
-      SELECT id, trp_name, spend, description, mem_id, payer_id, create_date, update_dttm
-      FROM trp_infm
-      WHERE group_id = $1
-        AND id = ANY($2::int[])
-      ORDER BY id DESC;
-    `;
-    const tripResult = await pool.query(tripSql, [group_id, normalizedTripIds]);
-
-    if (tripResult.rows.length === 0) {
+    if (reportData.trips.length === 0) {
       return res.status(404).json({ status: false, message: "Trip not found" });
     }
 
-    const tripLines = tripResult.rows.map((trip, index) => {
-      const participantIds = parseTripMemberIds(trip.mem_id);
-      const participantNames = participantIds
-        .map((id) => memberMap.get(Number(id)) || `Member ${id}`)
-        .filter(Boolean);
-      const participantCount = participantNames.length;
-      const perPerson = participantCount > 0 ? safeNumber(trip.spend) / participantCount : safeNumber(trip.spend);
-      const payerName = trip.payer_id ? (memberMap.get(Number(trip.payer_id)) || `Member ${trip.payer_id}`) : 'N/A';
-
+    const tripLines = reportData.trips.map((trip, index) => {
       const lines = [
-        `*${index + 1}. ${safeText(trip.trp_name, 'Untitled Expense')}*`,
-        `💵 Total: ${currency}${formatAmount(trip.spend)}`,
-        `👤 Paid by: ${safeText(payerName, 'N/A')}`,
-        `👥 Participants (${participantCount || 0}): ${participantCount > 0 ? participantNames.join(', ') : 'N/A'}`,
-        `🧮 Per person: ${currency}${formatAmount(perPerson)}`,
+        `*${index + 1}. ${safeText(trip.name, 'Untitled Expense')}*`,
+        `💵 Total: ${reportData.currency}${formatAmount(trip.total)}`,
+        `👤 Paid by: ${safeText(trip.payerName, 'N/A')}`,
+        `👥 Participants (${trip.participantCount || 0}): ${trip.participantCount > 0 ? trip.participants.join(', ') : 'N/A'}`,
+        `🧮 Per person: ${reportData.currency}${formatAmount(trip.perPerson)}`,
         `📝 Description: ${safeText(trip.description)}`,
-        `🕒 Updated: ${formatDateTime(trip.update_dttm || trip.create_date)}`,
+        `🕒 Updated: ${formatDateTime(trip.updatedAt)}`,
       ];
 
       return lines.join('\n');
     });
 
     const message = [
-      tripResult.rows.length === 1
-        ? `📢 *Trip Detail Shared: ${safeText(groupName)}*`
-        : `📢 *${tripResult.rows.length} Trip Details Shared: ${safeText(groupName)}*`,
+      reportData.trips.length === 1
+        ? `📢 *Trip Detail Shared: ${safeText(reportData.groupName)}*`
+        : `📢 *${reportData.trips.length} Trip Details Shared: ${safeText(reportData.groupName)}*`,
       '',
-      ...tripLines,
+      tripLines.join('\n\n━━━━━━━━━━━━\n\n'),
       '',
       `👤 Shared by: *${safeText(username, 'Unknown User')}*`,
       `_Generated via TinyNotie Portal_`,

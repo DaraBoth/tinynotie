@@ -3,6 +3,7 @@ import { authenticateToken } from "../middleware/auth.js";
 import { pool, handleError } from "../utils/db.js";
 import moment from "moment";
 import { getBot, notifyGroup } from "../services/telegramBotService.js";
+import { buildGroupReportData } from "../utils/groupReportData.js";
 
 const router = express.Router();
 
@@ -40,6 +41,13 @@ const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+const formatDateTime = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return safeText(value);
+  return date.toLocaleString();
+};
 
 /**
  * @swagger
@@ -1300,74 +1308,39 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
     const actorRes = await pool.query('SELECT usernm FROM user_infm WHERE id = $1', [user_id]);
     const actorName = safeText(actorRes.rows?.[0]?.usernm, 'Unknown User');
 
-    // 3. Fetch members and trip details
     const selectedMemberIds = Array.isArray(member_ids)
       ? member_ids.map((id) => Number(id)).filter(Number.isFinite)
       : [];
 
-    const membersSql = `
-      SELECT m.id, m.mem_name, m.paid
-      FROM member_infm m
-      WHERE m.group_id = $1
-        AND ($2::int[] IS NULL OR array_length($2::int[], 1) IS NULL OR m.id = ANY($2::int[]))
-      ORDER BY m.id;
-    `;
-    const tripsSql = `
-      SELECT id, trp_name, spend, mem_id
-      FROM trp_infm
-      WHERE group_id = $1
-      ORDER BY id DESC;
-    `;
+    const reportData = await buildGroupReportData(groupid, {
+      memberIds: selectedMemberIds.length > 0 ? selectedMemberIds : null,
+    });
 
-    const [membersRes, tripsRes] = await Promise.all([
-      pool.query(membersSql, [groupid, selectedMemberIds.length > 0 ? selectedMemberIds : null]),
-      pool.query(tripsSql, [groupid]),
-    ]);
+    if (!reportData) {
+      return res.status(404).json({ status: false, message: 'Group not found.' });
+    }
 
-    const members = membersRes.rows;
-    const trips = tripsRes.rows;
-
-    if (members.length === 0) {
+    if (reportData.members.length === 0) {
       return res.json({ status: true, message: "No members to share." });
     }
 
-    // 4. Format message
-    const groupName = safeText(group.grp_name, `Group ${groupid}`);
-    const currency = safeText(group.currency, '$');
+    const groupName = safeText(reportData.groupName, safeText(group.grp_name, `Group ${groupid}`));
+    const currency = safeText(reportData.currency, safeText(group.currency, '$'));
     let message = `📊 *Member Settlement Status: ${groupName}*\n\n`;
 
-    members.forEach((member) => {
-      const paid = safeNumber(member.paid);
-      const joinedTrips = [];
-      let spent = 0;
+    reportData.members.forEach((member) => {
+      message += `👤 *${safeText(member.name, 'Unknown Member')}*\n`;
+      message += `• Paid: ${currency}${formatAmount(member.paid)}\n`;
+      message += `• Spent: ${currency}${formatAmount(member.spent)}\n`;
+      message += `• Remain: ${currency}${formatAmount(member.remain)}\n`;
+      message += `• Unpaid: ${currency}${formatAmount(member.unpaid)}\n`;
 
-      trips.forEach((trip) => {
-        const participantIds = parseTripMemberIds(trip.mem_id);
-        if (participantIds.length === 0) return;
-        if (!participantIds.includes(Number(member.id))) return;
-
-        const perMemberCost = safeNumber(trip.spend) / participantIds.length;
-        spent += perMemberCost;
-        joinedTrips.push({
-          name: safeText(trip.trp_name, 'Untitled Expense'),
-          cost: perMemberCost,
-        });
-      });
-
-      const balance = paid - spent;
-      const remain = balance > 0 ? balance : 0;
-      const unpaid = balance < 0 ? Math.abs(balance) : 0;
-
-      message += `👤 *${safeText(member.mem_name, 'Unknown Member')}*\n`;
-      message += `• Paid: ${currency}${formatAmount(paid)}\n`;
-      message += `• Spent: ${currency}${formatAmount(spent)}\n`;
-      message += `• Remain: ${currency}${formatAmount(remain)}\n`;
-      message += `• Unpaid: ${currency}${formatAmount(unpaid)}\n`;
-
-      if (joinedTrips.length > 0) {
+      if (member.joinedTrips.length > 0) {
         message += `• Joined Trips:\n`;
-        joinedTrips.forEach((trip) => {
-          message += `   - ${safeText(trip.name)}: ${currency}${formatAmount(trip.cost)}\n`;
+        member.joinedTrips.forEach((trip) => {
+          const matchedTrip = reportData.trips.find((t) => t.id === trip.id);
+          const updated = matchedTrip ? formatDateTime(matchedTrip.updatedAt) : 'N/A';
+          message += `   - ${safeText(trip.name)}: ${currency}${formatAmount(trip.cost)} (${updated})\n`;
         });
       } else {
         message += `• Joined Trips: -\n`;

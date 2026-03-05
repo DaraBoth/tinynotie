@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { pool } from './dbUtils.js';
+import { buildGroupReportData } from './groupReportData.js';
 
 const safeText = (value, fallback = '—') => {
     if (value === null || value === undefined) return fallback;
@@ -24,71 +24,42 @@ const formatDate = (value) => {
     return date.toLocaleDateString();
 };
 
-const parseParticipantIds = (memId) => {
-    if (!memId) return [];
-    try {
-        if (typeof memId === 'string') {
-            if (memId.trim().startsWith('[')) {
-                const parsed = JSON.parse(memId);
-                return Array.isArray(parsed) ? parsed.map((id) => String(id)) : [];
-            }
-            return memId.split(',').map((id) => id.trim()).filter(Boolean);
-        }
-
-        if (Array.isArray(memId)) return memId.map((id) => String(id));
-        return [String(memId)];
-    } catch {
-        return [];
-    }
-};
-
 /**
  * Generates an Excel buffer for a given group
  * @param {number} groupId 
  * @returns {Promise<Buffer>}
  */
 export const generateGroupExcelBuffer = async (groupId) => {
-    const { rows: groupRows } = await pool.query(
-        'SELECT grp_name, currency FROM grp_infm WHERE id = $1',
-        [groupId]
-    );
-    const groupInfo = groupRows[0] || {};
-    const groupName = safeText(groupInfo.grp_name, 'Untitled Group');
-    const currency = safeText(groupInfo.currency, '$');
+    const reportData = await buildGroupReportData(groupId);
+    if (!reportData) {
+        throw new Error('Group not found');
+    }
 
-    // Fetch trips
-    const { rows: trips } = await pool.query(
-        `SELECT t.*, m.mem_name as payer_name 
-     FROM trp_infm t 
-     LEFT JOIN member_infm m ON t.payer_id = m.id 
-     WHERE t.group_id = $1 
-     ORDER BY t.create_date DESC`,
-        [groupId]
-    );
+    const groupName = safeText(reportData.groupName, 'Untitled Group');
+    const currency = safeText(reportData.currency, '$');
 
-    // Fetch all members for participant mapping
-    const { rows: members } = await pool.query(
-        'SELECT id, mem_name FROM member_infm WHERE group_id = $1',
-        [groupId]
-    );
-    const memberMap = Object.fromEntries(members.map(m => [m.id, m.mem_name]));
+    const tripRows = reportData.trips.map((trip, index) => [
+        index + 1,
+        formatDate(trip.updatedAt || trip.createDate),
+        safeText(trip.name, 'Untitled Expense'),
+        formatAmount(trip.total),
+        currency,
+        safeText(trip.payerName, '—'),
+        trip.participantCount,
+        trip.participants.join(', ') || '—',
+        formatAmount(trip.perPerson),
+        safeText(trip.description, '—'),
+    ]);
 
-    const rows = trips.map((trip, index) => {
-        const participantNames = parseParticipantIds(trip.mem_id)
-            .map((id) => safeText(memberMap[id], 'Unknown'))
-            .join(', ');
-
-        return [
-            index + 1,
-            formatDate(trip.create_date),
-            safeText(trip.trp_name, 'Untitled Expense'),
-            formatAmount(trip.spend),
-            currency,
-            safeText(trip.payer_name, '—'),
-            participantNames || '—',
-            safeText(trip.description, '—'),
-        ];
-    });
+    const memberRows = reportData.members.map((member, index) => [
+        index + 1,
+        safeText(member.name, 'Unknown Member'),
+        formatAmount(member.paid),
+        formatAmount(member.spent),
+        formatAmount(member.remain),
+        formatAmount(member.unpaid),
+        member.joinedTrips.map((trip) => `${safeText(trip.name)} (${currency}${formatAmount(trip.cost)})`).join(' | ') || '—',
+    ]);
 
     const reportTitle = `TinyNotie Expense Report - ${groupName}`;
     const generatedAt = new Date().toLocaleString();
@@ -96,16 +67,27 @@ export const generateGroupExcelBuffer = async (groupId) => {
     const sheetData = [
         [reportTitle],
         ['Generated At', generatedAt],
-        ['Total Records', rows.length],
+        ['Total Records', tripRows.length],
         [],
-        ['No.', 'Date', 'Expense', 'Amount', 'Currency', 'Payer', 'Participants', 'Description'],
-        ...rows,
+        ['No.', 'Updated', 'Expense', 'Amount', 'Currency', 'Payer', 'Participants Count', 'Participants', 'Per Person', 'Description'],
+        ...tripRows,
+    ];
+
+    const memberSheetData = [
+        [`TinyNotie Member Settlement - ${groupName}`],
+        ['Generated At', generatedAt],
+        ['Total Members', memberRows.length],
+        [],
+        ['No.', 'Member', 'Paid', 'Spent', 'Remain', 'Unpaid', 'Joined Trips (Cost Split)'],
+        ...memberRows,
     ];
 
     // Create Workbook
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+    const tripWorksheet = XLSX.utils.aoa_to_sheet(sheetData);
+    const memberWorksheet = XLSX.utils.aoa_to_sheet(memberSheetData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Expense Report');
+    XLSX.utils.book_append_sheet(workbook, tripWorksheet, 'Trip Details');
+    XLSX.utils.book_append_sheet(workbook, memberWorksheet, 'Member Details');
 
     // Set column widths
     const wscols = [
@@ -118,8 +100,30 @@ export const generateGroupExcelBuffer = async (groupId) => {
         { wch: 40 },
         { wch: 36 },
     ];
-    worksheet['!cols'] = wscols;
-    worksheet['!autofilter'] = { ref: `A5:H${Math.max(sheetData.length, 5)}` };
+    tripWorksheet['!cols'] = [
+        { wch: 6 },
+        { wch: 20 },
+        { wch: 30 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 42 },
+        { wch: 14 },
+        { wch: 38 },
+    ];
+    tripWorksheet['!autofilter'] = { ref: `A5:J${Math.max(sheetData.length, 5)}` };
+
+    memberWorksheet['!cols'] = [
+        { wch: 6 },
+        { wch: 24 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 60 },
+    ];
+    memberWorksheet['!autofilter'] = { ref: `A5:G${Math.max(memberSheetData.length, 5)}` };
 
     // Generate buffer
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });

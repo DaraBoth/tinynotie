@@ -149,7 +149,7 @@ export function GroupPageClient({ groupId }) {
     action();
   };
 
-  const { data: groupData, isLoading, error } = useQuery({
+  const { data: groupData, isLoading, error, refetch } = useQuery({
     queryKey: ['group', groupId],
     queryFn: async () => {
       const [groupResponse, membersResponse, tripsResponse] = await Promise.all([
@@ -1604,7 +1604,15 @@ export function GroupPageClient({ groupId }) {
       <SelectTripDialog open={selectTripOpen} onClose={() => setSelectTripOpen(false)} trips={sortedTrips} onSelectTrip={handleTripSelected} currency={currency} />
       <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
       <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
-      <StreamingChat open={chatOpen} onClose={() => setChatOpen(false)} groupId={groupId} />
+      <StreamingChat
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        groupId={groupId}
+        onDataChanged={() => {
+          refetch();
+          toast.success('Group data refreshed.');
+        }}
+      />
       <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} group={group} members={members} trips={trips} currency={currency} />
       <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} />
       <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />

@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-export function StreamingChat({ open, onClose, groupId }) {
+export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
@@ -100,6 +100,7 @@ export function StreamingChat({ open, onClose, groupId }) {
             const decoder = new TextDecoder();
 
             let aiResponseContent = '';
+            let hasToolChanges = false;
             let currentAiMessage = {
                 role: 'assistant',
                 content: '',
@@ -144,6 +145,7 @@ export function StreamingChat({ open, onClose, groupId }) {
                     } else if (event === 'status') {
                         setStatus(data.message || null);
                     } else if (event === 'tool_result') {
+                        hasToolChanges = true;
                         setMessages(prev => {
                             const last = [...prev];
                             const currentMsg = last[last.length - 1];
@@ -157,6 +159,10 @@ export function StreamingChat({ open, onClose, groupId }) {
                         toast.error(data.message || 'Streaming error');
                     }
                 }
+            }
+
+            if (hasToolChanges && typeof onDataChanged === 'function') {
+                onDataChanged();
             }
         } catch (error) {
             console.error('Chat error:', error);
