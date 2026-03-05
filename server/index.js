@@ -57,6 +57,11 @@ app.use(fileUpload({
   preserveExtension: true // Preserve file extensions
 }));
 
+// Health endpoint for Fly.io checks
+app.get('/healthz', (_, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Resolve the absolute path for Swagger API docs
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -95,24 +100,12 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: [path.join(__dirname, "routes", "*.js")], // Use absolute path
+  apis: [
+    path.join(__dirname, "routes", "*.js"),
+    path.join(__dirname, "routes", "**", "*.js"),
+    path.join(__dirname, "index.js"),
+  ],
 };
-
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-
-// Serve Swagger UI with custom CSS for Vercel compatibility
-app.use("/api-docs", swaggerUi.serve);
-app.get(
-  "/api-docs",
-  swaggerUi.setup(swaggerDocs, {
-    customCssUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css",
-    customJs:
-      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui-bundle.js",
-    customJsStandalonePreset:
-      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui-standalone-preset.js",
-  })
-);
 
 /**
  * @swagger
@@ -151,6 +144,104 @@ app.use("/api", apiRoutes);
 app.use("/auth", authRoutes);
 app.use("/bot", telegrambotRoutes);
 app.use("/daraboth", daraboth);
+
+const normalizePath = (rawPath = "") => {
+  if (!rawPath || rawPath === "/") return "/";
+  const replacedParams = rawPath.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
+  const cleaned = replacedParams.replace(/\/+/g, "/");
+  return cleaned.startsWith("/") ? cleaned : `/${cleaned}`;
+};
+
+const extractMountPath = (regexp) => {
+  if (!regexp || !regexp.source) return "";
+  const source = regexp.source;
+  if (source === "^\\/?$") return "";
+
+  return source
+    .replace("^\\/", "/")
+    .replace("\\/?(?=\\/|$)", "")
+    .replace("(?=\\/|$)", "")
+    .replace(/\\\//g, "/")
+    .replace(/\$$/, "")
+    .replace(/^\^/, "")
+    .replace(/\(\?:\(\[\^\\\/\]\+\?\)\)/g, ":param")
+    .replace(/\(\?:\(\?=\.\)\[\^\\\/\]\+\?\)/g, ":param")
+    .replace(/\/\?/g, "")
+    .replace(/\/$/, "");
+};
+
+const collectExpressRoutes = (stack, prefix = "") => {
+  const routes = [];
+
+  stack.forEach((layer) => {
+    if (layer.route?.path) {
+      const routePath = normalizePath(`${prefix}${layer.route.path}`);
+      Object.keys(layer.route.methods || {})
+        .filter((method) => layer.route.methods[method])
+        .forEach((method) => {
+          routes.push({ method: method.toLowerCase(), path: routePath });
+        });
+      return;
+    }
+
+    if (layer.name === "router" && layer.handle?.stack) {
+      const mountPath = normalizePath(extractMountPath(layer.regexp) || "");
+      const nextPrefix = normalizePath(`${prefix}${mountPath}`);
+      routes.push(...collectExpressRoutes(layer.handle.stack, nextPrefix === "/" ? "" : nextPrefix));
+    }
+  });
+
+  return routes;
+};
+
+const guessTag = (routePath) => {
+  const first = routePath.split("/").filter(Boolean)[0] || "General";
+  return first.charAt(0).toUpperCase() + first.slice(1);
+};
+
+const buildSwaggerDocs = () => {
+  const docs = swaggerJsDoc(swaggerOptions);
+  docs.paths = docs.paths || {};
+
+  const stack = app?._router?.stack || [];
+  const discoveredRoutes = collectExpressRoutes(stack);
+
+  discoveredRoutes.forEach(({ method, path: routePath }) => {
+    if (!docs.paths[routePath]) docs.paths[routePath] = {};
+    if (!docs.paths[routePath][method]) {
+      docs.paths[routePath][method] = {
+        tags: [guessTag(routePath)],
+        summary: `${method.toUpperCase()} ${routePath}`,
+        responses: {
+          200: { description: "Success" },
+          400: { description: "Bad request" },
+          500: { description: "Internal server error" },
+        },
+      };
+    }
+  });
+
+  return docs;
+};
+
+const swaggerDocs = buildSwaggerDocs();
+
+app.use("/api-docs", swaggerUi.serve);
+app.get(
+  "/api-docs",
+  swaggerUi.setup(swaggerDocs, {
+    customCssUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css",
+    customJs:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui-bundle.js",
+    customJsStandalonePreset:
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui-standalone-preset.js",
+  })
+);
+
+app.get('/api-docs.json', (_, res) => {
+  res.json(swaggerDocs);
+});
 
 /* SERVER SETUP */
 const PORT = process.env.PORT || 9000;
