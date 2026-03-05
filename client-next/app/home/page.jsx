@@ -301,20 +301,6 @@ export default function HomePage() {
             ))}
           </AnimatePresence>
 
-          {/* Create Shortcut Card */}
-          <Link href="/groups/create" className="h-full min-h-[300px]">
-            <motion.div
-              whileHover={{ scale: 0.98, rotate: 1 }}
-              whileTap={{ scale: 0.95 }}
-              className="h-full rounded-[2.5rem] border-4 border-dashed border-foreground/5 hover:border-[#80ff00]/30 hover:bg-[#80ff00]/5 transition-all flex flex-col items-center justify-center p-10 group/new relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-foreground/0 group-hover/new:bg-foreground/[0.02] transition-colors" />
-              <div className="w-20 h-20 rounded-[2rem] bg-foreground/5 flex items-center justify-center mb-6 group-hover/new:rotate-12 group-hover/new:bg-[#80ff00]/20 transition-all border border-foreground/10">
-                <Plus className="h-10 w-10 text-muted-foreground group-hover/new:text-[#80ff00]" />
-              </div>
-              <p className="font-black text-foreground uppercase tracking-[0.2em] text-[10px] italic">Level Up / Create</p>
-            </motion.div>
-          </Link>
         </div>
 
         {/* Empty State */}

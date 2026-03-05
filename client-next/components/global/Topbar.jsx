@@ -46,7 +46,6 @@ export function Topbar() {
 
   const navLinks = [
     { href: '/home', label: 'Home', icon: Home },
-    { href: '/groups/create', label: 'New Group', icon: Plus },
   ];
 
   return (
@@ -85,11 +84,13 @@ export function Topbar() {
               <ThemeSwitcher />
             </div>
 
-            <Button asChild size="sm" className="hidden md:inline-flex h-9">
-              <Link href="/groups/create" className="gap-1.5">
-                <Plus className="h-4 w-4" /> New Group
-              </Link>
-            </Button>
+            {pathname !== '/home' && (
+              <Button asChild size="sm" className="hidden md:inline-flex h-9">
+                <Link href="/groups/create" className="gap-1.5">
+                  <Plus className="h-4 w-4" /> New Group
+                </Link>
+              </Button>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
