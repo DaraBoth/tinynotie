@@ -161,24 +161,24 @@ function RegisterForm() {
           className="space-y-10 z-10"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-foreground/5 border border-foreground/10 text-foreground text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md">
-            <UserPlus className="h-3 w-3 text-blue-500 animate-pulse" /> New Operation
+            <UserPlus className="h-3 w-3 text-blue-500 animate-pulse" /> Easy Setup
           </div>
 
           <div className="space-y-6">
             <h1 className="text-6xl lg:text-8xl font-black tracking-tighter leading-[0.85] uppercase italic text-foreground">
-              Join the <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-primary to-blue-500 bg-[length:200%_auto] animate-gradient">Elite Squad</span>
+              Create Your <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-primary to-blue-500 bg-[length:200%_auto] animate-gradient">TinyNotie Account</span>
             </h1>
             <p className="text-xl text-muted-foreground/60 font-medium leading-relaxed max-w-md italic border-l-2 border-primary/20 pl-6">
-              Create account directly in-app, then optionally link Telegram in one tap.
+              Register in-app first. Telegram linking is optional and takes one tap.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-4 pt-4">
             {[
               { icon: User, label: "App Signup" },
-              { icon: ShieldCheck, label: "Verified" },
-              { icon: Zap, label: "Fast" },
+              { icon: ShieldCheck, label: "Secure" },
+              { icon: Zap, label: "Quick" },
               { icon: MessageSquare, label: "Telegram Optional" }
             ].map((item, i) => (
               <motion.div
@@ -216,9 +216,19 @@ function RegisterForm() {
               Create <br />
               <span className="text-primary tracking-normal">Account.</span>
             </h2>
-            <p className="text-muted-foreground/60 font-bold text-sm uppercase tracking-widest italic">
-              Register in app. Link Telegram anytime.
+            <p className="text-muted-foreground/60 font-bold text-sm uppercase tracking-wide italic">
+              Clear flow: Register → (Optional) Telegram Link → Continue.
             </p>
+          </div>
+
+          {/* Guideline */}
+          <div className="rounded-2xl border border-border/30 bg-muted/20 p-4 space-y-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/80">How registration works</p>
+            <div className="space-y-1.5 text-xs text-muted-foreground">
+              <p><span className="text-foreground font-semibold">1.</span> Create your username and password in this form.</p>
+              <p><span className="text-foreground font-semibold">2.</span> After success, optionally link Telegram with one tap.</p>
+              <p><span className="text-foreground font-semibold">3.</span> Continue to app and start using TinyNotie.</p>
+            </div>
           </div>
 
           {/* Register Form */}
@@ -316,7 +326,7 @@ function RegisterForm() {
                   <CheckCircle2 className="h-4 w-4" /> Account created successfully.
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Telegram linking is optional. You can do it now or later in group settings.
+                  Telegram linking is optional. You can do it now or later from Group Settings.
                 </p>
               </div>
 
@@ -347,7 +357,7 @@ function RegisterForm() {
             <div className="p-6 rounded-3xl bg-secondary/20 border border-primary/10 flex items-start gap-4">
               <Lock className="h-5 w-5 text-primary mt-1 shrink-0" />
               <p className="text-xs text-muted-foreground/80 leading-relaxed font-medium italic">
-                Secure registration starts in-app. Telegram link is one-tap and optional.
+                Your login credentials are created in-app. Telegram is only for optional linking and notifications.
               </p>
             </div>
 
