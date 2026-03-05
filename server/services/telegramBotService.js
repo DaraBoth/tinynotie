@@ -186,7 +186,7 @@ export const initTelegramBot = (token) => {
     });
 
     // /status command - summary
-    bot.command('status', async (ctx) => {
+    bot.command('export', async (ctx) => {
         try {
             const { rows: groups } = await pool.query('SELECT id, grp_name, currency FROM grp_infm WHERE telegram_chat_id = $1', [ctx.chat.id]);
             if (groups.length === 0) return ctx.reply('❌ This chat is not linked to any group.');
