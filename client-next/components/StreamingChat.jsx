@@ -2,12 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import {
-    Send, Bot, User, Loader2, X, Sparkles,
-    ChevronRight, Database, CheckCircle2, AlertCircle,
-    MessageSquare, UserCircle2
+    Send, Loader2, Sparkles,
+    Database, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody
 } from '@/components/ui/sheet';
@@ -202,7 +203,7 @@ export function StreamingChat({ open, onClose, groupId }) {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0 }}
-                                        className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/30 p-3 rounded-2xl border border-border/20 self-start ml-11"
+                                        className="flex items-center gap-3 text-sm text-muted-foreground bg-muted/30 p-3 rounded-2xl border border-border/20 w-full"
                                     >
                                         <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
                                         <span className="font-medium italic">{status}</span>
@@ -266,26 +267,16 @@ function MessageBubble({ message, isLast }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-                "flex gap-3 overflow-hidden",
-                !isAi && "flex-row-reverse"
+                "w-full overflow-hidden"
             )}
         >
             <div className={cn(
-                "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 border",
-                isAi
-                    ? "bg-primary/10 border-primary/20"
-                    : "bg-muted border-border"
-            )}>
-                {isAi ? <Bot className="h-4 w-4 text-primary" /> : <UserCircle2 className="h-4 w-4 text-muted-foreground" />}
-            </div>
-
-            <div className={cn(
-                "flex flex-col gap-2 max-w-[85%]",
+                "flex flex-col gap-2 w-full",
                 !isAi && "items-end"
             )}>
                 {/* Tool thoughts */}
                 {isAi && message.tools && message.tools.length > 0 && (
-                    <div className="flex flex-col gap-1.5 mb-1">
+                    <div className="flex flex-col gap-1.5 mb-1 w-full">
                         {message.tools.map((tool, idx) => (
                             <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40 border border-border/20 text-xs text-muted-foreground">
                                 <Database className="h-3 w-3 text-primary/60" />
@@ -297,14 +288,48 @@ function MessageBubble({ message, isLast }) {
                 )}
 
                 <div className={cn(
-                    "px-4 py-3 rounded-2xl text-sm leading-relaxed",
+                    "px-4 py-3 rounded-2xl text-sm leading-relaxed w-full",
                     isAi
                         ? "bg-background border border-border/40 shadow-sm"
-                        : "bg-primary text-primary-foreground shadow-md shadow-primary/10"
+                        : "bg-primary/10 border border-primary/20 text-foreground"
                 )}>
                     {message.content ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                            {message.content}
+                        <div className={cn(
+                            "prose prose-sm dark:prose-invert max-w-none break-words",
+                            !isAi && "prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-code:text-foreground"
+                        )}>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    code({ className, children, ...props }) {
+                                        const inline = !className;
+                                        if (inline) {
+                                            return (
+                                                <code className="rounded bg-muted/60 px-1.5 py-0.5 text-[0.85em]" {...props}>
+                                                    {children}
+                                                </code>
+                                            );
+                                        }
+                                        return (
+                                            <code className={cn("block rounded-lg bg-muted/60 p-3 overflow-x-auto text-xs", className)} {...props}>
+                                                {children}
+                                            </code>
+                                        );
+                                    },
+                                    pre({ children }) {
+                                        return <pre className="my-3 overflow-x-auto">{children}</pre>;
+                                    },
+                                    a({ children, ...props }) {
+                                        return (
+                                            <a className="text-primary underline underline-offset-2" target="_blank" rel="noreferrer" {...props}>
+                                                {children}
+                                            </a>
+                                        );
+                                    }
+                                }}
+                            >
+                                {message.content}
+                            </ReactMarkdown>
                         </div>
                     ) : isLast && (
                         <div className="flex gap-1 py-1">
@@ -315,7 +340,10 @@ function MessageBubble({ message, isLast }) {
                     )}
                 </div>
 
-                <span className="text-[10px] text-muted-foreground px-1 opacity-60">
+                <span className={cn(
+                    "text-[10px] text-muted-foreground px-1 opacity-60",
+                    isAi ? "self-start" : "self-end"
+                )}>
                     {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
             </div>
