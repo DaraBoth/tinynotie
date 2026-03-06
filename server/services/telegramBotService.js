@@ -585,24 +585,55 @@ export const initTelegramBot = (token) => {
     });
 
     bot.command('join', async (ctx) => {
-        const name = getTelegramDisplayName(ctx.from);
-
         try {
-            // Find linked group for this chat
-            const { rows: groups } = await pool.query('SELECT id FROM grp_infm WHERE telegram_chat_id = $1', [ctx.chat.id]);
-            if (groups.length === 0) return ctx.reply('❌ This chat is not linked to any group. Use /link_group first.');
+            // 1️⃣ Ensure command is used in group
+            if (ctx.chat.type === 'private') {
+                return ctx.reply("Please use /join inside the group chat.");
+            }
 
-            const groupId = groups[0].id;
-            await pool.query(
-                `INSERT INTO member_infm (mem_name, group_id, paid)
-            VALUES ($1,$2,0)
-            ON CONFLICT (group_id, mem_name) DO NOTHING`,
-                [name, groupId]
+            const name = getTelegramDisplayName(ctx.from);
+
+            // 2️⃣ Check if this Telegram group is linked
+            const { rows: groups } = await pool.query(
+                `SELECT id, grp_name 
+                FROM grp_infm 
+                WHERE telegram_chat_id = $1 
+                LIMIT 1`,
+                [ctx.chat.id]
             );
-            ctx.reply(`✅ ${name} joined the group!`, { parse_mode: 'Markdown' });
+
+            if (groups.length === 0) {
+                return ctx.reply("This Telegram group is not linked to TinyNotie yet.\nAsk the admin to run /link_group.");
+            }
+
+            const group = groups[0];
+
+            // 3️⃣ Insert member
+            const result = await pool.query(
+                `INSERT INTO member_infm (mem_name, group_id, paid)
+                    VALUES ($1,$2,0)
+                    ON CONFLICT (group_id, mem_name) DO NOTHING
+                    RETURNING id`,
+                [name, group.id]
+            );
+
+            // 4️⃣ Check if inserted
+            if (result.rowCount === 0) {
+                return ctx.reply(
+                    `ℹ️ *${name}*, you are already in *${group.grp_name}*.`,
+                    { parse_mode: "Markdown" }
+                );
+            }
+
+            // 5️⃣ Success message
+            return ctx.reply(
+                `✅ *${name}* joined *${group.grp_name}* successfully!`,
+                { parse_mode: "Markdown" }
+            );
+
         } catch (err) {
-            console.error('Add member TG error:', err);
-            ctx.reply('❌ Failed to join.');
+            console.error("Join command error:", err);
+            return ctx.reply("❌ Failed to join the group. Please try again later.");
         }
     });
 
