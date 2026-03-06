@@ -179,10 +179,10 @@ export const initTelegramBot = (token) => {
         const tgId = tgUser?.id || 'N/A';
         return (
             `✅ Registration successful!\n\n` +
-            `*Your TinyNotie Account Info*\n` +
-            `• Account ID: *${usernm}*\n` +
+            `Your TinyNotie Account Info\n` +
+            `• Account ID: ${usernm}\n` +
             `• Telegram Username: ${tgHandle}\n` +
-            `• Telegram ID: \`${tgId}\`\n\n` +
+            `• Telegram ID: ${tgId}\n\n` +
             `ℹ️ We auto-use your Telegram username as your account ID (with a safe suffix if needed) so it stays unique.\n` +
             `Use this Account ID + your password to login in the app.`
         );
@@ -331,12 +331,11 @@ export const initTelegramBot = (token) => {
             if (existingByTelegram.rows.length > 0) {
                 return ctx.reply(
                     `✅ This Telegram is already linked.\n\n` +
-                    `*Your TinyNotie Account Info*\n` +
-                    `• Account ID: *${existingByTelegram.rows[0].usernm}*\n` +
+                    `Your TinyNotie Account Info\n` +
+                    `• Account ID: ${existingByTelegram.rows[0].usernm}\n` +
                     `• Telegram Username: ${ctx.from.username ? `@${ctx.from.username}` : 'not set'}\n` +
-                    `• Telegram ID: \`${ctx.from.id}\`\n\n` +
-                    `Use /reset_password if you want a new password.`,
-                    { parse_mode: 'Markdown' }
+                    `• Telegram ID: ${ctx.from.id}\n\n` +
+                    `Use /reset_password if you want a new password.`
                 );
             }
 
@@ -348,9 +347,8 @@ export const initTelegramBot = (token) => {
             });
 
             return ctx.reply(
-                `🆔 Your Account ID is auto-generated from Telegram and reserved as: *${autoUsername}*\n` +
-                `Now send your password in the next message (min 6 characters).`,
-                { parse_mode: 'Markdown' }
+                `🆔 Your Account ID is auto-generated from Telegram and reserved as: ${autoUsername}\n` +
+                `Now send your password in the next message (min 6 characters).`
             );
         } catch (err) {
             console.error('Telegram register error:', err);
@@ -416,7 +414,7 @@ export const initTelegramBot = (token) => {
                 });
 
                 clearPendingInput(ctx.from.id);
-                return ctx.reply(formatAccountInfoMessage({ usernm: insert.rows[0].usernm, tgUser: ctx.from }), { parse_mode: 'Markdown' });
+                return ctx.reply(formatAccountInfoMessage({ usernm: insert.rows[0].usernm, tgUser: ctx.from }));
             } catch (err) {
                 console.error('Telegram password/register finalize error:', err);
                 return ctx.reply('❌ Failed to complete registration. Please try /register again.');
@@ -749,7 +747,7 @@ export const initTelegramBot = (token) => {
                     });
 
                     clearPendingInput(fromId);
-                    return ctx.reply(formatAccountInfoMessage({ usernm: insert.rows[0].usernm, tgUser: ctx.from }), { parse_mode: 'Markdown' });
+                    return ctx.reply(formatAccountInfoMessage({ usernm: insert.rows[0].usernm, tgUser: ctx.from }));
                 }
 
                 if (pending.type === 'reset_password') {

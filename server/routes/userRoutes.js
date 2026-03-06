@@ -440,6 +440,7 @@ router.delete("/deleteMyAccount", authenticateToken, async (req, res) => {
     }
 
     if (ownedGroupIds.length > 0) {
+      // Delete order for owned groups: trips -> members -> chat history -> group relations -> groups.
       if (await tableExists("trp_infm") && await columnExists("trp_infm", "group_id")) {
         await client.query("DELETE FROM trp_infm WHERE group_id = ANY($1::int[])", [ownedGroupIds]);
       }
@@ -448,17 +449,17 @@ router.delete("/deleteMyAccount", authenticateToken, async (req, res) => {
         await client.query("DELETE FROM member_infm WHERE group_id = ANY($1::int[])", [ownedGroupIds]);
       }
 
+      if (await tableExists("json_data") && await columnExists("json_data", "chat_id")) {
+        const ownedGroupChatIds = ownedGroupIds.map((id) => String(id));
+        await client.query("DELETE FROM json_data WHERE chat_id::text = ANY($1::text[])", [ownedGroupChatIds]);
+      }
+
       if (await tableExists("grp_users") && await columnExists("grp_users", "group_id")) {
         await client.query("DELETE FROM grp_users WHERE group_id = ANY($1::int[])", [ownedGroupIds]);
       }
 
       if (hasGroupsTable) {
         await client.query("DELETE FROM grp_infm WHERE id = ANY($1::int[])", [ownedGroupIds]);
-      }
-
-      if (await tableExists("json_data") && await columnExists("json_data", "chat_id")) {
-        const ownedGroupChatIds = ownedGroupIds.map((id) => String(id));
-        await client.query("DELETE FROM json_data WHERE chat_id::text = ANY($1::text[])", [ownedGroupChatIds]);
       }
     }
 
