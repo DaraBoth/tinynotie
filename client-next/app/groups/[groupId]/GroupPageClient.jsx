@@ -106,7 +106,7 @@ export function GroupPageClient({ groupId }) {
     queryKey: ['group', groupId],
     queryFn: async () => {
       const [groupResponse, membersResponse, tripsResponse] = await Promise.all([
-        api.getGroupById(groupId, user?._id),
+        api.getGroupById(groupId),
         api.getMembersByGroupId(groupId),
         api.getTripsByGroupId(groupId),
       ]);
@@ -247,6 +247,7 @@ export function GroupPageClient({ groupId }) {
   const members = groupData?.members || [];
   const trips = groupData?.trips || [];
   const currency = group.currency || '$';
+  const canManageGroup = !!(group.isAdmin || group.canEdit);
 
   const { info, newData } = calculateMoney(members, trips, currency);
 
@@ -649,10 +650,12 @@ export function GroupPageClient({ groupId }) {
         <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border/40 rounded-2xl">
           <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
           <p className="text-muted-foreground text-sm">No members yet</p>
-          <Button size="sm" variant="outline" className="mt-4"
-            onClick={() => { setSelectedMember(null); setEditMemberOpen(true); }}>
-            <UserPlus className="h-4 w-4 mr-1.5" /> Add First Member
-          </Button>
+          {canManageGroup && (
+            <Button size="sm" variant="outline" className="mt-4"
+              onClick={() => { setSelectedMember(null); setEditMemberOpen(true); }}>
+              <UserPlus className="h-4 w-4 mr-1.5" /> Add First Member
+            </Button>
+          )}
         </div>
       ) : viewMode === 'table' ? (
         <div className="overflow-auto scrollbar-hide max-h-[68vh] rounded-xl border border-border/30 bg-background/20 backdrop-blur-sm">
@@ -799,7 +802,7 @@ export function GroupPageClient({ groupId }) {
                   ))}
                 </div>
               )}
-              {member && (
+              {member && canManageGroup && (
                 <div className="mt-3 pt-3 border-t border-border/20">
                   <Button
                     size="sm"
@@ -836,10 +839,12 @@ export function GroupPageClient({ groupId }) {
               onClick={toggleAllTrips}>
               {selectedTripIds.length > 0 ? 'Clear' : 'Select'}
             </Button>
-            <Button size="sm" variant="outline" className="h-8 text-xs"
-              onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-              <Plus className="h-3.5 w-3.5 mr-1" /> Add
-            </Button>
+            {canManageGroup && (
+              <Button size="sm" variant="outline" className="h-8 text-xs"
+                onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add
+              </Button>
+            )}
             <Button size="sm" variant="outline" className="h-8 text-xs"
               onClick={handleExportTrips}>
               <Download className="h-3.5 w-3.5 mr-1" /> Export
@@ -889,10 +894,12 @@ export function GroupPageClient({ groupId }) {
                 <span>List</span>
               </button>
             </div>
-            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-              onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-              <Plus className="h-3.5 w-3.5" /> Add Trip
-            </Button>
+            {canManageGroup && (
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
+                <Plus className="h-3.5 w-3.5" /> Add Trip
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -900,10 +907,12 @@ export function GroupPageClient({ groupId }) {
         <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/40 rounded-2xl">
           <TrendingUp className="h-8 w-8 text-muted-foreground/30 mb-3" />
           <p className="text-muted-foreground text-sm">No trips yet</p>
-          <Button size="sm" variant="outline" className="mt-4"
-            onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-            <Plus className="h-4 w-4 mr-1.5" /> Add First Trip
-          </Button>
+          {canManageGroup && (
+            <Button size="sm" variant="outline" className="mt-4"
+              onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
+              <Plus className="h-4 w-4 mr-1.5" /> Add First Trip
+            </Button>
+          )}
         </div>
       ) : isMobile ? (
         <div className="space-y-2">
@@ -951,9 +960,11 @@ export function GroupPageClient({ groupId }) {
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-border/20 flex gap-2">
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
-                    <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                  </Button>
+                  {canManageGroup && (
+                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
+                      <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" className="h-8 text-xs" onClick={(e) => handleShareTrip(e, trip)} disabled={shareTripIdLoading === trip.id}>
                     
                     {shareTripIdLoading === trip.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
@@ -996,7 +1007,11 @@ export function GroupPageClient({ groupId }) {
               {orderedTrips.map((trip, idx) => (
                 <tr key={trip.id || idx}
                   className="border-b border-border/20 hover:bg-muted/20 transition-colors cursor-pointer"
-                  onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
+                  onClick={() => {
+                    if (!canManageGroup) return;
+                    setSelectedTrip(trip);
+                    setEditTripOpen(true);
+                  }}>
                   {tripTableColumns.map((column) => {
                     const baseClass = `${column.align === 'right' ? 'text-right' : 'text-left'} px-3 py-2.5 ${column.hideOnSmall ? 'hidden sm:table-cell' : ''}`;
 
@@ -1172,9 +1187,11 @@ export function GroupPageClient({ groupId }) {
                 {group.grp_name || 'Group'}
               </h1>
               <div className="flex items-center gap-1.5 shrink-0">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSettingsOpen(true)} title="Settings">
-                  <Settings className="h-4 w-4" />
-                </Button>
+                {canManageGroup && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSettingsOpen(true)} title="Settings">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="More">
@@ -1194,7 +1211,7 @@ export function GroupPageClient({ groupId }) {
             </div>
 
             {/* Action row — hidden on mobile (FAB handles those) */}
-            <div className="hidden md:flex flex-wrap gap-2">
+            {canManageGroup && <div className="hidden md:flex flex-wrap gap-2">
               <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
                 onClick={() => { setEditMemberMode(false); setSelectedMember(null); setEditMemberOpen(true); }}>
                 <UserPlus className="h-3.5 w-3.5" /> Add Member
@@ -1234,7 +1251,7 @@ export function GroupPageClient({ groupId }) {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
+            </div>}
           </header>
 
         </div>
@@ -1313,10 +1330,12 @@ export function GroupPageClient({ groupId }) {
                   <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border/40 rounded-2xl">
                     <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
                     <p className="text-muted-foreground text-sm">No members yet</p>
-                    <Button size="sm" variant="outline" className="mt-4"
-                      onClick={() => { setSelectedMember(null); setEditMemberOpen(true); }}>
-                      <UserPlus className="h-4 w-4 mr-1.5" /> Add First Member
-                    </Button>
+                    {canManageGroup && (
+                      <Button size="sm" variant="outline" className="mt-4"
+                        onClick={() => { setSelectedMember(null); setEditMemberOpen(true); }}>
+                        <UserPlus className="h-4 w-4 mr-1.5" /> Add First Member
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -1417,12 +1436,14 @@ export function GroupPageClient({ groupId }) {
                               </div>
 
                               {/* Edit button */}
-                              <button
-                                onClick={() => { setSelectedMember(member); setEditMemberMode(true); setEditMemberOpen(true); }}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border/30 bg-muted/30 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all active:scale-95"
-                              >
-                                <Pencil className="h-3.5 w-3.5" /> Edit Member
-                              </button>
+                              {canManageGroup && (
+                                <button
+                                  onClick={() => { setSelectedMember(member); setEditMemberMode(true); setEditMemberOpen(true); }}
+                                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border/30 bg-muted/30 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all active:scale-95"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" /> Edit Member
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1489,7 +1510,7 @@ export function GroupPageClient({ groupId }) {
       {/* ── Mobile FAB + Bottom Action Sheet (mobile only) ───────────────── */}
 
       {/* Backdrop / scrim */}
-      {fabOpen && (
+      {canManageGroup && fabOpen && (
         <div
           className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
           onClick={() => setFabOpen(false)}
@@ -1497,7 +1518,7 @@ export function GroupPageClient({ groupId }) {
       )}
 
       {/* Bottom Action Sheet */}
-      <div
+      {canManageGroup && <div
         className={`md:hidden fixed inset-x-0 w-screen max-w-none z-50 transition-all duration-300 ease-out ${fabOpen ? 'bottom-0' : '-bottom-full'
           }`}
       >
@@ -1591,10 +1612,10 @@ export function GroupPageClient({ groupId }) {
             )}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* FAB button */}
-      <button
+      {canManageGroup && <button
         onClick={() => setFabOpen((o) => !o)}
         className={`md:hidden fixed bottom-6 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 active:scale-90 ${fabOpen
           ? 'bg-foreground text-background rotate-45'
@@ -1602,14 +1623,14 @@ export function GroupPageClient({ groupId }) {
           }`}
       >
         <Plus className="h-6 w-6" />
-      </button>
+      </button>}
 
       {/* Panels & Dialogs */}
-      <EditMember open={editMemberOpen} onClose={() => setEditMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />
-      <AddUserToGroup open={addUserOpen} onClose={() => setAddUserOpen(false)} groupId={groupId} existingMembers={members} />
+      {canManageGroup && <EditMember open={editMemberOpen} onClose={() => setEditMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />}
+      {canManageGroup && <AddUserToGroup open={addUserOpen} onClose={() => setAddUserOpen(false)} groupId={groupId} existingMembers={members} />}
       <SelectTripDialog open={selectTripOpen} onClose={() => setSelectTripOpen(false)} trips={sortedTrips} onSelectTrip={handleTripSelected} currency={currency} />
-      <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />
-      <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />
+      {canManageGroup && <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />}
+      {canManageGroup && <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />}
       <StreamingChat
         open={chatOpen}
         onClose={() => setChatOpen(false)}
@@ -1620,8 +1641,8 @@ export function GroupPageClient({ groupId }) {
         }}
       />
       <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} group={group} members={members} trips={trips} currency={currency} />
-      <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} />
-      <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />
+      {canManageGroup && <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} />}
+      {canManageGroup && <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />}
     </div>
   );
 }

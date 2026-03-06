@@ -42,6 +42,31 @@ const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
   maximumFractionDigits: 2,
 });
 
+const getGroupAccess = async (groupId, userId) => {
+  const sql = `
+    SELECT
+      g.id,
+      g.visibility,
+      g.admin_id,
+      (g.admin_id = $2) AS is_admin,
+      COALESCE(gu.can_edit, FALSE) AS can_edit,
+      (gu.user_id IS NOT NULL) AS is_member,
+      CASE
+        WHEN g.visibility = 'public' THEN TRUE
+        WHEN g.admin_id = $2 THEN TRUE
+        WHEN gu.user_id IS NOT NULL THEN TRUE
+        ELSE FALSE
+      END AS has_access
+    FROM grp_infm g
+    LEFT JOIN grp_users gu ON gu.group_id = g.id AND gu.user_id = $2
+    WHERE g.id = $1
+    LIMIT 1;
+  `;
+
+  const result = await pool.query(sql, [groupId, userId]);
+  return result.rows[0] || null;
+};
+
 /**
  * @swagger
  * /groups/getGroupByUserId:
@@ -64,7 +89,7 @@ const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
  *         description: Internal server error
  */
 router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
-  const { user_id } = req.query;
+  const user_id = req.user._id;
   try {
     const sql = `
       SELECT g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date,
@@ -113,7 +138,7 @@ router.get("/getGroupByUserId", authenticateToken, async (req, res) => {
  *         description: Internal server error
  */
 router.get("/getGroupListWithDetails", authenticateToken, async (req, res) => {
-  const { user_id } = req.query;
+  const user_id = req.user._id;
   try {
     const sql = `
       SELECT
@@ -449,8 +474,8 @@ router.post("/updateGroupVisibility", authenticateToken, async (req, res) => {
 
       // Add new allowed users
       const insertUserSql = `
-        INSERT INTO grp_users (group_id, user_id)
-        VALUES ($1::int, $2::int);
+        INSERT INTO grp_users (group_id, user_id, can_edit)
+        VALUES ($1::int, $2::int, TRUE);
       `;
 
       // Use Promise.all to handle multiple inserts asynchronously
@@ -602,80 +627,45 @@ router.delete("/deleteGroupById", authenticateToken, async (req, res) => {
  */
 
 // Get group details
-router.get("/getGroupDetail", async (req, res) => {
-  const { group_id, user_id } = req.query;
+router.get("/getGroupDetail", authenticateToken, async (req, res) => {
+  const { group_id } = req.query;
+  const { _id: user_id } = req.user;
 
   try {
-    let groupCheckSql;
-    let params = [group_id]; // Start with group_id as the first parameter
+    const groupDataSql = `
+      SELECT id, grp_name, currency, visibility
+      FROM grp_infm
+      WHERE id = $1
+      LIMIT 1;
+    `;
+    const groupResult = await pool.query(groupDataSql, [group_id]);
 
-    // Convert user_id to an integer or undefined if it's not provided
-    const userIdInt = user_id ? parseInt(user_id, 10) : undefined;
-
-    if (userIdInt) {
-      // If user_id is provided and is a valid integer, include it in the query and parameters
-      groupCheckSql = `
-        SELECT
-          g.id,
-          g.grp_name,
-          g.currency,
-          g.visibility,
-          CASE
-            WHEN g.admin_id = $2 THEN TRUE  -- Check if user is admin
-            ELSE FALSE
-          END AS "isAdmin",
-          CASE
-            WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
-            WHEN (g.admin_id = $2 OR gu.user_id IS NOT NULL) THEN TRUE  -- Check if user is admin or in group
-            ELSE FALSE
-          END AS "isAuthorized"
-        FROM grp_infm g
-        LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $2
-        WHERE g.id = $1;
-      `;
-      params.push(userIdInt); // Add user_id as the second parameter
-    } else {
-      // If user_id is not provided, exclude user-specific checks
-      groupCheckSql = `
-        SELECT
-          g.id,
-          g.grp_name,
-          g.currency,
-          g.visibility,
-          FALSE AS "isAdmin",  -- No user_id provided, so not admin
-          CASE
-            WHEN g.visibility = 'public' THEN TRUE  -- Public groups are always authorized
-            ELSE FALSE
-          END AS "isAuthorized"
-        FROM grp_infm g
-        WHERE g.id = $1;
-      `;
+    if (groupResult.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "Group not found." });
     }
 
-    const groupResult = await pool.query(groupCheckSql, params);
-
-    // If the group exists, respond with the group data
-    if (groupResult.rows.length > 0) {
-      const groupData = groupResult.rows[0];
-      return res.json({
-        status: true,
-        data: {
-          id: groupData.id,
-          grp_name: groupData.grp_name,
-          currency: groupData.currency,
-          visibility: groupData.visibility,
-          isAuthorized: groupData.isAuthorized,
-          isAdmin: groupData.isAdmin,
-        },
-      });
-    } else {
-      // If the group is not found or the user is not authorized, return a custom JSON response
-      return res.json({
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access?.has_access) {
+      return res.status(403).json({
         status: false,
-        message:
-          "You are not authorized to view this group or the group does not exist.",
+        message: "You are not authorized to view this group.",
       });
     }
+
+    const groupData = groupResult.rows[0];
+    return res.json({
+      status: true,
+      data: {
+        id: groupData.id,
+        grp_name: groupData.grp_name,
+        currency: groupData.currency,
+        visibility: groupData.visibility,
+        isAuthorized: true,
+        isAdmin: !!access.is_admin,
+        isMember: !!access.is_member,
+        canEdit: !!(access.is_admin || access.can_edit || access.is_member),
+      },
+    });
   } catch (error) {
     console.error("error", error);
     res.json({ error: error.message });
@@ -715,29 +705,40 @@ router.get("/getGroupDetail", async (req, res) => {
 // Add member by group ID
 router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
   const { mem_name, paid, group_id, user_id } = req.body;
+  const actorId = req.user._id;
 
   console.log('[AddMember] Request:', { mem_name, paid, group_id, user_id });
 
   try {
-    // Check if the member already exists in the group
-    // If user_id is provided, check by user_id (prevents duplicate user accounts)
-    // Otherwise, check by mem_name (for manual member creation)
-    let checkSql, checkParams;
-    if (user_id) {
-      checkSql = `SELECT id FROM member_infm WHERE user_id = $1 AND group_id = $2;`;
-      checkParams = [user_id, group_id];
-    } else {
-      checkSql = `SELECT id FROM member_infm WHERE mem_name = $1 AND group_id = $2;`;
-      checkParams = [mem_name, group_id];
+    const access = await getGroupAccess(group_id, actorId);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
     }
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
+    if (user_id) {
+      return res.status(400).json({
+        status: false,
+        message: "For existing app users, use /api/addUserToGroup instead.",
+      });
+    }
+
+    const normalizedName = String(mem_name || '').trim();
+    if (!normalizedName) {
+      return res.status(400).json({ status: false, message: "Member name is required." });
+    }
+
+    // Check if the member already exists in the group
+    const checkSql = `SELECT id FROM member_infm WHERE LOWER(TRIM(mem_name)) = LOWER(TRIM($1)) AND group_id = $2;`;
+    const checkParams = [normalizedName, group_id];
     
     const checkResult = await pool.query(checkSql, checkParams);
     console.log('[AddMember] Check result:', checkResult.rows);
 
     if (checkResult.rows.length > 0) {
-      const errorMsg = user_id 
-        ? `This user is already a member of this group!`
-        : `Member ${mem_name} already exists in this group!`;
+      const errorMsg = `Member ${normalizedName} already exists in this group!`;
       console.log('[AddMember] Duplicate found:', errorMsg);
       return res.json({
         status: false,
@@ -745,13 +746,13 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
       });
     }
 
-    // Insert the new member (with optional user_id for linking to user_infm)
+    // Insert manual member row only.
     const insertSql = `
-      INSERT INTO member_infm (mem_name, paid, group_id, user_id)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO member_infm (mem_name, paid, group_id)
+      VALUES ($1, $2, $3)
       RETURNING id;
     `;
-    const result = await pool.query(insertSql, [mem_name, paid || 0, group_id, user_id || null]);
+    const result = await pool.query(insertSql, [normalizedName, paid || 0, group_id]);
     console.log('[AddMember] Success:', result.rows[0]);
 
     res.json({
@@ -762,6 +763,69 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("[AddMember] Error:", error);
     res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+router.post("/addUserToGroup", authenticateToken, async (req, res) => {
+  const { group_id, user_id, can_edit = true } = req.body;
+  const actorId = req.user._id;
+
+  try {
+    const access = await getGroupAccess(group_id, actorId);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
+    const targetId = Number(user_id);
+    if (!Number.isFinite(targetId)) {
+      return res.status(400).json({ status: false, message: "user_id must be a valid number." });
+    }
+
+    const userRes = await pool.query(
+      "SELECT id, usernm FROM user_infm WHERE id = $1 LIMIT 1",
+      [targetId]
+    );
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "Target user not found." });
+    }
+
+    const targetUser = userRes.rows[0];
+
+    const existingGroupUser = await pool.query(
+      "SELECT 1 FROM grp_users WHERE group_id = $1 AND user_id = $2 LIMIT 1",
+      [group_id, targetId]
+    );
+    if (existingGroupUser.rows.length > 0) {
+      return res.json({ status: false, message: "This user is already invited to this group." });
+    }
+
+    await pool.query(
+      `
+        INSERT INTO grp_users (group_id, user_id, can_edit)
+        VALUES ($1, $2, $3)
+      `,
+      [group_id, targetId, !!can_edit]
+    );
+
+    // Keep member list consistent by creating a display member row if name is not present.
+    const existingMemberByName = await pool.query(
+      "SELECT 1 FROM member_infm WHERE group_id = $1 AND LOWER(TRIM(mem_name)) = LOWER(TRIM($2)) LIMIT 1",
+      [group_id, targetUser.usernm]
+    );
+    if (existingMemberByName.rows.length === 0) {
+      await pool.query(
+        "INSERT INTO member_infm (mem_name, paid, group_id) VALUES ($1, 0, $2)",
+        [targetUser.usernm, group_id]
+      );
+    }
+
+    return res.json({ status: true, message: "User added to group successfully." });
+  } catch (error) {
+    console.error("addUserToGroup error", error);
+    return res.status(500).json({ status: false, error: error.message });
   }
 });
 
@@ -803,6 +867,14 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
   const { user_id, paid, group_id, type } = req.body;
 
   try {
+    const access = await getGroupAccess(group_id, req.user._id);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
     // Fetch the current paid value for the member
     const sql = `SELECT id, paid, mem_name FROM member_infm WHERE id = $1 AND group_id = $2;`;
     const results = await pool.query(sql, [user_id, group_id]);
@@ -927,6 +999,14 @@ router.delete("/members/:id", authenticateToken, async (req, res) => {
 
     const { mem_name, group_id } = memberResult.rows[0];
 
+    const access = await getGroupAccess(group_id, req.user._id);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
     // Delete the member
     const deleteSql = `DELETE FROM member_infm WHERE id = $1;`;
     await pool.query(deleteSql, [memberId]);
@@ -964,49 +1044,26 @@ router.delete("/members/:id", authenticateToken, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.get("/getMemberByGroupId", async (req, res) => {
+router.get("/getMemberByGroupId", authenticateToken, async (req, res) => {
   const { group_id } = req.query;
+  const { _id: user_id } = req.user;
 
   try {
-    // Check if the group exists
-    const groupCheckSql = `SELECT visibility FROM grp_infm WHERE id = $1;`;
-    const groupCheckResult = await pool.query(groupCheckSql, [group_id]);
-
-    if (groupCheckResult.rows.length === 0) {
-      // Group not found
-      return res
-        .status(404)
-        .send({ status: false, message: "Group not found" });
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access) {
+      return res.status(404).send({ status: false, message: "Group not found" });
+    }
+    if (!access.has_access) {
+      return res.status(403).send({ status: false, message: "Forbidden: No access to this group." });
     }
 
-    const { visibility } = groupCheckResult.rows[0];
+    const sql = `SELECT * FROM member_infm WHERE group_id = $1 ORDER BY id;`;
+    const results = await pool.query(sql, [group_id]);
 
-    if (visibility === "private") {
-      // If the group is private, authenticate the user
-      authenticateToken(req, res, async () => {
-        try {
-          // Fetch members for the authenticated user
-          const sql = `SELECT * FROM member_infm WHERE group_id = $1 ORDER BY id;`;
-          const results = await pool.query(sql, [group_id]);
-
-          res.send({
-            status: true,
-            data: results.rows.length > 0 ? results.rows : [],
-          });
-        } catch (error) {
-          handleError(error, res);
-        }
-      });
-    } else {
-      // If the group is public, fetch members without authentication
-      const sql = `SELECT * FROM member_infm WHERE group_id = $1 ORDER BY id;`;
-      const results = await pool.query(sql, [group_id]);
-
-      res.send({
-        status: true,
-        data: results.rows.length > 0 ? results.rows : [],
-      });
-    }
+    res.send({
+      status: true,
+      data: results.rows.length > 0 ? results.rows : [],
+    });
   } catch (error) {
     console.error("error", error);
     res.status(500).json({ status: false, error: error.message });
@@ -1057,6 +1114,10 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
     }
 
     const groupData = groupCheckResult.rows[0];
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access?.has_access) {
+      return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
+    }
 
     // Get the list of allowed users if the group is private
     let allowedUsers = [];
@@ -1083,6 +1144,70 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("error", error);
     res.json({ status: false, error: error.message });
+  }
+});
+
+router.post("/transferGroupAdmin", authenticateToken, async (req, res) => {
+  const { group_id, new_admin_user_id } = req.body;
+  const currentUserId = req.user._id;
+
+  const client = await pool.connect();
+  try {
+    const access = await getGroupAccess(group_id, currentUserId);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!access.is_admin) {
+      return res.status(403).json({ status: false, message: "Only current admin can transfer admin rights." });
+    }
+
+    const targetUserId = Number(new_admin_user_id);
+    if (!Number.isFinite(targetUserId)) {
+      return res.status(400).json({ status: false, message: "new_admin_user_id must be a valid number." });
+    }
+
+    const userExists = await client.query("SELECT id FROM user_infm WHERE id = $1 LIMIT 1", [targetUserId]);
+    if (userExists.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "Target user does not exist." });
+    }
+
+    if (targetUserId === currentUserId) {
+      return res.status(400).json({ status: false, message: "Target user is already admin." });
+    }
+
+    const targetIsGroupUser = await client.query(
+      "SELECT 1 FROM grp_users WHERE group_id = $1 AND user_id = $2 LIMIT 1",
+      [group_id, targetUserId]
+    );
+    if (targetIsGroupUser.rows.length === 0) {
+      return res.status(400).json({
+        status: false,
+        message: "New admin must already be an invited user in this group.",
+      });
+    }
+
+    await client.query("BEGIN");
+
+    await client.query(
+      `
+        INSERT INTO grp_users (group_id, user_id, can_edit)
+        VALUES ($1, $2, TRUE)
+        ON CONFLICT (group_id, user_id)
+        DO UPDATE SET can_edit = TRUE
+      `,
+      [group_id, currentUserId]
+    );
+
+    await client.query("UPDATE grp_infm SET admin_id = $1 WHERE id = $2", [targetUserId, group_id]);
+
+    await client.query("COMMIT");
+    return res.json({ status: true, message: "Group admin transferred successfully." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("transferGroupAdmin error", error);
+    return res.status(500).json({ status: false, error: error.message });
+  } finally {
+    client.release();
   }
 });
 // AI Chat with group database

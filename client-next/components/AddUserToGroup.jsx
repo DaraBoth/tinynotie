@@ -85,16 +85,15 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
   const addUsersMutation = useMutation({
     mutationFn: async (users) => {
       console.log('[AddUser] Adding users:', users);
-      // Add each user as a member to the group
+      // Add each app user to grp_users and let server sync member display rows.
       const promises = users.map(user => {
         const payload = {
-          mem_name: user.usernm,
-          paid: 0,
           group_id: groupId,
-          user_id: user.id, // Include user_id for linking
+          user_id: user.id,
+          can_edit: true,
         };
         console.log('[AddUser] Adding member payload:', payload);
-        return api.addMember(payload);
+        return api.addUserToGroup(payload);
       });
       return Promise.all(promises);
     },

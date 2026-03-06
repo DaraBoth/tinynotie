@@ -205,6 +205,13 @@ export const initTelegramBot = (token) => {
 
     const normalizeYesNo = (text = '') => String(text || '').trim().toLowerCase();
 
+    const normalizeCurrency = (text = '') => {
+        const value = String(text || '').trim().toUpperCase();
+        if (!value) return null;
+        if (value.length > 10) return null;
+        return value;
+    };
+
     const getTelegramDisplayName = (tgUser = {}) => {
         const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ').trim();
         if (fullName) return fullName;
@@ -225,17 +232,19 @@ export const initTelegramBot = (token) => {
         return rows[0] || null;
     };
 
-    const createGroupFromTelegramChat = async ({ chatId, groupName, userId, ctx, autoImportMembers = false }) => {
+    const createGroupFromTelegramChat = async ({ chatId, groupName, userId, currency = 'W', ctx, autoImportMembers = false }) => {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
+            const createDate = moment().format('YYYY-MM-DD HH:mm:ss');
+
             const insertGroupSql = `
-                INSERT INTO grp_infm (grp_name, admin_id, telegram_chat_id, currency)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO grp_infm (grp_name, admin_id, telegram_chat_id, currency, create_date)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING id;
             `;
-            const { rows } = await client.query(insertGroupSql, [groupName, userId, chatId, 'W']);
+            const { rows } = await client.query(insertGroupSql, [groupName, userId, chatId, currency || 'W', createDate]);
             const groupId = rows[0].id;
 
             let importedCount = 0;
@@ -527,15 +536,15 @@ export const initTelegramBot = (token) => {
 
             if (isGroup) {
                 setPendingInput(ctx.from.id, {
-                    type: 'create_group_import_members_confirm',
+                    type: 'create_group_currency',
                     chatId: ctx.chat.id,
                     groupName: grpName,
+                    askImportMembers: true,
                 });
 
                 return ctx.reply(
                     `🆕 Group name will be set to this Telegram title: *${grpName}*\n\n` +
-                    `Do you want to auto-create members from this Telegram group?\n` +
-                    `Reply with *yes* or *no*.`,
+                    `Please send the currency code/symbol for this group (example: *USD*, *THB*, *W*).`,
                     { parse_mode: 'Markdown' }
                 );
             }
@@ -545,15 +554,13 @@ export const initTelegramBot = (token) => {
                 return ctx.reply('Send the new group name in your next message.');
             }
 
-            const { groupId } = await createGroupFromTelegramChat({
+            setPendingInput(ctx.from.id, {
+                type: 'create_group_currency',
                 chatId: ctx.chat.id,
                 groupName: grpName,
-                userId: ctx.user.id,
-                ctx,
-                autoImportMembers: false,
+                askImportMembers: false,
             });
-
-            ctx.reply(`✅ Group *${grpName}* created successfully!\nID: \`${groupId}\`\nPlease join the group using /join`, { parse_mode: 'Markdown' });
+            return ctx.reply('Please send the currency code/symbol for this group (example: USD, THB, W).');
         } catch (err) {
             console.error('Create group TG error:', err);
             ctx.reply('❌ Failed to create group.');
@@ -824,12 +831,49 @@ export const initTelegramBot = (token) => {
                         return ctx.reply('Please register via /register first.');
                     }
                     const grpName = text || `TG Group ${ctx.chat.id}`;
-                    const { rows } = await pool.query(
-                        'INSERT INTO grp_infm (grp_name, admin_id, telegram_chat_id, currency) VALUES ($1, $2, $3, $4) RETURNING id',
-                        [grpName, ctx.user.id, pending.chatId || ctx.chat.id, 'W']
-                    );
+                    setPendingInput(fromId, {
+                        type: 'create_group_currency',
+                        chatId: pending.chatId || ctx.chat.id,
+                        groupName: grpName,
+                        askImportMembers: false,
+                    });
+                    return ctx.reply('Please send the currency code/symbol for this group (example: USD, THB, W).');
+                }
+
+                if (pending.type === 'create_group_currency') {
+                    if (!ctx.user) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('Please register via /register first.');
+                    }
+
+                    const currency = normalizeCurrency(text);
+                    if (!currency) {
+                        return ctx.reply('❌ Invalid currency. Please send a short currency code/symbol (example: USD, THB, W).');
+                    }
+
+                    if (pending.askImportMembers) {
+                        setPendingInput(fromId, {
+                            type: 'create_group_import_members_confirm',
+                            chatId: pending.chatId || ctx.chat.id,
+                            groupName: pending.groupName,
+                            currency,
+                        });
+                        return ctx.reply(
+                            `Currency set to *${currency}*.\n\nDo you want to auto-create members from this Telegram group?\nReply with *yes* or *no*.`,
+                            { parse_mode: 'Markdown' }
+                        );
+                    }
+
+                    const { groupId } = await createGroupFromTelegramChat({
+                        chatId: pending.chatId || ctx.chat.id,
+                        groupName: pending.groupName || `TG Group ${pending.chatId || ctx.chat.id}`,
+                        userId: ctx.user.id,
+                        currency,
+                        ctx,
+                        autoImportMembers: false,
+                    });
                     clearPendingInput(fromId);
-                    return ctx.reply(`✅ Group *${grpName}* created successfully!\nID: \`${rows[0].id}\``, { parse_mode: 'Markdown' });
+                    return ctx.reply(`✅ Group *${pending.groupName}* created successfully!\nID: \`${groupId}\`\n💱 Currency: *${currency}*`, { parse_mode: 'Markdown' });
                 }
 
                 if (pending.type === 'create_group_import_members_confirm') {
@@ -866,6 +910,7 @@ export const initTelegramBot = (token) => {
                         chatId: pending.chatId || ctx.chat.id,
                         groupName,
                         userId: ctx.user.id,
+                        currency: pending.currency || 'W',
                         ctx,
                         autoImportMembers,
                     });
@@ -873,12 +918,12 @@ export const initTelegramBot = (token) => {
                     clearPendingInput(fromId);
                     if (autoImportMembers) {
                         return ctx.reply(
-                            `✅ Group *${groupName}* created successfully!\nID: \`${groupId}\`\n👥 Auto-created members: *${importedCount}*`,
+                            `✅ Group *${groupName}* created successfully!\nID: \`${groupId}\`\n💱 Currency: *${pending.currency || 'W'}*\n👥 Auto-created members: *${importedCount}*`,
                             { parse_mode: 'Markdown' }
                         );
                     }
 
-                    return ctx.reply(`✅ Group *${groupName}* created successfully!\nID: \`${groupId}\``, { parse_mode: 'Markdown' });
+                    return ctx.reply(`✅ Group *${groupName}* created successfully!\nID: \`${groupId}\`\n💱 Currency: *${pending.currency || 'W'}*`, { parse_mode: 'Markdown' });
                 }
 
                 if (pending.type === 'add_member_name') {

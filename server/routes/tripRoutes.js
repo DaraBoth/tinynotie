@@ -50,6 +50,30 @@ const formatDateTime = (value) => {
   return date.toLocaleString();
 };
 
+const getGroupAccess = async (groupId, userId) => {
+  const sql = `
+    SELECT
+      g.id,
+      g.visibility,
+      g.admin_id,
+      (g.admin_id = $2) AS is_admin,
+      COALESCE(gu.can_edit, FALSE) AS can_edit,
+      (gu.user_id IS NOT NULL) AS is_member,
+      CASE
+        WHEN g.visibility = 'public' THEN TRUE
+        WHEN g.admin_id = $2 THEN TRUE
+        WHEN gu.user_id IS NOT NULL THEN TRUE
+        ELSE FALSE
+      END AS has_access
+    FROM grp_infm g
+    LEFT JOIN grp_users gu ON gu.group_id = g.id AND gu.user_id = $2
+    WHERE g.id = $1
+    LIMIT 1;
+  `;
+  const result = await pool.query(sql, [groupId, userId]);
+  return result.rows[0] || null;
+};
+
 /**
  * @swagger
  * /trips/addTripByGroupId:
@@ -221,6 +245,14 @@ router.post("/addTripByGroupId", authenticateToken, async (req, res) => {
   const sanitizedPayerId = sanitizeIntegerField(payer_id);
 
   try {
+    const access = await getGroupAccess(group_id, req.user._id);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
     const sql = `SELECT id FROM trp_infm WHERE group_id=$1 AND trp_name=$2;`;
     const results = await pool.query(sql, [group_id, trp_name]);
 
@@ -335,15 +367,42 @@ router.post("/addMultipleTripsByGroupId", authenticateToken, async (req, res) =>
 
 // Edit trip by group ID
 router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
-  const { trp_name, spend, group_id, type, update_dttm, payer_id } = req.body;
+  const {
+    trp_id,
+    trp_name,
+    spend,
+    mem_id,
+    description,
+    group_id,
+    type,
+    update_dttm,
+    payer_id,
+  } = req.body;
 
   // Sanitize payer_id: convert empty string to null for integer field
   const sanitizedPayerId = sanitizeIntegerField(payer_id);
 
   try {
-    // Fetch the current spend value for the trip
-    const sql = `SELECT id, spend FROM trp_infm WHERE group_id = $1 AND trp_name = $2;`;
-    const results = await pool.query(sql, [group_id, trp_name]);
+    const access = await getGroupAccess(group_id, req.user._id);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
+    // Prefer trp_id for reliable updates; fallback to name for backward compatibility.
+    let sql;
+    let params;
+    if (Number.isFinite(Number(trp_id))) {
+      sql = `SELECT id, spend FROM trp_infm WHERE id = $1 AND group_id = $2;`;
+      params = [Number(trp_id), group_id];
+    } else {
+      sql = `SELECT id, spend FROM trp_infm WHERE group_id = $1 AND trp_name = $2;`;
+      params = [group_id, trp_name];
+    }
+
+    const results = await pool.query(sql, params);
 
     if (results.rows.length === 0) {
       return res.json({
@@ -377,9 +436,26 @@ router.post("/editTripByGroupId", authenticateToken, async (req, res) => {
       });
     }
 
-    // Update the spend value and payer_id in the database
-    const sql2 = `UPDATE trp_infm SET spend = $1, update_dttm = $2, payer_id = $3 WHERE id = $4;`;
-    await pool.query(sql2, [newSpend, update_dttm, sanitizedPayerId, results.rows[0].id]);
+    // Update spend, payer, and optional editable fields in one call.
+    const sql2 = `
+      UPDATE trp_infm
+      SET spend = $1,
+          update_dttm = $2,
+          payer_id = $3,
+          trp_name = COALESCE(NULLIF($4, ''), trp_name),
+          description = COALESCE($5, description),
+          mem_id = COALESCE($6, mem_id)
+      WHERE id = $7;
+    `;
+    await pool.query(sql2, [
+      newSpend,
+      update_dttm,
+      sanitizedPayerId,
+      trp_name || null,
+      description ?? null,
+      mem_id ?? null,
+      results.rows[0].id,
+    ]);
 
     res.send({ status: true, message: `Edit ${trp_name} success!` });
   } catch (error) {
@@ -404,49 +480,26 @@ router.get("/getAllTrip", authenticateToken, async (_, res) => {
 });
 
 // Get trips by group ID
-router.get("/getTripByGroupId", async (req, res) => {
+router.get("/getTripByGroupId", authenticateToken, async (req, res) => {
   const { group_id } = req.query;
+  const { _id: user_id } = req.user;
 
   try {
-    // Check if the group is public
-    const groupCheckSql = `SELECT visibility FROM grp_infm WHERE id = $1;`;
-    const groupCheckResult = await pool.query(groupCheckSql, [group_id]);
-
-    if (groupCheckResult.rows.length === 0) {
-      // Group not found
-      return res
-        .status(404)
-        .send({ status: false, message: "Group not found" });
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access) {
+      return res.status(404).send({ status: false, message: "Group not found" });
+    }
+    if (!access.has_access) {
+      return res.status(403).send({ status: false, message: "Forbidden: No access to this group." });
     }
 
-    const { visibility } = groupCheckResult.rows[0];
+    const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
+    const results = await pool.query(sql, [group_id]);
 
-    if (visibility === "private") {
-      // If the group is private, authenticate the user
-      authenticateToken(req, res, async () => {
-        try {
-          // Fetch trips for the authenticated user
-          const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
-          const results = await pool.query(sql, [group_id]);
-
-          res.send({
-            status: true,
-            data: results.rows.length > 0 ? results.rows : [],
-          });
-        } catch (error) {
-          handleError(error, res);
-        }
-      });
-    } else {
-      // If the group is public, fetch trips without authentication
-      const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
-      const results = await pool.query(sql, [group_id]);
-
-      res.send({
-        status: true,
-        data: results.rows.length > 0 ? results.rows : [],
-      });
-    }
+    res.send({
+      status: true,
+      data: results.rows.length > 0 ? results.rows : [],
+    });
   } catch (error) {
     handleError(error, res);
   }
@@ -493,6 +546,14 @@ router.post("/editTripMem", authenticateToken, async (req, res) => {
   const { trp_id, group_id, trp_name, mem_id, payer_id } = req.body;
 
   try {
+    const access = await getGroupAccess(group_id, req.user._id);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
     // Check if the trip exists
     const checkTripSql = `SELECT id FROM trp_infm WHERE id = $1 AND group_id = $2;`;
     const checkTripResult = await pool.query(checkTripSql, [trp_id, group_id]);
@@ -530,21 +591,11 @@ router.delete("/deleteTripById", authenticateToken, async (req, res) => {
   const client = await pool.connect();
 
   try {
-    // Check if the user is the admin of the group
-    const checkAdminQuery = `
-      SELECT admin_id
-      FROM grp_infm
-      WHERE id = $1;
-    `;
-    const checkAdminResult = await client.query(checkAdminQuery, [group_id]);
-
-    if (checkAdminResult.rows.length === 0) {
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access) {
       return res.json({ status: false, message: "Group not found" });
     }
-
-    const { admin_id } = checkAdminResult.rows[0];
-
-    if (admin_id !== user_id) {
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
       return res.json({
         status: false,
         message: "You do not have permission to delete trips from this group",

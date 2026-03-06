@@ -161,6 +161,7 @@ export function useUpdateTrip(groupId) {
   return useMutation({
     mutationFn: ({ tripId, data }) =>
       api.updateTrip({
+        trp_id: tripId,
         ...data,
         group_id: groupId,
         type: 'UPDATE',
