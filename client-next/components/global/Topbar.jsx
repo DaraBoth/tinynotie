@@ -44,7 +44,9 @@ export function Topbar() {
     router.push('/login');
   };
 
-  const navLinks = [];
+  const navLinks = [
+    { href: '/help/telegram-commands', label: 'Commands', icon: Sparkles },
+  ];
 
   return (
     <>

@@ -147,6 +147,47 @@ export const initTelegramBot = (token) => {
         return base || `tg_${fallbackId}`;
     };
 
+    const buildTelegramBasedUsername = (tgUser = {}) => {
+        const usernameFromHandle = sanitizeUsername(tgUser.username || '', tgUser.id);
+        if (usernameFromHandle && !usernameFromHandle.startsWith('tg_')) {
+            return usernameFromHandle;
+        }
+
+        const first = sanitizeUsername(tgUser.first_name || '', tgUser.id).replace(/^tg_\d+$/, '');
+        const last = sanitizeUsername(tgUser.last_name || '', tgUser.id).replace(/^tg_\d+$/, '');
+        const nameCombo = [first, last].filter(Boolean).join('_').slice(0, 40);
+        if (nameCombo) return sanitizeUsername(nameCombo, tgUser.id);
+
+        return `tg_${tgUser.id}`;
+    };
+
+    const resolveUniqueTelegramUsername = async (tgUser = {}) => {
+        const base = buildTelegramBasedUsername(tgUser);
+        let candidate = base;
+
+        for (let i = 0; i < 1000; i++) {
+            const { rows } = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1 LIMIT 1', [candidate]);
+            if (rows.length === 0) return candidate;
+            candidate = `${base.slice(0, 34)}_${i + 2}`;
+        }
+
+        return `${base.slice(0, 30)}_${Date.now().toString().slice(-6)}`;
+    };
+
+    const formatAccountInfoMessage = ({ usernm, tgUser }) => {
+        const tgHandle = tgUser?.username ? `@${tgUser.username}` : 'not set';
+        const tgId = tgUser?.id || 'N/A';
+        return (
+            `✅ Registration successful!\n\n` +
+            `*Your TinyNotie Account Info*\n` +
+            `• Account ID: *${usernm}*\n` +
+            `• Telegram Username: ${tgHandle}\n` +
+            `• Telegram ID: \`${tgId}\`\n\n` +
+            `ℹ️ We auto-use your Telegram username as your account ID (with a safe suffix if needed) so it stays unique.\n` +
+            `Use this Account ID + your password to login in the app.`
+        );
+    };
+
     const ensurePrivateLinkedUser = (ctx) => {
         if (!ctx.user && ctx.chat?.type === 'private') {
             ctx.reply('❌ You are not registered yet. Use /register to create your TinyNotie account via Telegram.');
@@ -288,23 +329,29 @@ export const initTelegramBot = (token) => {
             );
 
             if (existingByTelegram.rows.length > 0) {
-                return ctx.reply(`✅ This Telegram is already linked to account: *${existingByTelegram.rows[0].usernm}*\nUse /reset_password if you want a new password.`, { parse_mode: 'Markdown' });
+                return ctx.reply(
+                    `✅ This Telegram is already linked.\n\n` +
+                    `*Your TinyNotie Account Info*\n` +
+                    `• Account ID: *${existingByTelegram.rows[0].usernm}*\n` +
+                    `• Telegram Username: ${ctx.from.username ? `@${ctx.from.username}` : 'not set'}\n` +
+                    `• Telegram ID: \`${ctx.from.id}\`\n\n` +
+                    `Use /reset_password if you want a new password.`,
+                    { parse_mode: 'Markdown' }
+                );
             }
 
-            const argUsername = readCommandArg(ctx);
-            if (argUsername) {
-                const candidate = sanitizeUsername(argUsername, ctx.from.id);
-                const usernameCheck = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [candidate]);
-                if (usernameCheck.rows.length > 0) {
-                    return ctx.reply('❌ Username already exists. Send /register and choose another username.');
-                }
+            const autoUsername = await resolveUniqueTelegramUsername(ctx.from);
+            setPendingInput(ctx.from.id, {
+                type: 'register_password',
+                username: autoUsername,
+                source: 'telegram_auto_username',
+            });
 
-                setPendingInput(ctx.from.id, { type: 'register_password', username: candidate });
-                return ctx.reply(`✅ Username reserved: *${candidate}*\nNow send your password in the next message (min 6 characters).`, { parse_mode: 'Markdown' });
-            }
-
-            setPendingInput(ctx.from.id, { type: 'register_username' });
-            return ctx.reply('📝 Send your desired username in your next message.');
+            return ctx.reply(
+                `🆔 Your Account ID is auto-generated from Telegram and reserved as: *${autoUsername}*\n` +
+                `Now send your password in the next message (min 6 characters).`,
+                { parse_mode: 'Markdown' }
+            );
         } catch (err) {
             console.error('Telegram register error:', err);
             return ctx.reply('❌ Failed to initialize registration. Please try again.');
@@ -352,15 +399,14 @@ export const initTelegramBot = (token) => {
             if (pwd.length < 6) return ctx.reply('❌ Password must be at least 6 characters.');
             try {
                 const usernameTaken = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [pending.username]);
-                if (usernameTaken.rows.length > 0) {
-                    clearPendingInput(ctx.from.id);
-                    return ctx.reply('❌ Username is no longer available. Please /register again.');
-                }
+                const resolvedUsername = usernameTaken.rows.length > 0
+                    ? await resolveUniqueTelegramUsername(ctx.from)
+                    : pending.username;
 
                 const hashed = await bcrypt.hash(pwd, 10);
                 const insert = await pool.query(
                     'INSERT INTO user_infm (usernm, passwd, telegram_id) VALUES ($1, $2, $3) RETURNING id, usernm',
-                    [pending.username, hashed, ctx.from.id]
+                    [resolvedUsername, hashed, ctx.from.id]
                 );
 
                 await enrichUserFromTelegramProfile({
@@ -370,7 +416,7 @@ export const initTelegramBot = (token) => {
                 });
 
                 clearPendingInput(ctx.from.id);
-                return ctx.reply(`✅ Registration successful!\nAccount: *${insert.rows[0].usernm}*`, { parse_mode: 'Markdown' });
+                return ctx.reply(formatAccountInfoMessage({ usernm: insert.rows[0].usernm, tgUser: ctx.from }), { parse_mode: 'Markdown' });
             } catch (err) {
                 console.error('Telegram password/register finalize error:', err);
                 return ctx.reply('❌ Failed to complete registration. Please try /register again.');
@@ -676,17 +722,6 @@ export const initTelegramBot = (token) => {
             }
 
             try {
-                if (pending.type === 'register_username') {
-                    const candidate = sanitizeUsername(text, fromId);
-                    const usernameCheck = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [candidate]);
-                    if (usernameCheck.rows.length > 0) {
-                        return ctx.reply('❌ Username already exists. Send another username.');
-                    }
-
-                    setPendingInput(fromId, { type: 'register_password', username: candidate });
-                    return ctx.reply(`✅ Username set: *${candidate}*\nNow send your password in next message (min 6 chars).`, { parse_mode: 'Markdown' });
-                }
-
                 if (pending.type === 'register_password') {
                     if (text.length < 6) return ctx.reply('❌ Password must be at least 6 characters. Send again.');
 
@@ -697,15 +732,14 @@ export const initTelegramBot = (token) => {
                     }
 
                     const usernameTaken = await pool.query('SELECT 1 FROM user_infm WHERE usernm = $1', [pending.username]);
-                    if (usernameTaken.rows.length > 0) {
-                        clearPendingInput(fromId);
-                        return ctx.reply('❌ Username is no longer available. Please /register again.');
-                    }
+                    const resolvedUsername = usernameTaken.rows.length > 0
+                        ? await resolveUniqueTelegramUsername(ctx.from)
+                        : pending.username;
 
                     const hashed = await bcrypt.hash(text, 10);
                     const insert = await pool.query(
                         'INSERT INTO user_infm (usernm, passwd, telegram_id) VALUES ($1, $2, $3) RETURNING id, usernm',
-                        [pending.username, hashed, fromId]
+                        [resolvedUsername, hashed, fromId]
                     );
 
                     await enrichUserFromTelegramProfile({
@@ -715,7 +749,7 @@ export const initTelegramBot = (token) => {
                     });
 
                     clearPendingInput(fromId);
-                    return ctx.reply(`✅ Registration successful!\nAccount: *${insert.rows[0].usernm}*`, { parse_mode: 'Markdown' });
+                    return ctx.reply(formatAccountInfoMessage({ usernm: insert.rows[0].usernm, tgUser: ctx.from }), { parse_mode: 'Markdown' });
                 }
 
                 if (pending.type === 'reset_password') {
