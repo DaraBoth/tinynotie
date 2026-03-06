@@ -99,6 +99,19 @@ export default function WelcomePage() {
               </Link>
             </Button>
           </div>
+
+          <div className="mt-10 inline-flex flex-col items-center gap-3 rounded-2xl border border-border/30 bg-background/40 backdrop-blur-xl px-5 py-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">Easy Telegram Commands</p>
+            <div className="flex flex-wrap justify-center gap-2 text-xs font-bold">
+              <span className="rounded-full border border-border/40 bg-muted/40 px-3 py-1">/register</span>
+              <span className="rounded-full border border-border/40 bg-muted/40 px-3 py-1">/create_group</span>
+              <span className="rounded-full border border-border/40 bg-muted/40 px-3 py-1">/sync_members</span>
+              <span className="rounded-full border border-border/40 bg-muted/40 px-3 py-1">/status</span>
+            </div>
+            <Link href="/help/telegram-commands" className="text-sm font-bold text-primary hover:underline">
+              See Full Command Guideline
+            </Link>
+          </div>
         </motion.div>
 
         {/* GenZ Bento Grid */}

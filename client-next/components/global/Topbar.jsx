@@ -44,9 +44,7 @@ export function Topbar() {
     router.push('/login');
   };
 
-  const navLinks = [
-    { href: '/help/telegram-commands', label: 'Commands', icon: Sparkles },
-  ];
+  const navLinks = [];
 
   return (
     <>
@@ -109,6 +107,11 @@ export function Topbar() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" /> Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/help/telegram-commands" className="cursor-pointer">
+                    <Sparkles className="mr-2 h-4 w-4" /> Commands
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -188,7 +191,7 @@ export function Topbar() {
               <ThemeSwitcher />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -197,6 +200,15 @@ export function Topbar() {
                 }}
               >
                 <User className="mr-2 h-4 w-4" /> Profile
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  router.push('/help/telegram-commands');
+                }}
+              >
+                <Sparkles className="mr-2 h-4 w-4" /> Commands
               </Button>
               <Button variant="destructive" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" /> Logout
