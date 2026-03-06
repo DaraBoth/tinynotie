@@ -1342,14 +1342,22 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
 
     message += `👤 Shared by: *${actorName}*\n_Generated via TinyNotie Portal_`;
 
+    const userRes = await pool.query('SELECT telegram_id FROM user_infm WHERE id = $1', [user_id]);
+    const personalChatId = userRes.rows?.[0]?.telegram_id;
+    const hasPersonal = !!personalChatId;
+    const hasGroup = !!group.telegram_chat_id;
+
+    let resolvedTarget = targetType;
+    if (resolvedTarget === 'group' && !hasGroup && hasPersonal) resolvedTarget = 'personal';
+    if (resolvedTarget === 'personal' && !hasPersonal && hasGroup) resolvedTarget = 'group';
+
+    if (!hasGroup && !hasPersonal) {
+      return res.status(400).json({ status: false, message: 'No Telegram destination is linked. Register via bot and/or link a Telegram group chat first.' });
+    }
+
     // 5. Send to Telegram (group or personal)
     let sent = false;
-    if (targetType === 'personal') {
-      const userRes = await pool.query('SELECT telegram_id FROM user_infm WHERE id = $1', [user_id]);
-      const personalChatId = userRes.rows?.[0]?.telegram_id;
-      if (!personalChatId) {
-        return res.status(400).json({ status: false, message: 'Your personal Telegram is not linked yet. Link your Telegram account first.' });
-      }
+    if (resolvedTarget === 'personal') {
       const bot = getBot();
       if (!bot) {
         return res.status(500).json({ status: false, message: 'Telegram bot is not initialized.' });
@@ -1365,9 +1373,9 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
     }
 
     if (sent) {
-      res.json({ status: true, message: targetType === 'personal' ? 'Summary sent to your personal Telegram chat!' : 'Summary shared to Telegram group!' });
+      res.json({ status: true, message: resolvedTarget === 'personal' ? 'Summary sent to your personal Telegram chat!' : 'Summary shared to Telegram group!' });
     } else {
-      res.status(400).json({ status: false, message: targetType === 'personal' ? 'Failed to send to your personal Telegram chat.' : 'Failed to share. Is this group linked to an active Telegram chat? Use /chat_id then link by group chat ID in app settings.' });
+      res.status(400).json({ status: false, message: resolvedTarget === 'personal' ? 'Failed to send to your personal Telegram chat.' : 'Failed to share. Is this group linked to an active Telegram chat? Use /chat_id then link by group chat ID in app settings.' });
     }
 
   } catch (error) {

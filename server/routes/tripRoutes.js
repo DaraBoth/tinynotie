@@ -657,19 +657,31 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
 
     summary += `👤 Shared by: *${safeText(username, 'Unknown User')}*`;
 
+    const [userRes, groupLinkRes] = await Promise.all([
+      pool.query("SELECT telegram_id FROM user_infm WHERE id = $1", [userId]),
+      pool.query("SELECT telegram_chat_id FROM grp_infm WHERE id = $1", [group_id]),
+    ]);
+
+    const personalChatId = userRes.rows?.[0]?.telegram_id;
+    const hasPersonal = !!personalChatId;
+    const hasGroup = !!groupLinkRes.rows?.[0]?.telegram_chat_id;
+
+    let resolvedTarget = targetType;
+    if (resolvedTarget === 'group' && !hasGroup && hasPersonal) resolvedTarget = 'personal';
+    if (resolvedTarget === 'personal' && !hasPersonal && hasGroup) resolvedTarget = 'group';
+
+    if (!hasGroup && !hasPersonal) {
+      return res.send({ status: false, message: "No Telegram destination is linked yet." });
+    }
+
     let success = false;
-    if (targetType === 'personal') {
-      const userRes = await pool.query("SELECT telegram_id FROM user_infm WHERE id = $1", [userId]);
-      const chatId = userRes.rows?.[0]?.telegram_id;
-      if (!chatId) {
-        return res.send({ status: false, message: "Your personal Telegram is not linked yet." });
-      }
+    if (resolvedTarget === 'personal') {
       const bot = getBot();
       if (!bot) {
         return res.status(500).json({ status: false, message: "Telegram bot is not initialized." });
       }
       try {
-        await bot.telegram.sendMessage(chatId, summary, { parse_mode: 'Markdown' });
+        await bot.telegram.sendMessage(personalChatId, summary, { parse_mode: 'Markdown' });
         success = true;
       } catch {
         success = false;
@@ -679,9 +691,9 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
     }
 
     if (success) {
-      res.send({ status: true, message: targetType === 'personal' ? "Member summary sent to your personal Telegram!" : "Member summary shared to Telegram!" });
+      res.send({ status: true, message: resolvedTarget === 'personal' ? "Member summary sent to your personal Telegram!" : "Member summary shared to Telegram!" });
     } else {
-      res.send({ status: false, message: targetType === 'personal' ? "Failed to send to your personal Telegram." : "Failed to share. Is the Telegram group linked?" });
+      res.send({ status: false, message: resolvedTarget === 'personal' ? "Failed to send to your personal Telegram." : "Failed to share. Is the Telegram group linked?" });
     }
   } catch (error) {
     console.error("Share members error:", error);
@@ -765,19 +777,31 @@ router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
       `_Generated via TinyNotie Portal_`,
     ].join('\n');
 
+    const [userRes, groupLinkRes] = await Promise.all([
+      pool.query("SELECT telegram_id FROM user_infm WHERE id = $1", [userId]),
+      pool.query("SELECT telegram_chat_id FROM grp_infm WHERE id = $1", [group_id]),
+    ]);
+
+    const personalChatId = userRes.rows?.[0]?.telegram_id;
+    const hasPersonal = !!personalChatId;
+    const hasGroup = !!groupLinkRes.rows?.[0]?.telegram_chat_id;
+
+    let resolvedTarget = targetType;
+    if (resolvedTarget === 'group' && !hasGroup && hasPersonal) resolvedTarget = 'personal';
+    if (resolvedTarget === 'personal' && !hasPersonal && hasGroup) resolvedTarget = 'group';
+
+    if (!hasGroup && !hasPersonal) {
+      return res.send({ status: false, message: "No Telegram destination is linked yet." });
+    }
+
     let success = false;
-    if (targetType === 'personal') {
-      const userRes = await pool.query("SELECT telegram_id FROM user_infm WHERE id = $1", [userId]);
-      const chatId = userRes.rows?.[0]?.telegram_id;
-      if (!chatId) {
-        return res.send({ status: false, message: "Your personal Telegram is not linked yet." });
-      }
+    if (resolvedTarget === 'personal') {
       const bot = getBot();
       if (!bot) {
         return res.status(500).json({ status: false, message: "Telegram bot is not initialized." });
       }
       try {
-        await bot.telegram.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        await bot.telegram.sendMessage(personalChatId, message, { parse_mode: 'Markdown' });
         success = true;
       } catch {
         success = false;
@@ -787,9 +811,9 @@ router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
     }
 
     if (success) {
-      res.send({ status: true, message: targetType === 'personal' ? "Shared to your personal Telegram!" : "Shared to Telegram!" });
+      res.send({ status: true, message: resolvedTarget === 'personal' ? "Shared to your personal Telegram!" : "Shared to Telegram!" });
     } else {
-      res.send({ status: false, message: targetType === 'personal' ? "Failed to share to personal Telegram." : "Failed to share. Is the Telegram group linked?" });
+      res.send({ status: false, message: resolvedTarget === 'personal' ? "Failed to share to personal Telegram." : "Failed to share. Is the Telegram group linked?" });
     }
   } catch (error) {
     console.error("Share to Telegram error:", error);

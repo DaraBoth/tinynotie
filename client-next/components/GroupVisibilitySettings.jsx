@@ -19,6 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/tinynotie_bot';
+
 export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -114,19 +116,9 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
 
   const handleOpenTelegramBot = async () => {
     try {
-      const newWindow = window.open('', '_blank');
-      const res = await api.getTelegramLink();
-      if (res.data?.status && res.data?.link) {
-        if (newWindow) {
-          newWindow.location.href = res.data.link;
-        } else {
-          window.location.href = res.data.link;
-        }
-        toast.success('Opening Telegram bot...');
-      } else {
-        if (newWindow) newWindow.close();
-        toast.error('Failed to generate Telegram link');
-      }
+      const popup = window.open(TELEGRAM_BOT_URL, '_blank');
+      if (!popup) window.location.href = TELEGRAM_BOT_URL;
+      toast.success('Opening Telegram bot...');
     } catch (error) {
       toast.error('Error opening Telegram bot');
     }
@@ -246,7 +238,7 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
                     <Send className="h-4 w-4 text-sky-500" /> Telegram Linking
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Link personal chat and optionally a Telegram group chat ID
+                    Personal chat links automatically when you register via bot. Optionally link a Telegram group chat ID.
                   </div>
                 </div>
                 {telegramStatus?.group_chat_linked ? (
@@ -278,7 +270,7 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
                   className="flex-1"
                   onClick={handleOpenTelegramBot}
                 >
-                  <Link2 className="mr-2 h-4 w-4" /> Open Bot
+                  <Link2 className="mr-2 h-4 w-4" /> Open Bot Chat
                 </Button>
                 <Button
                   type="button"

@@ -11,6 +11,7 @@ import axios from 'axios';
 let bot;
 const pendingInputs = new Map();
 let botUsernameCache = null;
+let userTableColumnsCache = null;
 const DEFAULT_WEB_APP_URL = 'https://tinynotie.vercel.app';
 
 const getPendingInput = (telegramUserId) => pendingInputs.get(telegramUserId);
@@ -34,6 +35,50 @@ const getWebAppBaseUrl = () => {
 };
 
 const getTelegramCommandGuideUrl = () => `${getWebAppBaseUrl()}/help/telegram-commands`;
+
+const getUserTableColumns = async () => {
+    if (userTableColumnsCache) return userTableColumnsCache;
+
+    const { rows } = await pool.query(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'user_infm'`
+    );
+
+    userTableColumnsCache = new Set(rows.map((row) => row.column_name));
+    return userTableColumnsCache;
+};
+
+const enrichUserFromTelegramProfile = async ({ userId, tgUser, chatId }) => {
+    try {
+        const columns = await getUserTableColumns();
+        const updates = [];
+        const values = [];
+
+        if (columns.has('first_name') && tgUser?.first_name) {
+            values.push(String(tgUser.first_name).slice(0, 100));
+            updates.push(`first_name = $${values.length}`);
+        }
+
+        if (columns.has('last_name') && tgUser?.last_name) {
+            values.push(String(tgUser.last_name).slice(0, 100));
+            updates.push(`last_name = $${values.length}`);
+        }
+
+        if (columns.has('telegram_chat_id') && Number.isFinite(Number(chatId))) {
+            values.push(Number(chatId));
+            updates.push(`telegram_chat_id = $${values.length}`);
+        }
+
+        if (updates.length === 0) return;
+
+        values.push(userId);
+        await pool.query(`UPDATE user_infm SET ${updates.join(', ')} WHERE id = $${values.length}`, values);
+    } catch (err) {
+        // Profile enrichment is best-effort and should not block registration.
+        console.warn('Telegram profile enrichment skipped:', err.message);
+    }
+};
 
 /**
  * Initialize the Telegram Bot with webhook mode
@@ -317,6 +362,13 @@ export const initTelegramBot = (token) => {
                     'INSERT INTO user_infm (usernm, passwd, telegram_id) VALUES ($1, $2, $3) RETURNING id, usernm',
                     [pending.username, hashed, ctx.from.id]
                 );
+
+                await enrichUserFromTelegramProfile({
+                    userId: insert.rows[0].id,
+                    tgUser: ctx.from,
+                    chatId: ctx.chat?.id,
+                });
+
                 clearPendingInput(ctx.from.id);
                 return ctx.reply(`✅ Registration successful!\nAccount: *${insert.rows[0].usernm}*`, { parse_mode: 'Markdown' });
             } catch (err) {
@@ -655,6 +707,13 @@ export const initTelegramBot = (token) => {
                         'INSERT INTO user_infm (usernm, passwd, telegram_id) VALUES ($1, $2, $3) RETURNING id, usernm',
                         [pending.username, hashed, fromId]
                     );
+
+                    await enrichUserFromTelegramProfile({
+                        userId: insert.rows[0].id,
+                        tgUser: ctx.from,
+                        chatId: ctx.chat?.id,
+                    });
+
                     clearPendingInput(fromId);
                     return ctx.reply(`✅ Registration successful!\nAccount: *${insert.rows[0].usernm}*`, { parse_mode: 'Markdown' });
                 }

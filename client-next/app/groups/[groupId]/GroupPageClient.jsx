@@ -71,7 +71,6 @@ export function GroupPageClient({ groupId }) {
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [expandedMemberId, setExpandedMemberId] = useState(null);
-  const [telegramLoading, setTelegramLoading] = useState(false);
   const [shareMembersLoading, setShareMembersLoading] = useState(false);
   const [shareTripsLoading, setShareTripsLoading] = useState(false);
   const [shareTripIdLoading, setShareTripIdLoading] = useState(null);
@@ -98,30 +97,6 @@ export function GroupPageClient({ groupId }) {
     }
   };
 
-  const handleTelegramLink = async () => {
-    try {
-      setTelegramLoading(true);
-      const newWindow = window.open('', '_blank');
-      const res = await api.getTelegramLink();
-      if (res.data.status && res.data.link) {
-        if (newWindow) {
-          newWindow.location.href = res.data.link;
-        } else {
-          window.location.href = res.data.link;
-        }
-        toast.success('Opening Telegram Bot...');
-      } else {
-        if (newWindow) newWindow.close();
-        toast.error('Failed to generate Telegram link');
-      }
-    } catch (err) {
-      console.error('Telegram link error:', err);
-      toast.error('Error connecting to Telegram');
-    } finally {
-      setTelegramLoading(false);
-    }
-  };
-
   const openPanel = (action) => {
     setFabOpen(false);
     action();
@@ -145,14 +120,61 @@ export function GroupPageClient({ groupId }) {
     refetchInterval: 30000,
   });
 
+  const { data: telegramStatusData } = useQuery({
+    queryKey: ['telegram-link-status', groupId],
+    queryFn: async () => {
+      const res = await api.getTelegramLinkStatus(groupId);
+      return res.data;
+    },
+    enabled: hasHydrated && isAuthenticated && !!groupId,
+    refetchInterval: 30000,
+  });
+
+  const telegramStatus = telegramStatusData?.data || null;
+  const canShareToGroup = !!telegramStatus?.group_chat_linked;
+  const canShareToPersonal = !!telegramStatus?.personal_chat_linked;
+  const showTelegramTargetSelector = canShareToGroup && canShareToPersonal;
+  const hasAnyTelegramTarget = canShareToGroup || canShareToPersonal;
+
+  useEffect(() => {
+    if (!groupId) return;
+
+    if (canShareToGroup && !canShareToPersonal && telegramTargetType !== 'group') {
+      setTelegramTargetType('group');
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(`telegram-target-${groupId}`, 'group');
+      }
+      return;
+    }
+
+    if (!canShareToGroup && canShareToPersonal && telegramTargetType !== 'personal') {
+      setTelegramTargetType('personal');
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(`telegram-target-${groupId}`, 'personal');
+      }
+    }
+  }, [groupId, canShareToGroup, canShareToPersonal, telegramTargetType]);
+
+  const resolveTelegramTargetType = () => {
+    if (showTelegramTargetSelector) return telegramTargetType;
+    if (canShareToGroup) return 'group';
+    if (canShareToPersonal) return 'personal';
+    return telegramTargetType;
+  };
+
   const handleShareTrip = async (e, trip) => {
     e.stopPropagation(); // Don't open edit modal
     try {
+      if (!hasAnyTelegramTarget) {
+        toast.error('No Telegram destination is linked yet.');
+        return;
+      }
+
       setShareTripIdLoading(trip.id);
       const res = await api.shareTripToTelegram({
         trip_id: trip.id,
         group_id: groupId,
-        targetType: telegramTargetType,
+        targetType: resolveTelegramTargetType(),
       });
       if (res.data.status) {
         toast.success('Shared to Telegram!');
@@ -169,12 +191,17 @@ export function GroupPageClient({ groupId }) {
 
   const handleShareMembers = async () => {
     try {
+      if (!hasAnyTelegramTarget) {
+        toast.error('No Telegram destination is linked yet.');
+        return;
+      }
+
       setShareMembersLoading(true);
       const allMemberIds = newData.map((row) => row._memberId).filter(Boolean);
       const memberIds = selectedMemberIds.length > 0 ? selectedMemberIds : allMemberIds;
       const res = await api.shareMembersToTelegram({
         group_id: groupId,
-        targetType: telegramTargetType,
+        targetType: resolveTelegramTargetType(),
         member_ids: memberIds,
       });
       if (res.data.status) {
@@ -391,12 +418,17 @@ export function GroupPageClient({ groupId }) {
 
   const handleShareSelectedTrips = async () => {
     try {
+      if (!hasAnyTelegramTarget) {
+        toast.error('No Telegram destination is linked yet.');
+        return;
+      }
+
       setShareTripsLoading(true);
       const tripIds = selectedTripIds.length > 0 ? selectedTripIds : sortedTrips.map((trip) => trip.id).filter(Boolean);
       const res = await api.shareTripToTelegram({
         group_id: groupId,
         trip_ids: tripIds,
-        targetType: telegramTargetType,
+        targetType: resolveTelegramTargetType(),
       });
 
       if (res.data.status) {
@@ -523,6 +555,45 @@ export function GroupPageClient({ groupId }) {
   const memberPinnedMeta = getPinnedMeta(memberTableColumns, memberPinnedColumns);
   const tripPinnedMeta = getPinnedMeta(tripTableColumns, tripPinnedColumns);
 
+  const renderTelegramTargetControl = () => {
+    if (showTelegramTargetSelector) {
+      return (
+        <div className="flex gap-1 bg-muted/60 p-1 rounded-lg">
+          <button
+            onClick={() => handleChangeTelegramTarget('group')}
+            className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'group' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Group
+          </button>
+          <button
+            onClick={() => handleChangeTelegramTarget('personal')}
+            className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'personal' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Personal
+          </button>
+        </div>
+      );
+    }
+
+    if (canShareToGroup) {
+      return (
+        <div className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide bg-muted/50 text-muted-foreground">
+          Group
+        </div>
+      );
+    }
+
+    if (canShareToPersonal) {
+      return (
+        <div className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide bg-muted/50 text-muted-foreground">
+          Personal (auto)
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   /* ─── main component ─────────────────────────────────────────────────────── */
 
   const ContributionsSection = (
@@ -531,7 +602,7 @@ export function GroupPageClient({ groupId }) {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
           <Users className="h-3.5 w-3.5" /> Contributions
         </h2>
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
           <Button
             size="sm"
             variant="ghost"
@@ -540,20 +611,7 @@ export function GroupPageClient({ groupId }) {
           >
             {selectedMemberIds.length > 0 ? 'Clear' : 'Select All'}
           </Button>
-          <div className="hidden sm:flex gap-1 bg-muted/60 p-1 rounded-lg">
-            <button
-              onClick={() => handleChangeTelegramTarget('group')}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'group' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Group
-            </button>
-            <button
-              onClick={() => handleChangeTelegramTarget('personal')}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'personal' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Personal
-            </button>
-          </div>
+          {renderTelegramTargetControl()}
           <Button
             size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-foreground uppercase tracking-widest font-bold"
             onClick={handleExportMembers}
@@ -771,7 +829,9 @@ export function GroupPageClient({ groupId }) {
           <TrendingUp className="h-3.5 w-3.5" /> Trips
         </h2>
         {isMobile ? (
-          <div className="grid grid-cols-2 gap-1.5 w-full max-w-[260px]">
+          <div className="flex flex-col gap-1.5 w-full max-w-[260px]">
+            <div className="flex justify-end">{renderTelegramTargetControl()}</div>
+            <div className="grid grid-cols-2 gap-1.5">
             <Button size="sm" variant="outline" className="h-8 text-xs"
               onClick={toggleAllTrips}>
               {selectedTripIds.length > 0 ? 'Clear' : 'Select'}
@@ -789,6 +849,7 @@ export function GroupPageClient({ groupId }) {
               disabled={shareTripsLoading}>
               {shareTripsLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />} {shareTripsLoading ? 'Sending...' : 'Telegram'}
             </Button>
+            </div>
           </div>
         ) : (
           <div className="flex gap-1">
@@ -798,20 +859,7 @@ export function GroupPageClient({ groupId }) {
             >
               {selectedTripIds.length > 0 ? 'Clear' : 'Select All'}
             </Button>
-            <div className="hidden sm:flex gap-1 bg-muted/60 p-1 rounded-lg mr-1">
-              <button
-                onClick={() => handleChangeTelegramTarget('group')}
-                className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'group' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                Group
-              </button>
-              <button
-                onClick={() => handleChangeTelegramTarget('personal')}
-                className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${telegramTargetType === 'personal' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                Personal
-              </button>
-            </div>
+            <div className="mr-1">{renderTelegramTargetControl()}</div>
             <Button
               size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
               onClick={handleExportTrips}
@@ -1126,16 +1174,6 @@ export function GroupPageClient({ groupId }) {
               <div className="flex items-center gap-1.5 shrink-0">
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSettingsOpen(true)} title="Settings">
                   <Settings className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-8 w-8 ${telegramLoading ? 'animate-pulse' : ''} text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 hover:bg-sky-500/10`}
-                  onClick={handleTelegramLink}
-                  disabled={telegramLoading}
-                  title="Link Telegram"
-                >
-                  <Send className="h-4 w-4" />
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

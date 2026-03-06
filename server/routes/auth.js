@@ -2,7 +2,6 @@ import pg from "pg";
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -135,33 +134,10 @@ router.post("/login", async (req, res) => {
  *         description: Internal server error
  */
 router.post("/register", async (req, res) => {
-  const { usernm, passwd } = req.body;
-  try {
-    const sql = `SELECT usernm FROM user_infm WHERE usernm = $1;`;
-    const values = [usernm.toLowerCase()];
-
-    const { rows } = await pool.query(sql, values);
-    if (rows.length === 0) {
-      // Hash the password before storing it
-      const hashedPassword = await bcrypt.hash(passwd, 10);
-
-      const sql2 = `INSERT INTO user_infm (usernm, passwd) VALUES ($1, $2) RETURNING id;`;
-      const values2 = [usernm.toLowerCase(), hashedPassword];
-
-      const result = await pool.query(sql2, values2);
-      const newUserId = result.rows[0].id;
-
-      // Generate JWT token upon registration
-      const token = jwt.sign({ _id: newUserId, usernm: usernm }, JWT_SECRET, { expiresIn: "1h" });
-
-      res.send({ status: true, message: "Registration successful!", token, _id: newUserId });
-    } else {
-      res.status(409).send({ status: false, message: `Username already exists!` });
-    }
-  } catch (error) {
-    console.error("error", error);
-    res.status(500).json({ status: false, error: error.message });
-  }
+  return res.status(410).json({
+    status: false,
+    message: "Web registration is disabled. Please register via TinyNotie Telegram bot using /register.",
+  });
 });
 
 /**
@@ -177,18 +153,10 @@ router.post("/register", async (req, res) => {
  *         description: Link generated successfully
  */
 router.get("/telegram-link", authenticateToken, async (req, res) => {
-  const userId = req.user._id;
-  const code = crypto.randomBytes(8).toString('hex');
-
   try {
-    await pool.query(
-      'INSERT INTO telegram_links (code, user_id) VALUES ($1, $2)',
-      [code, userId]
-    );
-
-    const botUsername = process.env.BOT_USER_NAME || 'TinyNotieBot';
-    const link = `https://t.me/${botUsername}?start=link_${code}`;
-
+    const botUsername = process.env.BOT_USER_NAME || 'tinynotie_bot';
+    const clean = String(botUsername).replace(/^@/, '');
+    const link = `https://t.me/${clean}`;
     res.json({ status: true, link });
   } catch (error) {
     console.error("Telegram link generation error:", error);
