@@ -584,6 +584,28 @@ export const initTelegramBot = (token) => {
         }
     });
 
+    bot.command('join', async (ctx) => {
+        const name = getTelegramDisplayName(ctx.from);
+
+        try {
+            // Find linked group for this chat
+            const { rows: groups } = await pool.query('SELECT id FROM grp_infm WHERE telegram_chat_id = $1', [ctx.chat.id]);
+            if (groups.length === 0) return ctx.reply('❌ This chat is not linked to any group. Use /link_group first.');
+
+            const groupId = groups[0].id;
+            await pool.query(
+                `INSERT INTO member_infm (mem_name, group_id, paid)
+            VALUES ($1,$2,0)
+            ON CONFLICT (group_id, mem_name) DO NOTHING`,
+                [name, groupId]
+            );
+            ctx.reply(`✅ ${name} joined the group!`, { parse_mode: 'Markdown' });
+        } catch (err) {
+            console.error('Add member TG error:', err);
+            ctx.reply('❌ Failed to join.');
+        }
+    });
+
     // /sync_members command - sync visible Telegram users into linked TinyNotie group
     bot.command('sync_members', async (ctx) => {
         if (!ctx.user) return ctx.reply('Please link your account first.');
