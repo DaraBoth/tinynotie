@@ -18,10 +18,12 @@ import { api } from '@/api/apiClient';
 import { Loading } from '@/components/Loading';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { useAuthStore } from '@/store/authStore';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { hasHydrated, isAuthenticated, user } = useAuthGuard();
+  const logout = useAuthStore((state) => state.logout);
   const { data: userInfo, isLoading } = useUserInfo(user?._id);
   const updateMutation = useUpdateUserInfo(user?._id);
   const fileInputRef = useRef(null);
@@ -35,9 +37,22 @@ export default function ProfilePage() {
   });
   const [profilePreview, setProfilePreview] = useState('');
   const [imageFile, setImageFile] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const uploadMutation = useMutation({
     mutationFn: (fd) => api.uploadImage(fd),
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: () => api.deleteMyAccount(),
+    onSuccess: () => {
+      toast.success('Your account and data were deleted.');
+      logout();
+      router.replace('/');
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to delete account');
+    },
   });
 
   useEffect(() => {
@@ -99,6 +114,17 @@ export default function ProfilePage() {
   if (isLoading) return <Loading text="Loading profile..." />;
 
   const isSaving = updateMutation.isPending || uploadMutation.isPending;
+  const isDeleting = deleteAccountMutation.isPending;
+  const canDelete = deleteConfirmText === 'DELETE';
+
+  const handleDeleteAccount = async () => {
+    if (!canDelete) {
+      toast.error('Type DELETE to confirm account deletion.');
+      return;
+    }
+
+    await deleteAccountMutation.mutateAsync();
+  };
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
@@ -315,6 +341,44 @@ export default function ProfilePage() {
                     className="h-11 bg-background/50 backdrop-blur border-border/60"
                   />
                 </div>
+              </div>
+            </section>
+
+            {/* Divider */}
+            <div className="border-t border-border/30 -mx-4 sm:-mx-8 md:-mx-12 lg:-mx-16" />
+
+            {/* ── Danger Zone ────────────────────────────────────────── */}
+            <section>
+              <h2 className="text-xs font-semibold text-destructive uppercase tracking-widest mb-5 flex items-center gap-2">
+                <Shield className="h-3.5 w-3.5" /> Danger Zone
+              </h2>
+
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 sm:p-5 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Deleting your account will permanently remove your profile and all related data in TinyNotie.
+                  This action cannot be undone.
+                </p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="delete_confirm" className="text-sm font-semibold">Type <span className="font-black">DELETE</span> to confirm</Label>
+                  <Input
+                    id="delete_confirm"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="DELETE"
+                    className="h-11 bg-background/50 backdrop-blur border-destructive/40"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={!canDelete || isDeleting}
+                  onClick={handleDeleteAccount}
+                  className="w-full sm:w-auto"
+                >
+                  {isDeleting ? 'Deleting Account…' : 'Delete My Account'}
+                </Button>
               </div>
             </section>
 

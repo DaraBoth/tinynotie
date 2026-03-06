@@ -368,6 +368,164 @@ router.get("/getUserProfile", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
+ * /api/deleteMyAccount:
+ *   delete:
+ *     summary: Delete current user account and all linked app data
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.delete("/deleteMyAccount", authenticateToken, async (req, res) => {
+  const userId = Number(req.user?._id);
+  if (!Number.isFinite(userId)) {
+    return res.status(400).json({ status: false, message: "Invalid user." });
+  }
+
+  const client = await pool.connect();
+  try {
+    const tableExists = async (tableName) => {
+      const { rows } = await client.query(
+        `SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = $1
+         ) AS exists`,
+        [tableName]
+      );
+      return !!rows?.[0]?.exists;
+    };
+
+    const columnExists = async (tableName, columnName) => {
+      const { rows } = await client.query(
+        `SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = $1 AND column_name = $2
+         ) AS exists`,
+        [tableName, columnName]
+      );
+      return !!rows?.[0]?.exists;
+    };
+
+    await client.query("BEGIN");
+
+    const userRes = await client.query(
+      "SELECT id, usernm FROM user_infm WHERE id = $1 LIMIT 1",
+      [userId]
+    );
+
+    if (userRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ status: false, message: "User not found." });
+    }
+
+    const username = String(userRes.rows[0].usernm || "");
+
+    // 1. Delete groups owned by this user and all group-bound rows.
+    const hasGroupsTable = await tableExists("grp_infm");
+    let ownedGroupIds = [];
+    if (hasGroupsTable && await columnExists("grp_infm", "admin_id")) {
+      const ownedGroupsRes = await client.query(
+        "SELECT id FROM grp_infm WHERE admin_id = $1",
+        [userId]
+      );
+      ownedGroupIds = ownedGroupsRes.rows.map((row) => Number(row.id)).filter(Number.isFinite);
+    }
+
+    if (ownedGroupIds.length > 0) {
+      if (await tableExists("trp_infm") && await columnExists("trp_infm", "group_id")) {
+        await client.query("DELETE FROM trp_infm WHERE group_id = ANY($1::int[])", [ownedGroupIds]);
+      }
+
+      if (await tableExists("member_infm") && await columnExists("member_infm", "group_id")) {
+        await client.query("DELETE FROM member_infm WHERE group_id = ANY($1::int[])", [ownedGroupIds]);
+      }
+
+      if (await tableExists("grp_users") && await columnExists("grp_users", "group_id")) {
+        await client.query("DELETE FROM grp_users WHERE group_id = ANY($1::int[])", [ownedGroupIds]);
+      }
+
+      if (hasGroupsTable) {
+        await client.query("DELETE FROM grp_infm WHERE id = ANY($1::int[])", [ownedGroupIds]);
+      }
+
+      if (await tableExists("json_data") && await columnExists("json_data", "chat_id")) {
+        const ownedGroupChatIds = ownedGroupIds.map((id) => String(id));
+        await client.query("DELETE FROM json_data WHERE chat_id::text = ANY($1::text[])", [ownedGroupChatIds]);
+      }
+    }
+
+    // 2. Remove membership rows for this user in shared groups.
+    if (await tableExists("grp_users") && await columnExists("grp_users", "user_id")) {
+      await client.query("DELETE FROM grp_users WHERE user_id = $1", [userId]);
+    }
+
+    // 3. Chat rows/messages tied to this user.
+    if (await tableExists("chat_room")) {
+      const hasUser1 = await columnExists("chat_room", "user1_id");
+      const hasUser2 = await columnExists("chat_room", "user2_id");
+      if (hasUser1 && hasUser2) {
+        const roomRes = await client.query(
+          "SELECT id FROM chat_room WHERE user1_id = $1 OR user2_id = $1",
+          [userId]
+        );
+        const roomIds = roomRes.rows.map((row) => Number(row.id)).filter(Number.isFinite);
+
+        if (roomIds.length > 0 && await tableExists("chat_message") && await columnExists("chat_message", "chat_room_id")) {
+          await client.query("DELETE FROM chat_message WHERE chat_room_id = ANY($1::int[])", [roomIds]);
+        }
+
+        await client.query("DELETE FROM chat_room WHERE user1_id = $1 OR user2_id = $1", [userId]);
+      }
+    }
+
+    if (await tableExists("chat_message") && await columnExists("chat_message", "sender_id")) {
+      await client.query("DELETE FROM chat_message WHERE sender_id = $1", [userId]);
+    }
+
+    // 4. Misc user-owned records.
+    if (await tableExists("translations") && await columnExists("translations", "user_id")) {
+      await client.query("DELETE FROM translations WHERE user_id = $1", [userId]);
+    }
+
+    if (await tableExists("subscriptions") && await columnExists("subscriptions", "user_id")) {
+      await client.query("DELETE FROM subscriptions WHERE user_id = $1", [userId]);
+    }
+
+    if (await tableExists("telegram_links") && await columnExists("telegram_links", "user_id")) {
+      await client.query("DELETE FROM telegram_links WHERE user_id = $1", [userId]);
+    }
+
+    if (await tableExists("json_data") && await columnExists("json_data", "user_id")) {
+      await client.query(
+        "DELETE FROM json_data WHERE user_id::text = $1 OR user_id::text = $2 OR user_id::text ILIKE $3",
+        [String(userId), username, `${username},%`]
+      );
+    }
+
+    // 5. Delete account row itself.
+    await client.query("DELETE FROM user_infm WHERE id = $1", [userId]);
+
+    await client.query("COMMIT");
+    return res.json({ status: true, message: "Account and related data deleted successfully." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("deleteMyAccount error:", error);
+    return res.status(500).json({ status: false, message: "Failed to delete account.", error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * @swagger
  * /api/uploadImage:
  *   post:
  *     summary: Upload user profile image

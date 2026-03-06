@@ -81,6 +81,7 @@ export const api = {
   // User
   getUserInfo: (userId) => apiClient.get('/api/getUserProfile', { params: { user_id: userId } }),
   updateUserInfo: (data) => apiClient.put('/api/updateUserInfo', data),
+  deleteMyAccount: () => apiClient.delete('/api/deleteMyAccount'),
   uploadImage: (formData) =>
     apiClient.post('/api/uploadImage', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
