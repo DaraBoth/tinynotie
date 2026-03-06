@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import {
-    Send, Loader2, Sparkles,
+    Send, Loader2, Sparkles, Paperclip, X,
     Database, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,9 +28,11 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState(null); // 'Thinking...', 'Executing tools...', etc.
     const [activeTools, setActiveTools] = useState([]); // List of current tool calls
+    const [attachedImage, setAttachedImage] = useState(null);
 
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const defaultWelcomeMessage = {
         role: 'assistant',
@@ -102,21 +104,29 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!input.trim() || isLoading) return;
+        if ((!input.trim() && !attachedImage) || isLoading) return;
         if (!groupId) {
             toast.error('Group context missing. Please reopen the group page.');
             return;
         }
 
+        const textContent = input.trim();
+        const displayContent = attachedImage
+            ? `${textContent}${textContent ? '\n\n' : ''}[Image: ${attachedImage.name}]`
+            : textContent;
+
         const userMessage = {
             role: 'user',
-            content: input,
+            content: displayContent,
             timestamp: new Date(),
+            attachmentName: attachedImage?.name || null,
         };
 
         setMessages(prev => [...prev, userMessage]);
-        const currentInput = input;
+        const currentInput = textContent;
+        const currentAttachment = attachedImage;
         setInput('');
+        setAttachedImage(null);
         setIsLoading(true);
         setStatus('Thinking...');
 
@@ -143,7 +153,14 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                 body: JSON.stringify({
                     message: currentInput,
                     groupId,
-                    history
+                    history,
+                    imageAttachment: currentAttachment
+                        ? {
+                            name: currentAttachment.name,
+                            mimeType: currentAttachment.mimeType,
+                            base64: currentAttachment.base64,
+                        }
+                        : null,
                 })
             });
 
@@ -231,7 +248,7 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
     return (
         <Sheet open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
             <SheetContent
-                className="flex flex-col p-0 bg-background/95 backdrop-blur-xl border-l border-border/40 sm:max-w-xl"
+                className="!inset-0 !left-0 !right-0 !top-0 !bottom-0 !h-screen !w-screen !max-w-none !rounded-none !border-0 flex flex-col p-0 bg-background/95 backdrop-blur-xl"
                 title="AI Financial Assistant"
                 description="Streamlined AI assistant for managing group expenses"
             >
@@ -281,6 +298,57 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                     <form onSubmit={handleSubmit} className="relative group">
                         <div className="absolute inset-x-0 -top-full h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
 
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (!file.type.startsWith('image/')) {
+                                    toast.error('Please select an image file.');
+                                    return;
+                                }
+                                if (file.size > 5 * 1024 * 1024) {
+                                    toast.error('Image is too large. Max 5MB.');
+                                    return;
+                                }
+
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                    const result = String(reader.result || '');
+                                    const base64 = result.includes(',') ? result.split(',')[1] : '';
+                                    if (!base64) {
+                                        toast.error('Failed to read image file.');
+                                        return;
+                                    }
+                                    setAttachedImage({
+                                        name: file.name,
+                                        mimeType: file.type,
+                                        base64,
+                                    });
+                                };
+                                reader.onerror = () => toast.error('Failed to read image file.');
+                                reader.readAsDataURL(file);
+
+                                e.target.value = '';
+                            }}
+                        />
+
+                        {attachedImage && (
+                            <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+                                <span className="truncate">Attached: {attachedImage.name}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setAttachedImage(null)}
+                                    className="inline-flex items-center justify-center rounded-md p-1 hover:bg-background/40"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                        )}
+
                         <div className="flex gap-2 items-end">
                             <div className="relative flex-1">
                                 <Input
@@ -298,10 +366,20 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                                 </div>
                             </div>
                             <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                className="rounded-xl h-[52px] w-[52px] shrink-0"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isLoading}
+                            >
+                                <Paperclip className="h-5 w-5" />
+                            </Button>
+                            <Button
                                 type="submit"
                                 size="icon"
                                 className="rounded-xl h-[52px] w-[52px] shadow-lg shadow-primary/20 shrink-0"
-                                disabled={!input.trim() || isLoading}
+                                disabled={(!input.trim() && !attachedImage) || isLoading}
                             >
                                 {isLoading ? (
                                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -392,7 +470,7 @@ function MessageBubble({ message, isLast }) {
                                 {message.content}
                             </ReactMarkdown>
                         </div>
-                    ) : isLast && (
+                    ) : isAi && isLast && (
                         <div className="flex gap-1 py-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '0ms' }} />
                             <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '150ms' }} />

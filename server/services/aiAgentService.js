@@ -5,10 +5,17 @@ import { tools, handlers } from '../utils/aiTools.js';
  * AI Agent Service
  * Handles multi-turn tool calling logic for both Web and Telegram
  */
-export const runAiAgent = async ({ message, groupId, history = [], onToken, onStatus, onToolCall }) => {
+export const runAiAgent = async ({ message, groupId, history = [], imageAttachment = null, onToken, onStatus, onToolCall }) => {
     if (!openai?.chat?.completions) {
         throw new Error("OpenAI client is not configured. Missing OPENAI_API_KEY or OPEN_API_KEY.");
     }
+
+    const userContent = imageAttachment?.base64
+        ? [
+            { type: "text", text: message || "Please analyze this uploaded image and help me." },
+            { type: "image_url", image_url: { url: `data:${imageAttachment.mimeType || "image/png"};base64,${imageAttachment.base64}` } },
+        ]
+        : message;
 
     let messages = [
         {
@@ -24,7 +31,7 @@ Be precise with numbers. If you add a trip, confirm the members involved.
 Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise English.`
         },
         ...history,
-        { role: "user", content: message }
+        { role: "user", content: userContent }
     ];
 
     let runLoop = true;
@@ -89,10 +96,17 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
  * Streaming version of the AI Agent
  * (Designed for SSE)
  */
-export const streamAiAgent = async ({ message, groupId, history = [], sendEvent }) => {
+export const streamAiAgent = async ({ message, groupId, history = [], imageAttachment = null, sendEvent }) => {
     if (!openai?.chat?.completions) {
         throw new Error("OpenAI client is not configured. Missing OPENAI_API_KEY or OPEN_API_KEY.");
     }
+
+    const userContent = imageAttachment?.base64
+        ? [
+            { type: "text", text: message || "Please analyze this uploaded image and help me." },
+            { type: "image_url", image_url: { url: `data:${imageAttachment.mimeType || "image/png"};base64,${imageAttachment.base64}` } },
+        ]
+        : message;
 
     let messages = [
         {
@@ -108,7 +122,7 @@ Be precise with numbers. If you add a trip, confirm the members involved.
 Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise English.`
         },
         ...history,
-        { role: "user", content: message }
+        { role: "user", content: userContent }
     ];
 
     let runLoop = true;

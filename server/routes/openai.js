@@ -359,7 +359,7 @@ router.post("/receiptImage", async (req, res) => {
  * Handles multi-turn tool calling and SSE streaming
  */
 router.post("/chat/stream", authenticateToken, async (req, res) => {
-  const { message, groupId, history = [] } = req.body;
+  const { message, groupId, history = [], imageAttachment = null } = req.body;
   const userId = req.user?._id;
 
   if (!groupId) {
@@ -376,12 +376,14 @@ router.post("/chat/stream", authenticateToken, async (req, res) => {
   };
 
   try {
-    const finalResponseText = await streamAiAgent({ message, groupId, history, sendEvent });
+    const finalResponseText = await streamAiAgent({ message, groupId, history, imageAttachment, sendEvent });
 
-    if (userId && groupId && message && finalResponseText) {
+    const userPrompt = String(message || '').trim() || (imageAttachment?.name ? `Uploaded image: ${imageAttachment.name}` : 'Uploaded image');
+
+    if (userId && groupId && finalResponseText) {
       const chatId = buildAiChatId(userId, groupId);
       const chatEntries = [
-        toStoredHistoryItem({ role: "user", content: message }),
+        toStoredHistoryItem({ role: "user", content: userPrompt }),
         toStoredHistoryItem({ role: "assistant", content: finalResponseText }),
       ];
 
