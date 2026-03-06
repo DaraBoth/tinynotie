@@ -31,7 +31,7 @@ import {
 
 // Premium GenZ colour gradients
 const ACCENT_GRADIENTS = [
-  'from-[#80ff00] via-[#00ff80] to-[#00ffff]', // Neon Green
+  'from-[#f78fa7] via-[#00ff80] to-[#00ffff]', // Neon Green
   'from-[#ff0080] via-[#ff00ff] to-[#8000ff]', // Hot Pink/Purple
   'from-[#0080ff] via-[#00ffff] to-[#00ff80]', // Electric Blue
   'from-[#ffff00] via-[#ff8000] to-[#ff0000]', // Cyber Yellow/Red
@@ -97,7 +97,7 @@ function GroupCard({ group, index, onDelete }) {
               </div>
               <div className="p-3 rounded-xl bg-foreground/5 border border-border/10 group-hover/card:bg-foreground/10 transition-colors">
                 <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-1">Status</p>
-                <p className={`text-sm font-black italic ${isPublicPreview ? 'text-muted-foreground' : balance >= 0 ? 'text-[#80ff00]' : 'text-[#ff0080]'}`}>
+                <p className={`text-sm font-black italic ${isPublicPreview ? 'text-muted-foreground' : balance >= 0 ? 'text-[#f78fa7]' : 'text-[#ff0080]'}`}>
                   {isPublicPreview ? 'PUBLIC' : balance >= 0 ? 'WIN' : 'OUT'}
                 </p>
               </div>
@@ -201,7 +201,7 @@ export default function HomePage() {
               transition={{ delay: 0.1 }}
               className="space-y-4"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#80ff00]/10 border border-[#80ff00]/20 text-[9px] font-black text-[#80ff00] uppercase tracking-widest backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f78fa7]/10 border border-[#f78fa7]/20 text-[9px] font-black text-[#f78fa7] uppercase tracking-widest backdrop-blur-md">
                 <Sparkles className="h-3 w-3" />
                 <span>Vault Overview</span>
               </div>
@@ -210,7 +210,7 @@ export default function HomePage() {
                 <span className="text-gradient-vibrant animate-gradient">{user?.usernm || 'LEGEND'}</span>
               </h1>
               <p className="text-muted-foreground/60 text-base font-black uppercase tracking-tight max-w-sm italic">
-                Leading <span className="text-foreground hover:text-[#80ff00] transition-colors">{groups?.length || 0} active squads</span> to perfection.
+                Leading <span className="text-foreground hover:text-[#f78fa7] transition-colors">{groups?.length || 0} active squads</span> to perfection.
               </p>
             </motion.div>
           </div>
@@ -221,15 +221,15 @@ export default function HomePage() {
             transition={{ delay: 0.2 }}
             className="lg:col-span-5 relative group"
           >
-            <div className="absolute inset-0 bg-[#80ff00]/5 blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-1000" />
+            <div className="absolute inset-0 bg-[#f78fa7]/5 blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-1000" />
             <div className="relative glass-card border-border/10 p-8 overflow-hidden">
               <div className="flex items-center justify-between mb-8">
                 <div className="w-12 h-12 rounded-2xl bg-foreground/5 flex items-center justify-center border border-border/10 group-hover:rotate-6 transition-transform">
-                  <Coins className="h-6 w-6 text-[#80ff00]" />
+                  <Coins className="h-6 w-6 text-[#f78fa7]" />
                 </div>
                 <div className="text-right">
                   <p className="text-[8px] uppercase font-black text-foreground/20 tracking-[.3em] mb-1">Status</p>
-                  <Badge className="bg-[#80ff00]/10 text-[#80ff00] border-none text-[9px] px-2">PERFECT VIBE</Badge>
+                  <Badge className="bg-[#f78fa7]/10 text-[#f78fa7] border-none text-[9px] px-2">PERFECT VIBE</Badge>
                 </div>
               </div>
 
@@ -259,9 +259,9 @@ export default function HomePage() {
         {/* ── Control Bar ─────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
           <div className="relative w-full md:max-w-md group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#80ff00] transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#f78fa7] transition-colors" />
             <Input
-              className="pl-12 h-12 rounded-2xl bg-foreground/5 border-border/10 focus:border-[#80ff00]/40 backdrop-blur-3xl transition-all text-sm font-bold placeholder:text-muted-foreground placeholder:uppercase placeholder:italic"
+              className="pl-12 h-12 rounded-2xl bg-foreground/5 border-border/10 focus:border-[#f78fa7]/40 backdrop-blur-3xl transition-all text-sm font-bold placeholder:text-muted-foreground placeholder:uppercase placeholder:italic"
               placeholder="Search Squads..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -278,7 +278,7 @@ export default function HomePage() {
                 <SelectItem value="member" className="text-muted-foreground focus:text-foreground focus:bg-foreground/5 uppercase font-black text-[9px] italic">Guest Mode</SelectItem>
               </SelectContent>
             </Select>
-            <Button asChild className="h-12 w-12 md:w-auto md:px-6 rounded-2xl bg-[#80ff00] hover:bg-[#80ff00]/90 text-black font-black uppercase italic tracking-tighter gap-2 shadow-[0_0_20px_rgba(128,255,0,0.2)] group">
+            <Button asChild className="h-12 w-12 md:w-auto md:px-6 rounded-2xl bg-[#f78fa7] hover:bg-[#f78fa7]/90 text-black font-black uppercase italic tracking-tighter gap-2 shadow-[0_0_20px_rgba(128,255,0,0.2)] group">
               <Link href="/groups/create" className="flex items-center">
                 <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" />
                 <span className="hidden md:inline text-[11px]">Spawn</span>

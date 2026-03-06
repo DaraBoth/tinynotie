@@ -49,14 +49,11 @@ export function Topbar() {
   return (
     <>
       <header className="sticky top-0 z-[100] w-full border-b border-border/40 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-        <div className={`mx-auto max-w-7xl px-4 sm:px-6 transition-all ${isScrolled ? 'h-14' : 'h-16'} flex items-center justify-between`}>
+        <div className={`mx-auto px-4 sm:px-6 transition-all ${isScrolled ? 'h-14' : 'h-16'} flex items-center justify-between`}>
           {/* Brand */}
           <Link href="/home" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-[#80ff00] flex items-center justify-center shadow-[0_0_18px_rgba(128,255,0,0.35)]">
-              <Sparkles className="h-4 w-4 text-black" />
-            </div>
             <span className="text-lg sm:text-xl font-black tracking-tight">
-              Tiny<span className="text-[#80ff00]">Notie</span>
+              Tiny<span className="text-[#f78fa7]">Notie</span>
             </span>
           </Link>
 
@@ -136,7 +133,7 @@ export function Topbar() {
           side="right"
           title="Navigation"
           description="Mobile navigation and account quick actions"
-          className="w-[86vw] max-w-sm p-0 flex flex-col"
+          className="w-full p-0 flex flex-col"
         >
           <SheetHeader className="px-5 pt-6 pb-4 border-b">
             <SheetTitle className="text-left">Menu</SheetTitle>

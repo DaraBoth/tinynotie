@@ -54,7 +54,7 @@ export default function WelcomePage() {
       <SpaceSky />
 
       {/* High-Intensity Glow Effects */}
-      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-[#80ff00]/10 blur-[150px] rounded-full pointer-events-none animate-pulse" />
+      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-[#f78fa7]/10 blur-[150px] rounded-full pointer-events-none animate-pulse" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-[#ff0080]/10 blur-[150px] rounded-full pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
 
       {/* Content */}
@@ -156,7 +156,7 @@ export default function WelcomePage() {
           </motion.div>
 
           {/* Card 5: Mini Feature */}
-          <motion.div variants={item} className="md:col-span-4 glass-card p-10 group hover:bg-[#80ff00]/5 transition-colors">
+          <motion.div variants={item} className="md:col-span-4 glass-card p-10 group hover:bg-[#f78fa7]/5 transition-colors">
             <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mb-6 border border-primary/30 group-hover:translate-x-2 transition-transform">
               <Shield className="h-8 w-8 text-primary" />
             </div>
@@ -192,7 +192,7 @@ export default function WelcomePage() {
       </div>
 
       {/* Footer Edge */}
-      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-transparent via-[#80ff00]/50 to-transparent blur-sm" />
+      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-transparent via-[#f78fa7]/50 to-transparent blur-sm" />
     </main>
   );
 }
