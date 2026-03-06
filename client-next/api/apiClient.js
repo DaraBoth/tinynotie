@@ -126,5 +126,5 @@ export const api = {
   receiptImage: (formData) => apiClient.post('/openai/receiptImage', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
-  addMultipleTrips: (data) => apiClient.post('/api/addMultipleTrips', data),
+  addMultipleTrips: (data) => apiClient.post('/api/addMultipleTripsByGroupId', data),
 };
