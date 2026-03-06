@@ -767,7 +767,7 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
 });
 
 router.post("/addUserToGroup", authenticateToken, async (req, res) => {
-  const { group_id, user_id, can_edit = true } = req.body;
+  const { group_id, user_id, can_edit = false } = req.body;
   const actorId = req.user._id;
 
   try {
@@ -802,12 +802,15 @@ router.post("/addUserToGroup", authenticateToken, async (req, res) => {
       return res.json({ status: false, message: "This user is already invited to this group." });
     }
 
+    // Only admin can decide collaborator edit permission explicitly.
+    const resolvedCanEdit = access.is_admin ? !!can_edit : false;
+
     await pool.query(
       `
         INSERT INTO grp_users (group_id, user_id, can_edit)
         VALUES ($1, $2, $3)
       `,
-      [group_id, targetId, !!can_edit]
+      [group_id, targetId, resolvedCanEdit]
     );
 
     // Keep member list consistent by creating a display member row if name is not present.
@@ -825,6 +828,92 @@ router.post("/addUserToGroup", authenticateToken, async (req, res) => {
     return res.json({ status: true, message: "User added to group successfully." });
   } catch (error) {
     console.error("addUserToGroup error", error);
+    return res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+router.get("/getGroupUsers", authenticateToken, async (req, res) => {
+  const { group_id } = req.query;
+  const actorId = req.user._id;
+
+  try {
+    const access = await getGroupAccess(group_id, actorId);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!access.has_access) {
+      return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
+    }
+
+    const usersSql = `
+      SELECT
+        u.id,
+        u.usernm,
+        u.email,
+        u.profile_url,
+        gu.can_edit,
+        CASE WHEN g.admin_id = u.id THEN TRUE ELSE FALSE END AS is_admin
+      FROM grp_users gu
+      JOIN user_infm u ON u.id = gu.user_id
+      JOIN grp_infm g ON g.id = gu.group_id
+      WHERE gu.group_id = $1
+      ORDER BY u.usernm ASC;
+    `;
+    const result = await pool.query(usersSql, [group_id]);
+
+    return res.json({
+      status: true,
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error("getGroupUsers error", error);
+    return res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+router.post("/updateGroupUserPermission", authenticateToken, async (req, res) => {
+  const { group_id, target_user_id, can_edit } = req.body;
+  const actorId = req.user._id;
+
+  try {
+    const access = await getGroupAccess(group_id, actorId);
+    if (!access) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+    if (!access.is_admin) {
+      return res.status(403).json({ status: false, message: "Only admin can update collaborator permissions." });
+    }
+
+    const targetId = Number(target_user_id);
+    if (!Number.isFinite(targetId)) {
+      return res.status(400).json({ status: false, message: "target_user_id must be a valid number." });
+    }
+
+    const groupAdminSql = "SELECT admin_id FROM grp_infm WHERE id = $1 LIMIT 1";
+    const groupAdminRes = await pool.query(groupAdminSql, [group_id]);
+    if (groupAdminRes.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "Group not found." });
+    }
+
+    if (Number(groupAdminRes.rows[0].admin_id) === targetId) {
+      return res.status(400).json({ status: false, message: "Admin permission is fixed. Transfer admin instead." });
+    }
+
+    const updateSql = `
+      UPDATE grp_users
+      SET can_edit = $3
+      WHERE group_id = $1 AND user_id = $2
+      RETURNING group_id, user_id, can_edit;
+    `;
+    const updateRes = await pool.query(updateSql, [group_id, targetId, !!can_edit]);
+
+    if (updateRes.rows.length === 0) {
+      return res.status(404).json({ status: false, message: "Target user is not in this group." });
+    }
+
+    return res.json({ status: true, data: updateRes.rows[0] });
+  } catch (error) {
+    console.error("updateGroupUserPermission error", error);
     return res.status(500).json({ status: false, error: error.message });
   }
 });
@@ -1123,7 +1212,7 @@ router.get("/getGroupVisibility", authenticateToken, async (req, res) => {
     let allowedUsers = [];
     if (groupData.visibility === 'private') {
       const allowedUsersSql = `
-        SELECT u.id, u.usernm, u.email, u.profile_url
+        SELECT u.id, u.usernm, u.email, u.profile_url, gu.can_edit
         FROM user_infm u
         JOIN grp_users gu ON u.id = gu.user_id
         WHERE gu.group_id = $1;

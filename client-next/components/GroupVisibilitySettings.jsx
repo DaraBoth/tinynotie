@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Settings, Eye, EyeOff, Trash2, Send, Link2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUpdateGroupVisibility, useDeleteGroup } from '@/hooks/useQueries';
 import { api } from '@/api/apiClient';
 import {
@@ -21,13 +22,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/tinynotie_bot';
 
-export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
+export function GroupVisibilitySettings({ open, onClose, group, groupId, groupUsers: initialGroupUsers = [], isAdmin: isAdminProp = false }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     grp_name: '',
     description: '',
     visibility: 'public',
   });
+  const [groupUsers, setGroupUsers] = useState([]);
+  const [updatingPermissionUserId, setUpdatingPermissionUserId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [telegramGroupChatId, setTelegramGroupChatId] = useState('');
   const [telegramStatus, setTelegramStatus] = useState(null);
@@ -36,6 +40,7 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
 
   const updateMutation = useUpdateGroupVisibility(groupId);
   const deleteMutation = useDeleteGroup();
+  const isAdmin = !!(isAdminProp || group?.isAdmin);
 
   useEffect(() => {
     if (group) {
@@ -73,6 +78,28 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
 
     loadTelegramStatus();
   }, [open, groupId]);
+
+  useEffect(() => {
+    if (!open || !groupId || !isAdmin) return;
+
+    const loadGroupUsers = async () => {
+      try {
+        const res = await api.getGroupUsers(groupId);
+        if (res.data?.status) {
+          setGroupUsers(res.data.data || []);
+        }
+      } catch (error) {
+        console.error('Load group users error:', error);
+      }
+    };
+
+    loadGroupUsers();
+  }, [open, groupId, isAdmin]);
+
+  useEffect(() => {
+    if (!open) return;
+    setGroupUsers(Array.isArray(initialGroupUsers) ? initialGroupUsers : []);
+  }, [open, initialGroupUsers]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -151,6 +178,31 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
       toast.error(error?.response?.data?.message || 'Failed to link Telegram group');
     } finally {
       setTelegramLinking(false);
+    }
+  };
+
+  const handlePermissionToggle = async (targetUserId, nextCanEdit) => {
+    if (!isAdmin) return;
+
+    try {
+      setUpdatingPermissionUserId(targetUserId);
+      await api.updateGroupUserPermission({
+        group_id: Number(groupId),
+        target_user_id: targetUserId,
+        can_edit: nextCanEdit,
+      });
+
+      setGroupUsers((prev) => prev.map((u) => (
+        Number(u.id) === Number(targetUserId)
+          ? { ...u, can_edit: !!nextCanEdit }
+          : u
+      )));
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      toast.success('Permission updated');
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to update permission');
+    } finally {
+      setUpdatingPermissionUserId(null);
     }
   };
 
@@ -295,6 +347,48 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId }) {
                 </div>
               )}
             </div>
+
+            {isAdmin && (
+              <div className="space-y-3 p-4 rounded-lg border border-border/30 bg-muted/20">
+                <div className="space-y-0.5">
+                  <div className="text-sm font-semibold">Collaborator Permissions</div>
+                  <div className="text-xs text-muted-foreground">
+                    Control which invited users can edit group data.
+                  </div>
+                </div>
+
+                {groupUsers.length === 0 ? (
+                  <div className="text-xs text-muted-foreground rounded-md border border-border/30 bg-background/50 p-3">
+                    No invited users yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {groupUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-border/30 bg-background/60 p-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold truncate">{u.usernm}</div>
+                          <div className="text-xs text-muted-foreground truncate">{u.email || `User #${u.id}`}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${u.can_edit ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : 'bg-muted text-muted-foreground'}`}>
+                            {u.can_edit ? 'Can Edit' : 'Read Only'}
+                          </span>
+                          <Switch
+                            checked={!!u.can_edit}
+                            onCheckedChange={(checked) => handlePermissionToggle(u.id, checked)}
+                            disabled={updatingPermissionUserId === u.id}
+                            aria-label={`Set edit permission for ${u.usernm}`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Danger Zone */}
             <div className="pt-4 space-y-3 border-t">

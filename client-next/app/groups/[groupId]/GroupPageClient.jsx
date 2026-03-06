@@ -110,10 +110,12 @@ export function GroupPageClient({ groupId }) {
         api.getMembersByGroupId(groupId),
         api.getTripsByGroupId(groupId),
       ]);
+      const groupUsersResponse = await api.getGroupUsers(groupId).catch(() => ({ data: { data: [] } }));
       return {
         group: groupResponse.data.data || {},
         members: membersResponse.data.data || [],
         trips: tripsResponse.data.data || [],
+        groupUsers: groupUsersResponse.data?.data || [],
       };
     },
     enabled: hasHydrated && isAuthenticated && !!groupId && !!user,
@@ -246,8 +248,10 @@ export function GroupPageClient({ groupId }) {
   const group = groupData?.group || {};
   const members = groupData?.members || [];
   const trips = groupData?.trips || [];
+  const groupUsers = groupData?.groupUsers || [];
   const currency = group.currency || '$';
   const canManageGroup = !!(group.isAdmin || group.canEdit);
+  const canOpenSettings = !!group.isAdmin;
 
   const { info, newData } = calculateMoney(members, trips, currency);
 
@@ -1187,7 +1191,7 @@ export function GroupPageClient({ groupId }) {
                 {group.grp_name || 'Group'}
               </h1>
               <div className="flex items-center gap-1.5 shrink-0">
-                {canManageGroup && (
+                {canOpenSettings && (
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSettingsOpen(true)} title="Settings">
                     <Settings className="h-4 w-4" />
                   </Button>
@@ -1627,7 +1631,7 @@ export function GroupPageClient({ groupId }) {
 
       {/* Panels & Dialogs */}
       {canManageGroup && <EditMember open={editMemberOpen} onClose={() => setEditMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />}
-      {canManageGroup && <AddUserToGroup open={addUserOpen} onClose={() => setAddUserOpen(false)} groupId={groupId} existingMembers={members} />}
+      {canManageGroup && <AddUserToGroup open={addUserOpen} onClose={() => setAddUserOpen(false)} groupId={groupId} existingMembers={members} existingGroupUsers={groupUsers} isAdmin={!!group.isAdmin} />}
       <SelectTripDialog open={selectTripOpen} onClose={() => setSelectTripOpen(false)} trips={sortedTrips} onSelectTrip={handleTripSelected} currency={currency} />
       {canManageGroup && <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />}
       {canManageGroup && <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />}
@@ -1641,7 +1645,7 @@ export function GroupPageClient({ groupId }) {
         }}
       />
       <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} group={group} members={members} trips={trips} currency={currency} />
-      {canManageGroup && <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} />}
+      {canOpenSettings && <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} groupUsers={groupUsers} isAdmin={!!group.isAdmin} />}
       {canManageGroup && <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />}
     </div>
   );

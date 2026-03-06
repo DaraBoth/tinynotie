@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 
 const AVATAR_COLORS = [
   'bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500',
@@ -22,7 +23,7 @@ const AVATAR_COLORS = [
 const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 const getAvatarInitials = (name = '') => name.slice(0, 2).toUpperCase();
 
-export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] }) {
+export function AddUserToGroup({ open, onClose, groupId, existingMembers = [], existingGroupUsers = [], isAdmin = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -31,6 +32,11 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
   const queryClient = useQueryClient();
 
   // Get existing member user IDs to exclude from search
+  const existingGroupUserIds = useMemo(
+    () => existingGroupUsers.map((u) => Number(u.id)).filter(Number.isFinite),
+    [existingGroupUsers]
+  );
+
   const existingUserIds = useMemo(
     () => existingMembers.filter((m) => m.user_id).map((m) => m.user_id),
     [existingMembers]
@@ -62,7 +68,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
         if (response.data.status) {
           // Filter out existing members
           const filtered = response.data.data.filter(
-            user => !existingUserIds.includes(user.id)
+            user => !existingUserIds.includes(user.id) && !existingGroupUserIds.includes(user.id)
           );
           console.log('[AddUser] Filtered results:', filtered);
           console.log('[AddUser] Existing user IDs:', existingUserIds);
@@ -80,7 +86,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, existingUserIds, searchResults.length]);
+  }, [searchQuery, existingUserIds, existingGroupUserIds, searchResults.length]);
 
   const addUsersMutation = useMutation({
     mutationFn: async (users) => {
@@ -90,7 +96,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
         const payload = {
           group_id: groupId,
           user_id: user.id,
-          can_edit: true,
+          can_edit: isAdmin ? !!user.can_edit : false,
         };
         console.log('[AddUser] Adding member payload:', payload);
         return api.addUserToGroup(payload);
@@ -116,9 +122,15 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
       if (exists) {
         return prev.filter(u => u.id !== user.id);
       } else {
-        return [...prev, user];
+        return [...prev, { ...user, can_edit: false }];
       }
     });
+  };
+
+  const updateSelectedUserPermission = (userId, canEdit) => {
+    setSelectedUsers((prev) => prev.map((u) => (
+      u.id === userId ? { ...u, can_edit: !!canEdit } : u
+    )));
   };
 
   const handleAddUsers = () => {
@@ -183,7 +195,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
                   <Badge
                     key={user.id}
                     variant="secondary"
-                    className="pl-1 pr-2 py-1 gap-1.5"
+                    className="pl-1 pr-2 py-1 gap-1.5 flex items-center"
                   >
                     <Avatar className="h-5 w-5">
                       {user.profile_url ? (
@@ -195,6 +207,11 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
                       )}
                     </Avatar>
                     <span className="text-xs">{user.usernm}</span>
+                    {isAdmin && (
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${user.can_edit ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : 'bg-muted text-muted-foreground'}`}>
+                        {user.can_edit ? 'Can Edit' : 'Read Only'}
+                      </span>
+                    )}
                     <button
                       onClick={() => toggleUserSelection(user)}
                       className="ml-1 hover:bg-background/50 rounded-full p-0.5"
@@ -227,15 +244,18 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
                     Results ({searchResults.length})
                   </p>
                   {searchResults.map(user => (
-                    <button
+                    <div
                       key={user.id}
-                      onClick={() => toggleUserSelection(user)}
                       className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
                         isSelected(user.id)
                           ? 'bg-primary/10 border-2 border-primary'
                           : 'bg-muted/30 hover:bg-muted/50 border-2 border-transparent'
                       }`}
                     >
+                      <button
+                        onClick={() => toggleUserSelection(user)}
+                        className="flex-1 flex items-center gap-3 text-left"
+                      >
                       <Avatar className="h-10 w-10">
                         {user.profile_url ? (
                           <AvatarImage src={user.profile_url} alt={user.usernm} />
@@ -269,7 +289,18 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [] })
                           </svg>
                         </div>
                       )}
-                    </button>
+                      </button>
+                      {isAdmin && isSelected(user.id) && (
+                        <div className="flex items-center gap-2 rounded-lg border border-border/40 px-2 py-1 bg-background/70">
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Can edit</span>
+                          <Switch
+                            checked={!!selectedUsers.find((u) => u.id === user.id)?.can_edit}
+                            onCheckedChange={(checked) => updateSelectedUserPermission(user.id, checked)}
+                            aria-label={`Set edit permission for ${user.usernm}`}
+                          />
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               ) : (
