@@ -11,6 +11,7 @@ import axios from 'axios';
 let bot;
 const pendingInputs = new Map();
 let botUsernameCache = null;
+const DEFAULT_WEB_APP_URL = 'https://tinynotie.vercel.app';
 
 const getPendingInput = (telegramUserId) => pendingInputs.get(telegramUserId);
 const setPendingInput = (telegramUserId, state) => pendingInputs.set(telegramUserId, {
@@ -18,6 +19,21 @@ const setPendingInput = (telegramUserId, state) => pendingInputs.set(telegramUse
     expiresAt: Date.now() + (state.ttlMs || 10 * 60 * 1000),
 });
 const clearPendingInput = (telegramUserId) => pendingInputs.delete(telegramUserId);
+
+const getWebAppBaseUrl = () => {
+    const configured =
+        process.env.WEB_APP_URL ||
+        process.env.CLIENT_APP_URL ||
+        process.env.FRONTEND_URL ||
+        process.env.NEXT_PUBLIC_WEB_APP_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
+        DEFAULT_WEB_APP_URL;
+
+    return String(configured).replace(/\/+$/, '');
+};
+
+const getTelegramCommandGuideUrl = () => `${getWebAppBaseUrl()}/help/telegram-commands`;
 
 /**
  * Initialize the Telegram Bot with webhook mode
@@ -94,6 +110,70 @@ export const initTelegramBot = (token) => {
         return true;
     };
 
+    const normalizeYesNo = (text = '') => String(text || '').trim().toLowerCase();
+
+    const getTelegramDisplayName = (tgUser = {}) => {
+        const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ').trim();
+        if (fullName) return fullName;
+        if (tgUser.username) return `@${tgUser.username}`;
+        return `Telegram User ${tgUser.id || ''}`.trim();
+    };
+
+    const findCreateGroupConflict = async ({ chatId, groupName, userId }) => {
+        const sql = `
+            SELECT id, grp_name, admin_id, telegram_chat_id
+            FROM grp_infm
+            WHERE telegram_chat_id = $1
+               OR (LOWER(TRIM(grp_name)) = LOWER(TRIM($2)) AND admin_id <> $3)
+            ORDER BY CASE WHEN telegram_chat_id = $1 THEN 0 ELSE 1 END, id ASC
+            LIMIT 1;
+        `;
+        const { rows } = await pool.query(sql, [chatId, groupName, userId]);
+        return rows[0] || null;
+    };
+
+    const createGroupFromTelegramChat = async ({ chatId, groupName, userId, ctx, autoImportMembers = false }) => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const insertGroupSql = `
+                INSERT INTO grp_infm (grp_name, admin_id, telegram_chat_id, currency)
+                VALUES ($1, $2, $3, $4)
+                RETURNING id;
+            `;
+            const { rows } = await client.query(insertGroupSql, [groupName, userId, chatId, 'W']);
+            const groupId = rows[0].id;
+
+            let importedCount = 0;
+            if (autoImportMembers) {
+                const admins = await ctx.telegram.getChatAdministrators(chatId);
+                const rawNames = admins.map((admin) => getTelegramDisplayName(admin.user));
+
+                // Ensure the command sender is included.
+                rawNames.push(getTelegramDisplayName(ctx.from));
+
+                const uniqueNames = [...new Set(rawNames.map((name) => String(name).trim()).filter(Boolean))].slice(0, 100);
+
+                for (const memName of uniqueNames) {
+                    await client.query(
+                        'INSERT INTO member_infm (mem_name, group_id, paid) VALUES ($1, $2, 0)',
+                        [memName.slice(0, 50), groupId]
+                    );
+                    importedCount++;
+                }
+            }
+
+            await client.query('COMMIT');
+            return { groupId, importedCount };
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    };
+
     // /start command - handles deep linking for account linking
     bot.start(async (ctx) => {
         const payloadFromStart = ctx.startPayload; // Preferred, when available
@@ -130,12 +210,25 @@ export const initTelegramBot = (token) => {
             }
         }
 
-        ctx.reply(
+        await ctx.reply(
             `👋 Welcome to TinyNotie Assistant!\n\nI can help you manage your group expenses, members, and trips directly from Telegram.\n\n${ctx.user
                 ? `Logged in as: *${ctx.user.usernm}*`
                 : 'To get started, register directly here by sending /register'
-            }\n\n*Available Commands:*\n/register - Create account via Telegram\n/reset_password - Change your account password\n/link_group - Link this chat to a group\n/chat_id - Get current chat ID\n/create_group - Create a new group\n/add_member - Add member to group\n/export - Get Excel report\n/status - Group summary`,
+            }\n\n*Available Commands:*\n/register - Create account via Telegram\n/reset_password - Change your account password\n/link_group - Link this chat to a group\n/chat_id - Get current chat ID\n/create_group - Create a new group\n/add_member - Add member to group\n/sync_members - Sync visible Telegram members\n/export - Get Excel report\n/status - Group summary\n/guideline - Open full command guide page`,
             { parse_mode: 'Markdown' }
+        );
+
+        return ctx.reply(
+            `📘 *Command Guideline*\nOpen full guide: [TinyNotie Telegram Command Guide](${getTelegramCommandGuideUrl()})\n\nUse /guideline anytime to open this page again.`,
+            { parse_mode: 'Markdown', disable_web_page_preview: true }
+        );
+    });
+
+    // /guideline command - quick access to the command guide page
+    bot.command('guideline', async (ctx) => {
+        return ctx.reply(
+            `📘 *TinyNotie Command Guideline*\nOpen full guide: [TinyNotie Telegram Command Guide](${getTelegramCommandGuideUrl()})\n\nThis page explains what each command does and when to use it.`,
+            { parse_mode: 'Markdown', disable_web_page_preview: true }
         );
     });
 
@@ -271,6 +364,18 @@ export const initTelegramBot = (token) => {
         if (!Number.isFinite(groupId)) return ctx.reply('❌ Invalid group ID. Please send a numeric group ID.');
 
         try {
+            const conflictSql = `
+                SELECT id, admin_id
+                FROM grp_infm
+                WHERE telegram_chat_id = $1
+                  AND id <> $2
+                LIMIT 1;
+            `;
+            const { rows: conflicts } = await pool.query(conflictSql, [ctx.chat.id, groupId]);
+            if (conflicts.length > 0 && conflicts[0].admin_id !== ctx.user.id) {
+                return ctx.reply('❌ This Telegram chat is already linked by another TinyNotie owner. Ask them to unlink it first.');
+            }
+
             // Verification: is user owner or member?
             const { rows: accessCheck } = await pool.query(
                 'SELECT 1 FROM grp_infm g LEFT JOIN grp_users gu ON g.id = gu.group_id WHERE g.id = $1 AND (g.admin_id = $2 OR gu.user_id = $2)',
@@ -296,19 +401,55 @@ export const initTelegramBot = (token) => {
     // /create_group command
     bot.command('create_group', async (ctx) => {
         if (!ctx.user) return ctx.reply('Please link your account first.');
+
+        const isGroup = isGroupChat(ctx);
         const grpNameArg = readCommandArg(ctx);
-        if (!grpNameArg) {
-            setPendingInput(ctx.from.id, { type: 'create_group_name', chatId: ctx.chat.id });
-            return ctx.reply('Send the new group name in your next message.');
-        }
-        const grpName = grpNameArg || `TG Group ${ctx.chat.id}`;
+        const chatTitle = (ctx.chat?.title || '').trim();
+        const grpName = isGroup ? (chatTitle || `Telegram Group ${ctx.chat.id}`) : (grpNameArg || `TG Group ${ctx.chat.id}`);
 
         try {
-            const { rows } = await pool.query(
-                'INSERT INTO grp_infm (grp_name, admin_id, telegram_chat_id, currency) VALUES ($1, $2, $3, $4) RETURNING id',
-                [grpName, ctx.user.id, ctx.chat.id, 'W']
-            );
-            const groupId = rows[0].id;
+            const conflict = await findCreateGroupConflict({
+                chatId: ctx.chat.id,
+                groupName: grpName,
+                userId: ctx.user.id,
+            });
+
+            if (conflict && conflict.admin_id !== ctx.user.id) {
+                return ctx.reply('❌ Cannot create group. This Telegram chat or group name is already owned/linked by another TinyNotie user. They must unlink first.');
+            }
+
+            if (conflict && conflict.admin_id === ctx.user.id && conflict.telegram_chat_id === ctx.chat.id) {
+                return ctx.reply(`ℹ️ This Telegram chat is already linked to your group *${conflict.grp_name}* (ID: \`${conflict.id}\`).`, { parse_mode: 'Markdown' });
+            }
+
+            if (isGroup) {
+                setPendingInput(ctx.from.id, {
+                    type: 'create_group_import_members_confirm',
+                    chatId: ctx.chat.id,
+                    groupName: grpName,
+                });
+
+                return ctx.reply(
+                    `🆕 Group name will be set to this Telegram title: *${grpName}*\n\n` +
+                    `Do you want to auto-create members from this Telegram group?\n` +
+                    `Reply with *yes* or *no*.`,
+                    { parse_mode: 'Markdown' }
+                );
+            }
+
+            if (!grpNameArg) {
+                setPendingInput(ctx.from.id, { type: 'create_group_name', chatId: ctx.chat.id });
+                return ctx.reply('Send the new group name in your next message.');
+            }
+
+            const { groupId } = await createGroupFromTelegramChat({
+                chatId: ctx.chat.id,
+                groupName: grpName,
+                userId: ctx.user.id,
+                ctx,
+                autoImportMembers: false,
+            });
+
             ctx.reply(`✅ Group *${grpName}* created successfully!\nID: \`${groupId}\``, { parse_mode: 'Markdown' });
         } catch (err) {
             console.error('Create group TG error:', err);
@@ -337,6 +478,85 @@ export const initTelegramBot = (token) => {
         } catch (err) {
             console.error('Add member TG error:', err);
             ctx.reply('❌ Failed to add member.');
+        }
+    });
+
+    // /sync_members command - sync visible Telegram users into linked TinyNotie group
+    bot.command('sync_members', async (ctx) => {
+        if (!ctx.user) return ctx.reply('Please link your account first.');
+        if (!isGroupChat(ctx)) return ctx.reply('Please use this command inside a Telegram group chat.');
+
+        try {
+            const { rows: linkedGroups } = await pool.query(
+                'SELECT id, grp_name, admin_id FROM grp_infm WHERE telegram_chat_id = $1 LIMIT 1',
+                [ctx.chat.id]
+            );
+
+            if (linkedGroups.length === 0) {
+                return ctx.reply('❌ This chat is not linked to any TinyNotie group. Use /link_group first.');
+            }
+
+            const linkedGroup = linkedGroups[0];
+
+            const { rows: accessCheck } = await pool.query(
+                'SELECT 1 FROM grp_infm g LEFT JOIN grp_users gu ON g.id = gu.group_id WHERE g.id = $1 AND (g.admin_id = $2 OR gu.user_id = $2)',
+                [linkedGroup.id, ctx.user.id]
+            );
+
+            if (accessCheck.length === 0) {
+                return ctx.reply('❌ You do not have permission to sync members for this linked group.');
+            }
+
+            await ctx.reply('⏳ Syncing visible Telegram members into TinyNotie group...');
+
+            const adminMembers = await ctx.telegram.getChatAdministrators(ctx.chat.id);
+            const candidateNames = new Set();
+
+            adminMembers.forEach((admin) => {
+                const displayName = getTelegramDisplayName(admin.user);
+                if (displayName) candidateNames.add(displayName);
+            });
+
+            // Include command sender and replied user when available.
+            candidateNames.add(getTelegramDisplayName(ctx.from));
+            const repliedUser = ctx.message?.reply_to_message?.from;
+            if (repliedUser) candidateNames.add(getTelegramDisplayName(repliedUser));
+
+            const normalizedNames = [...candidateNames]
+                .map((name) => String(name || '').trim())
+                .filter(Boolean)
+                .map((name) => name.slice(0, 50));
+
+            if (normalizedNames.length === 0) {
+                return ctx.reply('ℹ️ No visible Telegram members found to sync right now.');
+            }
+
+            let inserted = 0;
+            for (const memName of normalizedNames) {
+                const { rows: existing } = await pool.query(
+                    'SELECT id FROM member_infm WHERE group_id = $1 AND LOWER(TRIM(mem_name)) = LOWER(TRIM($2)) LIMIT 1',
+                    [linkedGroup.id, memName]
+                );
+
+                if (existing.length > 0) continue;
+
+                await pool.query(
+                    'INSERT INTO member_infm (mem_name, group_id, paid) VALUES ($1, $2, 0)',
+                    [memName, linkedGroup.id]
+                );
+                inserted++;
+            }
+
+            return ctx.reply(
+                `✅ Member sync complete for *${linkedGroup.grp_name}*\n` +
+                `• Checked: ${normalizedNames.length}\n` +
+                `• Added: ${inserted}\n` +
+                `• Skipped(existing): ${normalizedNames.length - inserted}`,
+                { parse_mode: 'Markdown' }
+            );
+        } catch (err) {
+            console.error('Sync members TG error:', err);
+            return ctx.reply('❌ Failed to sync members from Telegram chat.');
         }
     });
 
@@ -461,6 +681,55 @@ export const initTelegramBot = (token) => {
                     return ctx.reply(`✅ Group *${grpName}* created successfully!\nID: \`${rows[0].id}\``, { parse_mode: 'Markdown' });
                 }
 
+                if (pending.type === 'create_group_import_members_confirm') {
+                    if (!ctx.user) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('Please register via /register first.');
+                    }
+
+                    const decision = normalizeYesNo(text);
+                    if (!['yes', 'y', 'no', 'n'].includes(decision)) {
+                        return ctx.reply('Please reply with *yes* or *no*.', { parse_mode: 'Markdown' });
+                    }
+
+                    const groupName = pending.groupName || (ctx.chat?.title || `Telegram Group ${pending.chatId || ctx.chat.id}`);
+
+                    const conflict = await findCreateGroupConflict({
+                        chatId: pending.chatId || ctx.chat.id,
+                        groupName,
+                        userId: ctx.user.id,
+                    });
+
+                    if (conflict && conflict.admin_id !== ctx.user.id) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('❌ Cannot create group. This Telegram chat or group name is already owned/linked by another TinyNotie user. They must unlink first.');
+                    }
+
+                    if (conflict && conflict.admin_id === ctx.user.id && conflict.telegram_chat_id === (pending.chatId || ctx.chat.id)) {
+                        clearPendingInput(fromId);
+                        return ctx.reply(`ℹ️ This Telegram chat is already linked to your group *${conflict.grp_name}* (ID: \`${conflict.id}\`).`, { parse_mode: 'Markdown' });
+                    }
+
+                    const autoImportMembers = ['yes', 'y'].includes(decision);
+                    const { groupId, importedCount } = await createGroupFromTelegramChat({
+                        chatId: pending.chatId || ctx.chat.id,
+                        groupName,
+                        userId: ctx.user.id,
+                        ctx,
+                        autoImportMembers,
+                    });
+
+                    clearPendingInput(fromId);
+                    if (autoImportMembers) {
+                        return ctx.reply(
+                            `✅ Group *${groupName}* created successfully!\nID: \`${groupId}\`\n👥 Auto-created members: *${importedCount}*`,
+                            { parse_mode: 'Markdown' }
+                        );
+                    }
+
+                    return ctx.reply(`✅ Group *${groupName}* created successfully!\nID: \`${groupId}\``, { parse_mode: 'Markdown' });
+                }
+
                 if (pending.type === 'add_member_name') {
                     if (!ctx.user) {
                         clearPendingInput(fromId);
@@ -492,6 +761,19 @@ export const initTelegramBot = (token) => {
                     if (accessCheck.length === 0) {
                         clearPendingInput(fromId);
                         return ctx.reply('❌ You do not have permission to link this group or the group does not exist.');
+                    }
+
+                    const conflictSql = `
+                        SELECT id, admin_id
+                        FROM grp_infm
+                        WHERE telegram_chat_id = $1
+                          AND id <> $2
+                        LIMIT 1;
+                    `;
+                    const { rows: conflicts } = await pool.query(conflictSql, [pending.chatId || ctx.chat.id, groupId]);
+                    if (conflicts.length > 0 && conflicts[0].admin_id !== ctx.user.id) {
+                        clearPendingInput(fromId);
+                        return ctx.reply('❌ This Telegram chat is already linked by another TinyNotie owner. Ask them to unlink it first.');
                     }
 
                     await pool.query('UPDATE grp_infm SET telegram_chat_id = $1 WHERE id = $2', [pending.chatId || ctx.chat.id, groupId]);

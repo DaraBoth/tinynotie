@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   LayoutGrid, List, MessageSquare, Settings, ArrowLeft,
   Share2, UserPlus, Plus, Pencil, Trash2, Users,
-  Wallet, TrendingUp, Clock, BadgeCheck, ScanLine, X, ChevronDown,
+  Wallet, TrendingUp, ScanLine, X, ChevronDown,
   Download, FileStack, Send, ExternalLink, Pin, MoreHorizontal,
   Loader2,
 } from 'lucide-react';
@@ -47,28 +47,6 @@ export const AVATAR_COLORS = [
 ];
 export const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 export const getAvatarInitials = (name = '') => name.slice(0, 2).toUpperCase();
-
-/* ─── tiny helper ────────────────────────────────────────────────────────── */
-function StatPill({ icon: Icon, label, value, color = 'text-foreground' }) {
-  const bgMap = {
-    'text-emerald-600 dark:text-emerald-400': 'bg-emerald-500/10 dark:bg-emerald-500/20',
-    'text-orange-600 dark:text-orange-400': 'bg-orange-500/10 dark:bg-orange-500/20',
-    'text-rose-600 dark:text-rose-400': 'bg-rose-500/10 dark:bg-rose-500/20',
-    'text-sky-600 dark:text-sky-400': 'bg-sky-500/10 dark:bg-sky-500/20',
-  };
-  const bg = bgMap[color] || 'bg-primary/10';
-  return (
-    <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-background/50 border border-border/30 backdrop-blur-sm shrink-0">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bg}`}>
-        <Icon className={`h-4 w-4 ${color}`} />
-      </div>
-      <div>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none mb-0.5">{label}</p>
-        <p className={`text-sm font-bold leading-none ${color}`}>{value ?? '—'}</p>
-      </div>
-    </div>
-  );
-}
 
 /* ─── main component ─────────────────────────────────────────────────────── */
 export function GroupPageClient({ groupId }) {
@@ -522,7 +500,7 @@ export function GroupPageClient({ groupId }) {
       ...baseStyle,
       position: 'sticky',
       zIndex: isHeader ? 35 : 20,
-      background: 'rgba(9, 12, 40, 0.96)',
+      background: 'hsl(var(--background) / 0.96)',
       backdropFilter: 'blur(2px)',
       ...(isHeader ? { top: '0px' } : {}),
     };
@@ -1221,16 +1199,6 @@ export function GroupPageClient({ groupId }) {
             </div>
           </header>
 
-          {/* Desktop-only stat pills strip */}
-          <div className="hidden md:block w-full px-4 sm:px-6 lg:px-8 py-3 border-t border-border/10">
-            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
-              <StatPill icon={Users} label="Members" value={info.totalMember} />
-              <StatPill icon={BadgeCheck} label="Total Paid" value={info.totalPaid} color="text-emerald-600 dark:text-emerald-400" />
-              <StatPill icon={TrendingUp} label="Total Spend" value={info.totalSpend} color="text-orange-600 dark:text-orange-400" />
-              <StatPill icon={Wallet} label="Remain" value={info.totalRemain} color="text-sky-600 dark:text-sky-400" />
-              <StatPill icon={Clock} label="Unpaid" value={info.totalUnPaid} color="text-rose-600 dark:text-rose-400" />
-            </div>
-          </div>
         </div>
 
         {/* Content starts below sticky section */}
