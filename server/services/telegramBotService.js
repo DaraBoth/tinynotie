@@ -553,7 +553,7 @@ export const initTelegramBot = (token) => {
                 autoImportMembers: false,
             });
 
-            ctx.reply(`✅ Group *${grpName}* created successfully!\nID: \`${groupId}\``, { parse_mode: 'Markdown' });
+            ctx.reply(`✅ Group *${grpName}* created successfully!\nID: \`${groupId}\`\nPlease join the group using /join`, { parse_mode: 'Markdown' });
         } catch (err) {
             console.error('Create group TG error:', err);
             ctx.reply('❌ Failed to create group.');
