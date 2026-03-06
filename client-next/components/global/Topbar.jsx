@@ -191,9 +191,10 @@ export function Topbar() {
               <ThemeSwitcher />
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-2.5 pt-1">
               <Button
                 variant="outline"
+                className="w-full justify-start h-11"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   router.push('/profile');
@@ -203,6 +204,7 @@ export function Topbar() {
               </Button>
               <Button
                 variant="outline"
+                className="w-full justify-start h-11"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   router.push('/help/telegram-commands');
@@ -210,7 +212,7 @@ export function Topbar() {
               >
                 <Sparkles className="mr-2 h-4 w-4" /> Commands
               </Button>
-              <Button variant="destructive" onClick={handleLogout}>
+              <Button variant="destructive" className="w-full justify-start h-11 mt-2" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" /> Logout
               </Button>
             </div>
