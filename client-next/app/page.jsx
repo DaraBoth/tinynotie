@@ -55,7 +55,7 @@ export default function WelcomePage() {
 
       {/* High-Intensity Glow Effects */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-[#f78fa7]/10 blur-[150px] rounded-full pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-[#ff0080]/10 blur-[150px] rounded-full pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-primary/10 blur-[150px] rounded-full pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6 py-20 lg:py-32">
@@ -123,9 +123,9 @@ export default function WelcomePage() {
           </motion.div>
 
           {/* Card 2: AI Mojo */}
-          <motion.div variants={item} className="md:col-span-4 glass-card p-12 flex flex-col justify-center items-center group bg-gradient-to-br from-[#8000ff]/20 to-transparent h-[400px] text-center">
-            <div className="w-24 h-24 rounded-[2.5rem] bg-indigo-500/20 flex items-center justify-center mb-10 border-2 border-indigo-500/50 group-hover:scale-110 transition-transform shadow-[0_0_40px_rgba(99,102,241,0.3)]">
-              <MessageSquare className="h-12 w-12 text-indigo-500" />
+          <motion.div variants={item} className="md:col-span-4 glass-card p-12 flex flex-col justify-center items-center group bg-gradient-to-br from-primary/20 to-transparent h-[400px] text-center">
+            <div className="w-24 h-24 rounded-[2.5rem] bg-accent/25 flex items-center justify-center mb-10 border-2 border-accent/50 group-hover:scale-110 transition-transform shadow-[0_0_40px_rgba(var(--primary-rgb),0.3)]">
+              <MessageSquare className="h-12 w-12 text-primary" />
             </div>
             <h3 className="text-3xl font-black text-foreground mb-4 uppercase italic tracking-tighter">AI AGENT</h3>
             <p className="text-muted-foreground font-bold uppercase text-xs tracking-widest leading-relaxed">
@@ -134,7 +134,7 @@ export default function WelcomePage() {
           </motion.div>
 
           {/* Card 3: Mini Feature */}
-          <motion.div variants={item} className="md:col-span-4 glass-card p-10 group hover:bg-[#ffff00]/5 transition-colors">
+          <motion.div variants={item} className="md:col-span-4 glass-card p-10 group hover:bg-accent/10 transition-colors">
             <div className="w-16 h-16 rounded-2xl bg-amber-500/20 flex items-center justify-center mb-6 border border-amber-500/30 group-hover:-rotate-12 transition-transform">
               <Calculator className="h-8 w-8 text-amber-500" />
             </div>
@@ -145,7 +145,7 @@ export default function WelcomePage() {
           </motion.div>
 
           {/* Card 4: Mini Feature */}
-          <motion.div variants={item} className="md:col-span-4 glass-card p-10 group hover:bg-[#00ffff]/5 transition-colors">
+          <motion.div variants={item} className="md:col-span-4 glass-card p-10 group hover:bg-primary/10 transition-colors">
             <div className="w-16 h-16 rounded-2xl bg-sky-500/20 flex items-center justify-center mb-6 border border-sky-500/30 group-hover:scale-90 transition-transform">
               <Zap className="h-8 w-8 text-sky-500" />
             </div>

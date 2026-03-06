@@ -97,20 +97,29 @@ export function SpaceSky() {
 
   if (isDark) {
     return (
-      <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-b from-slate-950 via-[#0d0b2b] to-slate-900">
+      <div
+        className="fixed inset-0 -z-10 overflow-hidden"
+        style={{
+          backgroundImage:
+            'linear-gradient(180deg, hsl(var(--background)) 0%, rgba(var(--primary-rgb), 0.2) 55%, rgba(var(--accent-rgb), 0.16) 100%)',
+        }}
+      >
         <canvas ref={canvasRef} className="absolute inset-0" />
         <motion.div
-          className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-3xl"
+          className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full blur-3xl"
+          style={{ backgroundColor: 'rgba(var(--primary-rgb), 0.18)' }}
           animate={{ scale: [1, 1.25, 1], opacity: [0.25, 0.45, 0.25] }}
           transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-purple-700/20 rounded-full blur-3xl"
+          className="absolute bottom-0 right-1/4 w-[450px] h-[450px] rounded-full blur-3xl"
+          style={{ backgroundColor: 'rgba(var(--accent-rgb), 0.2)' }}
           animate={{ scale: [1.2, 1, 1.2], opacity: [0.45, 0.25, 0.45] }}
           transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute top-1/3 right-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-2xl"
+          className="absolute top-1/3 right-10 w-64 h-64 rounded-full blur-2xl"
+          style={{ backgroundColor: 'rgba(var(--primary-rgb), 0.1)' }}
           animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.3, 0.15] }}
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
         />
@@ -119,21 +128,33 @@ export function SpaceSky() {
   }
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-b from-sky-200 via-blue-100 to-indigo-50">
+    <div
+      className="fixed inset-0 -z-10 overflow-hidden"
+      style={{
+        backgroundImage:
+          'linear-gradient(180deg, hsl(var(--background)) 0%, rgba(var(--primary-rgb), 0.08) 58%, rgba(var(--accent-rgb), 0.1) 100%)',
+      }}
+    >
       <canvas ref={canvasRef} className="absolute inset-0" />
       <motion.div
-        className="absolute top-8 right-16 w-32 h-32 rounded-full bg-yellow-200/80 blur-2xl"
+        className="absolute top-8 right-16 w-32 h-32 rounded-full blur-2xl"
+        style={{ backgroundColor: 'rgba(var(--accent-rgb), 0.45)' }}
         animate={{ opacity: [0.6, 0.9, 0.6], scale: [1, 1.12, 1] }}
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <div className="absolute top-10 right-[4.5rem] w-16 h-16 rounded-full bg-yellow-300/50 blur-sm" />
+      <div
+        className="absolute top-10 right-[4.5rem] w-16 h-16 rounded-full blur-sm"
+        style={{ backgroundColor: 'rgba(var(--accent-rgb), 0.32)' }}
+      />
       <motion.div
-        className="absolute bottom-0 left-1/4 w-[600px] h-48 bg-indigo-200/40 rounded-full blur-3xl"
+        className="absolute bottom-0 left-1/4 w-[600px] h-48 rounded-full blur-3xl"
+        style={{ backgroundColor: 'rgba(var(--primary-rgb), 0.2)' }}
         animate={{ opacity: [0.3, 0.5, 0.3] }}
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[700px] h-48 bg-sky-300/20 rounded-full blur-3xl"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[700px] h-48 rounded-full blur-3xl"
+        style={{ backgroundColor: 'rgba(var(--accent-rgb), 0.18)' }}
         animate={{ opacity: [0.2, 0.4, 0.2] }}
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
       />

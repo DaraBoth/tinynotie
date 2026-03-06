@@ -52,12 +52,12 @@ function RegisterGuide() {
       <SpaceSky />
 
       <div className="relative flex-[1.2] hidden md:flex flex-col justify-center px-12 lg:px-24 overflow-hidden border-r border-border/10">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-blue-600/5 -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 -z-10" />
 
         <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
           transition={{ duration: 12, repeat: Infinity }}
-          className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-[120px] -z-10"
+          className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-accent/25 rounded-full blur-[120px] -z-10"
         />
 
         <motion.div
@@ -67,13 +67,13 @@ function RegisterGuide() {
           className="space-y-10 z-10"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-foreground/5 border border-foreground/10 text-foreground text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md">
-            <Zap className="h-3 w-3 text-blue-500 animate-pulse" /> Telegram Required
+            <Zap className="h-3 w-3 text-primary animate-pulse" /> Telegram Required
           </div>
 
           <div className="space-y-6">
             <h1 className="text-6xl lg:text-8xl font-black tracking-tighter leading-[0.85] uppercase italic text-foreground">
               Register <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-primary to-blue-500 bg-[length:200%_auto] animate-gradient">via Telegram</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-gradient">via Telegram</span>
             </h1>
             <p className="text-xl text-muted-foreground/60 font-medium leading-relaxed max-w-md italic border-l-2 border-primary/20 pl-6">
               For security, every TinyNotie account must be created and linked through {TELEGRAM_BOT_NAME} Telegram bot.
@@ -93,7 +93,7 @@ function RegisterGuide() {
                 transition={{ delay: 0.5 + i * 0.1 }}
                 className="flex items-center gap-3 px-6 py-4 rounded-3xl bg-foreground/[0.03] border border-foreground/5 backdrop-blur-xl"
               >
-                <item.icon className="h-5 w-5 text-blue-500" />
+                <item.icon className="h-5 w-5 text-primary" />
                 <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">{item.label}</span>
               </motion.div>
             ))}

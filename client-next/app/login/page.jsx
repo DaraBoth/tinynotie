@@ -89,7 +89,7 @@ function LoginForm() {
 
       {/* Visual / Brand Side */}
       <div className="relative flex-[1.2] hidden md:flex flex-col justify-center px-12 lg:px-24 overflow-hidden border-r border-border/10">
-        <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-background to-purple-600/5 -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-background to-accent/10 -z-10" />
 
         {/* Animated Orbs */}
         <motion.div
@@ -100,7 +100,7 @@ function LoginForm() {
         <motion.div
           animate={{ scale: [1, 1.3, 1], opacity: [0.05, 0.1, 0.05] }}
           transition={{ duration: 15, repeat: Infinity, delay: 2 }}
-          className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[100px] -z-10"
+          className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-accent/20 rounded-full blur-[100px] -z-10"
         />
 
         <motion.div
@@ -116,7 +116,7 @@ function LoginForm() {
           <div className="space-y-6">
             <h1 className="text-6xl lg:text-8xl font-black tracking-tighter leading-[0.85] uppercase italic text-foreground">
               Master <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-primary bg-[length:200%_auto] animate-gradient">Your Cash</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-gradient">Your Cash</span>
             </h1>
             <p className="text-xl text-muted-foreground/60 font-medium leading-relaxed max-w-md italic border-l-2 border-primary/20 pl-6">
               The elite way to track group spending, manage vaults, and conquer expenses with the squad.
