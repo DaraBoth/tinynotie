@@ -26,12 +26,19 @@ const getWebAppBaseUrl = () => {
         process.env.WEB_APP_URL ||
         process.env.CLIENT_APP_URL ||
         process.env.FRONTEND_URL ||
+        process.env.SITE_URL ||
         process.env.NEXT_PUBLIC_WEB_APP_URL ||
         process.env.NEXT_PUBLIC_APP_URL ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
         DEFAULT_WEB_APP_URL;
 
-    return String(configured).replace(/\/+$/, '');
+    const cleaned = String(configured || '').trim().replace(/\/+$/, '');
+
+    // Guard against accidentally using API domains for website links.
+    if (/tinynotie-api|\/bot\b|\/api\b/i.test(cleaned)) {
+        return DEFAULT_WEB_APP_URL;
+    }
+
+    return cleaned || DEFAULT_WEB_APP_URL;
 };
 
 const getTelegramCommandGuideUrl = () => `${getWebAppBaseUrl()}/help/telegram-commands`;
