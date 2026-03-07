@@ -23,20 +23,16 @@ const AVATAR_COLORS = [
 const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 const getAvatarInitials = (name = '') => name.slice(0, 2).toUpperCase();
 
-export function AddUserToGroup({ open, onClose, groupId, existingMembers = [], existingGroupUsers = [], isAdmin = false }) {
+export function AddUserToGroup({ open, onClose, groupId, existingMembers = [], isAdmin = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [existingGroupUserIds, setExistingGroupUserIds] = useState([]);
   
   const queryClient = useQueryClient();
 
   // Get existing member user IDs to exclude from search
-  const existingGroupUserIds = useMemo(
-    () => existingGroupUsers.map((u) => Number(u.id)).filter(Number.isFinite),
-    [existingGroupUsers]
-  );
-
   const existingUserIds = useMemo(
     () => existingMembers.filter((m) => m.user_id).map((m) => m.user_id),
     [existingMembers]
@@ -48,8 +44,17 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [], e
       setSearchQuery('');
       setSearchResults([]);
       setSelectedUsers([]);
+
+      api.getGroupUsers(groupId)
+        .then((res) => {
+          const ids = (res.data?.data || []).map((u) => Number(u.id)).filter(Number.isFinite);
+          setExistingGroupUserIds(ids);
+        })
+        .catch(() => {
+          setExistingGroupUserIds([]);
+        });
     }
-  }, [open]);
+  }, [open, groupId]);
 
   // Search users with debounce
   useEffect(() => {

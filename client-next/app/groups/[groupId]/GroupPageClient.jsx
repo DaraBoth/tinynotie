@@ -49,7 +49,7 @@ export const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % 
 export const getAvatarInitials = (name = '') => name.slice(0, 2).toUpperCase();
 
 /* ─── main component ─────────────────────────────────────────────────────── */
-export function GroupPageClient({ groupId }) {
+export function GroupPageClient({ groupId, initialData = null }) {
   const router = useRouter();
   const { hasHydrated, isAuthenticated, user } = useAuthGuard();
   const { isMobile } = useWindowDimensions();
@@ -102,6 +102,8 @@ export function GroupPageClient({ groupId }) {
     action();
   };
 
+  const hasSSRData = !!(initialData?.group && Object.keys(initialData.group).length > 0);
+
   const { data: groupData, isLoading, error, refetch } = useQuery({
     queryKey: ['group', groupId],
     queryFn: async () => {
@@ -110,15 +112,15 @@ export function GroupPageClient({ groupId }) {
         api.getMembersByGroupId(groupId),
         api.getTripsByGroupId(groupId),
       ]);
-      const groupUsersResponse = await api.getGroupUsers(groupId).catch(() => ({ data: { data: [] } }));
       return {
         group: groupResponse.data.data || {},
         members: membersResponse.data.data || [],
         trips: tripsResponse.data.data || [],
-        groupUsers: groupUsersResponse.data?.data || [],
       };
     },
     enabled: hasHydrated && isAuthenticated && !!groupId && !!user,
+    initialData: hasSSRData ? initialData : undefined,
+    staleTime: 30 * 1000,
     refetchInterval: 30000,
   });
 
@@ -224,8 +226,8 @@ export function GroupPageClient({ groupId }) {
   }, [isMobile]);
 
   /* ── guards ── */
-  if (!hasHydrated || !isAuthenticated) return <Loading text="Checking authentication..." />;
-  if (isLoading) return <Loading text="Loading group..." />;
+  if ((!hasHydrated || !isAuthenticated) && !hasSSRData) return <Loading text="Checking authentication..." />;
+  if (isLoading && !groupData) return <Loading text="Loading group..." />;
 
   if (error) {
     return (
@@ -248,7 +250,6 @@ export function GroupPageClient({ groupId }) {
   const group = groupData?.group || {};
   const members = groupData?.members || [];
   const trips = groupData?.trips || [];
-  const groupUsers = groupData?.groupUsers || [];
   const currency = group.currency || '$';
   const canManageGroup = !!(group.isAdmin || group.canEdit);
   const canOpenSettings = !!group.isAdmin;
@@ -1631,7 +1632,7 @@ export function GroupPageClient({ groupId }) {
 
       {/* Panels & Dialogs */}
       {canManageGroup && <EditMember open={editMemberOpen} onClose={() => setEditMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} editMode={editMemberMode} currency={currency} />}
-      {canManageGroup && <AddUserToGroup open={addUserOpen} onClose={() => setAddUserOpen(false)} groupId={groupId} existingMembers={members} existingGroupUsers={groupUsers} isAdmin={!!group.isAdmin} />}
+      {canManageGroup && <AddUserToGroup open={addUserOpen} onClose={() => setAddUserOpen(false)} groupId={groupId} existingMembers={members} isAdmin={!!group.isAdmin} />}
       <SelectTripDialog open={selectTripOpen} onClose={() => setSelectTripOpen(false)} trips={sortedTrips} onSelectTrip={handleTripSelected} currency={currency} />
       {canManageGroup && <EditTrip open={editTripOpen} onClose={() => setEditTripOpen(false)} groupId={groupId} trip={selectedTrip} members={members} currency={currency} />}
       {canManageGroup && <DeleteMember open={deleteMemberOpen} onClose={() => setDeleteMemberOpen(false)} groupId={groupId} member={selectedMember} members={members} trips={trips} />}
@@ -1645,7 +1646,7 @@ export function GroupPageClient({ groupId }) {
         }}
       />
       <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} group={group} members={members} trips={trips} currency={currency} />
-      {canOpenSettings && <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} groupUsers={groupUsers} isAdmin={!!group.isAdmin} />}
+      {canOpenSettings && <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} isAdmin={!!group.isAdmin} />}
       {canManageGroup && <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />}
     </div>
   );

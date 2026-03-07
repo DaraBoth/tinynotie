@@ -141,36 +141,60 @@ router.get("/getGroupListWithDetails", authenticateToken, async (req, res) => {
   const user_id = req.user._id;
   try {
     const sql = `
+      WITH accessible_groups AS (
+        SELECT
+          g.id,
+          g.grp_name,
+          g.status,
+          g.currency,
+          g.admin_id,
+          g.create_date,
+          g.description,
+          g.visibility,
+          (g.admin_id = $1::int) AS "isAdmin",
+          EXISTS (
+            SELECT 1
+            FROM grp_users gu
+            WHERE gu.group_id = g.id AND gu.user_id = $1::int
+          ) AS "isMember"
+        FROM grp_infm g
+        WHERE g.visibility = 'public'
+           OR g.admin_id = $1::int
+           OR EXISTS (
+             SELECT 1
+             FROM grp_users gu
+             WHERE gu.group_id = g.id AND gu.user_id = $1::int
+           )
+      ),
+      member_stats AS (
+        SELECT group_id, COUNT(*)::int AS member_count, COALESCE(SUM(paid), 0) AS total_paid
+        FROM member_infm
+        GROUP BY group_id
+      ),
+      trip_stats AS (
+        SELECT group_id, COUNT(*)::int AS trip_count, COALESCE(SUM(spend), 0) AS total_spend
+        FROM trp_infm
+        GROUP BY group_id
+      )
       SELECT
-        g.id,
-        g.grp_name,
-        g.status,
-        g.currency,
-        g.admin_id,
-        g.create_date,
-        g.description,
-        g.visibility,
-        CASE
-          WHEN g.admin_id = $1::int THEN TRUE
-          ELSE FALSE
-        END AS "isAdmin",
-        CASE
-          WHEN gu.user_id IS NOT NULL THEN TRUE
-          ELSE FALSE
-        END AS "isMember",
-        COUNT(DISTINCT m.id) AS member_count,
-        COUNT(DISTINCT t.id) AS trip_count,
-        COALESCE((SELECT SUM(tr.spend) FROM trp_infm tr WHERE tr.group_id = g.id), 0) AS total_spend,
-        COALESCE((SELECT SUM(mi.paid) FROM member_infm mi WHERE mi.group_id = g.id), 0) AS total_paid
-      FROM grp_infm g
-      LEFT JOIN grp_users gu ON g.id = gu.group_id AND gu.user_id = $1::int
-      LEFT JOIN member_infm m ON m.group_id = g.id
-      LEFT JOIN trp_infm t ON t.group_id = g.id
-      WHERE g.visibility = 'public'
-         OR g.admin_id = $1::int
-         OR gu.user_id IS NOT NULL
-      GROUP BY g.id, g.grp_name, g.status, g.currency, g.admin_id, g.create_date, g.description, g.visibility, gu.user_id
-      ORDER BY g.create_date DESC;
+        ag.id,
+        ag.grp_name,
+        ag.status,
+        ag.currency,
+        ag.admin_id,
+        ag.create_date,
+        ag.description,
+        ag.visibility,
+        ag."isAdmin",
+        ag."isMember",
+        COALESCE(ms.member_count, 0) AS member_count,
+        COALESCE(ts.trip_count, 0) AS trip_count,
+        COALESCE(ts.total_spend, 0) AS total_spend,
+        COALESCE(ms.total_paid, 0) AS total_paid
+      FROM accessible_groups ag
+      LEFT JOIN member_stats ms ON ms.group_id = ag.id
+      LEFT JOIN trip_stats ts ON ts.group_id = ag.id
+      ORDER BY ag.create_date DESC;
     `;
     const results = await pool.query(sql, [user_id]);
     res.send({ status: true, data: results.rows });
