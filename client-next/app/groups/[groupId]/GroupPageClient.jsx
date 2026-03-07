@@ -81,6 +81,11 @@ export function GroupPageClient({ groupId, initialData = null }) {
   const [tripPinnedRows, setTripPinnedRows] = useState([]);
   const [memberPinnedColumns, setMemberPinnedColumns] = useState({ name: 'left' });
   const [tripPinnedColumns, setTripPinnedColumns] = useState({ name: 'left' });
+  const [mobileShareOpen, setMobileShareOpen] = useState(false);
+  const [mobileShareMode, setMobileShareMode] = useState('members');
+  const [mobileShareTrip, setMobileShareTrip] = useState(null);
+  const [mobileShareTarget, setMobileShareTarget] = useState('group');
+  const [mobileShareSubmitting, setMobileShareSubmitting] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -166,38 +171,58 @@ export function GroupPageClient({ groupId, initialData = null }) {
     return telegramTargetType;
   };
 
-  const handleShareTrip = async (e, trip) => {
-    e.stopPropagation(); // Don't open edit modal
+  const resolveTargetType = (forcedTargetType) => {
+    if (forcedTargetType === 'group' || forcedTargetType === 'personal') return forcedTargetType;
+    return resolveTelegramTargetType();
+  };
+
+  const openMobileShareDrawer = (mode, trip = null) => {
+    if (!hasAnyTelegramTarget) {
+      toast.error('No Telegram destination is linked yet.');
+      return;
+    }
+
+    setMobileShareMode(mode);
+    setMobileShareTrip(trip || null);
+    setMobileShareTarget(resolveTelegramTargetType());
+    setMobileShareOpen(true);
+  };
+
+  const handleShareTrip = async (e, trip, forcedTargetType = null) => {
+    e?.stopPropagation?.(); // Don't open edit modal
     try {
       if (!hasAnyTelegramTarget) {
         toast.error('No Telegram destination is linked yet.');
-        return;
+        return false;
       }
 
       setShareTripIdLoading(trip.id);
       const res = await api.shareTripToTelegram({
         trip_id: trip.id,
         group_id: groupId,
-        targetType: resolveTelegramTargetType(),
+        targetType: resolveTargetType(forcedTargetType),
       });
       if (res.data.status) {
         toast.success('Shared to Telegram!');
+        return true;
       } else {
         toast.error(res.data.message || 'Failed to share to Telegram');
+        return false;
       }
     } catch (err) {
       console.error('Share error:', err);
       toast.error('Error sharing to Telegram');
+      return false;
     } finally {
       setShareTripIdLoading(null);
     }
   };
 
-  const handleShareMembers = async () => {
+  const handleShareMembers = async (forcedTargetType = null) => {
     try {
       if (!hasAnyTelegramTarget) {
         toast.error('No Telegram destination is linked yet.');
-        return;
+        return false;
       }
 
       setShareMembersLoading(true);
@@ -205,17 +230,20 @@ export function GroupPageClient({ groupId, initialData = null }) {
       const memberIds = selectedMemberIds.length > 0 ? selectedMemberIds : allMemberIds;
       const res = await api.shareMembersToTelegram({
         group_id: groupId,
-        targetType: resolveTelegramTargetType(),
+        targetType: resolveTargetType(forcedTargetType),
         member_ids: memberIds,
       });
       if (res.data.status) {
         toast.success('Member summary shared to Telegram!');
+        return true;
       } else {
         toast.error(res.data.message || 'Failed to share to Telegram');
+        return false;
       }
     } catch (err) {
       console.error('Share error:', err);
       toast.error('Error sharing member summary');
+      return false;
     } finally {
       setShareMembersLoading(false);
     }
@@ -422,11 +450,11 @@ export function GroupPageClient({ groupId, initialData = null }) {
     toast.success(`Trips export downloaded (${selectedTrips.length} row${selectedTrips.length === 1 ? '' : 's'})`);
   };
 
-  const handleShareSelectedTrips = async () => {
+  const handleShareSelectedTrips = async (forcedTargetType = null) => {
     try {
       if (!hasAnyTelegramTarget) {
         toast.error('No Telegram destination is linked yet.');
-        return;
+        return false;
       }
 
       setShareTripsLoading(true);
@@ -434,19 +462,43 @@ export function GroupPageClient({ groupId, initialData = null }) {
       const res = await api.shareTripToTelegram({
         group_id: groupId,
         trip_ids: tripIds,
-        targetType: resolveTelegramTargetType(),
+        targetType: resolveTargetType(forcedTargetType),
       });
 
       if (res.data.status) {
         toast.success('Trip data shared to Telegram!');
+        return true;
       } else {
         toast.error(res.data.message || 'Failed to share trip data');
+        return false;
       }
     } catch (err) {
       console.error('Bulk trip share error:', err);
       toast.error('Error sharing trips to Telegram');
+      return false;
     } finally {
       setShareTripsLoading(false);
+    }
+  };
+
+  const handleMobileShareSubmit = async () => {
+    setMobileShareSubmitting(true);
+    let success = false;
+
+    try {
+      if (mobileShareMode === 'members') {
+        success = await handleShareMembers(mobileShareTarget);
+      } else if (mobileShareMode === 'trips') {
+        success = await handleShareSelectedTrips(mobileShareTarget);
+      } else if (mobileShareMode === 'trip-single' && mobileShareTrip) {
+        success = await handleShareTrip(null, mobileShareTrip, mobileShareTarget);
+      }
+
+      if (success) {
+        setMobileShareOpen(false);
+      }
+    } finally {
+      setMobileShareSubmitting(false);
     }
   };
 
@@ -838,7 +890,6 @@ export function GroupPageClient({ groupId, initialData = null }) {
         </h2>
         {isMobile ? (
           <div className="flex flex-col gap-1.5 w-full max-w-[260px]">
-            <div className="flex justify-end">{renderTelegramTargetControl()}</div>
             <div className="grid grid-cols-2 gap-1.5">
             <Button size="sm" variant="outline" className="h-8 text-xs"
               onClick={toggleAllTrips}>
@@ -855,7 +906,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
               <Download className="h-3.5 w-3.5 mr-1" /> Export
             </Button>
             <Button size="sm" variant="outline" className="h-8 text-xs"
-              onClick={handleShareSelectedTrips}
+              onClick={() => openMobileShareDrawer('trips')}
               disabled={shareTripsLoading}>
               {shareTripsLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />} {shareTripsLoading ? 'Sending...' : 'Telegram'}
             </Button>
@@ -970,7 +1021,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                       <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={(e) => handleShareTrip(e, trip)} disabled={shareTripIdLoading === trip.id}>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openMobileShareDrawer('trip-single', trip)} disabled={shareTripIdLoading === trip.id || mobileShareSubmitting}>
                     
                     {shareTripIdLoading === trip.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
                     {shareTripIdLoading === trip.id ? 'Sending...' : 'Telegram'}
@@ -1326,7 +1377,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                   <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleExportMembers}>
                     <Download className="h-3.5 w-3.5 mr-1" /> Export {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
                   </Button>
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleShareMembers} disabled={shareMembersLoading}>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openMobileShareDrawer('members')} disabled={shareMembersLoading}>
                     {shareMembersLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
                     {shareMembersLoading ? 'Sending...' : `Telegram ${selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}`}
                   </Button>
@@ -1648,6 +1699,83 @@ export function GroupPageClient({ groupId, initialData = null }) {
       <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} group={group} members={members} trips={trips} currency={currency} />
       {canOpenSettings && <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} isAdmin={!!group.isAdmin} />}
       {canManageGroup && <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />}
+
+      {/* Mobile Share Action Drawer */}
+      {isMobile && mobileShareOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
+            onClick={() => setMobileShareOpen(false)}
+          />
+          <div className="fixed inset-x-0 bottom-0 z-[61] w-screen max-w-none">
+            <div className="bg-background/85 backdrop-blur-xl rounded-t-3xl border-t border-border/30 shadow-2xl pb-safe">
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/25" />
+              </div>
+              <div className="px-5 pt-2 pb-5 space-y-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Share to Telegram</p>
+                  <h3 className="text-base font-bold mt-1">
+                    {mobileShareMode === 'members' && 'Share Member Summary'}
+                    {mobileShareMode === 'trips' && 'Share Trip Selection'}
+                    {mobileShareMode === 'trip-single' && `Share ${mobileShareTrip?.trp_name || 'Trip'}`}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Pick destination, then tap share. We will send this directly to Telegram.
+                  </p>
+                </div>
+
+                {showTelegramTargetSelector ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMobileShareTarget('group')}
+                      className={`rounded-xl border px-3 py-3 text-left transition-all ${mobileShareTarget === 'group' ? 'border-primary bg-primary/10' : 'border-border/40 bg-muted/20'}`}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wide">Group Chat</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Share to linked group Telegram chat.</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMobileShareTarget('personal')}
+                      className={`rounded-xl border px-3 py-3 text-left transition-all ${mobileShareTarget === 'personal' ? 'border-primary bg-primary/10' : 'border-border/40 bg-muted/20'}`}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wide">Personal Chat</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Send privately to your Telegram account.</p>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide">
+                      Destination: {canShareToGroup ? 'Group Chat' : 'Personal Chat'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Only one destination is linked for this group, so it will be used automatically.
+                    </p>
+                  </div>
+                )}
+
+                <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide">How It Works</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    We format your selected {mobileShareMode === 'members' ? 'members' : 'trips'} and send it through your linked Telegram connection.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Button variant="outline" className="h-10" onClick={() => setMobileShareOpen(false)} disabled={mobileShareSubmitting}>
+                    Cancel
+                  </Button>
+                  <Button className="h-10" onClick={handleMobileShareSubmit} disabled={mobileShareSubmitting}>
+                    {mobileShareSubmitting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Send className="h-4 w-4 mr-1.5" />}
+                    {mobileShareSubmitting ? 'Sharing...' : 'Share Now'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
