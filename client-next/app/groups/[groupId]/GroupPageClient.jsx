@@ -1643,6 +1643,32 @@ export function GroupPageClient({ groupId, initialData = null }) {
               <span className="text-xs font-semibold text-center leading-tight">Scan Receipt</span>
             </button>
 
+            {/* Share Members */}
+            {members.length > 0 && (
+              <button
+                onClick={() => openPanel(() => openMobileShareDrawer('members'))}
+                className="flex flex-col items-center gap-2.5 py-4 px-2 rounded-2xl active:bg-muted/60 transition-colors"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-sky-500/15 flex items-center justify-center">
+                  <Send className="h-6 w-6 text-sky-400" />
+                </div>
+                <span className="text-xs font-semibold text-center leading-tight">Share Members</span>
+              </button>
+            )}
+
+            {/* Share Trips */}
+            {sortedTrips.length > 0 && (
+              <button
+                onClick={() => openPanel(() => openMobileShareDrawer('trips'))}
+                className="flex flex-col items-center gap-2.5 py-4 px-2 rounded-2xl active:bg-muted/60 transition-colors"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-cyan-500/15 flex items-center justify-center">
+                  <Share2 className="h-6 w-6 text-cyan-400" />
+                </div>
+                <span className="text-xs font-semibold text-center leading-tight">Share Trips</span>
+              </button>
+            )}
+
             {members.length > 0 && (
               <>
                 {/* Edit Member */}
