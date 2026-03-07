@@ -791,7 +791,7 @@ router.post("/addMemberByGroupId", authenticateToken, async (req, res) => {
 });
 
 router.post("/addUserToGroup", authenticateToken, async (req, res) => {
-  const { group_id, user_id, can_edit = false } = req.body;
+  const { group_id, user_id, can_edit = false, auto_create_member = false } = req.body;
   const actorId = req.user._id;
 
   try {
@@ -837,19 +837,28 @@ router.post("/addUserToGroup", authenticateToken, async (req, res) => {
       [group_id, targetId, resolvedCanEdit]
     );
 
-    // Keep member list consistent by creating a display member row if name is not present.
-    const existingMemberByName = await pool.query(
-      "SELECT 1 FROM member_infm WHERE group_id = $1 AND LOWER(TRIM(mem_name)) = LOWER(TRIM($2)) LIMIT 1",
-      [group_id, targetUser.usernm]
-    );
-    if (existingMemberByName.rows.length === 0) {
-      await pool.query(
-        "INSERT INTO member_infm (mem_name, paid, group_id) VALUES ($1, 0, $2)",
-        [targetUser.usernm, group_id]
+    // Optional admin/editor-controlled behavior: create participant member row.
+    const shouldCreateMember = !!auto_create_member;
+    if (shouldCreateMember) {
+      const existingMemberByName = await pool.query(
+        "SELECT 1 FROM member_infm WHERE group_id = $1 AND LOWER(TRIM(mem_name)) = LOWER(TRIM($2)) LIMIT 1",
+        [group_id, targetUser.usernm]
       );
+
+      if (existingMemberByName.rows.length === 0) {
+        await pool.query(
+          "INSERT INTO member_infm (mem_name, paid, group_id) VALUES ($1, 0, $2)",
+          [targetUser.usernm, group_id]
+        );
+      }
     }
 
-    return res.json({ status: true, message: "User added to group successfully." });
+    return res.json({
+      status: true,
+      message: shouldCreateMember
+        ? "User added to group access list and member list successfully."
+        : "User added to group access list successfully.",
+    });
   } catch (error) {
     console.error("addUserToGroup error", error);
     return res.status(500).json({ status: false, error: error.message });
@@ -1170,7 +1179,20 @@ router.get("/getMemberByGroupId", authenticateToken, async (req, res) => {
       return res.status(403).send({ status: false, message: "Forbidden: No access to this group." });
     }
 
-    const sql = `SELECT * FROM member_infm WHERE group_id = $1 ORDER BY id;`;
+    const sql = `
+      SELECT m.*
+      FROM member_infm m
+      WHERE m.group_id = $1
+        AND NOT EXISTS (
+          SELECT 1
+          FROM grp_users gu
+          JOIN user_infm u ON u.id = gu.user_id
+          WHERE gu.group_id = m.group_id
+            AND LOWER(TRIM(u.usernm)) = LOWER(TRIM(m.mem_name))
+            AND COALESCE(m.paid, 0) = 0
+        )
+      ORDER BY m.id;
+    `;
     const results = await pool.query(sql, [group_id]);
 
     res.send({

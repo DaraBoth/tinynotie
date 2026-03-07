@@ -29,6 +29,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [], i
   const [isSearching, setIsSearching] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [existingGroupUserIds, setExistingGroupUserIds] = useState([]);
+  const [autoCreateMember, setAutoCreateMember] = useState(false);
   
   const queryClient = useQueryClient();
 
@@ -44,6 +45,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [], i
       setSearchQuery('');
       setSearchResults([]);
       setSelectedUsers([]);
+      setAutoCreateMember(false);
 
       api.getGroupUsers(groupId)
         .then((res) => {
@@ -102,6 +104,7 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [], i
           group_id: groupId,
           user_id: user.id,
           can_edit: isAdmin ? !!user.can_edit : false,
+          auto_create_member: isAdmin ? !!autoCreateMember : false,
         };
         console.log('[AddUser] Adding member payload:', payload);
         return api.addUserToGroup(payload);
@@ -182,6 +185,23 @@ export function AddUserToGroup({ open, onClose, groupId, existingMembers = [], i
                 </button>
               )}
             </div>
+
+            {isAdmin && (
+              <div className="mt-3 rounded-xl border border-border/40 bg-muted/20 p-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide">Auto-create member</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Also add invited users as expense members in this group.
+                  </p>
+                </div>
+                <Switch
+                  checked={autoCreateMember}
+                  onCheckedChange={setAutoCreateMember}
+                  aria-label="Auto create member for invited users"
+                />
+              </div>
+            )}
+
             {searchQuery.length > 0 && searchQuery.length < 2 && (
               <p className="text-xs text-muted-foreground mt-2">
                 Type at least 2 characters to search
