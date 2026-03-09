@@ -265,22 +265,22 @@ export const initTelegramBot = (token) => {
     };
 
     const commandListText = `*Useful Commands*\n` +
-        `/register - Create and link your TinyNotie account\n` +
-        `/reset_password - Change your account password\n` +
-        `/my_account - Show your linked TinyNotie account info\n` +
-        `/my_groups - Show your latest TinyNotie groups\n` +
-        `/chat_id - Show current Telegram chat ID\n` +
-        `/link_group - Link this Telegram group to TinyNotie group\n` +
-        `/unlink_group - Unlink this Telegram group from TinyNotie\n` +
-        `/create_group - Create a TinyNotie group from this chat\n` +
-        `/add_member - Add a member to linked group\n` +
-        `/join - Join linked group with your Telegram name\n` +
-        `/sync_members - Sync visible Telegram members\n` +
-        `/status - Show linked group summary\n` +
-        `/export - Export linked group report\n` +
-        `/miniapp - Open TinyNotie mini app\n` +
-        `/guideline - Open full command guideline page\n` +
-        `/commands - Show this command list`;
+        "`/register` - Create and link your TinyNotie account\n" +
+        "`/reset_password` - Change your account password\n" +
+        "`/my_account` - Show your linked TinyNotie account info\n" +
+        "`/my_groups` - Show your latest TinyNotie groups\n" +
+        "`/chat_id` - Show current Telegram chat ID\n" +
+        "`/link_group` - Link this Telegram group to TinyNotie group\n" +
+        "`/unlink_group` - Unlink this Telegram group from TinyNotie\n" +
+        "`/create_group` - Create a TinyNotie group from this chat\n" +
+        "`/add_member` - Add a member to linked group\n" +
+        "`/join` - Join linked group with your Telegram name\n" +
+        "`/sync_members` - Sync visible Telegram members\n" +
+        "`/status` - Show linked group summary\n" +
+        "`/export` - Export linked group report\n" +
+        "`/miniapp` - Open TinyNotie mini app\n" +
+        "`/guideline` - Open full command guideline page\n" +
+        "`/commands` - Show this command list";
 
     const normalizeYesNo = (text = '') => String(text || '').trim().toLowerCase();
 
