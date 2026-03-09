@@ -43,27 +43,34 @@ const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
 });
 
 const getGroupAccess = async (groupId, userId) => {
+  const parsedGroupId = Number(groupId);
+  const parsedUserId = Number(userId);
+
+  if (!Number.isFinite(parsedGroupId) || !Number.isFinite(parsedUserId)) {
+    return null;
+  }
+
   const sql = `
     SELECT
       g.id,
       g.visibility,
       g.admin_id,
-      (g.admin_id = $2) AS is_admin,
+      (g.admin_id = $2::int) AS is_admin,
       COALESCE(gu.can_edit, FALSE) AS can_edit,
       (gu.user_id IS NOT NULL) AS is_member,
       CASE
         WHEN g.visibility = 'public' THEN TRUE
-        WHEN g.admin_id = $2 THEN TRUE
+        WHEN g.admin_id = $2::int THEN TRUE
         WHEN gu.user_id IS NOT NULL THEN TRUE
         ELSE FALSE
       END AS has_access
     FROM grp_infm g
-    LEFT JOIN grp_users gu ON gu.group_id = g.id AND gu.user_id = $2
-    WHERE g.id = $1
+    LEFT JOIN grp_users gu ON gu.group_id = g.id AND gu.user_id = $2::int
+    WHERE g.id = $1::int
     LIMIT 1;
   `;
 
-  const result = await pool.query(sql, [groupId, userId]);
+  const result = await pool.query(sql, [parsedGroupId, parsedUserId]);
   return result.rows[0] || null;
 };
 
@@ -867,10 +874,15 @@ router.post("/addUserToGroup", authenticateToken, async (req, res) => {
 
 router.get("/getGroupUsers", authenticateToken, async (req, res) => {
   const { group_id } = req.query;
-  const actorId = req.user._id;
+  const actorId = Number(req.user._id);
+  const parsedGroupId = Number(group_id);
+
+  if (!Number.isFinite(parsedGroupId) || !Number.isFinite(actorId)) {
+    return res.status(400).json({ status: false, message: "group_id and actor user ID must be valid numbers." });
+  }
 
   try {
-    const access = await getGroupAccess(group_id, actorId);
+    const access = await getGroupAccess(parsedGroupId, actorId);
     if (!access) {
       return res.status(404).json({ status: false, message: "Group not found." });
     }
@@ -892,7 +904,7 @@ router.get("/getGroupUsers", authenticateToken, async (req, res) => {
       WHERE gu.group_id = $1
       ORDER BY u.usernm ASC;
     `;
-    const result = await pool.query(usersSql, [group_id]);
+    const result = await pool.query(usersSql, [parsedGroupId]);
 
     return res.json({
       status: true,
@@ -1371,10 +1383,15 @@ router.post("/askDatabase", authenticateToken, async (req, res) => {
 // Get Telegram link status for a TinyNotie group + current user
 router.get("/getTelegramLinkStatus", authenticateToken, async (req, res) => {
   const { group_id } = req.query;
-  const { _id: user_id } = req.user;
+  const user_id = Number(req.user._id);
+  const parsedGroupId = Number(group_id);
 
   if (!group_id) {
     return res.status(400).json({ status: false, message: "group_id is required." });
+  }
+
+  if (!Number.isFinite(parsedGroupId) || !Number.isFinite(user_id)) {
+    return res.status(400).json({ status: false, message: "group_id and user ID must be valid numbers." });
   }
 
   try {
@@ -1384,9 +1401,9 @@ router.get("/getTelegramLinkStatus", authenticateToken, async (req, res) => {
                 SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $2
              )) AS has_access
       FROM grp_infm g
-      WHERE g.id = $1
+      WHERE g.id = $1::int
     `;
-    const accessRes = await pool.query(accessSql, [group_id, user_id]);
+    const accessRes = await pool.query(accessSql, [parsedGroupId, user_id]);
 
     if (accessRes.rows.length === 0 || !accessRes.rows[0].has_access) {
       return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
@@ -1435,10 +1452,15 @@ router.get("/getTelegramLinkStatus", authenticateToken, async (req, res) => {
 // Link a TinyNotie group with a Telegram group chat ID entered by user
 router.post("/linkTelegramGroupChat", authenticateToken, async (req, res) => {
   const { group_id, group_chat_id } = req.body;
-  const { _id: user_id } = req.user;
+  const user_id = Number(req.user._id);
+  const parsedGroupId = Number(group_id);
 
   if (!group_id || group_chat_id === undefined || group_chat_id === null) {
     return res.status(400).json({ status: false, message: "group_id and group_chat_id are required." });
+  }
+
+  if (!Number.isFinite(parsedGroupId) || !Number.isFinite(user_id)) {
+    return res.status(400).json({ status: false, message: "group_id and user ID must be valid numbers." });
   }
 
   const parsedChatId = Number(group_chat_id);
@@ -1453,9 +1475,9 @@ router.post("/linkTelegramGroupChat", authenticateToken, async (req, res) => {
                 SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $2
              )) AS has_access
       FROM grp_infm g
-      WHERE g.id = $1
+      WHERE g.id = $1::int
     `;
-    const accessRes = await pool.query(accessSql, [group_id, user_id]);
+    const accessRes = await pool.query(accessSql, [parsedGroupId, user_id]);
 
     if (accessRes.rows.length === 0 || !accessRes.rows[0].has_access) {
       return res.status(403).json({ status: false, message: "Forbidden: No access to this group." });
@@ -1511,7 +1533,7 @@ router.post("/linkTelegramGroupChat", authenticateToken, async (req, res) => {
 
     await pool.query(
       "UPDATE grp_infm SET telegram_chat_id = $1 WHERE id = $2",
-      [parsedChatId, group_id]
+      [parsedChatId, parsedGroupId]
     );
 
     return res.json({
