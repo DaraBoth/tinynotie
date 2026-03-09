@@ -130,6 +130,49 @@ export const initTelegramBot = (token) => {
         }
     };
 
+    const safeReply = async (ctx, message, extra) => {
+        try {
+            return await ctx.reply(message, extra);
+        } catch (replyErr) {
+            console.error('[Telegram] reply failed:', replyErr.message);
+            return null;
+        }
+    };
+
+    const withSafeCommand = (name, handler, fallbackMessage = '❌ Sorry, something went wrong. Please try again.') => {
+        return async (ctx) => {
+            try {
+                return await handler(ctx);
+            } catch (err) {
+                console.error(`[Telegram] ${name} command error:`, err);
+                return safeReply(ctx, fallbackMessage);
+            }
+        };
+    };
+
+    // Normalize commands that Telegram auto-expands in groups: /cmd@botname -> /cmd
+    // This keeps bot.command() handlers working consistently in group chats.
+    bot.use(async (ctx, next) => {
+        const text = ctx.message?.text;
+        if (!text || !text.startsWith('/')) return next();
+
+        const firstToken = String(text).trim().split(/\s+/)[0];
+        const match = firstToken.match(/^\/([a-z0-9_]+)@([a-z0-9_]+)$/i);
+        if (!match) return next();
+
+        const addressedUsername = String(match[2] || '').toLowerCase();
+        const botUsername = await getBotUsername();
+
+        if (botUsername && addressedUsername === botUsername) {
+            const stripped = text.replace(/^\/[a-z0-9_]+@[a-z0-9_]+/i, `/${match[1]}`);
+            if (ctx.message) {
+                ctx.message.text = stripped;
+            }
+        }
+
+        return next();
+    });
+
     const isGroupChat = (ctx) => ['group', 'supergroup'].includes(ctx.chat?.type);
 
     const isTriggeredForBotInGroup = async (ctx, text = '') => {
@@ -356,7 +399,7 @@ export const initTelegramBot = (token) => {
     };
 
     // /start command - handles deep linking for account linking
-    bot.start(async (ctx) => {
+    bot.start(withSafeCommand('start', async (ctx) => {
         const payloadFromStart = ctx.startPayload; // Preferred, when available
         const text = ctx.message?.text || '';
         const payloadFromText = text.startsWith('/start ') ? text.replace('/start ', '').trim() : '';
@@ -407,17 +450,17 @@ export const initTelegramBot = (token) => {
         );
 
         return sendCommandGuide(ctx);
-    });
+    }, '❌ Sorry, I could not process /start right now. Please try again.'));
 
     // /guideline command - quick access to the command guide page
-    bot.command('guideline', async (ctx) => {
+    bot.command('guideline', withSafeCommand('guideline', async (ctx) => {
         return sendCommandGuide(ctx);
-    });
+    }));
 
     // /commands command - quick inline command list
-    bot.command('commands', async (ctx) => {
+    bot.command('commands', withSafeCommand('commands', async (ctx) => {
         return ctx.reply(commandListText, { parse_mode: 'Markdown' });
-    });
+    }));
 
     // /register command - conversational account creation
     bot.command('register', async (ctx) => {
@@ -538,16 +581,16 @@ export const initTelegramBot = (token) => {
     });
 
     // /chat_id command - helps users discover the current Telegram chat ID
-    bot.command('chat_id', async (ctx) => {
+    bot.command('chat_id', withSafeCommand('chat_id', async (ctx) => {
         const chatTitle = ctx.chat?.title || ctx.chat?.username || 'this chat';
         return ctx.reply(
             `🆔 Chat ID for *${chatTitle}*: \`${ctx.chat.id}\`\n\nUse this ID in TinyNotie to link Telegram group chat.`,
             { parse_mode: 'Markdown' }
         );
-    });
+    }));
 
     // /my_account command - quick identity and linking status view
-    bot.command('my_account', async (ctx) => {
+    bot.command('my_account', withSafeCommand('my_account', async (ctx) => {
         if (!ctx.user) {
             return ctx.reply('❌ No TinyNotie account linked yet. Use /register in private chat first.');
         }
@@ -559,7 +602,7 @@ export const initTelegramBot = (token) => {
             `• Telegram ID: \`${ctx.from?.id || ''}\``,
             { parse_mode: 'Markdown' }
         );
-    });
+    }));
 
     // /my_groups command - list latest groups user can access
     bot.command('my_groups', async (ctx) => {
@@ -671,14 +714,14 @@ export const initTelegramBot = (token) => {
     });
 
     // /miniapp command - open TinyNotie Telegram mini app
-    bot.command('miniapp', async (ctx) => {
+    bot.command('miniapp', withSafeCommand('miniapp', async (ctx) => {
         return ctx.reply(
             '🚀 Open TinyNotie mini app:',
             Markup.inlineKeyboard([
                 Markup.button.webApp('Open Mini App', getTelegramMiniAppUrl()),
             ])
         );
-    });
+    }));
 
     // /create_group command
     bot.command('create_group', async (ctx) => {
@@ -1290,6 +1333,12 @@ export const initTelegramBot = (token) => {
         } catch (err) {
             console.error('[Telegram] new_chat_members handler error:', err.message);
         }
+    });
+
+    // Last-resort error boundary for any unhandled middleware/handler failure.
+    bot.catch(async (err, ctx) => {
+        console.error('[Telegram] Unhandled bot error:', err);
+        await safeReply(ctx, '❌ Sorry, I hit an unexpected error. Please try again in a moment.');
     });
 
     return bot;
