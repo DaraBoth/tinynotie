@@ -2,6 +2,7 @@ import pg from "pg";
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -12,6 +13,62 @@ const pool = new Pool({
 
 // Secret key for JWT (use a strong secret key in production)
 const JWT_SECRET = process.env.JWT_SECRET;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN_NEW || process.env.TELEGRAM_BOT_TOKEN || "";
+const TELEGRAM_AUTH_MAX_AGE_SECONDS = Number(process.env.TELEGRAM_AUTH_MAX_AGE_SECONDS || 86400);
+
+const timingSafeHexEqual = (left = "", right = "") => {
+  const a = Buffer.from(String(left), "hex");
+  const b = Buffer.from(String(right), "hex");
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+};
+
+const parseTelegramInitData = (initDataRaw = "") => {
+  const params = new URLSearchParams(String(initDataRaw || ""));
+  const hash = params.get("hash") || "";
+
+  const pairs = [];
+  for (const [key, value] of params.entries()) {
+    if (key === "hash") continue;
+    pairs.push(`${key}=${value}`);
+  }
+  pairs.sort();
+  const dataCheckString = pairs.join("\n");
+
+  const authDate = Number(params.get("auth_date") || 0);
+  let user = null;
+  try {
+    const userRaw = params.get("user");
+    user = userRaw ? JSON.parse(userRaw) : null;
+  } catch {
+    user = null;
+  }
+
+  return { hash, dataCheckString, authDate, user };
+};
+
+const verifyTelegramInitData = ({ initDataRaw, botToken }) => {
+  if (!initDataRaw || !botToken) return { ok: false, reason: "missing_init_data_or_token" };
+
+  const { hash, dataCheckString, authDate, user } = parseTelegramInitData(initDataRaw);
+  if (!hash || !dataCheckString || !authDate || !user?.id) {
+    return { ok: false, reason: "invalid_payload" };
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (Math.abs(nowSeconds - authDate) > TELEGRAM_AUTH_MAX_AGE_SECONDS) {
+    return { ok: false, reason: "expired_auth_date" };
+  }
+
+  const secret = crypto.createHmac("sha256", "WebAppData").update(botToken).digest();
+  const calculatedHash = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
+
+  if (!timingSafeHexEqual(calculatedHash, hash)) {
+    return { ok: false, reason: "hash_mismatch" };
+  }
+
+  return { ok: true, telegramUser: user };
+};
 
 /**
  * @swagger
@@ -161,6 +218,55 @@ router.get("/telegram-link", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Telegram link generation error:", error);
     res.status(500).json({ status: false, error: error.message });
+  }
+});
+
+/**
+ * Telegram Mini App login
+ * Verifies Telegram WebApp initData signature and returns JWT for linked users.
+ */
+router.post("/telegram-miniapp-login", async (req, res) => {
+  try {
+    const initData = req.body?.initData || "";
+    const verification = verifyTelegramInitData({
+      initDataRaw: initData,
+      botToken: TELEGRAM_BOT_TOKEN,
+    });
+
+    if (!verification.ok) {
+      return res.status(401).json({
+        status: false,
+        message: "Invalid Telegram mini app authentication.",
+        reason: verification.reason,
+      });
+    }
+
+    const telegramId = Number(verification.telegramUser.id);
+    const { rows } = await pool.query(
+      "SELECT id, usernm, telegram_id FROM user_infm WHERE telegram_id = $1 LIMIT 1",
+      [telegramId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(403).json({
+        status: false,
+        message: "Telegram account is not linked to TinyNotie yet. Please use /register in bot first.",
+      });
+    }
+
+    const appUser = rows[0];
+    const token = jwt.sign({ ...appUser, _id: appUser.id }, JWT_SECRET, { expiresIn: "1d" });
+
+    return res.json({
+      status: true,
+      token,
+      usernm: appUser.usernm,
+      _id: appUser.id,
+      source: "telegram_miniapp",
+    });
+  } catch (error) {
+    console.error("telegram miniapp login error", error);
+    return res.status(500).json({ status: false, error: error.message });
   }
 });
 

@@ -6,6 +6,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'sonner';
 import { useState } from 'react';
 import { TopLoadingBar } from '@/components/TopLoadingBar';
+import { TelegramMiniAppAuthBootstrap } from '@/components/TelegramMiniAppAuthBootstrap';
 
 export function Providers({ children }) {
   const [queryClient] = useState(
@@ -15,11 +16,11 @@ export function Providers({ children }) {
           queries: {
             staleTime: 60 * 1000, // 1 minute
             gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
-            refetchOnWindowFocus: false,
-            retry: 1,
+            refetchOnWindowFocus: true,
+            retry: 5,
           },
           mutations: {
-            retry: 1,
+            retry: 5,
           },
         },
       })
@@ -35,9 +36,10 @@ export function Providers({ children }) {
       >
         {/* Global top-of-screen loading bar — auto-shows during any fetch */}
         <TopLoadingBar />
+        <TelegramMiniAppAuthBootstrap />
         {children}
         <Toaster
-          position="top-center"
+          position="top-right"
           richColors
           closeButton
           duration={3000}

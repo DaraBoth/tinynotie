@@ -75,6 +75,7 @@ export default apiClient;
 export const api = {
   // Auth
   login: (credentials) => apiClient.post('/auth/login', credentials),
+  telegramMiniAppLogin: (initData) => apiClient.post('/auth/telegram-miniapp-login', { initData }),
   register: (userData) => apiClient.post('/auth/register', userData),
   getTelegramLink: () => apiClient.get('/auth/telegram-link'),
 
