@@ -1,7 +1,11 @@
 import { openai, OPENAI_CHAT_MODEL } from './openaiClient.js';
 import { tools, handlers } from '../utils/aiTools.js';
 
-const MAX_TOOL_ITERATIONS = Number(process.env.AI_MAX_TOOL_ITERATIONS || 20);
+const configuredMaxIterations = Number(process.env.AI_MAX_TOOL_ITERATIONS || 20);
+// Prevent accidental env values (e.g. 1) from forcing one-tool-only behavior.
+const MAX_TOOL_ITERATIONS = Number.isFinite(configuredMaxIterations)
+    ? Math.max(8, configuredMaxIterations)
+    : 20;
 const OPENAI_CALL_TIMEOUT_MS = Number(process.env.OPENAI_CALL_TIMEOUT_MS || 45000);
 
 const withTimeout = async (promise, ms) => {
