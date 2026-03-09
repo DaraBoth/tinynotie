@@ -226,16 +226,16 @@ const buildSwaggerDocs = () => {
 
 const swaggerDocs = buildSwaggerDocs();
 
-app.use("/api-docs", swaggerUi.serve);
-app.get(
+// Serve Swagger UI and its static assets from the same origin.
+// This avoids CSP blocking of CDN scripts/styles and prevents 404 MIME issues on deployment.
+app.use(
   "/api-docs",
+  swaggerUi.serveFiles(swaggerDocs),
   swaggerUi.setup(swaggerDocs, {
-    customCssUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css",
-    customJs:
-      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui-bundle.js",
-    customJsStandalonePreset:
-      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui-standalone-preset.js",
+    explorer: true,
+    swaggerOptions: {
+      url: "/api-docs.json",
+    },
   })
 );
 
