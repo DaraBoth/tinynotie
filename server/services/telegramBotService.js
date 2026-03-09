@@ -144,6 +144,59 @@ export const initTelegramBot = (token) => {
         return isReplyToBot || hasMention;
     };
 
+    const stripBotMention = async (text = '') => {
+        const raw = String(text || '');
+        const username = await getBotUsername();
+        if (!username) return raw.trim();
+        const mentionRegex = new RegExp(`@${username}\\b`, 'ig');
+        return raw.replace(mentionRegex, '').replace(/\s{2,}/g, ' ').trim();
+    };
+
+    const resolveGroupContext = async ({ chatId, chatType, userId }) => {
+        const result = {
+            groupId: null,
+            groupName: null,
+            linkedInCurrentChat: false,
+            hasAnyAccessibleGroup: false,
+        };
+
+        try {
+            const { rows: linkedRows } = await pool.query(
+                'SELECT id, grp_name FROM grp_infm WHERE telegram_chat_id = $1 LIMIT 1',
+                [chatId]
+            );
+
+            if (linkedRows.length > 0) {
+                result.groupId = linkedRows[0].id;
+                result.groupName = linkedRows[0].grp_name || `Group ${linkedRows[0].id}`;
+                result.linkedInCurrentChat = true;
+                result.hasAnyAccessibleGroup = true;
+                return result;
+            }
+
+            if (chatType === 'private' && userId) {
+                const { rows: personalGroups } = await pool.query(
+                    `SELECT g.id, g.grp_name FROM grp_infm g
+                     LEFT JOIN grp_users gu ON gu.group_id = g.id
+                     WHERE g.admin_id = $1 OR gu.user_id = $1
+                     ORDER BY g.create_date DESC
+                     LIMIT 1`,
+                    [userId]
+                );
+
+                if (personalGroups.length > 0) {
+                    result.groupId = personalGroups[0].id;
+                    result.groupName = personalGroups[0].grp_name || `Group ${personalGroups[0].id}`;
+                    result.hasAnyAccessibleGroup = true;
+                }
+            }
+
+            return result;
+        } catch {
+            return result;
+        }
+    };
+
     const readCommandArg = (ctx) => (ctx.message?.text || '').split(' ').slice(1).join(' ').trim();
 
     const sanitizeUsername = (raw, fallbackId) => {
@@ -983,56 +1036,45 @@ export const initTelegramBot = (token) => {
             }
         }
 
+        const triggeredInGroup = isGroupChat(ctx)
+            ? await isTriggeredForBotInGroup(ctx, text)
+            : true;
+
+        if (isGroupChat(ctx) && !triggeredInGroup) {
+            return;
+        }
+
         if (!ctx.user) {
             if (ctx.chat?.type === 'private') {
                 return ctx.reply('Please register via /register to start using TinyNotie bot.');
             }
-            return;
+            return ctx.reply('👋 I can help once your TinyNotie account is linked. Please DM me and use /register first, then mention me here again.');
         }
 
-        if (isGroupChat(ctx)) {
-            const triggered = await isTriggeredForBotInGroup(ctx, text);
-            if (!triggered) return;
+        const groupContext = await resolveGroupContext({
+            chatId: ctx.chat.id,
+            chatType: ctx.chat.type,
+            userId: ctx.user.id,
+        });
+
+        if (!groupContext.groupId && isGroupChat(ctx)) {
+            return ctx.reply('🔗 This Telegram group is not linked to TinyNotie yet. Use /link_group in this chat so I can manage expenses here.');
         }
 
-        // Find if this group is linked
-        let groupId;
-        try {
-            const { rows } = await pool.query(
-                'SELECT id FROM grp_infm WHERE telegram_chat_id = $1',
-                [ctx.chat.id]
-            );
-            if (rows.length > 0) {
-                groupId = rows[0].id;
-            } else if (ctx.chat.type === 'private') {
-                const { rows: personalGroups } = await pool.query(
-                    `SELECT g.id FROM grp_infm g
-                     LEFT JOIN grp_users gu ON gu.group_id = g.id
-                     WHERE g.admin_id = $1 OR gu.user_id = $1
-                     ORDER BY g.create_date DESC
-                     LIMIT 1`,
-                    [ctx.user.id]
-                );
-                if (personalGroups.length === 0) {
-                    return ctx.reply('No group found for your account yet. Create one with /create_group.');
-                }
-                groupId = personalGroups[0].id;
-            } else {
-                return; // Group not linked, ignore
-            }
-        } catch (err) {
-            return;
+        if (!groupContext.groupId && ctx.chat.type === 'private') {
+            return ctx.reply('No TinyNotie group found for your account yet. Create one with /create_group, then chat with me again.');
         }
 
         ctx.sendChatAction('typing');
 
         try {
             const userContext = `Message from @${ctx.from.username || ctx.from.first_name} (App User: ${ctx.user.usernm}). `;
-            const fullMessage = userContext + ctx.message.text;
+            const cleanText = await stripBotMention(ctx.message.text || '');
+            const fullMessage = userContext + (cleanText || text);
 
             const aiResponse = await runAiAgent({
                 message: fullMessage,
-                groupId,
+                groupId: groupContext.groupId,
             });
 
             ctx.reply(aiResponse, { parse_mode: 'Markdown' });
@@ -1044,13 +1086,6 @@ export const initTelegramBot = (token) => {
 
     // Handle Photos (Receipt Tracking)
     bot.on(message('photo'), async (ctx) => {
-        if (!ctx.user) {
-            if (ctx.chat?.type === 'private') {
-                return ctx.reply('Please register via /register before sending receipts.');
-            }
-            return;
-        }
-
         if (isGroupChat(ctx)) {
             const captionText = ctx.message?.caption || '';
             const triggered = await isTriggeredForBotInGroup(ctx, captionText);
@@ -1059,26 +1094,18 @@ export const initTelegramBot = (token) => {
             }
         }
 
-        let group = null;
-        const { rows: groups } = await pool.query('SELECT id, grp_name FROM grp_infm WHERE telegram_chat_id = $1', [ctx.chat.id]);
-        if (groups.length > 0) {
-            group = groups[0];
-        } else if (ctx.chat.type === 'private') {
-            const { rows: personalGroups } = await pool.query(
-                `SELECT g.id, g.grp_name FROM grp_infm g
-                 LEFT JOIN grp_users gu ON gu.group_id = g.id
-                 WHERE g.admin_id = $1 OR gu.user_id = $1
-                 ORDER BY g.create_date DESC
-                 LIMIT 1`,
-                [ctx.user.id]
-            );
+        const groupContext = await resolveGroupContext({
+            chatId: ctx.chat.id,
+            chatType: ctx.chat.type,
+            userId: ctx.user?.id,
+        });
 
-            if (personalGroups.length === 0) {
-                return ctx.reply('No group found for your account. Create one with /create_group first.');
-            }
-            group = personalGroups[0];
-        } else {
-            return;
+        if (!ctx.user && ctx.chat?.type === 'private') {
+            await ctx.reply('📌 You can still send images now. For group-expense actions, please /register to link your TinyNotie account.');
+        }
+
+        if (!ctx.user && isGroupChat(ctx)) {
+            await ctx.reply('👋 I received your image. To perform TinyNotie actions in this group, please link your account via DM with /register.');
         }
 
         await ctx.sendChatAction('typing');
@@ -1095,9 +1122,10 @@ export const initTelegramBot = (token) => {
             ctx.reply('🔍 Scanning receipt...');
 
             const ocrResult = await processReceiptImage(base64);
+            const contextLine = groupContext.groupName ? `Group: *${groupContext.groupName}*\n` : '';
 
             if (ocrResult.status && ocrResult.data && ocrResult.data.length > 0) {
-                let summary = `📄 *Receipt Scan Results*\nGroup: *${group.grp_name}*\n\n`;
+                let summary = `📄 *Image Analysis Results*\n${contextLine}\n`;
                 let total = 0;
 
                 ocrResult.data.forEach(item => {
@@ -1105,11 +1133,20 @@ export const initTelegramBot = (token) => {
                     total += parseFloat(item.spend);
                 });
 
-                summary += `\n*Total: ${total.toLocaleString()}*\n\n_Note: You can tell me to "Add these expenses" to save them!_`;
+                summary += `\n*Total: ${total.toLocaleString()}*\n\n`;
+                summary += `What do you want me to do with this image next?\n`;
+                summary += `• Reply *"add these expenses"* to save them\n`;
+                summary += `• Reply with your own instruction (for example: *"summarize by category"*)`;
 
                 ctx.reply(summary, { parse_mode: 'Markdown' });
             } else {
-                ctx.reply('❌ Could not extract items from this receipt.');
+                ctx.reply(
+                    `📷 I analyzed the image but could not confidently extract receipt items.\n\n` +
+                    `Tell me what you want to do with it, for example:\n` +
+                    `• "describe this image"\n` +
+                    `• "extract any visible text"\n` +
+                    `• "try adding expense manually"`
+                );
             }
         } catch (err) {
             console.error('Bot photo error:', err);
