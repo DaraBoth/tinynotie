@@ -36,6 +36,7 @@ import { fileURLToPath } from "url";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const { version } = require("./package.json");
+const swaggerUiDistPath = require("swagger-ui-dist").absolutePath();
 
 const app = express();
 
@@ -225,6 +226,9 @@ const buildSwaggerDocs = () => {
 };
 
 const swaggerDocs = buildSwaggerDocs();
+
+// Explicit static serving for swagger-ui-dist assets (bundle/preset/css) on serverless.
+app.use("/api-docs", express.static(swaggerUiDistPath, { index: false }));
 
 // Serve Swagger UI and its static assets from the same origin.
 // This avoids CSP blocking of CDN scripts/styles and prevents 404 MIME issues on deployment.

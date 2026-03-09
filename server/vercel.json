@@ -7,7 +7,8 @@
             "config": {
                 "includeFiles": [
                     "routes/**",
-                    "utils/**"
+                    "utils/**",
+                    "node_modules/swagger-ui-dist/**"
                 ],
                 "maxLambdaSize": "50mb"
             }
