@@ -123,7 +123,7 @@ function GroupCard({ group, index, onDelete }) {
       {group.isAdmin && (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete({ id: group.id, grp_name: group.grp_name }); }}
-          className="absolute top-4 right-4 z-20 opacity-0 group-hover/card:opacity-100 p-2 rounded-xl glass-button text-[#ff0080] hover:bg-[#ff0080]/20 transition-all border-none"
+          className="absolute top-4 right-4 z-20 opacity-0 pointer-events-none md:group-hover/card:opacity-100 md:group-hover/card:pointer-events-auto p-2 rounded-xl glass-button text-[#ff0080] hover:bg-[#ff0080]/20 transition-all border-none"
         >
           <Trash2 className="h-4 w-4" />
         </button>
