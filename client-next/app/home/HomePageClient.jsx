@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loading } from '@/components/Loading';
 import { SpaceSky } from '@/components/SpaceSky';
 import { Topbar } from '@/components/global/Topbar';
+import { MobilePullToRefresh } from '@/components/MobilePullToRefresh';
 import { CURRENCY_NAMES } from '@/utils/helpers';
 import {
   Dialog, DialogContent, DialogDescription,
@@ -143,7 +144,7 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
   const [search, setSearch] = useState('');
   const [filterBy, setFilterBy] = useState('all');
 
-  const { data: groups, isLoading } = useQuery({
+  const { data: groups, isLoading, refetch } = useQuery({
     queryKey: ['groupsWithDetails', activeUserId],
     queryFn: async () => {
       const response = await api.getGroupsWithDetails(activeUserId);
@@ -191,8 +192,13 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
   if ((!hasHydrated || !isAuthenticated) && !hasSSRData) return <Loading text="CHECKING VIBES..." />;
   if (isLoading && !Array.isArray(groups)) return <Loading text="WAKING UP THE SERVER... RELAX." />;
 
+  const handlePullToRefresh = async () => {
+    await refetch();
+  };
+
   return (
     <div className="min-h-screen relative bg-background pb-24 selection:bg-primary selection:text-primary-foreground">
+      <MobilePullToRefresh onRefresh={handlePullToRefresh} enabled={!!isAuthenticated} />
       <SpaceSky />
       <Topbar />
 

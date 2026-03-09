@@ -30,6 +30,7 @@ import { GroupVisibilitySettings } from '@/components/GroupVisibilitySettings';
 import { ReceiptScanner } from '@/components/ReceiptScanner';
 import { AddUserToGroup } from '@/components/AddUserToGroup';
 import { SelectTripDialog } from '@/components/SelectTripDialog';
+import { MobilePullToRefresh } from '@/components/MobilePullToRefresh';
 import { calculateMoney, formatTimeDifference } from '@/utils/helpers';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -273,7 +274,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
     refetchInterval: 30000,
   });
 
-  const { data: telegramStatusData } = useQuery({
+  const { data: telegramStatusData, refetch: refetchTelegramStatus } = useQuery({
     queryKey: ['telegram-link-status', groupId],
     queryFn: async () => {
       const res = await api.getTelegramLinkStatus(groupId);
@@ -318,6 +319,10 @@ export function GroupPageClient({ groupId, initialData = null }) {
   const resolveTargetType = (forcedTargetType) => {
     if (forcedTargetType === 'group' || forcedTargetType === 'personal') return forcedTargetType;
     return resolveTelegramTargetType();
+  };
+
+  const handlePullToRefresh = async () => {
+    await Promise.allSettled([refetch(), refetchTelegramStatus()]);
   };
 
   const openShareFlow = (mode, trip = null) => {
@@ -398,6 +403,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
   if (error) {
     return (
       <div className="min-h-screen relative">
+        <MobilePullToRefresh onRefresh={handlePullToRefresh} enabled={!!isAuthenticated} />
         <SpaceSky />
         <Topbar />
         <div className="relative z-10 flex items-center justify-center min-h-[60vh]">
