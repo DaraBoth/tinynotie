@@ -569,28 +569,24 @@ export const initTelegramBot = (token) => {
 
         try {
             const { rows } = await pool.query(
-                `SELECT g.id, g.grp_name, g.telegram_chat_id,
-                        CASE WHEN g.admin_id = $1 THEN true ELSE false END AS is_owner
+                `SELECT g.id, g.grp_name, g.telegram_chat_id
                  FROM grp_infm g
-                 LEFT JOIN grp_users gu ON gu.group_id = g.id
-                 WHERE g.admin_id = $1 OR gu.user_id = $1
-                 GROUP BY g.id, g.grp_name, g.telegram_chat_id, g.admin_id
+                 WHERE g.admin_id = $1
                  ORDER BY g.create_date DESC
                  LIMIT 10`,
                 [ctx.user.id]
             );
 
             if (rows.length === 0) {
-                return ctx.reply('ℹ️ You do not have any groups yet. Use /create_group to make one.');
+                return ctx.reply('ℹ️ You do not own any groups yet. Use /create_group to make one.');
             }
 
             const lines = rows.map((g) => {
-                const role = g.is_owner ? 'Owner' : 'Member';
                 const linkState = g.telegram_chat_id ? `Linked chat: \`${g.telegram_chat_id}\`` : 'Not linked to Telegram chat';
-                return `• *${g.grp_name || `Group ${g.id}`}* (ID: \`${g.id}\`, ${role})\n  ${linkState}`;
+                return `• *${g.grp_name || `Group ${g.id}`}* (ID: \`${g.id}\`)\n  ${linkState}`;
             });
 
-            return ctx.reply(`📚 *Your Groups (latest 10)*\n\n${lines.join('\n')}`, { parse_mode: 'Markdown' });
+            return ctx.reply(`📚 *Your Owned Groups (latest 10)*\n\n${lines.join('\n')}`, { parse_mode: 'Markdown' });
         } catch (err) {
             console.error('my_groups command error:', err);
             return ctx.reply('❌ Failed to fetch your groups.');
