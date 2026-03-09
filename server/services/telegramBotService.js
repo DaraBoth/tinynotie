@@ -42,6 +42,7 @@ const getWebAppBaseUrl = () => {
 };
 
 const getTelegramCommandGuideUrl = () => `${getWebAppBaseUrl()}/help/telegram-commands`;
+    const getTelegramMiniAppUrl = () => `${getWebAppBaseUrl()}`;
 
 const getUserTableColumns = async () => {
     if (userTableColumnsCache) return userTableColumnsCache;
@@ -256,6 +257,31 @@ export const initTelegramBot = (token) => {
         return true;
     };
 
+    const sendCommandGuide = async (ctx) => {
+        return ctx.reply(
+            `📘 *TinyNotie Command Guideline*\nOpen full guide: [TinyNotie Telegram Command Guide](${getTelegramCommandGuideUrl()})\n\nThis page explains what each command does and when to use it.`,
+            { parse_mode: 'Markdown', disable_web_page_preview: true }
+        );
+    };
+
+    const commandListText = `*Useful Commands*\n` +
+        `/register - Create and link your TinyNotie account\n` +
+        `/reset_password - Change your account password\n` +
+        `/my_account - Show your linked TinyNotie account info\n` +
+        `/my_groups - Show your latest TinyNotie groups\n` +
+        `/chat_id - Show current Telegram chat ID\n` +
+        `/link_group - Link this Telegram group to TinyNotie group\n` +
+        `/unlink_group - Unlink this Telegram group from TinyNotie\n` +
+        `/create_group - Create a TinyNotie group from this chat\n` +
+        `/add_member - Add a member to linked group\n` +
+        `/join - Join linked group with your Telegram name\n` +
+        `/sync_members - Sync visible Telegram members\n` +
+        `/status - Show linked group summary\n` +
+        `/export - Export linked group report\n` +
+        `/miniapp - Open TinyNotie mini app\n` +
+        `/guideline - Open full command guideline page\n` +
+        `/commands - Show this command list`;
+
     const normalizeYesNo = (text = '') => String(text || '').trim().toLowerCase();
 
     const normalizeCurrency = (text = '') => {
@@ -369,22 +395,28 @@ export const initTelegramBot = (token) => {
             `👋 Welcome to TinyNotie Assistant!\n\nI can help you manage your group expenses, members, and trips directly from Telegram.\n\n${ctx.user
                 ? `Logged in as: *${ctx.user.usernm}*`
                 : 'To get started, register directly here by sending /register'
-            }\n\n*Available Commands:*\n/register - Create account via Telegram\n/reset_password - Change your account password\n/link_group - Link this chat to a group\n/chat_id - Get current chat ID\n/create_group - Create a new group\n/add_member - Add member to group\n/sync_members - Sync visible Telegram members\n/export - Get Excel report\n/status - Group summary\n/guideline - Open full command guide page`,
+            }\n\n${commandListText}`,
             { parse_mode: 'Markdown' }
         );
 
-        return ctx.reply(
-            `📘 *Command Guideline*\nOpen full guide: [TinyNotie Telegram Command Guide](${getTelegramCommandGuideUrl()})\n\nUse /guideline anytime to open this page again.`,
-            { parse_mode: 'Markdown', disable_web_page_preview: true }
+        await ctx.reply(
+            '🚀 Tap below to open TinyNotie mini app directly in Telegram:',
+            Markup.inlineKeyboard([
+                Markup.button.webApp('Open TinyNotie Mini App', getTelegramMiniAppUrl()),
+            ])
         );
+
+        return sendCommandGuide(ctx);
     });
 
     // /guideline command - quick access to the command guide page
     bot.command('guideline', async (ctx) => {
-        return ctx.reply(
-            `📘 *TinyNotie Command Guideline*\nOpen full guide: [TinyNotie Telegram Command Guide](${getTelegramCommandGuideUrl()})\n\nThis page explains what each command does and when to use it.`,
-            { parse_mode: 'Markdown', disable_web_page_preview: true }
-        );
+        return sendCommandGuide(ctx);
+    });
+
+    // /commands command - quick inline command list
+    bot.command('commands', async (ctx) => {
+        return ctx.reply(commandListText, { parse_mode: 'Markdown' });
     });
 
     // /register command - conversational account creation
@@ -514,6 +546,57 @@ export const initTelegramBot = (token) => {
         );
     });
 
+    // /my_account command - quick identity and linking status view
+    bot.command('my_account', async (ctx) => {
+        if (!ctx.user) {
+            return ctx.reply('❌ No TinyNotie account linked yet. Use /register in private chat first.');
+        }
+
+        return ctx.reply(
+            `👤 *Your TinyNotie Account*\n` +
+            `• Account ID: *${ctx.user.usernm}*\n` +
+            `• Telegram Username: ${ctx.from?.username ? `@${ctx.from.username}` : 'not set'}\n` +
+            `• Telegram ID: \`${ctx.from?.id || ''}\``,
+            { parse_mode: 'Markdown' }
+        );
+    });
+
+    // /my_groups command - list latest groups user can access
+    bot.command('my_groups', async (ctx) => {
+        if (!ctx.user) {
+            return ctx.reply('❌ Please /register first to view your groups.');
+        }
+
+        try {
+            const { rows } = await pool.query(
+                `SELECT g.id, g.grp_name, g.telegram_chat_id,
+                        CASE WHEN g.admin_id = $1 THEN true ELSE false END AS is_owner
+                 FROM grp_infm g
+                 LEFT JOIN grp_users gu ON gu.group_id = g.id
+                 WHERE g.admin_id = $1 OR gu.user_id = $1
+                 GROUP BY g.id, g.grp_name, g.telegram_chat_id, g.admin_id
+                 ORDER BY g.create_date DESC
+                 LIMIT 10`,
+                [ctx.user.id]
+            );
+
+            if (rows.length === 0) {
+                return ctx.reply('ℹ️ You do not have any groups yet. Use /create_group to make one.');
+            }
+
+            const lines = rows.map((g) => {
+                const role = g.is_owner ? 'Owner' : 'Member';
+                const linkState = g.telegram_chat_id ? `Linked chat: \`${g.telegram_chat_id}\`` : 'Not linked to Telegram chat';
+                return `• *${g.grp_name || `Group ${g.id}`}* (ID: \`${g.id}\`, ${role})\n  ${linkState}`;
+            });
+
+            return ctx.reply(`📚 *Your Groups (latest 10)*\n\n${lines.join('\n')}`, { parse_mode: 'Markdown' });
+        } catch (err) {
+            console.error('my_groups command error:', err);
+            return ctx.reply('❌ Failed to fetch your groups.');
+        }
+    });
+
     // /link_group command - links a Telegram chat (group) to a TinyNotie group
     bot.command('link_group', async (ctx) => {
         if (!ctx.user) return ctx.reply('Please link your account first via private message to the bot.');
@@ -561,6 +644,44 @@ export const initTelegramBot = (token) => {
             console.error('Link group error:', err);
             ctx.reply('❌ Failed to link group.');
         }
+    });
+
+    // /unlink_group command - remove Telegram chat linkage for current group chat
+    bot.command('unlink_group', async (ctx) => {
+        if (!ctx.user) return ctx.reply('Please link your account first via private message to the bot.');
+        if (ctx.chat.type === 'private') return ctx.reply('Please use this command inside a Telegram group.');
+
+        try {
+            const { rows } = await pool.query(
+                'SELECT id, grp_name, admin_id FROM grp_infm WHERE telegram_chat_id = $1 LIMIT 1',
+                [ctx.chat.id]
+            );
+
+            if (rows.length === 0) {
+                return ctx.reply('ℹ️ This chat is not linked to any TinyNotie group right now.');
+            }
+
+            const linkedGroup = rows[0];
+            if (Number(linkedGroup.admin_id) !== Number(ctx.user.id)) {
+                return ctx.reply('❌ Only the TinyNotie group owner can unlink this chat.');
+            }
+
+            await pool.query('UPDATE grp_infm SET telegram_chat_id = NULL WHERE id = $1', [linkedGroup.id]);
+            return ctx.reply(`✅ Unlinked this Telegram chat from *${linkedGroup.grp_name || `Group ${linkedGroup.id}`}*.`, { parse_mode: 'Markdown' });
+        } catch (err) {
+            console.error('unlink_group error:', err);
+            return ctx.reply('❌ Failed to unlink this chat.');
+        }
+    });
+
+    // /miniapp command - open TinyNotie Telegram mini app
+    bot.command('miniapp', async (ctx) => {
+        return ctx.reply(
+            '🚀 Open TinyNotie mini app:',
+            Markup.inlineKeyboard([
+                Markup.button.webApp('Open Mini App', getTelegramMiniAppUrl()),
+            ])
+        );
     });
 
     // /create_group command

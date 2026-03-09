@@ -3,14 +3,20 @@ import Link from 'next/link';
 const COMMANDS = [
   { cmd: '/register', use: 'Create and link your TinyNotie account from Telegram.' },
   { cmd: '/reset_password', use: 'Set a new password for your linked TinyNotie account.' },
+  { cmd: '/my_account', use: 'Show your TinyNotie account ID and Telegram link details.' },
+  { cmd: '/my_groups', use: 'List your latest TinyNotie groups and Telegram link status.' },
   { cmd: '/chat_id', use: 'Show the current Telegram chat ID for linking.' },
   { cmd: '/link_group', use: 'Link this Telegram group chat to an existing TinyNotie group.' },
+  { cmd: '/unlink_group', use: 'Unlink the current Telegram group chat from TinyNotie (owner only).' },
   { cmd: '/create_group', use: 'Create a TinyNotie group from this chat. In group chats, it uses the Telegram group title.' },
   { cmd: '/add_member', use: 'Add one member to the linked TinyNotie group.' },
+  { cmd: '/join', use: 'Join a linked TinyNotie group in Telegram using your current display name.' },
   { cmd: '/sync_members', use: 'Sync visible Telegram members into the linked TinyNotie group.' },
   { cmd: '/status', use: 'Show a quick financial summary of the linked group.' },
   { cmd: '/export', use: 'Generate and send the group Excel report.' },
+  { cmd: '/miniapp', use: 'Open TinyNotie as a Telegram mini app.' },
   { cmd: '/guideline', use: 'Open this guideline page again anytime.' },
+  { cmd: '/commands', use: 'Show a quick command list directly in Telegram chat.' },
 ];
 
 export default function TelegramCommandsPage() {
@@ -39,6 +45,12 @@ export default function TelegramCommandsPage() {
           <div className="mt-8 rounded-xl border border-border/40 bg-muted/30 p-4">
             <p className="text-sm text-muted-foreground">
               Tip: In a Telegram group chat, commands work best when sent directly to the TinyNotie bot or as a reply to a bot message.
+            </p>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-border/40 bg-muted/30 p-4">
+            <p className="text-sm text-muted-foreground">
+              Mini App Tip: Use <span className="font-mono">/miniapp</span> in Telegram to open TinyNotie quickly. Make sure your bot domain is configured in BotFather and points to your production web app URL.
             </p>
           </div>
 
