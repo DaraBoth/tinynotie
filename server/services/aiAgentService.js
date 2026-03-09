@@ -48,21 +48,81 @@ const parseToolArguments = (rawArgs) => {
     return JSON.parse(rawArgs);
 };
 
+const normalizeAttachments = ({ imageAttachment = null, attachments = [] }) => {
+    const normalized = Array.isArray(attachments) ? [...attachments] : [];
+
+    if (imageAttachment?.base64) {
+        normalized.push({
+            name: imageAttachment.name || 'image',
+            mimeType: imageAttachment.mimeType || 'image/png',
+            size: imageAttachment.size || null,
+            kind: 'image',
+            base64: imageAttachment.base64,
+        });
+    }
+
+    return normalized;
+};
+
+const buildUserContent = ({ message, imageAttachment = null, attachments = [] }) => {
+    const normalizedAttachments = normalizeAttachments({ imageAttachment, attachments });
+
+    if (!normalizedAttachments.length) {
+        return message || 'Please help with this request.';
+    }
+
+    const content = [
+        { type: 'text', text: message || 'Please analyze the attached files and help me.' },
+    ];
+
+    normalizedAttachments.forEach((file, idx) => {
+        const label = `Attachment ${idx + 1}: ${file.name || 'unnamed'}`;
+
+        if (file.kind === 'image' && file.base64) {
+            content.push({
+                type: 'text',
+                text: `${label} (image, ${file.mimeType || 'image/*'})`,
+            });
+            content.push({
+                type: 'image_url',
+                image_url: {
+                    url: `data:${file.mimeType || 'image/png'};base64,${file.base64}`,
+                },
+            });
+            return;
+        }
+
+        if (file.kind === 'text') {
+            const textBody = String(file.textContent || '').slice(0, 12000);
+            const truncNote = file.truncated ? '\n[Content was truncated before sending.]' : '';
+            content.push({
+                type: 'text',
+                text: `${label} (text, ${file.mimeType || 'text/plain'})\n\n${textBody}${truncNote}`,
+            });
+            return;
+        }
+
+        const preview = String(file.base64Preview || '').slice(0, 2000);
+        content.push({
+            type: 'text',
+            text: `${label} (binary, ${file.mimeType || 'application/octet-stream'}, ${file.size || 0} bytes).` +
+                (preview ? `\nBase64 preview:\n${preview}` : '\nNo preview content available.'),
+        });
+    });
+
+    return content;
+};
+
 /**
  * AI Agent Service
  * Handles multi-turn tool calling logic for both Web and Telegram
  */
-export const runAiAgent = async ({ message, groupId, history = [], imageAttachment = null, onToken, onStatus, onToolCall }) => {
+export const runAiAgent = async ({ message, groupId, history = [], imageAttachment = null, attachments = [], onToken, onStatus, onToolCall }) => {
     if (!openai?.chat?.completions) {
         throw new Error("OpenAI client is not configured. Missing OPENAI_API_KEY or OPEN_API_KEY.");
     }
 
-    const userContent = imageAttachment?.base64
-        ? [
-            { type: "text", text: message || "Please analyze this uploaded image and help me." },
-            { type: "image_url", image_url: { url: `data:${imageAttachment.mimeType || "image/png"};base64,${imageAttachment.base64}` } },
-        ]
-        : message;
+    const userContent = buildUserContent({ message, imageAttachment, attachments });
 
     let messages = [
         {
@@ -75,6 +135,7 @@ You can:
 2. Add or update trips/expenses.
 3. Add or update members.
         4. Use bulk update tools when the user asks to edit multiple members or multiple trips in one request.
+    5. If files are attached, analyze them first and use the extracted details to answer or execute tools.
 Be precise with numbers. If you add a trip, confirm the members involved.
 Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise English.`
         },
@@ -168,17 +229,12 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
  * Streaming version of the AI Agent
  * (Designed for SSE)
  */
-export const streamAiAgent = async ({ message, groupId, history = [], imageAttachment = null, sendEvent }) => {
+export const streamAiAgent = async ({ message, groupId, history = [], imageAttachment = null, attachments = [], sendEvent }) => {
     if (!openai?.chat?.completions) {
         throw new Error("OpenAI client is not configured. Missing OPENAI_API_KEY or OPEN_API_KEY.");
     }
 
-    const userContent = imageAttachment?.base64
-        ? [
-            { type: "text", text: message || "Please analyze this uploaded image and help me." },
-            { type: "image_url", image_url: { url: `data:${imageAttachment.mimeType || "image/png"};base64,${imageAttachment.base64}` } },
-        ]
-        : message;
+    const userContent = buildUserContent({ message, imageAttachment, attachments });
 
     let messages = [
         {
@@ -191,6 +247,7 @@ You can:
 2. Add or update trips/expenses.
 3. Add or update members.
         4. Use bulk update tools when the user asks to edit multiple members or multiple trips in one request.
+    5. If files are attached, analyze them first and use the extracted details to answer or execute tools.
 Be precise with numbers. If you add a trip, confirm the members involved.
 Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise English.`
         },

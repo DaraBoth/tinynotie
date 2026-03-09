@@ -17,6 +17,41 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
+const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const MAX_ATTACHMENTS = 8;
+const TEXT_MIME_PREFIXES = ['text/'];
+const TEXT_MIME_EXACT = [
+    'application/json',
+    'application/xml',
+    'application/javascript',
+    'application/x-javascript',
+    'application/x-yaml',
+    'application/yaml',
+];
+
+const isTextLikeFile = (file) => {
+    const mime = String(file?.type || '').toLowerCase();
+    if (TEXT_MIME_PREFIXES.some((prefix) => mime.startsWith(prefix))) return true;
+    if (TEXT_MIME_EXACT.includes(mime)) return true;
+
+    const name = String(file?.name || '').toLowerCase();
+    return /\.(txt|md|csv|log|json|xml|yaml|yml|js|jsx|ts|tsx|css|html|sql|py|java|go|rs)$/i.test(name);
+};
+
+const readFileAsDataURL = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Failed to read file as data URL'));
+    reader.readAsDataURL(file);
+});
+
+const readFileAsText = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Failed to read file as text'));
+    reader.readAsText(file);
+});
+
 const shouldRefreshFromTool = (toolName) => {
     const name = String(toolName || '').toLowerCase();
     return [
@@ -35,7 +70,7 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState(null); // 'Thinking...', 'Executing tools...', etc.
     const [activeTools, setActiveTools] = useState([]); // List of current tool calls
-    const [attachedImage, setAttachedImage] = useState(null);
+    const [attachments, setAttachments] = useState([]);
 
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
@@ -111,29 +146,33 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if ((!input.trim() && !attachedImage) || isLoading) return;
+        if ((!input.trim() && attachments.length === 0) || isLoading) return;
         if (!groupId) {
             toast.error('Group context missing. Please reopen the group page.');
             return;
         }
 
         const textContent = input.trim();
-        const displayContent = attachedImage
-            ? `${textContent}${textContent ? '\n\n' : ''}[Image: ${attachedImage.name}]`
+        const attachmentLabel = attachments.length
+            ? attachments.map((f) => `[File: ${f.name}]`).join('\n')
+            : '';
+
+        const displayContent = attachmentLabel
+            ? `${textContent}${textContent ? '\n\n' : ''}${attachmentLabel}`
             : textContent;
 
         const userMessage = {
             role: 'user',
             content: displayContent,
             timestamp: new Date(),
-            attachmentName: attachedImage?.name || null,
+            attachmentName: attachments.length ? attachments.map((f) => f.name).join(', ') : null,
         };
 
         setMessages(prev => [...prev, userMessage]);
         const currentInput = textContent;
-        const currentAttachment = attachedImage;
+        const currentAttachments = attachments;
         setInput('');
-        setAttachedImage(null);
+        setAttachments([]);
         setIsLoading(true);
         setStatus('Thinking...');
 
@@ -161,13 +200,8 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                     message: currentInput,
                     groupId,
                     history,
-                    imageAttachment: currentAttachment
-                        ? {
-                            name: currentAttachment.name,
-                            mimeType: currentAttachment.mimeType,
-                            base64: currentAttachment.base64,
-                        }
-                        : null,
+                    imageAttachment: null,
+                    attachments: currentAttachments,
                 })
             });
 
@@ -364,51 +398,85 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/*"
+                            multiple
                             className="hidden"
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                if (!file.type.startsWith('image/')) {
-                                    toast.error('Please select an image file.');
-                                    return;
-                                }
-                                if (file.size > 5 * 1024 * 1024) {
-                                    toast.error('Image is too large. Max 5MB.');
-                                    return;
-                                }
-
-                                const reader = new FileReader();
-                                reader.onload = () => {
-                                    const result = String(reader.result || '');
-                                    const base64 = result.includes(',') ? result.split(',')[1] : '';
-                                    if (!base64) {
-                                        toast.error('Failed to read image file.');
-                                        return;
-                                    }
-                                    setAttachedImage({
-                                        name: file.name,
-                                        mimeType: file.type,
-                                        base64,
-                                    });
-                                };
-                                reader.onerror = () => toast.error('Failed to read image file.');
-                                reader.readAsDataURL(file);
-
+                            onChange={async (e) => {
+                                const fileList = Array.from(e.target.files || []);
                                 e.target.value = '';
+                                if (!fileList.length) return;
+
+                                setStatus('Reading attachments...');
+
+                                try {
+                                    const built = [];
+                                    for (const file of fileList) {
+                                        if (file.size > MAX_ATTACHMENT_BYTES) {
+                                            toast.error(`${file.name} is too large. Max 8MB per file.`);
+                                            continue;
+                                        }
+
+                                        if (file.type.startsWith('image/')) {
+                                            const result = await readFileAsDataURL(file);
+                                            const base64 = result.includes(',') ? result.split(',')[1] : '';
+                                            if (!base64) continue;
+                                            built.push({
+                                                name: file.name,
+                                                mimeType: file.type || 'image/png',
+                                                size: file.size,
+                                                kind: 'image',
+                                                base64,
+                                            });
+                                            continue;
+                                        }
+
+                                        if (isTextLikeFile(file)) {
+                                            const text = await readFileAsText(file);
+                                            const truncated = text.length > 120000;
+                                            built.push({
+                                                name: file.name,
+                                                mimeType: file.type || 'text/plain',
+                                                size: file.size,
+                                                kind: 'text',
+                                                textContent: truncated ? text.slice(0, 120000) : text,
+                                                truncated,
+                                            });
+                                            continue;
+                                        }
+
+                                        const result = await readFileAsDataURL(file);
+                                        const base64 = result.includes(',') ? result.split(',')[1] : '';
+                                        built.push({
+                                            name: file.name,
+                                            mimeType: file.type || 'application/octet-stream',
+                                            size: file.size,
+                                            kind: 'binary',
+                                            base64Preview: base64.slice(0, 2000),
+                                        });
+                                    }
+
+                                    setAttachments((prev) => [...prev, ...built].slice(0, MAX_ATTACHMENTS));
+                                } catch {
+                                    toast.error('Failed to process one or more files.');
+                                } finally {
+                                    setStatus(null);
+                                }
                             }}
                         />
 
-                        {attachedImage && (
-                            <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
-                                <span className="truncate">Attached: {attachedImage.name}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setAttachedImage(null)}
-                                    className="inline-flex items-center justify-center rounded-md p-1 hover:bg-background/40"
-                                >
-                                    <X className="h-3.5 w-3.5" />
-                                </button>
+                        {attachments.length > 0 && (
+                            <div className="mb-2 flex flex-wrap gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs">
+                                {attachments.map((file, idx) => (
+                                    <div key={`${file.name}-${idx}`} className="flex items-center gap-2 rounded-lg border border-primary/20 bg-background/40 px-2 py-1 max-w-full">
+                                        <span className="truncate max-w-[220px]">{file.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                                            className="inline-flex items-center justify-center rounded-md p-0.5 hover:bg-background/40"
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         )}
 
@@ -418,6 +486,71 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                                     ref={inputRef}
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
+                                    onPaste={async (e) => {
+                                        const items = Array.from(e.clipboardData?.items || []);
+                                        const files = items
+                                            .filter((item) => item.kind === 'file')
+                                            .map((item) => item.getAsFile())
+                                            .filter(Boolean);
+
+                                        if (!files.length) return;
+                                        e.preventDefault();
+
+                                        setStatus('Reading pasted files...');
+                                        try {
+                                            const built = [];
+                                            for (const file of files) {
+                                                if (file.size > MAX_ATTACHMENT_BYTES) {
+                                                    toast.error(`${file.name} is too large. Max 8MB per file.`);
+                                                    continue;
+                                                }
+
+                                                if (file.type.startsWith('image/')) {
+                                                    const result = await readFileAsDataURL(file);
+                                                    const base64 = result.includes(',') ? result.split(',')[1] : '';
+                                                    if (!base64) continue;
+                                                    built.push({
+                                                        name: file.name,
+                                                        mimeType: file.type || 'image/png',
+                                                        size: file.size,
+                                                        kind: 'image',
+                                                        base64,
+                                                    });
+                                                    continue;
+                                                }
+
+                                                if (isTextLikeFile(file)) {
+                                                    const text = await readFileAsText(file);
+                                                    const truncated = text.length > 120000;
+                                                    built.push({
+                                                        name: file.name,
+                                                        mimeType: file.type || 'text/plain',
+                                                        size: file.size,
+                                                        kind: 'text',
+                                                        textContent: truncated ? text.slice(0, 120000) : text,
+                                                        truncated,
+                                                    });
+                                                    continue;
+                                                }
+
+                                                const result = await readFileAsDataURL(file);
+                                                const base64 = result.includes(',') ? result.split(',')[1] : '';
+                                                built.push({
+                                                    name: file.name,
+                                                    mimeType: file.type || 'application/octet-stream',
+                                                    size: file.size,
+                                                    kind: 'binary',
+                                                    base64Preview: base64.slice(0, 2000),
+                                                });
+                                            }
+
+                                            setAttachments((prev) => [...prev, ...built].slice(0, MAX_ATTACHMENTS));
+                                        } catch {
+                                            toast.error('Failed to process pasted files.');
+                                        } finally {
+                                            setStatus(null);
+                                        }
+                                    }}
                                     placeholder="Ask about expenses, add trips, or manage members..."
                                     className="pr-12 py-6 rounded-2xl border-border/40 bg-muted/20 focus-visible:ring-primary/30 transition-all"
                                     disabled={isLoading}
@@ -442,7 +575,7 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                                 type="submit"
                                 size="icon"
                                 className="rounded-xl h-[52px] w-[52px] shadow-lg shadow-primary/20 shrink-0"
-                                disabled={(!input.trim() && !attachedImage) || isLoading}
+                                disabled={(!input.trim() && attachments.length === 0) || isLoading}
                             >
                                 {isLoading ? (
                                     <Loader2 className="h-5 w-5 animate-spin" />

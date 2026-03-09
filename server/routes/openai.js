@@ -359,7 +359,7 @@ router.post("/receiptImage", async (req, res) => {
  * Handles multi-turn tool calling and SSE streaming
  */
 router.post("/chat/stream", authenticateToken, async (req, res) => {
-  const { message, groupId, history = [], imageAttachment = null } = req.body;
+  const { message, groupId, history = [], imageAttachment = null, attachments = [] } = req.body;
   const userId = req.user?._id;
 
   if (!groupId) {
@@ -376,9 +376,19 @@ router.post("/chat/stream", authenticateToken, async (req, res) => {
   };
 
   try {
-    const finalResponseText = await streamAiAgent({ message, groupId, history, imageAttachment, sendEvent });
+    const finalResponseText = await streamAiAgent({ message, groupId, history, imageAttachment, attachments, sendEvent });
 
-    const userPrompt = String(message || '').trim() || (imageAttachment?.name ? `Uploaded image: ${imageAttachment.name}` : 'Uploaded image');
+    const attachmentNames = (Array.isArray(attachments) ? attachments : [])
+      .map((item) => item?.name)
+      .filter(Boolean);
+
+    const fallbackAttachmentName = imageAttachment?.name ? [imageAttachment.name] : [];
+    const allAttachmentNames = [...attachmentNames, ...fallbackAttachmentName];
+
+    const userPrompt = String(message || '').trim()
+      || (allAttachmentNames.length > 0
+        ? `Uploaded files: ${allAttachmentNames.join(', ')}`
+        : 'Uploaded files');
 
     if (userId && groupId && finalResponseText) {
       const chatId = buildAiChatId(userId, groupId);
