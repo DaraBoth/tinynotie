@@ -19,7 +19,14 @@ import { cn } from '@/lib/utils';
 
 const shouldRefreshFromTool = (toolName) => {
     const name = String(toolName || '').toLowerCase();
-    return ['add_member', 'update_member', 'add_trip', 'update_trip'].includes(name);
+    return [
+        'add_member',
+        'update_member',
+        'add_trip',
+        'update_trip',
+        'bulk_update_members_info',
+        'bulk_update_trips_info',
+    ].includes(name);
 };
 
 export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
@@ -181,56 +188,112 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
             setMessages(prev => [...prev, currentAiMessage]);
 
             let buffered = '';
+            let doneReceived = false;
+
+            const processEventBlock = (block) => {
+                const eventLine = block.split('\n').find((line) => line.startsWith('event: '));
+                const dataLine = block.split('\n').find((line) => line.startsWith('data: '));
+                if (!eventLine || !dataLine) return;
+
+                const event = eventLine.slice(7).trim();
+                let data;
+
+                try {
+                    data = JSON.parse(dataLine.slice(6));
+                } catch {
+                    return;
+                }
+
+                if (event === 'message') {
+                    aiResponseContent += data.delta || '';
+                    setMessages(prev => {
+                        const last = [...prev];
+                        if (last[last.length - 1]) {
+                            last[last.length - 1].content = aiResponseContent;
+                        }
+                        return last;
+                    });
+                    setStatus(null);
+                    return;
+                }
+
+                if (event === 'status') {
+                    setStatus(data.message || null);
+                    return;
+                }
+
+                if (event === 'tool_result') {
+                    if (shouldRefreshFromTool(data.tool)) {
+                        hasMutatingToolChanges = true;
+                    }
+
+                    setMessages(prev => {
+                        const last = [...prev];
+                        const currentMsg = last[last.length - 1];
+                        if (!currentMsg) return last;
+
+                        currentMsg.tools = [
+                            ...(currentMsg.tools || []),
+                            { name: data.tool, result: data.result }
+                        ];
+                        return last;
+                    });
+                    return;
+                }
+
+                if (event === 'error') {
+                    toast.error(data.message || 'Streaming error');
+                    return;
+                }
+
+                if (event === 'done') {
+                    doneReceived = true;
+                }
+            };
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
+                if (done) {
+                    if (buffered.trim()) {
+                        processEventBlock(buffered.trim());
+                        buffered = '';
+                    }
+                    break;
+                }
 
                 buffered += decoder.decode(value, { stream: true });
                 const events = buffered.split('\n\n');
                 buffered = events.pop() || '';
 
                 for (const block of events) {
-                    const eventLine = block.split('\n').find((line) => line.startsWith('event: '));
-                    const dataLine = block.split('\n').find((line) => line.startsWith('data: '));
-                    if (!eventLine || !dataLine) continue;
-
-                    const event = eventLine.slice(7).trim();
-                    let data;
-
-                    try {
-                        data = JSON.parse(dataLine.slice(6));
-                    } catch {
-                        continue;
-                    }
-
-                    if (event === 'message') {
-                        aiResponseContent += data.delta || '';
-                        setMessages(prev => {
-                            const last = [...prev];
-                            last[last.length - 1].content = aiResponseContent;
-                            return last;
-                        });
-                        setStatus(null);
-                    } else if (event === 'status') {
-                        setStatus(data.message || null);
-                    } else if (event === 'tool_result') {
-                        if (shouldRefreshFromTool(data.tool)) {
-                            hasMutatingToolChanges = true;
-                        }
-                        setMessages(prev => {
-                            const last = [...prev];
-                            const currentMsg = last[last.length - 1];
-                            currentMsg.tools = [...(currentMsg.tools || []), {
-                                name: data.tool,
-                                result: data.result
-                            }];
-                            return last;
-                        });
-                    } else if (event === 'error') {
-                        toast.error(data.message || 'Streaming error');
-                    }
+                    processEventBlock(block);
                 }
+
+                if (doneReceived) break;
+            }
+
+            if (!aiResponseContent && currentAiMessage.tools?.length) {
+                const preview = currentAiMessage.tools
+                    .slice(-3)
+                    .map((t, idx) => {
+                        const summary = t?.result?.summary || t?.result?.message || t?.result?.error || 'Completed';
+                        return `${idx + 1}. ${t.name}: ${String(summary)}`;
+                    })
+                    .join('\n');
+
+                const fallbackText = [
+                    'I completed tool operations but did not receive a final model message.',
+                    'Latest updates:',
+                    preview,
+                ].join('\n');
+
+                setMessages(prev => {
+                    const last = [...prev];
+                    if (last[last.length - 1]) {
+                        last[last.length - 1].content = fallbackText;
+                    }
+                    return last;
+                });
             }
 
             if (hasMutatingToolChanges && typeof onDataChanged === 'function') {

@@ -111,6 +111,7 @@ Track at least:
 - Credits purchased per paying user.
 - Credit burn rate per active user.
 - Gross margin after AI costs.
+
 - 30-day repeat purchase rate.
 
 9. Define launch and quality gates.
