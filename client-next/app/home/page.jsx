@@ -3,8 +3,6 @@ import { redirect } from 'next/navigation';
 import { HomePageClient } from './HomePageClient';
 import { getServerAuthContext, serverApiGet } from '@/lib/serverApi';
 
-export const dynamic = 'force-dynamic';
-
 export default async function HomePage() {
   const { token, userId } = await getServerAuthContext();
 

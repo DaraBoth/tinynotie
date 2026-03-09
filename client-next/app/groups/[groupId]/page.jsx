@@ -3,8 +3,6 @@ import { redirect } from 'next/navigation';
 import { GroupPageClient } from './GroupPageClient';
 import { getServerAuthContext, serverApiGet } from '@/lib/serverApi';
 
-export const dynamic = 'force-dynamic';
-
 export default async function GroupPage({ params }) {
   const { token } = await getServerAuthContext();
   const { groupId } = await params;
