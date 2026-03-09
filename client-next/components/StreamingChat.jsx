@@ -60,6 +60,7 @@ const shouldRefreshFromTool = (toolName) => {
         'add_trip',
         'update_trip',
         'bulk_update_members_info',
+        'set_all_members_paid',
         'bulk_update_trips_info',
     ].includes(name);
 };

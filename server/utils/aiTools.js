@@ -211,6 +211,45 @@ export async function bulk_update_members_info({ group_id, members }) {
 }
 
 /**
+ * AI Tool: Set the same paid amount for all members in a group
+ */
+export async function set_all_members_paid({ group_id, paid }) {
+    try {
+        const parsedPaid = Number(paid);
+        if (!Number.isFinite(parsedPaid)) {
+            return { error: "paid must be a valid number" };
+        }
+
+        const groupRes = await pool.query(`SELECT id, grp_name FROM grp_infm WHERE id = $1;`, [group_id]);
+        if (groupRes.rows.length === 0) {
+            return { error: "Group not found" };
+        }
+
+        const membersRes = await pool.query(
+            `SELECT id, mem_name FROM member_infm WHERE group_id = $1 ORDER BY id;`,
+            [group_id]
+        );
+
+        if (membersRes.rows.length === 0) {
+            return { error: "No members found in this group" };
+        }
+
+        await pool.query(`UPDATE member_infm SET paid = $1 WHERE group_id = $2;`, [parsedPaid, group_id]);
+
+        return {
+            success: true,
+            updated_count: membersRes.rows.length,
+            paid: parsedPaid,
+            member_ids: membersRes.rows.map((m) => m.id),
+            summary: `Updated ${membersRes.rows.length} members in group ${group_id} to paid=${parsedPaid}.`,
+        };
+    } catch (error) {
+        console.error("set_all_members_paid error:", error);
+        return { error: error.message };
+    }
+}
+
+/**
  * AI Tool: Bulk update trip information in one call
  */
 export async function bulk_update_trips_info({ group_id, trips }) {
@@ -413,6 +452,21 @@ export const tools = [
     {
         type: "function",
         function: {
+            name: "set_all_members_paid",
+            description: "Set one paid amount for every member in the group (use this for commands like 'set all members to $30').",
+            parameters: {
+                type: "object",
+                properties: {
+                    group_id: { type: "integer", description: "Group ID" },
+                    paid: { type: "number", description: "The paid amount to apply to all members" }
+                },
+                required: ["group_id", "paid"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
             name: "bulk_update_trips_info",
             description: "Update multiple trips at once when they share common changes.",
             parameters: {
@@ -449,5 +503,6 @@ export const handlers = {
     add_member,
     update_member,
     bulk_update_members_info,
+    set_all_members_paid,
     bulk_update_trips_info
 };
