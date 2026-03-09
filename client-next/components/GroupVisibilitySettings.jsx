@@ -22,7 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const TELEGRAM_BOT_URL = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/tinynotie_bot';
 
-export function GroupVisibilitySettings({ open, onClose, group, groupId, groupUsers: initialGroupUsers = [], isAdmin: isAdminProp = false }) {
+export function GroupVisibilitySettings({ open, onClose, group, groupId, groupUsers: initialGroupUsers = null, isAdmin: isAdminProp = false }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
@@ -98,7 +98,8 @@ export function GroupVisibilitySettings({ open, onClose, group, groupId, groupUs
 
   useEffect(() => {
     if (!open) return;
-    setGroupUsers(Array.isArray(initialGroupUsers) ? initialGroupUsers : []);
+    if (!Array.isArray(initialGroupUsers)) return;
+    setGroupUsers(initialGroupUsers);
   }, [open, initialGroupUsers]);
 
   const handleSubmit = async (e) => {
