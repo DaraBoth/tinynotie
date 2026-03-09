@@ -48,6 +48,144 @@ export const AVATAR_COLORS = [
 export const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 export const getAvatarInitials = (name = '') => name.slice(0, 2).toUpperCase();
 
+function ShareExportFlowSheet({
+  open,
+  onClose,
+  mode = 'members',
+  title,
+  subtitle,
+  canShareToGroup,
+  canShareToPersonal,
+  defaultTarget = 'group',
+  onTargetChange,
+  onSubmit,
+  loading = false,
+}) {
+  const [step, setStep] = useState(1);
+  const [target, setTarget] = useState(defaultTarget);
+
+  useEffect(() => {
+    if (!open) return;
+    setStep(1);
+    setTarget(defaultTarget);
+  }, [open, defaultTarget]);
+
+  const hasAnyTelegramTarget = canShareToGroup || canShareToPersonal;
+  const effectiveTarget = canShareToGroup && !canShareToPersonal
+    ? 'group'
+    : (!canShareToGroup && canShareToPersonal ? 'personal' : target);
+
+  const handleContinue = () => {
+    onTargetChange?.(effectiveTarget);
+    setStep(2);
+  };
+
+  const handleAction = (actionType) => {
+    onSubmit?.({ mode, targetType: effectiveTarget, actionType });
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose?.(); }}>
+      <SheetContent
+        side="bottom"
+        title={title || 'Share Data'}
+        description={subtitle || 'Follow the steps to share or export your selected data.'}
+        className="w-full rounded-t-3xl border-t border-border/40 p-0 h-[92vh] max-h-[92vh] sm:h-[80vh] sm:max-h-[80vh]"
+      >
+        <SheetHeader className="px-5 pt-5 pb-3 border-b border-border/20 bg-background/80 backdrop-blur-md">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <SheetTitle className="text-lg font-extrabold tracking-tight">{title || 'Share Data'}</SheetTitle>
+              <SheetDescription className="mt-1 text-xs">{subtitle || 'Follow the steps to share or export your selected data.'}</SheetDescription>
+            </div>
+            <div className="rounded-xl border border-border/30 bg-muted/40 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+              Step {step} / 2
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${step === 1 ? 'border-primary/50 bg-primary/10 text-foreground' : 'border-border/30 bg-muted/20 text-muted-foreground'}`}>
+              1. Destination
+            </div>
+            <div className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${step === 2 ? 'border-primary/50 bg-primary/10 text-foreground' : 'border-border/30 bg-muted/20 text-muted-foreground'}`}>
+              2. Action
+            </div>
+          </div>
+        </SheetHeader>
+
+        <div className="h-[calc(100%-166px)] overflow-y-auto px-5 py-4">
+          {step === 1 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Choose Telegram Destination</p>
+              <button
+                type="button"
+                onClick={() => setTarget('group')}
+                disabled={!canShareToGroup}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${canShareToGroup ? 'hover:border-primary/50' : 'opacity-50 cursor-not-allowed'} ${effectiveTarget === 'group' ? 'border-primary/60 bg-primary/10' : 'border-border/30 bg-muted/20'}`}
+              >
+                <p className="text-sm font-bold">Group Chat</p>
+                <p className="text-xs text-muted-foreground mt-1">Send directly to the linked Telegram group conversation.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTarget('personal')}
+                disabled={!canShareToPersonal}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${canShareToPersonal ? 'hover:border-primary/50' : 'opacity-50 cursor-not-allowed'} ${effectiveTarget === 'personal' ? 'border-primary/60 bg-primary/10' : 'border-border/30 bg-muted/20'}`}
+              >
+                <p className="text-sm font-bold">Personal Chat</p>
+                <p className="text-xs text-muted-foreground mt-1">Send privately to your Telegram account.</p>
+              </button>
+              {!hasAnyTelegramTarget && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-300">
+                  Telegram is not linked yet. You can still continue and use Export in step 2.
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Choose Action</p>
+              <button
+                type="button"
+                onClick={() => handleAction('telegram')}
+                disabled={loading || !hasAnyTelegramTarget}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${loading || !hasAnyTelegramTarget ? 'opacity-50 cursor-not-allowed border-border/30 bg-muted/20' : 'border-sky-500/40 bg-sky-500/10 hover:border-sky-500/60'}`}
+              >
+                <p className="text-sm font-bold">Share to Telegram</p>
+                <p className="text-xs text-muted-foreground mt-1">Send now to {effectiveTarget === 'group' ? 'Group Chat' : 'Personal Chat'}.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAction('export')}
+                disabled={loading}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${loading ? 'opacity-50 cursor-not-allowed border-border/30 bg-muted/20' : 'border-emerald-500/40 bg-emerald-500/10 hover:border-emerald-500/60'}`}
+              >
+                <p className="text-sm font-bold">Export File</p>
+                <p className="text-xs text-muted-foreground mt-1">Download as Excel for offline sharing and reporting.</p>
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-border/20 bg-background/85 backdrop-blur-sm px-5 py-3 flex gap-2">
+          {step === 1 ? (
+            <>
+              <button type="button" onClick={onClose} disabled={loading} className="h-10 flex-1 rounded-xl border border-border/40 bg-background text-sm font-semibold">Cancel</button>
+              <button type="button" onClick={handleContinue} disabled={loading} className="h-10 flex-1 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">Continue</button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={() => setStep(1)} disabled={loading} className="h-10 flex-1 rounded-xl border border-border/40 bg-background text-sm font-semibold">Back</button>
+              <button type="button" onClick={onClose} disabled={loading} className="h-10 flex-1 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">Close</button>
+            </>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 /* ─── main component ─────────────────────────────────────────────────────── */
 export function GroupPageClient({ groupId, initialData = null }) {
   const router = useRouter();
@@ -75,17 +213,16 @@ export function GroupPageClient({ groupId, initialData = null }) {
   const [shareTripsLoading, setShareTripsLoading] = useState(false);
   const [shareTripIdLoading, setShareTripIdLoading] = useState(null);
   const [telegramTargetType, setTelegramTargetType] = useState('group');
+  const [shareFlowOpen, setShareFlowOpen] = useState(false);
+  const [shareFlowMode, setShareFlowMode] = useState('members');
+  const [shareFlowTrip, setShareFlowTrip] = useState(null);
+  const [shareFlowSubmitting, setShareFlowSubmitting] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [selectedTripIds, setSelectedTripIds] = useState([]);
   const [memberPinnedRows, setMemberPinnedRows] = useState([]);
   const [tripPinnedRows, setTripPinnedRows] = useState([]);
   const [memberPinnedColumns, setMemberPinnedColumns] = useState({ name: 'left' });
   const [tripPinnedColumns, setTripPinnedColumns] = useState({ name: 'left' });
-  const [mobileShareOpen, setMobileShareOpen] = useState(false);
-  const [mobileShareMode, setMobileShareMode] = useState('members');
-  const [mobileShareTrip, setMobileShareTrip] = useState(null);
-  const [mobileShareTarget, setMobileShareTarget] = useState('group');
-  const [mobileShareSubmitting, setMobileShareSubmitting] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -176,16 +313,10 @@ export function GroupPageClient({ groupId, initialData = null }) {
     return resolveTelegramTargetType();
   };
 
-  const openMobileShareDrawer = (mode, trip = null) => {
-    if (!hasAnyTelegramTarget) {
-      toast.error('No Telegram destination is linked yet.');
-      return;
-    }
-
-    setMobileShareMode(mode);
-    setMobileShareTrip(trip || null);
-    setMobileShareTarget(resolveTelegramTargetType());
-    setMobileShareOpen(true);
+  const openShareFlow = (mode, trip = null) => {
+    setShareFlowMode(mode);
+    setShareFlowTrip(trip || null);
+    setShareFlowOpen(true);
   };
 
   const handleShareTrip = async (e, trip, forcedTargetType = null) => {
@@ -481,24 +612,71 @@ export function GroupPageClient({ groupId, initialData = null }) {
     }
   };
 
-  const handleMobileShareSubmit = async () => {
-    setMobileShareSubmitting(true);
+  const handleShareFlowAction = async ({ actionType, targetType }) => {
+    setShareFlowSubmitting(true);
     let success = false;
 
     try {
-      if (mobileShareMode === 'members') {
-        success = await handleShareMembers(mobileShareTarget);
-      } else if (mobileShareMode === 'trips') {
-        success = await handleShareSelectedTrips(mobileShareTarget);
-      } else if (mobileShareMode === 'trip-single' && mobileShareTrip) {
-        success = await handleShareTrip(null, mobileShareTrip, mobileShareTarget);
+      if (actionType === 'export') {
+        if (shareFlowMode === 'members') {
+          handleExportMembers();
+          success = true;
+        } else if (shareFlowMode === 'trips') {
+          handleExportTrips();
+          success = true;
+        } else if (shareFlowMode === 'trip-single' && shareFlowTrip?.id) {
+          setSelectedTripIds([shareFlowTrip.id]);
+          const selectedTrips = [shareFlowTrip];
+          const data = selectedTrips.map((trip, idx) => {
+            const ids = parseTripMemberIds(trip.mem_id);
+            const joinedBy = members
+              .filter((member) => ids.includes(Number(member.id)))
+              .map((member) => member.mem_name)
+              .join(', ') || '—';
+
+            return {
+              '#': idx + 1,
+              'Trip Name': trip.trp_name || '—',
+              'Amount': `${currency}${parseFloat(trip.spend || 0).toFixed(2)}`,
+              'Payer': getPayerName(trip),
+              'Joined By': joinedBy,
+              'Updated': formatTimeDifference(trip.update_dttm || trip.create_date),
+              'Description': trip.description || '—',
+            };
+          });
+          const ws = XLSX.utils.json_to_sheet(data);
+          ws['!cols'] = [
+            { wch: 6 },
+            { wch: 24 },
+            { wch: 14 },
+            { wch: 18 },
+            { wch: 34 },
+            { wch: 16 },
+            { wch: 36 },
+          ];
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Trip');
+          XLSX.writeFile(wb, `${group.grp_name || 'Group'}_${shareFlowTrip.trp_name || 'Trip'}.xlsx`);
+          toast.success('Trip export downloaded (1 row)');
+          success = true;
+        }
+      }
+
+      if (actionType === 'telegram') {
+        if (shareFlowMode === 'members') {
+          success = await handleShareMembers(targetType);
+        } else if (shareFlowMode === 'trips') {
+          success = await handleShareSelectedTrips(targetType);
+        } else if (shareFlowMode === 'trip-single' && shareFlowTrip) {
+          success = await handleShareTrip(null, shareFlowTrip, targetType);
+        }
       }
 
       if (success) {
-        setMobileShareOpen(false);
+        setShareFlowOpen(false);
       }
     } finally {
-      setMobileShareSubmitting(false);
+      setShareFlowSubmitting(false);
     }
   };
 
@@ -672,17 +850,11 @@ export function GroupPageClient({ groupId, initialData = null }) {
           {renderTelegramTargetControl()}
           <Button
             size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-foreground uppercase tracking-widest font-bold"
-            onClick={handleExportMembers}
+            onClick={() => openShareFlow('members')}
+            disabled={shareFlowSubmitting || shareMembersLoading}
           >
-            <Download className="h-3.5 w-3.5" /> Export {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
-          </Button>
-          <Button
-            size="sm" variant="ghost" className="h-7 text-[10px] gap-1.5 text-muted-foreground hover:text-sky-400 uppercase tracking-widest font-bold"
-            onClick={handleShareMembers}
-            disabled={shareMembersLoading}
-          >
-            {shareMembersLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            {shareMembersLoading ? 'Sending...' : `Telegram ${selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}`}
+            {(shareFlowSubmitting || shareMembersLoading) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
+            Share {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
           </Button>
           <div className="flex gap-0.5 bg-muted/60 p-1 rounded-lg">
             <button
@@ -902,13 +1074,9 @@ export function GroupPageClient({ groupId, initialData = null }) {
               </Button>
             )}
             <Button size="sm" variant="outline" className="h-8 text-xs"
-              onClick={handleExportTrips}>
-              <Download className="h-3.5 w-3.5 mr-1" /> Export
-            </Button>
-            <Button size="sm" variant="outline" className="h-8 text-xs"
-              onClick={() => openMobileShareDrawer('trips')}
-              disabled={shareTripsLoading}>
-              {shareTripsLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />} {shareTripsLoading ? 'Sending...' : 'Telegram'}
+              onClick={() => openShareFlow('trips')}
+              disabled={shareFlowSubmitting || shareTripsLoading}>
+              {(shareFlowSubmitting || shareTripsLoading) ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Share2 className="h-3.5 w-3.5 mr-1" />} Share
             </Button>
             </div>
           </div>
@@ -923,16 +1091,10 @@ export function GroupPageClient({ groupId, initialData = null }) {
             <div className="mr-1">{renderTelegramTargetControl()}</div>
             <Button
               size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-              onClick={handleExportTrips}
+              onClick={() => openShareFlow('trips')}
+              disabled={shareFlowSubmitting || shareTripsLoading}
             >
-              <Download className="h-3.5 w-3.5" /> Export {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
-            </Button>
-            <Button
-              size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-sky-400"
-              onClick={handleShareSelectedTrips}
-              disabled={shareTripsLoading}
-            >
-              {shareTripsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} {shareTripsLoading ? 'Sending...' : `Telegram ${selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}`}
+              {(shareFlowSubmitting || shareTripsLoading) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />} Share {selectedTripIds.length > 0 ? `(${selectedTripIds.length})` : ''}
             </Button>
             <div className="hidden md:flex gap-0.5 bg-muted/60 p-1 rounded-lg">
               <button
@@ -1021,7 +1183,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                       <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openMobileShareDrawer('trip-single', trip)} disabled={shareTripIdLoading === trip.id || mobileShareSubmitting}>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openShareFlow('trip-single', trip)} disabled={shareTripIdLoading === trip.id || shareFlowSubmitting}>
                     
                     {shareTripIdLoading === trip.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
                     {shareTripIdLoading === trip.id ? 'Sending...' : 'Telegram'}
@@ -1127,9 +1289,12 @@ export function GroupPageClient({ groupId, initialData = null }) {
                               size="icon"
                               variant="ghost"
                               className="h-7 w-7 text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 hover:bg-sky-500/10"
-                              onClick={(e) => handleShareTrip(e, trip)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openShareFlow('trip-single', trip);
+                              }}
                               disabled={shareTripIdLoading === trip.id}
-                              title="Share to Telegram"
+                              title="Share options"
                             >
                               {shareTripIdLoading === trip.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                             </Button>
@@ -1374,12 +1539,9 @@ export function GroupPageClient({ groupId, initialData = null }) {
                   <Button size="sm" variant="outline" className="h-8 text-xs" onClick={toggleAllMembers}>
                     {selectedMemberIds.length > 0 ? 'Clear' : 'Select All'}
                   </Button>
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleExportMembers}>
-                    <Download className="h-3.5 w-3.5 mr-1" /> Export {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
-                  </Button>
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openMobileShareDrawer('members')} disabled={shareMembersLoading}>
-                    {shareMembersLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
-                    {shareMembersLoading ? 'Sending...' : `Telegram ${selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}`}
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openShareFlow('members')} disabled={shareFlowSubmitting || shareMembersLoading}>
+                    {(shareFlowSubmitting || shareMembersLoading) ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Share2 className="h-3.5 w-3.5 mr-1" />}
+                    Share {selectedMemberIds.length > 0 ? `(${selectedMemberIds.length})` : ''}
                   </Button>
                 </div>
                 {members.length === 0 ? (
@@ -1646,7 +1808,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
             {/* Share Members */}
             {members.length > 0 && (
               <button
-                onClick={() => openPanel(() => openMobileShareDrawer('members'))}
+                onClick={() => openPanel(() => openShareFlow('members'))}
                 className="flex flex-col items-center gap-2.5 py-4 px-2 rounded-2xl active:bg-muted/60 transition-colors"
               >
                 <div className="w-14 h-14 rounded-2xl bg-sky-500/15 flex items-center justify-center">
@@ -1659,7 +1821,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
             {/* Share Trips */}
             {sortedTrips.length > 0 && (
               <button
-                onClick={() => openPanel(() => openMobileShareDrawer('trips'))}
+                onClick={() => openPanel(() => openShareFlow('trips'))}
                 className="flex flex-col items-center gap-2.5 py-4 px-2 rounded-2xl active:bg-muted/60 transition-colors"
               >
                 <div className="w-14 h-14 rounded-2xl bg-cyan-500/15 flex items-center justify-center">
@@ -1723,85 +1885,27 @@ export function GroupPageClient({ groupId, initialData = null }) {
         }}
       />
       <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} group={group} members={members} trips={trips} currency={currency} />
+      <ShareExportFlowSheet
+        open={shareFlowOpen}
+        onClose={() => setShareFlowOpen(false)}
+        mode={shareFlowMode}
+        title={
+          shareFlowMode === 'members'
+            ? 'Share Members'
+            : shareFlowMode === 'trips'
+              ? 'Share Trips'
+              : `Share ${shareFlowTrip?.trp_name || 'Trip'}`
+        }
+        subtitle="Step 1: pick destination. Step 2: choose Telegram or Export."
+        canShareToGroup={canShareToGroup}
+        canShareToPersonal={canShareToPersonal}
+        defaultTarget={resolveTelegramTargetType()}
+        onTargetChange={handleChangeTelegramTarget}
+        onSubmit={handleShareFlowAction}
+        loading={shareFlowSubmitting || shareMembersLoading || shareTripsLoading || Boolean(shareTripIdLoading)}
+      />
       {canOpenSettings && <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} isAdmin={!!group.isAdmin} />}
       {canManageGroup && <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />}
-
-      {/* Mobile Share Action Drawer */}
-      {isMobile && mobileShareOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
-            onClick={() => setMobileShareOpen(false)}
-          />
-          <div className="fixed inset-x-0 bottom-0 z-[61] w-screen max-w-none">
-            <div className="bg-background/85 backdrop-blur-xl rounded-t-3xl border-t border-border/30 shadow-2xl pb-safe">
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 rounded-full bg-muted-foreground/25" />
-              </div>
-              <div className="px-5 pt-2 pb-5 space-y-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Share to Telegram</p>
-                  <h3 className="text-base font-bold mt-1">
-                    {mobileShareMode === 'members' && 'Share Member Summary'}
-                    {mobileShareMode === 'trips' && 'Share Trip Selection'}
-                    {mobileShareMode === 'trip-single' && `Share ${mobileShareTrip?.trp_name || 'Trip'}`}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Pick destination, then tap share. We will send this directly to Telegram.
-                  </p>
-                </div>
-
-                {showTelegramTargetSelector ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setMobileShareTarget('group')}
-                      className={`rounded-xl border px-3 py-3 text-left transition-all ${mobileShareTarget === 'group' ? 'border-primary bg-primary/10' : 'border-border/40 bg-muted/20'}`}
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-wide">Group Chat</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">Share to linked group Telegram chat.</p>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMobileShareTarget('personal')}
-                      className={`rounded-xl border px-3 py-3 text-left transition-all ${mobileShareTarget === 'personal' ? 'border-primary bg-primary/10' : 'border-border/40 bg-muted/20'}`}
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-wide">Personal Chat</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">Send privately to your Telegram account.</p>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide">
-                      Destination: {canShareToGroup ? 'Group Chat' : 'Personal Chat'}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Only one destination is linked for this group, so it will be used automatically.
-                    </p>
-                  </div>
-                )}
-
-                <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide">How It Works</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    We format your selected {mobileShareMode === 'members' ? 'members' : 'trips'} and send it through your linked Telegram connection.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <Button variant="outline" className="h-10" onClick={() => setMobileShareOpen(false)} disabled={mobileShareSubmitting}>
-                    Cancel
-                  </Button>
-                  <Button className="h-10" onClick={handleMobileShareSubmit} disabled={mobileShareSubmitting}>
-                    {mobileShareSubmitting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Send className="h-4 w-4 mr-1.5" />}
-                    {mobileShareSubmitting ? 'Sharing...' : 'Share Now'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
