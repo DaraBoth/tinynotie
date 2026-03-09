@@ -23,8 +23,24 @@ const timingSafeHexEqual = (left = "", right = "") => {
   return crypto.timingSafeEqual(a, b);
 };
 
+const normalizeInitDataRaw = (initDataRaw = "") => {
+  const raw = String(initDataRaw || "").trim();
+  if (!raw) return "";
+
+  // Some clients pass initData as one encoded blob. Decode once when needed.
+  if (!raw.includes("hash=") && /%3D|%26|%7B|%7D/i.test(raw)) {
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }
+
+  return raw;
+};
+
 const parseTelegramInitData = (initDataRaw = "") => {
-  const params = new URLSearchParams(String(initDataRaw || ""));
+  const params = new URLSearchParams(normalizeInitDataRaw(initDataRaw));
   const hash = params.get("hash") || "";
 
   const pairs = [];
