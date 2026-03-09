@@ -1,5 +1,6 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
+import { Suspense } from 'react';
 import { Providers } from './providers';
 import { TokenExpirationHandler } from '@/components/TokenExpirationHandler';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
@@ -71,11 +72,13 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-title" content="Tiny Notie" />
       </head>
       <body className={inter.variable} suppressHydrationWarning>
-        <Providers>
-          <ServiceWorkerRegistration />
-          <TokenExpirationHandler />
-          {children}
-        </Providers>
+        <Suspense fallback={null}>
+          <Providers>
+            <ServiceWorkerRegistration />
+            <TokenExpirationHandler />
+            {children}
+          </Providers>
+        </Suspense>
       </body>
     </html>
   );
