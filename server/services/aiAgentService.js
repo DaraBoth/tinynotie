@@ -48,6 +48,16 @@ const parseToolArguments = (rawArgs) => {
     return JSON.parse(rawArgs);
 };
 
+const hasMutationIntent = (text) => {
+    const src = String(text || '').toLowerCase();
+    return /(add|update|edit|delete|remove|set|change|modify|create|increase|decrease|reduce|replace|rename)/.test(src);
+};
+
+const isWriteToolName = (toolName) => {
+    const name = String(toolName || '').toLowerCase();
+    return name !== 'get_group_data';
+};
+
 const normalizeAttachments = ({ imageAttachment = null, attachments = [] }) => {
     const normalized = Array.isArray(attachments) ? [...attachments] : [];
 
@@ -149,6 +159,8 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
     let loopCount = 0;
     let fullResponse = "";
     const toolLog = [];
+    const mutationIntent = hasMutationIntent(message);
+    let forcedWriteReminderSent = false;
 
     while (runLoop && loopCount < MAX_TOOL_ITERATIONS) {
         loopCount++;
@@ -205,10 +217,28 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
                     name: functionName,
                     ok: !functionResponse?.error,
                     summary: summarizeToolResult(functionResponse),
+                    writeTool: isWriteToolName(functionName),
                 });
             }
             // Continue loop to let AI process tool results
         } else {
+            const hasWriteToolExecution = toolLog.some((entry) => entry.writeTool && entry.ok);
+
+            if (
+                mutationIntent &&
+                !hasWriteToolExecution &&
+                !forcedWriteReminderSent &&
+                loopCount < MAX_TOOL_ITERATIONS
+            ) {
+                // Prevent read-only stop after get_group_data for write requests.
+                messages.push({
+                    role: 'user',
+                    content: 'You have not executed any write tool yet. If the user requested data changes, execute the required write tool now and then summarize results.',
+                });
+                forcedWriteReminderSent = true;
+                continue;
+            }
+
             // No more tool calls, we are done
             fullResponse = responseMessage.content || "";
             runLoop = false;
@@ -263,6 +293,8 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
     let loopCount = 0;
     let finalResponseText = "";
     const toolLog = [];
+    const mutationIntent = hasMutationIntent(message);
+    let forcedWriteReminderSent = false;
 
     while (runLoop && loopCount < MAX_TOOL_ITERATIONS) {
         loopCount++;
@@ -318,9 +350,27 @@ Return your responses in Markdown. Use Khmer if the user speaks Khmer, otherwise
                     name: functionName,
                     ok: !functionResponse?.error,
                     summary: summarizeToolResult(functionResponse),
+                    writeTool: isWriteToolName(functionName),
                 });
             }
         } else {
+            const hasWriteToolExecution = toolLog.some((entry) => entry.writeTool && entry.ok);
+
+            if (
+                mutationIntent &&
+                !hasWriteToolExecution &&
+                !forcedWriteReminderSent &&
+                loopCount < MAX_TOOL_ITERATIONS
+            ) {
+                sendEvent("status", { message: "Continuing to apply requested updates..." });
+                messages.push({
+                    role: 'user',
+                    content: 'You have not executed any write tool yet. If the user requested data changes, execute the required write tool now and then summarize results.',
+                });
+                forcedWriteReminderSent = true;
+                continue;
+            }
+
             if (responseMessage.content) {
                 finalResponseText = responseMessage.content;
                 sendEvent("message", { delta: responseMessage.content });

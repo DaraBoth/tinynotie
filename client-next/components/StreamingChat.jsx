@@ -65,6 +65,22 @@ const shouldRefreshFromTool = (toolName) => {
     ].includes(name);
 };
 
+const TOOL_DISPLAY_NAMES = {
+    get_group_data: 'Read Group Data',
+    add_member: 'Add Member',
+    update_member: 'Update Member',
+    set_all_members_paid: 'Set All Member Payments',
+    bulk_update_members_info: 'Bulk Update Members',
+    add_trip: 'Add Trip',
+    update_trip: 'Update Trip',
+    bulk_update_trips_info: 'Bulk Update Trips',
+};
+
+const getToolDisplayName = (toolName) => {
+    const key = String(toolName || '').toLowerCase();
+    return TOOL_DISPLAY_NAMES[key] || 'Execute Action';
+};
+
 export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -616,7 +632,7 @@ function MessageBubble({ message, isLast }) {
                         {message.tools.map((tool, idx) => (
                             <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40 border border-border/20 text-xs text-muted-foreground">
                                 <Database className="h-3 w-3 text-primary/60" />
-                                <span>Executed <b>{tool.name}</b></span>
+                                <span>Executed <b>{getToolDisplayName(tool.name)}</b></span>
                                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                             </div>
                         ))}
