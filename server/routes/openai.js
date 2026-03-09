@@ -332,23 +332,24 @@ router.post("/receiptImage", async (req, res) => {
     if (!req.files || !req.files.receipt) {
       return res.status(400).json({
         status: false,
-        message: "No receipt image uploaded"
+        message: "No receipt file uploaded"
       });
     }
 
-    const receiptImage = req.files.receipt;
-    const imageBase64 = receiptImage.data.toString('base64');
-    const mimeType = receiptImage.mimetype;
+    const receiptFile = req.files.receipt;
+    const imageBase64 = receiptFile.data.toString('base64');
+    const mimeType = receiptFile.mimetype;
+    const fileName = receiptFile.name || 'receipt';
 
-    const result = await processReceiptImage(imageBase64, mimeType);
+    const result = await processReceiptImage(imageBase64, mimeType, fileName);
 
     // Return the processed data
     res.status(200).json({ text: JSON.stringify(result) });
   } catch (error) {
-    console.error("Error processing receipt image with OpenAI:", error.response?.data || error.message);
+    console.error("Error processing receipt file with OpenAI:", error.response?.data || error.message);
     res.status(500).json({
       status: false,
-      message: "Error processing receipt image",
+      message: "Error processing receipt file",
       error: error.response?.data?.error?.message || error.message
     });
   }

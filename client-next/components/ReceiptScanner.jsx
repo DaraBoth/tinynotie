@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Camera, Upload, X, ScanLine, Plus, Trash2,
   CheckCircle2, ImageIcon, Sparkles, CreditCard,
@@ -43,18 +43,52 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
   const scanMutation = useReceiptScan();
   const addMutation = useAddMultipleTrips(groupId);
 
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const onPaste = (event) => {
+      const items = Array.from(event.clipboardData?.items || []);
+      const fileItem = items.find((item) => item.kind === 'file');
+      const pastedFile = fileItem?.getAsFile();
+      if (!pastedFile) return;
+
+      event.preventDefault();
+      handleFile(pastedFile);
+      toast.success(`Pasted: ${pastedFile.name || 'Clipboard image'}`);
+    };
+
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [open]);
+
   const allMemberIds = members.map(m => m.id);
 
   const handleFile = (file) => {
     if (!file) return;
+    const allowed = [
+      'image/',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/',
+    ];
+
+    const isAllowed = allowed.some((prefix) => file.type?.startsWith(prefix) || file.type === prefix);
+    if (!isAllowed) {
+      toast.error('Unsupported file type. Use image, PDF, DOC, DOCX, XLS, XLSX, or text file.');
+      return;
+    }
+
     setImageFile(file);
-    setPreview(URL.createObjectURL(file));
+    setPreview(file.type?.startsWith('image/') ? URL.createObjectURL(file) : '');
     setRows([]);
     setScanned(false);
   };
 
   const handleScan = async () => {
-    if (!imageFile) { toast.error('Please select an image first'); return; }
+    if (!imageFile) { toast.error('Please select or paste a file first'); return; }
     const formData = new FormData();
     formData.append('receipt', imageFile);
     try {
@@ -181,7 +215,7 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                     <Upload className="h-5 w-5 text-primary" />
                   </div>
-                  <span className="text-xs font-semibold">Upload Image</span>
+                  <span className="text-xs font-semibold">Upload File</span>
                 </button>
 
                 <button
@@ -197,10 +231,10 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
               </div>
 
               <p className="text-[11px] text-muted-foreground text-center">
-                Supported: JPG, PNG, WEBP — max 10 MB
+                Supported: image, PDF, DOC/DOCX, XLS/XLSX, text — max 10 MB. You can also paste from clipboard.
               </p>
 
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+              <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.json,.xml,.md" className="hidden"
                 onChange={(e) => handleFile(e.target.files?.[0])} />
               <input ref={cameraInputRef} type="file" accept="image/*" capture="environment"
                 className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
@@ -215,8 +249,15 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
                     {scanned ? 'Step 3 — Review & Edit' : 'Step 2 — Confirm & Scan'}
                   </p>
                   <div className="relative rounded-2xl overflow-hidden border border-border/30 bg-muted/20">
-                    <img src={preview} alt="Receipt preview"
-                      className="w-full max-h-52 object-contain" />
+                    {preview ? (
+                      <img src={preview} alt="Receipt preview" className="w-full max-h-52 object-contain" />
+                    ) : (
+                      <div className="w-full min-h-28 px-4 py-6">
+                        <p className="text-sm font-semibold truncate">{imageFile?.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{imageFile?.type || 'Unknown type'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{Math.round((imageFile?.size || 0) / 1024)} KB</p>
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={clearAll}
