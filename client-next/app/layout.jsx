@@ -55,7 +55,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script src="https://telegram.org/js/telegram-web-app.js" />
         {/* Fallback for older browsers that don't read metadata icons */}
         <link rel="icon"             href="/icons/maskable_icon_x48.png" sizes="48x48" />
         <link rel="icon"             href="/icons/maskable_icon_x96.png" sizes="96x96" />

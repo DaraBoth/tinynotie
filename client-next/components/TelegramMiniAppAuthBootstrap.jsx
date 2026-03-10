@@ -51,6 +51,7 @@ const isTelegramMiniApp = () => {
 
 export function TelegramMiniAppAuthBootstrap() {
   const hasTriedRef = useRef(false);
+  const bridgeReadyRef = useRef(false);
   const setAuth = useAuthStore((state) => state.setAuth);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const timerRef = useRef(null);
@@ -69,7 +70,7 @@ export function TelegramMiniAppAuthBootstrap() {
       }
     }
 
-    const maxAttempts = 12;
+    const maxAttempts = 20;
     const attemptIntervalMs = 250;
 
     const bootstrap = async (attempt = 1) => {
@@ -78,10 +79,11 @@ export function TelegramMiniAppAuthBootstrap() {
       const { tg, initData } = resolveInitData();
 
       // Let Telegram know UI is ready ASAP to avoid client-side timeout spinner.
-      if (tg) {
+      if (tg && !bridgeReadyRef.current) {
         try {
           tg.ready();
           tg.expand();
+          bridgeReadyRef.current = true;
         } catch {
           // Best-effort only.
         }
