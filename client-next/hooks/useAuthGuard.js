@@ -4,6 +4,13 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
+const TG_AUTH_PENDING_KEY = 'tg-miniapp-auth-pending';
+
+const isTelegramMiniApp = () => {
+  if (typeof window === 'undefined') return false;
+  return !!window?.Telegram?.WebApp || /[?#&]tgWebAppData=/.test(`${window.location.search}${window.location.hash}`);
+};
+
 /**
  * Hook for protected pages.
  *
@@ -24,6 +31,12 @@ export function useAuthGuard(redirectTo = '/login') {
 
   useEffect(() => {
     if (!hasHydrated) return; // wait — store is still reading localStorage
+
+    if (typeof window !== 'undefined' && isTelegramMiniApp()) {
+      const pending = window.sessionStorage.getItem(TG_AUTH_PENDING_KEY) === '1';
+      if (pending) return;
+    }
+
     if (!isAuthenticated) {
       router.push(redirectTo);
     }

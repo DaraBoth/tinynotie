@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { api } from '@/api/apiClient';
 import { useAuthStore } from '@/store/authStore';
 
+const TG_AUTH_PENDING_KEY = 'tg-miniapp-auth-pending';
+
 const decodeMaybeEncoded = (value = '') => {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -61,6 +63,16 @@ export function TelegramMiniAppAuthBootstrap() {
 
       const { tg, initData } = resolveInitData();
 
+      // Let Telegram know UI is ready ASAP to avoid client-side timeout spinner.
+      if (tg) {
+        try {
+          tg.ready();
+          tg.expand();
+        } catch {
+          // Best-effort only.
+        }
+      }
+
       if (!initData) {
         if (attempt < maxAttempts) {
           timerRef.current = window.setTimeout(() => {
@@ -71,29 +83,26 @@ export function TelegramMiniAppAuthBootstrap() {
       }
 
       hasTriedRef.current = true;
+      window.sessionStorage.setItem(TG_AUTH_PENDING_KEY, '1');
 
       try {
-        const response = await api.telegramMiniAppLogin(initData);
+        const response = await api.telegramMiniAppLogin(initData, { timeout: 12000 });
         const data = response?.data || {};
 
         if (!data?.status || !data?.token) {
+          window.sessionStorage.removeItem(TG_AUTH_PENDING_KEY);
           return;
         }
 
         setAuth(data.token, { usernm: data.usernm, _id: data._id });
-
-        try {
-          tg.ready();
-          tg.expand();
-        } catch {
-          // Non-blocking: WebApp methods are best-effort.
-        }
+        window.sessionStorage.removeItem(TG_AUTH_PENDING_KEY);
       } catch (error) {
         const msg = error?.response?.data?.message;
         const reason = error?.response?.data?.reason;
         if (msg) {
           console.warn('[Telegram Mini App] auth failed:', msg, reason || '');
         }
+        window.sessionStorage.removeItem(TG_AUTH_PENDING_KEY);
       }
     };
 
@@ -102,6 +111,9 @@ export function TelegramMiniAppAuthBootstrap() {
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
+      }
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(TG_AUTH_PENDING_KEY);
       }
     };
   }, [isAuthenticated, setAuth]);
