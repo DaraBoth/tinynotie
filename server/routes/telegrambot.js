@@ -15,18 +15,29 @@ router.post("/webhook", async (req, res) => {
   }
 
   try {
-    // Process the update from Telegram
-    // Telegraf's handleUpdate method processes the update through all middlewares and handlers
-    console.log(req.body);
+    const asyncMode = String(process.env.TELEGRAM_WEBHOOK_ASYNC || "true").toLowerCase() !== "false";
+
+    if (asyncMode) {
+      // For Fly.io (always-on VM), acknowledge quickly to avoid Telegram timeout/retry storms.
+      res.status(200).json({ ok: true, mode: "async" });
+
+      setImmediate(async () => {
+        try {
+          await bot.handleUpdate(req.body);
+        } catch (err) {
+          console.error("[Telegram] Async webhook processing error:", err);
+        }
+      });
+      return;
+    }
+
+    // Fallback synchronous mode (legacy behavior).
     await bot.handleUpdate(req.body);
-    
-    // Always return 200 OK to Telegram immediately
-    // This prevents Telegram from retrying the webhook
-    res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, mode: "sync" });
   } catch (err) {
     console.error("[Telegram] Error handling webhook update:", err);
     // Still return 200 to prevent Telegram retries, but log the error
-    res.status(200).json({ ok: true, error: err.message });
+    return res.status(200).json({ ok: true, error: err.message });
   }
 });
 
