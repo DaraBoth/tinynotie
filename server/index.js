@@ -85,6 +85,10 @@ const swaggerOptions = {
         url: "https://tinynotie-api.vercel.app/",
         description: "Production server",
       },
+      {
+        url: "https://tinynotie.fly.dev",
+        description: "Fly.io server",
+      },
     ],
     components: {
       securitySchemes: {
