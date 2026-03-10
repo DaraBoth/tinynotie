@@ -2,6 +2,11 @@
 
 import { useEffect } from 'react';
 
+const isTelegramMiniApp = () => {
+  if (typeof window === 'undefined') return false;
+  return !!window?.Telegram?.WebApp || /[?#&]tgWebAppData=/.test(`${window.location.search}${window.location.hash}`);
+};
+
 /**
  * Registers the service worker on mount (client-side only).
  * Renders nothing – purely a side-effect component.
@@ -9,6 +14,14 @@ import { useEffect } from 'react';
 export function ServiceWorkerRegistration() {
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    if (isTelegramMiniApp()) {
+      // Telegram WebView and SW can conflict (install errors / reload loops).
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((reg) => reg.unregister())))
+        .catch((err) => console.warn('[SW] Unregister in Telegram mini app failed:', err));
+      return;
+    }
 
     const register = async () => {
       try {

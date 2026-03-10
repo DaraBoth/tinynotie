@@ -11,6 +11,11 @@ const apiClient = axios.create({
   },
 });
 
+const isTelegramMiniApp = () => {
+  if (typeof window === 'undefined') return false;
+  return !!window?.Telegram?.WebApp || /[?#&]tgWebAppData=/.test(`${window.location.search}${window.location.hash}`);
+};
+
 /**
  * Read the token from localStorage (primary) or Zustand in-memory store (fallback).
  * localStorage is always written synchronously by Zustand persist middleware,
@@ -49,6 +54,12 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.warn('[API] 401 Unauthorized:', error.config?.url);
+
+      if (isTelegramMiniApp()) {
+        // In Telegram mini app, let bootstrap auth recover without hard redirect loops.
+        return Promise.reject(error);
+      }
+
       // Only clear auth + redirect when we're NOT already on the login page.
       // Avoids infinite redirect loops when a stale/unauthenticated request
       // fires before the store is fully hydrated.

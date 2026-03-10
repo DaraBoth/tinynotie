@@ -715,10 +715,18 @@ export const initTelegramBot = (token) => {
 
     // /miniapp command - open TinyNotie Telegram mini app
     bot.command('miniapp', withSafeCommand('miniapp', async (ctx) => {
+        const miniAppUrl = getTelegramMiniAppUrl();
+
+        if (isGroupChat(ctx)) {
+            return ctx.reply(
+                `🚀 Mini app link (open in Telegram):\n${miniAppUrl}`
+            );
+        }
+
         return ctx.reply(
             '🚀 Open TinyNotie mini app:',
             Markup.inlineKeyboard([
-                Markup.button.webApp('Open Mini App', getTelegramMiniAppUrl()),
+                Markup.button.webApp('Open Mini App', miniAppUrl),
             ])
         );
     }));
