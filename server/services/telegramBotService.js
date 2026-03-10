@@ -42,7 +42,7 @@ const getWebAppBaseUrl = () => {
 };
 
 const getTelegramCommandGuideUrl = () => `${getWebAppBaseUrl()}/help/telegram-commands`;
-    const getTelegramMiniAppUrl = () => `${getWebAppBaseUrl()}`;
+    const getTelegramMiniAppUrl = () => `${getWebAppBaseUrl()}/tg`;
 
 const getUserTableColumns = async () => {
     if (userTableColumnsCache) return userTableColumnsCache;
