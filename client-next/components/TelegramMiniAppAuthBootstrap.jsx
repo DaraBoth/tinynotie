@@ -44,6 +44,11 @@ const resolveInitData = () => {
   return { tg, initData: fromUrl };
 };
 
+const isTelegramMiniApp = () => {
+  if (typeof window === 'undefined') return false;
+  return !!window?.['Telegram']?.WebApp || /[?#&]tgWebAppData=/.test(`${window.location.search}${window.location.hash}`);
+};
+
 export function TelegramMiniAppAuthBootstrap() {
   const hasTriedRef = useRef(false);
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -54,6 +59,15 @@ export function TelegramMiniAppAuthBootstrap() {
     if (hasTriedRef.current || isAuthenticated) return;
 
     if (typeof window === 'undefined') return;
+
+    const inTelegramMiniApp = isTelegramMiniApp();
+    if (inTelegramMiniApp) {
+      // Signal other guards to wait while bootstrap attempts to authenticate.
+      window.sessionStorage.setItem(TG_AUTH_PENDING_KEY, '1');
+      if (!window.sessionStorage.getItem(`${TG_AUTH_PENDING_KEY}-started-at`)) {
+        window.sessionStorage.setItem(`${TG_AUTH_PENDING_KEY}-started-at`, String(Date.now()));
+      }
+    }
 
     const maxAttempts = 12;
     const attemptIntervalMs = 250;
@@ -83,7 +97,6 @@ export function TelegramMiniAppAuthBootstrap() {
       }
 
       hasTriedRef.current = true;
-      window.sessionStorage.setItem(TG_AUTH_PENDING_KEY, '1');
 
       try {
         const response = await api.telegramMiniAppLogin(initData, { timeout: 12000 });
@@ -114,6 +127,7 @@ export function TelegramMiniAppAuthBootstrap() {
       }
       if (typeof window !== 'undefined') {
         window.sessionStorage.removeItem(TG_AUTH_PENDING_KEY);
+        window.sessionStorage.removeItem(`${TG_AUTH_PENDING_KEY}-started-at`);
       }
     };
   }, [isAuthenticated, setAuth]);

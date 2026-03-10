@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
 const TG_AUTH_PENDING_KEY = 'tg-miniapp-auth-pending';
+const TG_AUTH_PENDING_STARTED_AT_KEY = `${TG_AUTH_PENDING_KEY}-started-at`;
+const TG_AUTH_GUARD_GRACE_MS = 12000;
 
 const isTelegramMiniApp = () => {
   if (typeof window === 'undefined') return false;
-  return !!window?.Telegram?.WebApp || /[?#&]tgWebAppData=/.test(`${window.location.search}${window.location.hash}`);
+  return !!window?.['Telegram']?.WebApp || /[?#&]tgWebAppData=/.test(`${window.location.search}${window.location.hash}`);
 };
 
 /**
@@ -35,6 +37,12 @@ export function useAuthGuard(redirectTo = '/login') {
     if (typeof window !== 'undefined' && isTelegramMiniApp()) {
       const pending = window.sessionStorage.getItem(TG_AUTH_PENDING_KEY) === '1';
       if (pending) return;
+
+      const startedAtRaw = window.sessionStorage.getItem(TG_AUTH_PENDING_STARTED_AT_KEY);
+      const startedAt = Number(startedAtRaw || 0);
+      if (startedAt > 0 && (Date.now() - startedAt) < TG_AUTH_GUARD_GRACE_MS) {
+        return;
+      }
     }
 
     if (!isAuthenticated) {

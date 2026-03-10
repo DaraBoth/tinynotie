@@ -15,7 +15,20 @@ router.post("/webhook", async (req, res) => {
   }
 
   try {
-    const asyncMode = String(process.env.TELEGRAM_WEBHOOK_ASYNC || "true").toLowerCase() !== "false";
+    const configured = process.env.TELEGRAM_WEBHOOK_ASYNC;
+    const isServerlessRuntime = Boolean(
+      process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.NETLIFY ||
+      process.env.K_SERVICE
+    );
+
+    // Default behavior:
+    // - serverless: sync (must finish before function exits)
+    // - VM/container hosts: async (faster ack, resilient for long processing)
+    const asyncMode = configured == null
+      ? !isServerlessRuntime
+      : String(configured).toLowerCase() !== "false";
 
     if (asyncMode) {
       // For Fly.io (always-on VM), acknowledge quickly to avoid Telegram timeout/retry storms.
