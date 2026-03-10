@@ -5,9 +5,22 @@ import { useEffect, useRef, useState } from 'react';
 const PULL_THRESHOLD = 84;
 const MAX_PULL_DISTANCE = 130;
 
-const isLikelyMobileTouch = () => {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints || 0) > 0;
+const isScrollableY = (element) => {
+  if (!element || typeof window === 'undefined') return false;
+  const style = window.getComputedStyle(element);
+  const overflowY = style.overflowY;
+  return overflowY === 'auto' || overflowY === 'scroll';
+};
+
+const findScrollableParent = (node) => {
+  let current = node;
+  while (current && current !== document.body) {
+    if (isScrollableY(current) && current.scrollHeight > current.clientHeight) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return document.scrollingElement || document.documentElement;
 };
 
 export function MobilePullToRefresh({ onRefresh, enabled = true }) {
@@ -19,6 +32,7 @@ export function MobilePullToRefresh({ onRefresh, enabled = true }) {
   const runningRef = useRef(false);
   const pullDistanceRef = useRef(0);
   const refreshingRef = useRef(false);
+  const activeScrollerRef = useRef(null);
 
   const setPull = (value) => {
     pullDistanceRef.current = value;
@@ -34,8 +48,16 @@ export function MobilePullToRefresh({ onRefresh, enabled = true }) {
     if (!enabled || typeof window === 'undefined') return;
 
     const onTouchStart = (event) => {
-      if (!isLikelyMobileTouch() || runningRef.current || refreshingRef.current) return;
-      if (window.scrollY > 0) {
+      if (runningRef.current || refreshingRef.current) return;
+
+      const touchTarget = event.target;
+      const scroller = findScrollableParent(touchTarget);
+      activeScrollerRef.current = scroller;
+
+      const scrollerTop = Number(scroller?.scrollTop || 0);
+      const windowTop = Number(window.scrollY || 0);
+
+      if (scrollerTop > 0 || windowTop > 0) {
         canPullRef.current = false;
         startYRef.current = null;
         return;
@@ -57,7 +79,10 @@ export function MobilePullToRefresh({ onRefresh, enabled = true }) {
         return;
       }
 
-      if (window.scrollY > 0) {
+      const scrollerTop = Number(activeScrollerRef.current?.scrollTop || 0);
+      const windowTop = Number(window.scrollY || 0);
+      if (scrollerTop > 0 || windowTop > 0) {
+        canPullRef.current = false;
         setPull(0);
         return;
       }
@@ -76,6 +101,7 @@ export function MobilePullToRefresh({ onRefresh, enabled = true }) {
       setPull(0);
       startYRef.current = null;
       canPullRef.current = false;
+      activeScrollerRef.current = null;
 
       if (!shouldRefresh || typeof onRefresh !== 'function') return;
 
@@ -90,16 +116,16 @@ export function MobilePullToRefresh({ onRefresh, enabled = true }) {
       }
     };
 
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    document.addEventListener('touchstart', onTouchStart, { passive: true, capture: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true, capture: true });
+    document.addEventListener('touchcancel', onTouchEnd, { passive: true, capture: true });
 
     return () => {
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
-      window.removeEventListener('touchcancel', onTouchEnd);
+      document.removeEventListener('touchstart', onTouchStart, { capture: true });
+      document.removeEventListener('touchmove', onTouchMove, { capture: true });
+      document.removeEventListener('touchend', onTouchEnd, { capture: true });
+      document.removeEventListener('touchcancel', onTouchEnd, { capture: true });
     };
   }, [enabled, onRefresh]);
 
