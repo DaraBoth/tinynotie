@@ -1566,7 +1566,7 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
   try {
     // 1. Double check access
     const accessSql = `
-      SELECT g.grp_name, g.currency,
+      SELECT g.grp_name, g.currency, g.telegram_chat_id,
              (g.admin_id = $2 OR EXISTS(SELECT 1 FROM grp_users gu WHERE gu.group_id = g.id AND gu.user_id = $2)) as has_access
       FROM grp_infm g
       WHERE g.id = $1;

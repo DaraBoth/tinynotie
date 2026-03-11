@@ -92,6 +92,12 @@ function ShareExportFlowSheet({
     onSubmit?.({ mode, targetType: effectiveTarget, actionType });
   };
 
+  const modeLabel = mode === 'members'
+    ? 'member summary'
+    : (mode === 'trips' ? 'trip summary' : 'trip detail');
+
+  const destinationLabel = effectiveTarget === 'group' ? 'Telegram Group Chat' : 'Personal Telegram Chat';
+
   return (
     <Sheet open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose?.(); }}>
       <SheetContent
@@ -111,12 +117,15 @@ function ShareExportFlowSheet({
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${step === 1 ? 'border-primary/50 bg-primary/10 text-foreground' : 'border-border/30 bg-muted/20 text-muted-foreground'}`}>
-              1. Destination
-            </div>
-            <div className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${step === 2 ? 'border-primary/50 bg-primary/10 text-foreground' : 'border-border/30 bg-muted/20 text-muted-foreground'}`}>
-              2. Action
+          <div className="mt-4 relative">
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-border/30" />
+            <div className="relative grid grid-cols-2 gap-3">
+              <div className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${step === 1 ? 'border-primary/50 bg-primary/10 text-foreground shadow-[0_0_0_1px_rgba(255,255,255,0.04)]' : 'border-border/30 bg-muted/20 text-muted-foreground'}`}>
+                1. Destination
+              </div>
+              <div className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${step === 2 ? 'border-primary/50 bg-primary/10 text-foreground shadow-[0_0_0_1px_rgba(255,255,255,0.04)]' : 'border-border/30 bg-muted/20 text-muted-foreground'}`}>
+                2. Action
+              </div>
             </div>
           </div>
         </SheetHeader>
@@ -124,25 +133,50 @@ function ShareExportFlowSheet({
         <div className="h-[calc(100%-166px)] overflow-y-auto px-5 py-4">
           {step === 1 && (
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Choose Telegram Destination</p>
+              <div className="rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-cyan-500/5 to-transparent px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-500">Share Target</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">Choose where to deliver this {modeLabel}</p>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setTarget('group')}
                 disabled={!canShareToGroup}
-                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${canShareToGroup ? 'hover:border-primary/50' : 'opacity-50 cursor-not-allowed'} ${effectiveTarget === 'group' ? 'border-primary/60 bg-primary/10' : 'border-border/30 bg-muted/20'}`}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${canShareToGroup ? 'hover:border-sky-500/60 hover:bg-sky-500/5' : 'opacity-50 cursor-not-allowed'} ${effectiveTarget === 'group' ? 'border-sky-500/60 bg-sky-500/10 shadow-[0_8px_24px_-18px_rgba(14,165,233,0.9)]' : 'border-border/30 bg-muted/20'}`}
               >
-                <p className="text-sm font-bold">Group Chat</p>
-                <p className="text-xs text-muted-foreground mt-1">Send directly to the linked Telegram group conversation.</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold">Group Chat</p>
+                    <p className="text-xs text-muted-foreground mt-1">Send directly to the linked Telegram group conversation.</p>
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-wide ${canShareToGroup ? 'text-sky-500' : 'text-muted-foreground'}`}>
+                    {canShareToGroup ? 'Ready' : 'Not Linked'}
+                  </span>
+                </div>
               </button>
+
               <button
                 type="button"
                 onClick={() => setTarget('personal')}
                 disabled={!canShareToPersonal}
-                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${canShareToPersonal ? 'hover:border-primary/50' : 'opacity-50 cursor-not-allowed'} ${effectiveTarget === 'personal' ? 'border-primary/60 bg-primary/10' : 'border-border/30 bg-muted/20'}`}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${canShareToPersonal ? 'hover:border-violet-500/60 hover:bg-violet-500/5' : 'opacity-50 cursor-not-allowed'} ${effectiveTarget === 'personal' ? 'border-violet-500/60 bg-violet-500/10 shadow-[0_8px_24px_-18px_rgba(139,92,246,0.9)]' : 'border-border/30 bg-muted/20'}`}
               >
-                <p className="text-sm font-bold">Personal Chat</p>
-                <p className="text-xs text-muted-foreground mt-1">Send privately to your Telegram account.</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold">Personal Chat</p>
+                    <p className="text-xs text-muted-foreground mt-1">Send privately to your Telegram account.</p>
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-wide ${canShareToPersonal ? 'text-violet-500' : 'text-muted-foreground'}`}>
+                    {canShareToPersonal ? 'Ready' : 'Not Linked'}
+                  </span>
+                </div>
               </button>
+
+              <div className="rounded-xl border border-border/30 bg-muted/20 px-3 py-2.5">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Current Destination</p>
+                <p className="mt-1 text-sm font-semibold">{hasAnyTelegramTarget ? destinationLabel : 'None linked yet'}</p>
+              </div>
+
               {!hasAnyTelegramTarget && (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-300">
                   Telegram is not linked yet. You can still continue and use Export in step 2.
@@ -153,24 +187,39 @@ function ShareExportFlowSheet({
 
           {step === 2 && (
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Choose Action</p>
+              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Action</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">Pick how you want to deliver this data</p>
+              </div>
+
               <button
                 type="button"
                 onClick={() => handleAction('telegram')}
                 disabled={loading || !hasAnyTelegramTarget}
-                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${loading || !hasAnyTelegramTarget ? 'opacity-50 cursor-not-allowed border-border/30 bg-muted/20' : 'border-sky-500/40 bg-sky-500/10 hover:border-sky-500/60'}`}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${loading || !hasAnyTelegramTarget ? 'opacity-50 cursor-not-allowed border-border/30 bg-muted/20' : 'border-sky-500/40 bg-sky-500/10 hover:border-sky-500/70 hover:bg-sky-500/15'}`}
               >
-                <p className="text-sm font-bold">Share to Telegram</p>
-                <p className="text-xs text-muted-foreground mt-1">Send now to {effectiveTarget === 'group' ? 'Group Chat' : 'Personal Chat'}.</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold">Share to Telegram</p>
+                    <p className="text-xs text-muted-foreground mt-1">Send now to {effectiveTarget === 'group' ? 'Group Chat' : 'Personal Chat'}.</p>
+                  </div>
+                  <Send className="h-4 w-4 text-sky-500" />
+                </div>
               </button>
+
               <button
                 type="button"
                 onClick={() => handleAction('export')}
                 disabled={loading}
-                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${loading ? 'opacity-50 cursor-not-allowed border-border/30 bg-muted/20' : 'border-emerald-500/40 bg-emerald-500/10 hover:border-emerald-500/60'}`}
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${loading ? 'opacity-50 cursor-not-allowed border-border/30 bg-muted/20' : 'border-emerald-500/40 bg-emerald-500/10 hover:border-emerald-500/70 hover:bg-emerald-500/15'}`}
               >
-                <p className="text-sm font-bold">Export File</p>
-                <p className="text-xs text-muted-foreground mt-1">Download as Excel for offline sharing and reporting.</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold">Export File</p>
+                    <p className="text-xs text-muted-foreground mt-1">Download as Excel for offline sharing and reporting.</p>
+                  </div>
+                  <Download className="h-4 w-4 text-emerald-500" />
+                </div>
               </button>
             </div>
           )}

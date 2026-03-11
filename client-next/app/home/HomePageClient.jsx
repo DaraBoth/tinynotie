@@ -218,7 +218,7 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
               </div>
               <h1 className="text-5xl md:text-7xl font-black mb-3 tracking-tighter uppercase italic leading-[0.9]">
                 <span className="text-muted-foreground/40">WELCOME,</span><br />
-                <span className="text-gradient-vibrant animate-gradient">{activeUser?.usernm || 'LEGEND'}</span>
+                <span className="text-gradient-vibrant animate-gradient inline-block max-w-full break-all [overflow-wrap:anywhere]">{activeUser?.usernm || 'LEGEND'}</span>
               </h1>
               <p className="text-muted-foreground/60 text-base font-black uppercase tracking-tight max-w-sm italic">
                 Leading <span className="text-foreground hover:text-[#f78fa7] transition-colors">{groups?.length || 0} active squads</span> to perfection.
