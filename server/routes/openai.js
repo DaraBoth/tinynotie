@@ -1298,7 +1298,20 @@ router.get("/getWeatherNotification", async (_, res) => {
 });
 
 router.post("/batchPush", async (req, res) => {
-  const { payload } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const body = req.body || {};
+  const { payload } = body; // Extract payload from request body
+
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    console.warn("[openai/batchPush] Invalid payload", {
+      hasBody: Boolean(req.body),
+      payloadType: typeof payload,
+    });
+    return res.status(400).json({
+      status: false,
+      message: "Invalid request body. 'payload' object is required.",
+    });
+  }
+
   try {
     res.send(await sendBatchNotification(payload));
   } catch (error) {
@@ -1308,7 +1321,43 @@ router.post("/batchPush", async (req, res) => {
 });
 
 router.post("/push", async (req, res) => {
-  const { identifier, payload, appId = 0 } = req.body; // Extract identifier (username or deviceId) and payload from request body
+  const body = req.body || {};
+  const { identifier, payload, appId = 0 } = body; // Extract identifier (username or deviceId) and payload from request body
+
+  if (!identifier || typeof identifier !== "string" || !identifier.trim()) {
+    console.warn("[openai/push] Missing or invalid identifier", {
+      hasBody: Boolean(req.body),
+      identifierType: typeof identifier,
+    });
+    return res.status(400).json({
+      status: false,
+      message: "Invalid request body. 'identifier' string is required.",
+    });
+  }
+
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    console.warn("[openai/push] Missing or invalid payload", {
+      hasBody: Boolean(req.body),
+      payloadType: typeof payload,
+    });
+    return res.status(400).json({
+      status: false,
+      message: "Invalid request body. 'payload' object is required.",
+    });
+  }
+
+  const parsedAppId = Number(appId);
+  if (!Number.isInteger(parsedAppId) || parsedAppId < 0) {
+    console.warn("[openai/push] Invalid appId", {
+      appId,
+      appIdType: typeof appId,
+    });
+    return res.status(400).json({
+      status: false,
+      message: "Invalid request body. 'appId' must be a non-negative integer.",
+    });
+  }
+
   const client = await pool.connect();
 
   try {
@@ -1316,7 +1365,8 @@ router.post("/push", async (req, res) => {
     let userQuery = `
       SELECT id FROM user_infm WHERE usernm = $1 and app_id = $2;
     `;
-    const userResult = await client.query(userQuery, [identifier, appId]);
+    const normalizedIdentifier = identifier.trim();
+    const userResult = await client.query(userQuery, [normalizedIdentifier, parsedAppId]);
     if (userResult.rows.length > 0) {
       // If a username is provided, retrieve the device_id from user_infm
       const { id } = userResult.rows[0];
