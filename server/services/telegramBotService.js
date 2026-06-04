@@ -781,7 +781,7 @@ export const initTelegramBot = (token) => {
                 groupName: grpName,
                 askImportMembers: false,
             });
-            return ctx.reply('Please send the currency code/symbol for this group (example: USD, THB, W).');
+            return ctx.reply('Please send the currency code/symbol for this group (example: USD, W).');
         } catch (err) {
             console.error('Create group TG error:', err);
             ctx.reply('❌ Failed to create group.');
@@ -1058,7 +1058,7 @@ export const initTelegramBot = (token) => {
                         groupName: grpName,
                         askImportMembers: false,
                     });
-                    return ctx.reply('Please send the currency code/symbol for this group (example: USD, THB, W).');
+                    return ctx.reply('Please send the currency code/symbol for this group (example: USD, W).');
                 }
 
                 if (pending.type === 'create_group_currency') {
@@ -1069,7 +1069,7 @@ export const initTelegramBot = (token) => {
 
                     const currency = normalizeCurrency(text);
                     if (!currency) {
-                        return ctx.reply('❌ Invalid currency. Please send a short currency code/symbol (example: USD, THB, W).');
+                        return ctx.reply('❌ Invalid currency. Please send a short currency code/symbol (example: USD, W).');
                     }
 
                     if (pending.askImportMembers) {
