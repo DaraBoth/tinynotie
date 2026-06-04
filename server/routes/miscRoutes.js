@@ -3,10 +3,11 @@ import pg from "pg";
 import axios from "axios";
 import { authenticateToken } from "../middleware/auth.js";
 import { handleError } from "../utils/db.js";
+import { getPostgresConnectionString } from "../utils/postgresConnection.js";
 
 const { Pool } = pg;
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
+  connectionString: getPostgresConnectionString(),
 });
 
 const router = express.Router();
@@ -62,7 +63,7 @@ router.get("/test_db_online", async (req, res) => {
 
   if (isDaraboth) {
     testPool = new Pool({
-      connectionString: process.env.POSTGRES_URL,
+      connectionString: getPostgresConnectionString(),
     });
   } else {
     testPool = new Pool({

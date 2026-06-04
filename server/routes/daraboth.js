@@ -4,12 +4,13 @@ import express from "express";
 import pg from "pg";
 const Pool = pg.Pool;
 import { handleError } from "../helpers/errorHandler.js"; // Ensure this helper exists
+import { getPostgresConnectionString } from "../utils/postgresConnection.js";
 
 const router = express.Router();
 
 // Initialize PostgreSQL pool
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
+  connectionString: getPostgresConnectionString(),
   max: 20, // Adjust based on your PostgreSQL connection limits
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
   connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established

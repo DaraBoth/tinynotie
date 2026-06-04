@@ -4,11 +4,12 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { authenticateToken } from "../middleware/auth.js";
+import { getPostgresConnectionString } from "../utils/postgresConnection.js";
 
 const router = express.Router();
 const Pool = pg.Pool;
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
+  connectionString: getPostgresConnectionString(),
 });
 
 // Secret key for JWT (use a strong secret key in production)

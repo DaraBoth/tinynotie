@@ -1,9 +1,10 @@
 import pkg from "pg";
+import { getPostgresConnectionString } from "./postgresConnection.js";
 const { Pool } = pkg;
 
 // Create a new pool instance for PostgreSQL
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL, // Use environment variable for connection string
+  connectionString: getPostgresConnectionString(), // Use environment variable for connection string
   ssl: {
     rejectUnauthorized: false, // Allow self-signed certificates
   },

@@ -1,10 +1,11 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import { getPostgresConnectionString } from '../utils/postgresConnection.js';
 dotenv.config();
 
 const { Pool } = pg;
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
+  connectionString: getPostgresConnectionString(),
 });
 
 async function migrate() {

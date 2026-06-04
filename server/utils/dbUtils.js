@@ -1,9 +1,10 @@
 import pg from "pg";
+import { getPostgresConnectionString } from "./postgresConnection.js";
 const Pool = pg.Pool;
 
 // Create a database connection pool
 export const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
+  connectionString: getPostgresConnectionString(),
 });
 
 /**
