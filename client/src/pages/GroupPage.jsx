@@ -157,7 +157,7 @@ export default function Group({ user, secret, setGroupInfo }) {
       },
       {
         field: "trp_name",
-        headerName: "Trip Name",
+        headerName: "Expense Name",
         width: 100,
         headerAlign: "center",
         align: "center",
@@ -229,12 +229,12 @@ export default function Group({ user, secret, setGroupInfo }) {
   const actions = [
     {
       icon: <AddIcon />,
-      name: "Add Trip",
+      name: "Add Expense",
       onClick: () => setOpenAddTripDialog(true),
     },
     {
       icon: <EditIcon />,
-      name: "Edit Trip's Member",
+      name: "Edit Expense Members",
       onClick: () => setOpenEditTripDialog(true),
     },
     {
@@ -538,7 +538,7 @@ export default function Group({ user, secret, setGroupInfo }) {
                         letterSpacing: "-0.01em"
                       }}
                     >
-                      Recent Trips
+                      Recent Expenses
                     </Typography>
                   </Box>
                   <Tooltip title={tripViewMode === "table" ? "Switch to List View" : "Switch to Table View"}>
@@ -685,7 +685,7 @@ export default function Group({ user, secret, setGroupInfo }) {
       <CustomDialog
         open={openAddTripDialog}
         onClose={() => setOpenAddTripDialog(false)}
-        title="Edit or Add Trip"
+        title="Edit or Add Expense"
       >
         <EditTrip
           triggerTrip={triggerTrip}
@@ -700,7 +700,7 @@ export default function Group({ user, secret, setGroupInfo }) {
       <CustomDialog
         open={openEditTripDialog}
         onClose={() => setOpenEditTripDialog(false)}
-        title="Edit Trip Member"
+        title="Edit Expense Members"
       >
         <EditTripMem
           triggerTrip={triggerTrip}

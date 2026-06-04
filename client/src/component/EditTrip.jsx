@@ -179,10 +179,10 @@ export default function EditTrip({
     })
       .then((response) => {
         if (response?.data?.status) {
-          setAlertMessage("Trip added successfully!");
+          setAlertMessage("Expense added successfully!");
           setAlertType("success");
         } else {
-          setAlertMessage(`Failed to add trip: ${response?.data?.message}`);
+          setAlertMessage(`Failed to add expense: ${response?.data?.message}`);
           setAlertType("error");
         }
         setAlertOpen(true);
@@ -373,7 +373,7 @@ export default function EditTrip({
               color="primary"
               {...params}
               variant="standard"
-              label="Select or Add Trip"
+              label="Select or Add Expense"
               InputProps={{
                 ...params.InputProps,
                 style: { color: theme.palette.text.primary }
@@ -782,7 +782,7 @@ export default function EditTrip({
                 letterSpacing: "-0.01em"
               }}
             >
-              New trip
+              New expense
             </Typography>
             <IconButton
               onClick={handleClose}
@@ -850,7 +850,7 @@ export default function EditTrip({
                   trp_name: event.target.value,
                 })
               }
-              label="Trip's Name"
+              label="Expense Name"
               type="text"
               variant="standard"
               fullWidth

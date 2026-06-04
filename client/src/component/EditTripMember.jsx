@@ -112,11 +112,11 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
     })
       .then((response) => {
         if (response?.data?.status) {
-          setAlertMessage("Successfully updated trip members.");
+          setAlertMessage("Successfully updated expense members.");
           setAlertType("success");
           triggerTrip({ group_id });
         } else {
-          setAlertMessage(response?.data?.message || "Failed to update trip members.");
+          setAlertMessage(response?.data?.message || "Failed to update expense members.");
           setAlertType("error");
         }
         setAlertOpen(true);
@@ -170,11 +170,11 @@ export default function EditTripMem({ triggerTrip, member, trip, group_id }) {
         }}
       >
         <FormControl variant="standard">
-          <InputLabel color="primary">Choose Event</InputLabel>
+          <InputLabel color="primary">Choose Expense</InputLabel>
           <Select
             value={state.trpNametoEdit}
             onChange={handleChange}
-            label="Choose Event"
+            label="Choose Expense"
             color="primary"
             sx={{ width: "100%" }}
             MenuProps={{

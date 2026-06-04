@@ -21,7 +21,7 @@ import { SpaceSky } from '@/components/SpaceSky';
 import { CURRENCY_OPTIONS } from '@/utils/helpers';
 
 const FEATURES = [
-  { icon: TrendingUp, title: 'Smart Expense Tracking', desc: 'Track every trip and who owes what in real time.' },
+  { icon: TrendingUp, title: 'Smart Expense Tracking', desc: 'Track every expense and who owes what in real time.' },
   { icon: Users,      title: 'Group Collaboration',   desc: 'Add members and manage payments together.' },
   { icon: Shield,     title: 'Secure & Private',      desc: 'Your data is safe with optional visibility settings.' },
   { icon: Sparkles,   title: 'AI-Powered Insights',   desc: 'Ask your group data questions in plain language.' },
@@ -198,7 +198,7 @@ export default function CreateGroupPage() {
                   </Label>
                   <Input
                     id="grp_name" name="grp_name"
-                    placeholder="e.g. Japan Trip 2026"
+                    placeholder="e.g. Japan Expenses 2026"
                     value={formData.grp_name} onChange={handleChange}
                     required autoFocus
                     className="h-11 text-sm bg-background/50 backdrop-blur border-border/60"

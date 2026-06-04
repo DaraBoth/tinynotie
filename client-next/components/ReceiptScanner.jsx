@@ -118,7 +118,7 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
         joined_ids: allMemberIds,
       })));
       setScanned(true);
-      toast.success(`Detected ${trips.length} item${trips.length !== 1 ? 's' : ''}`);
+      toast.success(`Detected ${trips.length} expense item${trips.length !== 1 ? 's' : ''}`);
     } catch { /* handled by mutation */ }
   };
 
@@ -158,7 +158,7 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
     }));
     try {
       await addMutation.mutateAsync(trips);
-      toast.success(`Added ${valid.length} trip${valid.length !== 1 ? 's' : ''} to group`);
+      toast.success(`Added ${valid.length} expense${valid.length !== 1 ? 's' : ''} to group`);
       clearAll();
       onClose();
     } catch { /* handled by mutation */ }
@@ -178,7 +178,7 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent title="Scan Receipt" description="Use AI to extract trip items from a receipt image">
+      <SheetContent title="Scan Receipt" description="Use AI to extract expense items from a receipt image">
         <SheetHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
@@ -313,7 +313,7 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
                           <Input
                             value={row.trp_name}
                             onChange={(e) => updateRow(row.id, 'trp_name', e.target.value)}
-                            placeholder="Item / trip name"
+                            placeholder="Item / expense name"
                             className="h-9 text-sm"
                           />
                           <div className="grid grid-cols-2 gap-2">

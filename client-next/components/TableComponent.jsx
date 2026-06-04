@@ -48,7 +48,7 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
           {data.length === 0 ? (
             <tr>
               <td colSpan={5} className="text-center p-8 text-muted-foreground">
-                No {title.toLowerCase()} yet. Click "Add {isMembersTable ? 'Member' : 'Trip'}" to get started.
+                No {title.toLowerCase()} yet. Click "Add {isMembersTable ? 'Member' : 'Expense'}" to get started.
               </td>
             </tr>
           ) : (
@@ -112,7 +112,7 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
     <div className="space-y-3">
       {data.length === 0 ? (
         <div className="text-center p-8 text-muted-foreground bg-muted/50 rounded-lg">
-          No {title.toLowerCase()} yet. Click "Add {isMembersTable ? 'Member' : 'Trip'}" to get started.
+          No {title.toLowerCase()} yet. Click "Add {isMembersTable ? 'Member' : 'Expense'}" to get started.
         </div>
       ) : (
         data.map((item) => (
@@ -204,7 +204,7 @@ export function TableComponent({ title, type, data, viewMode, onAdd, onEdit, onD
             )}
             <Button onClick={onAdd} size={isMobile ? 'icon' : 'default'}>
               <Plus className="h-4 w-4" />
-              {!isMobile && <span className="ml-2">Add {isMembersTable ? 'Member' : 'Trip'}</span>}
+              {!isMobile && <span className="ml-2">Add {isMembersTable ? 'Member' : 'Expense'}</span>}
             </Button>
           </div>
         </div>

@@ -146,10 +146,10 @@ export function useAddTrip(groupId) {
     mutationFn: (tripData) => api.addTrip({ ...tripData, group_id: groupId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
-      toast.success('Trip added successfully');
+      toast.success('Expense added successfully');
     },
     onError: (error) => {
-      const message = error.response?.data?.message || 'Failed to add trip';
+      const message = error.response?.data?.message || 'Failed to add expense';
       toast.error(message);
     },
   });
@@ -169,10 +169,10 @@ export function useUpdateTrip(groupId) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
-      toast.success('Trip updated successfully');
+      toast.success('Expense updated successfully');
     },
     onError: (error) => {
-      const message = error.response?.data?.message || 'Failed to update trip';
+      const message = error.response?.data?.message || 'Failed to update expense';
       toast.error(message);
     },
   });
@@ -185,10 +185,10 @@ export function useDeleteTrip(groupId) {
     mutationFn: (tripId) => api.deleteTrip(tripId, groupId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
-      toast.success('Trip deleted successfully');
+      toast.success('Expense deleted successfully');
     },
     onError: (error) => {
-      const message = error.response?.data?.message || 'Failed to delete trip';
+      const message = error.response?.data?.message || 'Failed to delete expense';
       toast.error(message);
     },
   });
@@ -234,10 +234,10 @@ export function useAddMultipleTrips(groupId) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
-      toast.success('Trips added successfully');
+      toast.success('Expenses added successfully');
     },
     onError: (error) => {
-      const message = error.response?.data?.message || 'Failed to add trips';
+      const message = error.response?.data?.message || 'Failed to add expenses';
       toast.error(message);
     },
   });

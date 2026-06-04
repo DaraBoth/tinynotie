@@ -69,11 +69,11 @@ export default function DeleteMember({
       }
 
       if (tripResponse?.data?.status) {
-        setAlertMessage(prev => `${prev}\nSuccessfully deleted the trip.`);
+        setAlertMessage(prev => `${prev}\nSuccessfully deleted the expense.`);
         setAlertType("success");
         triggerTrips({ group_id });
       } else if (deleteTrip) {
-        setAlertMessage(prev => `${prev}\nFailed to delete the trip.`);
+        setAlertMessage(prev => `${prev}\nFailed to delete the expense.`);
         setAlertType("error");
       }
 
@@ -292,7 +292,7 @@ export default function DeleteMember({
                 letterSpacing: "-0.01em"
               }}
             >
-              Select Trip to Delete
+              Select Expense to Delete
             </Typography>
           </Box>
 
@@ -312,13 +312,13 @@ export default function DeleteMember({
                 },
               }}
             >
-              Select Trip
+              Select Expense
             </InputLabel>
             <Select
               labelId="trip-select-label"
               value={deleteTrip}
               onChange={(event) => setDeleteTrip(event.target.value)}
-              label="Select Trip"
+              label="Select Expense"
               color="primary"
               sx={{
                 borderRadius: "10px",
@@ -470,7 +470,7 @@ export default function DeleteMember({
 
               {deleteTrip && (
                 <Chip
-                  label={`Trip: ${trips.find((t) => t.id === deleteTrip)?.trp_name}`}
+                  label={`Expense: ${trips.find((t) => t.id === deleteTrip)?.trp_name}`}
                   color="error"
                   variant="outlined"
                   icon={<EventBusyIcon />}

@@ -50,8 +50,8 @@ export function DeleteMember({ open, onClose, groupId, member, members = [], tri
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
         side="right"
-        title="Delete Member or Trip"
-        description="Permanently delete a member or a trip from this group"
+        title="Delete Member or Expense"
+        description="Permanently delete a member or an expense from this group"
       >
         <SheetHeader>
           <div className="flex items-center gap-3">
@@ -104,14 +104,14 @@ export function DeleteMember({ open, onClose, groupId, member, members = [], tri
             <div className="flex-1 h-px bg-border/40" />
           </div>
 
-          {/* Delete trip */}
+          {/* Delete expense */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Trip to Delete
+              Expense to Delete
             </Label>
             <Select value={selectedTripId} onValueChange={setSelectedTripId}>
               <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select a trip to delete…" />
+                <SelectValue placeholder="Select an expense to delete…" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE}>— None —</SelectItem>
@@ -140,7 +140,7 @@ export function DeleteMember({ open, onClose, groupId, member, members = [], tri
               {selectedTripId !== NONE && (
                 <p className="text-sm flex items-center gap-2">
                   <Trash2 className="h-3.5 w-3.5 text-destructive shrink-0" />
-                  Trip: <strong>{trips.find(t => String(t.id) === selectedTripId)?.trp_name}</strong>
+                  Expense: <strong>{trips.find(t => String(t.id) === selectedTripId)?.trp_name}</strong>
                 </p>
               )}
             </div>

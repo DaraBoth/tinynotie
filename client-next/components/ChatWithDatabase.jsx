@@ -25,7 +25,7 @@ export function ChatWithDatabase({ open, onClose, groupId }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hi! I can help you analyze your group expenses. Ask me anything about your spending patterns, member balances, or trip summaries!',
+      content: 'Hi! I can help you analyze your group expenses. Ask me anything about your spending patterns, member balances, or expense summaries!',
       timestamp: new Date(),
     },
   ]);

@@ -71,9 +71,9 @@ const TOOL_DISPLAY_NAMES = {
     update_member: 'Update Member',
     set_all_members_paid: 'Set All Member Payments',
     bulk_update_members_info: 'Bulk Update Members',
-    add_trip: 'Add Trip',
-    update_trip: 'Update Trip',
-    bulk_update_trips_info: 'Bulk Update Trips',
+    add_trip: 'Add Expense',
+    update_trip: 'Update Expense',
+    bulk_update_trips_info: 'Bulk Update Expenses',
 };
 
 const getToolDisplayName = (toolName) => {
@@ -95,7 +95,7 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
 
     const defaultWelcomeMessage = {
         role: 'assistant',
-        content: 'Hello! I am your AI financial assistant. I can help you manage trips, members, and analyze spending patterns. How can I help you today?',
+        content: 'Hello! I am your AI financial assistant. I can help you manage expenses, members, and analyze spending patterns. How can I help you today?',
         timestamp: new Date(),
     };
 
@@ -568,7 +568,7 @@ export function StreamingChat({ open, onClose, groupId, onDataChanged }) {
                                             setStatus(null);
                                         }
                                     }}
-                                    placeholder="Ask about expenses, add trips, or manage members..."
+                                    placeholder="Ask about expenses, add expense entries, or manage members..."
                                     className="pr-12 py-6 rounded-2xl border-border/40 bg-muted/20 focus-visible:ring-primary/30 transition-all"
                                     disabled={isLoading}
                                 />

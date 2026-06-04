@@ -757,7 +757,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
                     What is a Note?
                   </Typography>
                   <Typography variant="body2" sx={{ color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)' }}>
-                    A Note is a shared space where you and your friends can track expenses, plan trips, or manage any shared costs. Perfect for roommates, travel groups, or projects.
+                    A Note is a shared space where you and your friends can track expenses, plan spending, or manage any shared costs. Perfect for roommates, travel groups, or projects.
                   </Typography>
                 </CardContent>
               </Card>
@@ -982,7 +982,7 @@ export default function CreateGroup({ secret, setGroupInfo }) {
           </DialogTitle>
           <DialogContent>
             <Typography variant="body2" sx={{ mt: 2 }}>
-              A Note is a shared space where you and your friends can track expenses, plan trips, or manage any shared costs.
+              A Note is a shared space where you and your friends can track expenses, plan spending, or manage any shared costs.
             </Typography>
             <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: 600 }}>
               Tips for Creating a Note:

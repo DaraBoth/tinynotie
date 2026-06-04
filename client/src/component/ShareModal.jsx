@@ -398,7 +398,7 @@ export default function ShareModal({
               fontSize: { xs: "0.9rem", md: "1rem" },
             }}
           >
-            Select Trips to Share:
+            Select Expenses to Share:
           </Typography>
         </Box>
         <Select

@@ -87,7 +87,7 @@ export function EditTrip({ open, onClose, groupId, trip, members = [], currency 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!tripName.trim()) { toast.error('Trip name is required'); return; }
+    if (!tripName.trim()) { toast.error('Expense name is required'); return; }
     const price = parseFloat(spend);
     if (isNaN(price) || price <= 0) { toast.error('Enter a valid amount'); return; }
     if (selectedMemberIds.length === 0) { toast.error('Select at least one member'); return; }
@@ -115,7 +115,7 @@ export function EditTrip({ open, onClose, groupId, trip, members = [], currency 
   if (members.length === 0 && !isEditing) {
     return (
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="right" title="Add Trip" description="No members yet">
+        <SheetContent side="right" title="Add Expense" description="No members yet">
           <SheetHeader>
             <SheetTitle>Add Members First</SheetTitle>
           </SheetHeader>
@@ -134,24 +134,24 @@ export function EditTrip({ open, onClose, groupId, trip, members = [], currency 
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
         side="right"
-        title={isEditing ? 'Edit Trip' : 'Add Trip'}
-        description="Manage group expense trips"
+        title={isEditing ? 'Edit Expense' : 'Add Expense'}
+        description="Manage group expenses"
       >
         <SheetHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <FileText className="h-5 w-5 text-primary" />
             </div>
-            <SheetTitle>{isEditing ? 'Edit Trip' : 'Add Trip'}</SheetTitle>
+            <SheetTitle>{isEditing ? 'Edit Expense' : 'Add Expense'}</SheetTitle>
           </div>
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <SheetBody>
-            {/* Trip name */}
+            {/* Expense name */}
             <div className="space-y-1.5">
               <Label htmlFor="trp_name" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Trip Name *
+                Expense Name *
               </Label>
               <Input id="trp_name" placeholder="e.g. Dinner at restaurant" value={tripName}
                 onChange={(e) => setTripName(e.target.value)} required className="h-11"
@@ -272,7 +272,7 @@ export function EditTrip({ open, onClose, groupId, trip, members = [], currency 
               Cancel
             </Button>
             <Button type="submit" className="flex-1" disabled={isPending}>
-              {isPending ? 'Saving…' : isEditing ? 'Save Changes' : 'Add Trip'}
+              {isPending ? 'Saving…' : isEditing ? 'Save Changes' : 'Add Expense'}
             </Button>
           </SheetFooter>
         </form>

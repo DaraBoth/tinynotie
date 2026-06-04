@@ -271,7 +271,7 @@ export default function GroupPageContent() {
             <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Trips
+                  Expenses
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -305,14 +305,14 @@ export default function GroupPageContent() {
             </CardContent>
           </Card>
 
-          {/* Trips Section */}
+          {/* Expenses Section */}
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Expense Trips</CardTitle>
+                <CardTitle>Expenses</CardTitle>
                 <Button onClick={handleAddTrip} size="sm">
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Trip
+                  Add Expense
                 </Button>
               </div>
             </CardHeader>

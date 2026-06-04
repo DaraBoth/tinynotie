@@ -226,13 +226,13 @@ const ReceiptScanner = ({
 
   const handleConfirm = async () => {
     setErrorMessages([]);
-    setIsProcessing("Adding all trips....");
+    setIsProcessing("Adding all expenses....");
 
     // Validate that all trips have a name
     const invalidTrips = tableData.filter((trip) => !trip.trp_name || trip.trp_name.trim() === "");
     if (invalidTrips.length > 0) {
       console.log("Invalid trips:", invalidTrips); // Add logging for debugging
-      setValidationError("All trips must have a name.");
+      setValidationError("All expenses must have a name.");
       setIsProcessing(null);
       return;
     }
@@ -253,20 +253,20 @@ const ReceiptScanner = ({
       setTableData(failedTrips);
 
       if (failedTrips.length === 0) {
-        setIsProcessing("All trips added successfully!");
+        setIsProcessing("All expenses added successfully!");
         setTimeout(() => setIsProcessing(null), 2000);
       }
       triggerTrips({ group_id });
     } catch (error) {
       console.error("Error adding trips:", error);
-      setIsProcessing("Error adding trips. Please try again.");
+      setIsProcessing("Error adding expenses. Please try again.");
     }
   };
 
   const handleAddRow = () => {
     const newRow = {
       id: tableData.length + 1,
-      trp_name: `New trip ${tableData.length + 1}`,
+      trp_name: `New expense ${tableData.length + 1}`,
       spend: 0,
       mem_id: "[]",
       group_id,

@@ -94,7 +94,7 @@ function ShareExportFlowSheet({
 
   const modeLabel = mode === 'members'
     ? 'member summary'
-    : (mode === 'trips' ? 'trip summary' : 'trip detail');
+    : (mode === 'trips' ? 'expense summary' : 'expense detail');
 
   const destinationLabel = effectiveTarget === 'group' ? 'Telegram Group Chat' : 'Personal Telegram Chat';
 
@@ -509,7 +509,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
 
   const openEditTripFromAction = () => {
     if (sortedTrips.length === 0) {
-      toast.error('No trips to edit');
+      toast.error('No expenses to edit');
       return;
     }
     // Open trip selection dialog instead of directly opening edit
@@ -618,7 +618,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
 
       return {
         '#': idx + 1,
-        'Trip Name': trip.trp_name || '—',
+        'Expense Name': trip.trp_name || '—',
         'Amount': `${currency}${parseFloat(trip.spend || 0).toFixed(2)}`,
         'Payer': getPayerName(trip),
         'Joined By': joinedBy,
@@ -638,9 +638,9 @@ export function GroupPageClient({ groupId, initialData = null }) {
       { wch: 36 },
     ];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Trips');
-    XLSX.writeFile(wb, `${group.grp_name || 'Group'}_Trips.xlsx`);
-    toast.success(`Trips export downloaded (${selectedTrips.length} row${selectedTrips.length === 1 ? '' : 's'})`);
+    XLSX.utils.book_append_sheet(wb, ws, 'Expenses');
+    XLSX.writeFile(wb, `${group.grp_name || 'Group'}_Expenses.xlsx`);
+    toast.success(`Expenses export downloaded (${selectedTrips.length} row${selectedTrips.length === 1 ? '' : 's'})`);
   };
 
   const handleShareSelectedTrips = async (forcedTargetType = null) => {
@@ -659,15 +659,15 @@ export function GroupPageClient({ groupId, initialData = null }) {
       });
 
       if (res.data.status) {
-        toast.success('Trip data shared to Telegram!');
+        toast.success('Expense data shared to Telegram!');
         return true;
       } else {
-        toast.error(res.data.message || 'Failed to share trip data');
+        toast.error(res.data.message || 'Failed to share expense data');
         return false;
       }
     } catch (err) {
       console.error('Bulk trip share error:', err);
-      toast.error('Error sharing trips to Telegram');
+      toast.error('Error sharing expenses to Telegram');
       return false;
     } finally {
       setShareTripsLoading(false);
@@ -698,7 +698,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
 
             return {
               '#': idx + 1,
-              'Trip Name': trip.trp_name || '—',
+              'Expense Name': trip.trp_name || '—',
               'Amount': `${currency}${parseFloat(trip.spend || 0).toFixed(2)}`,
               'Payer': getPayerName(trip),
               'Joined By': joinedBy,
@@ -717,9 +717,9 @@ export function GroupPageClient({ groupId, initialData = null }) {
             { wch: 36 },
           ];
           const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, 'Trip');
-          XLSX.writeFile(wb, `${group.grp_name || 'Group'}_${shareFlowTrip.trp_name || 'Trip'}.xlsx`);
-          toast.success('Trip export downloaded (1 row)');
+          XLSX.utils.book_append_sheet(wb, ws, 'Expense');
+          XLSX.writeFile(wb, `${group.grp_name || 'Group'}_${shareFlowTrip.trp_name || 'Expense'}.xlsx`);
+          toast.success('Expense export downloaded (1 row)');
           success = true;
         }
       }
@@ -1120,7 +1120,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
     <div>
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-          <TrendingUp className="h-3.5 w-3.5" /> Trips
+          <TrendingUp className="h-3.5 w-3.5" /> Expenses
         </h2>
         {isMobile ? (
           <div className="flex flex-col gap-1.5 w-full max-w-[260px]">
@@ -1177,7 +1177,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
             {canManageGroup && (
               <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
                 onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-                <Plus className="h-3.5 w-3.5" /> Add Trip
+                <Plus className="h-3.5 w-3.5" /> Add Expense
               </Button>
             )}
           </div>
@@ -1186,11 +1186,11 @@ export function GroupPageClient({ groupId, initialData = null }) {
       {sortedTrips.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/40 rounded-2xl">
           <TrendingUp className="h-8 w-8 text-muted-foreground/30 mb-3" />
-          <p className="text-muted-foreground text-sm">No trips yet</p>
+          <p className="text-muted-foreground text-sm">No expenses yet</p>
           {canManageGroup && (
             <Button size="sm" variant="outline" className="mt-4"
               onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-              <Plus className="h-4 w-4 mr-1.5" /> Add First Trip
+              <Plus className="h-4 w-4 mr-1.5" /> Add First Expense
             </Button>
           )}
         </div>
@@ -1209,7 +1209,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                       className="h-4 w-4 accent-primary mt-1"
                     />
                     <div className="min-w-0">
-                      <p className="font-semibold text-sm leading-tight break-words">{trip.trp_name || 'Untitled Trip'}</p>
+                      <p className="font-semibold text-sm leading-tight break-words">{trip.trp_name || 'Untitled Expense'}</p>
                       <p className="text-xs text-muted-foreground mt-1">{formatTimeDifference(trip.update_dttm || trip.create_date)}</p>
                     </div>
                   </div>
@@ -1391,7 +1391,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                     <p className="font-semibold truncate" title={trip.trp_name}>{trip.trp_name}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => togglePinnedTripRow(trip.id)} title="Pin trip">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => togglePinnedTripRow(trip.id)} title="Pin expense">
                       <Pin className={`h-3.5 w-3.5 ${isPinned ? 'text-primary' : 'text-muted-foreground'}`} />
                     </Button>
                     <Badge variant="outline" className="text-xs">{formatTimeDifference(trip.update_dttm || trip.create_date)}</Badge>
@@ -1501,7 +1501,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
               </Button>
               <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-xs"
                 onClick={() => { setSelectedTrip(null); setEditTripOpen(true); }}>
-                <Plus className="h-3.5 w-3.5" /> Add Trip
+                <Plus className="h-3.5 w-3.5" /> Add Expense
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1515,7 +1515,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                   </DropdownMenuItem>
                   {sortedTrips.length > 0 && (
                     <DropdownMenuItem onClick={openEditTripFromAction} className="cursor-pointer">
-                      <FileStack className="mr-2 h-4 w-4" /> Edit Trip
+                      <FileStack className="mr-2 h-4 w-4" /> Edit Expense
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={() => setScannerOpen(true)} className="cursor-pointer">
@@ -1574,7 +1574,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
           <div className="flex md:hidden gap-0.5 mb-4 w-full border-b border-border/20">
             {[
               { key: 'members', label: 'Members', icon: Users },
-              { key: 'trips', label: 'Trips', icon: TrendingUp },
+              { key: 'trips', label: 'Expenses', icon: TrendingUp },
               { key: 'summary', label: 'Summary', icon: Wallet },
             ].map(({ key, label, icon: Icon }) => (
               <button
@@ -1679,7 +1679,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                               {memberTrips.length > 0 ? (
                                 <div className="rounded-xl bg-muted/30 border border-border/20 overflow-hidden mb-3">
                                   <p className="px-3 pt-2.5 pb-1.5 text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">
-                                    Trips Joined ({memberTrips.length})
+                                    Expenses Joined ({memberTrips.length})
                                   </p>
                                   {memberTrips.map((t, i) => (
                                     <div key={t.name}
@@ -1700,7 +1700,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                                   </div>
                                 </div>
                               ) : (
-                                <p className="text-xs text-muted-foreground mb-3 py-2">No trips joined yet.</p>
+                                <p className="text-xs text-muted-foreground mb-3 py-2">No expenses joined yet.</p>
                               )}
 
                               {/* Quick stats row */}
@@ -1765,7 +1765,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
               <div className="flex gap-1">
                 {[
                   { key: 'members', label: 'Members', icon: Users },
-                  { key: 'trips', label: 'Trips', icon: TrendingUp },
+                  { key: 'trips', label: 'Expenses', icon: TrendingUp },
                   { key: 'summary', label: 'Summary', icon: Wallet },
                 ].map(({ key, label, icon: Icon }) => (
                   <button
@@ -1835,17 +1835,17 @@ export function GroupPageClient({ groupId, initialData = null }) {
               <span className="text-xs font-semibold text-center leading-tight">Add User</span>
             </button>
 
-            {/* Add Trip */}
+            {/* Add Expense */}
             <button
               onClick={() => openPanel(() => { setSelectedTrip(null); setEditTripOpen(true); })}
               className="flex flex-col items-center gap-2.5 py-4 px-2 rounded-2xl active:bg-muted/60 transition-colors">
               <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center">
                 <Plus className="h-6 w-6 text-primary" />
               </div>
-              <span className="text-xs font-semibold text-center leading-tight">Add Trip</span>
+              <span className="text-xs font-semibold text-center leading-tight">Add Expense</span>
             </button>
 
-            {/* Edit Trip */}
+            {/* Edit Expense */}
             {sortedTrips.length > 0 && (
               <button
                 onClick={() => openPanel(() => openEditTripFromAction())}
@@ -1853,7 +1853,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/15 flex items-center justify-center">
                   <FileStack className="h-6 w-6 text-amber-400" />
                 </div>
-                <span className="text-xs font-semibold text-center leading-tight">Edit Trip</span>
+                <span className="text-xs font-semibold text-center leading-tight">Edit Expense</span>
               </button>
             )}
 
@@ -1880,7 +1880,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
               </button>
             )}
 
-            {/* Share Trips */}
+            {/* Share Expenses */}
             {sortedTrips.length > 0 && (
               <button
                 onClick={() => openPanel(() => openShareFlow('trips'))}
@@ -1889,7 +1889,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                 <div className="w-14 h-14 rounded-2xl bg-cyan-500/15 flex items-center justify-center">
                   <Share2 className="h-6 w-6 text-cyan-400" />
                 </div>
-                <span className="text-xs font-semibold text-center leading-tight">Share Trips</span>
+                <span className="text-xs font-semibold text-center leading-tight">Share Expenses</span>
               </button>
             )}
 
@@ -1955,8 +1955,8 @@ export function GroupPageClient({ groupId, initialData = null }) {
           shareFlowMode === 'members'
             ? 'Share Members'
             : shareFlowMode === 'trips'
-              ? 'Share Trips'
-              : `Share ${shareFlowTrip?.trp_name || 'Trip'}`
+              ? 'Share Expenses'
+              : `Share ${shareFlowTrip?.trp_name || 'Expense'}`
         }
         subtitle="Step 1: pick destination. Step 2: choose Telegram or Export."
         canShareToGroup={canShareToGroup}
@@ -1971,3 +1971,5 @@ export function GroupPageClient({ groupId, initialData = null }) {
     </div>
   );
 }
+
+
