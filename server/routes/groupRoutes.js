@@ -37,25 +37,6 @@ const parseTripMemberIds = (memId) => {
   }
 };
 
-const parseTripMemberIds = (memId) => {
-  try {
-    if (Array.isArray(memId)) return memId.map((id) => Number(id)).filter(Number.isFinite);
-    if (typeof memId === "string") {
-      const trimmed = memId.trim();
-      if (!trimmed) return [];
-      if (trimmed.startsWith("[")) {
-        const parsed = JSON.parse(trimmed);
-        return Array.isArray(parsed) ? parsed.map((id) => Number(id)).filter(Number.isFinite) : [];
-      }
-      return trimmed.split(",").map((id) => Number(id.trim())).filter(Number.isFinite);
-    }
-    const asNum = Number(memId);
-    return Number.isFinite(asNum) ? [asNum] : [];
-  } catch {
-    return [];
-  }
-};
-
 const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
