@@ -2,7 +2,6 @@
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
-.client\*
 
 # Legacy client folder (no longer active)
 client/
