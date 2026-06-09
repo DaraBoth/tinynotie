@@ -1464,7 +1464,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                                 variant="ghost"
                                 className="h-7 w-7 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
                                 onClick={(e) => { e.stopPropagation(); handleOpenResolveModal(trip); }}
-                                title="Resolve trip"
+                                title="Resolve expense"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                               </Button>
@@ -2194,9 +2194,9 @@ export function GroupPageClient({ groupId, initialData = null }) {
               const isUndo = entry.action_type.startsWith('UNDO_');
               const affected = Array.isArray(entry.affected_members) ? entry.affected_members : [];
               const actionLabel = {
-                RESOLVE_TRIP: 'Resolved trip',
+                RESOLVE_TRIP: 'Resolved expense',
                 CLEAR_MEMBER: 'Cleared member receipt',
-                UNDO_RESOLVE_TRIP: 'Undid trip resolution',
+                UNDO_RESOLVE_TRIP: 'Undid expense resolution',
                 UNDO_CLEAR_MEMBER: 'Undid member receipt clear',
               }[entry.action_type] || entry.action_type;
 
