@@ -37,11 +37,6 @@ function LoginForm() {
     passwd: '',
   });
 
-  // Pre-fetch the redirect target so its JS bundle is ready before the user logs in
-  useEffect(() => {
-    router.prefetch(redirectTo);
-  }, [router, redirectTo]);
-
   // Redirect if already logged in
   useEffect(() => {
     if (hasHydrated && isAuthenticated) {
