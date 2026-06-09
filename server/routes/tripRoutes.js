@@ -1020,7 +1020,7 @@ router.post("/undoSettlement", authenticateToken, async (req, res) => {
     await client.query(
       `INSERT INTO settlement_log (action_type, group_id, trip_id, member_id, affected_members, performed_by, undo_of_log_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [undoActionType, group_id, log.trip_id || null, log.member_id || null, log.affected_members, user_id, log_id]
+      [undoActionType, group_id, log.trip_id || null, log.member_id || null, JSON.stringify(affectedMembers), user_id, log_id]
     );
 
     await client.query("COMMIT");
