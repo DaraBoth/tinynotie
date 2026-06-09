@@ -6,8 +6,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Users, Trash2, AlertTriangle, Search,
-  Users2, TrendingUp, DollarSign, Calendar, Crown, Globe, Lock, ChevronRight,
-  ArrowUpRight, Wallet, Sparkles, Coins
+  Users2, TrendingUp, ChevronRight, Coins,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -30,12 +29,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 
-// Premium GenZ colour gradients
-const ACCENT_GRADIENTS = [
-  'from-[#f78fa7] via-[#00ff80] to-[#00ffff]', // Neon Green
-  'from-[#ff0080] via-[#ff00ff] to-[#8000ff]', // Hot Pink/Purple
-  'from-[#0080ff] via-[#00ffff] to-[#00ff80]', // Electric Blue
-  'from-[#ffff00] via-[#ff8000] to-[#ff0000]', // Cyber Yellow/Red
+const ACCENT_COLORS = [
+  { bg: 'bg-blue-500', gradient: 'from-blue-500 to-indigo-500' },
+  { bg: 'bg-emerald-500', gradient: 'from-emerald-500 to-teal-500' },
+  { bg: 'bg-violet-500', gradient: 'from-violet-500 to-purple-500' },
+  { bg: 'bg-amber-500', gradient: 'from-amber-500 to-orange-500' },
 ];
 
 function formatMoney(amount, currency) {
@@ -55,7 +53,7 @@ function GroupCard({ group, index, onDelete }) {
   const totalSpend = isPublicPreview ? 0 : Number(group.total_spend ?? 0);
   const totalPaid = isPublicPreview ? 0 : Number(group.total_paid ?? 0);
   const balance = totalPaid - totalSpend;
-  const accent = ACCENT_GRADIENTS[index % ACCENT_GRADIENTS.length];
+  const accent = ACCENT_COLORS[index % ACCENT_COLORS.length];
 
   return (
     <motion.div
@@ -63,60 +61,57 @@ function GroupCard({ group, index, onDelete }) {
       className="relative group/card h-full"
     >
       <Link href={`/groups/${group.id}`} className="block relative h-full">
-        <div className="relative h-full glass-card border-border/10 overflow-hidden group-hover/card:border-border/30 p-6 flex flex-col justify-between transition-all duration-300 md:hover:scale-[1.02] md:hover:-rotate-1">
+        <div className="relative h-full glass-card border-border/20 overflow-hidden group-hover/card:border-border/40 p-5 flex flex-col justify-between transition-all duration-200 md:hover:scale-[1.01]">
 
-          {/* Subtle Accent Glow */}
-          <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r ${accent} opacity-80 group-hover/card:opacity-100 transition-opacity`} />
-          <div className={`absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br ${accent} blur-3xl opacity-0 group-hover/card:opacity-10 transition-opacity duration-700`} />
+          {/* Top accent bar */}
+          <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${accent.gradient} opacity-70 group-hover/card:opacity-100 transition-opacity`} />
 
           <div>
-            <div className="flex items-start justify-between mb-6">
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${accent} flex items-center justify-center text-black shadow-[0_0_20px_rgba(255,255,255,0.2)]`}>
-                <Users2 className="h-7 w-7" />
+            <div className="flex items-start justify-between mb-4">
+              <div className={`w-11 h-11 rounded-xl ${accent.bg} bg-opacity-15 flex items-center justify-center`}>
+                <Users2 className={`h-5 w-5 text-white`} />
               </div>
-              <div className="flex flex-col gap-2 items-end">
+              <div className="flex flex-col gap-1.5 items-end">
                 {group.isAdmin && (
-                  <Badge className="bg-white text-black font-black border-none text-[10px] py-0 px-2 rounded-lg">
-                    CROWN
+                  <Badge variant="secondary" className="text-[10px] py-0 px-2 rounded-md font-semibold">
+                    Admin
                   </Badge>
                 )}
-                <Badge variant="outline" className="border-border/20 text-foreground/70 font-bold text-[9px] py-0 backdrop-blur-md uppercase tracking-tighter">
-                  {group.visibility === 'public' ? 'Public' : 'Solo'}
+                <Badge variant="outline" className="text-[10px] py-0 px-2 font-medium text-muted-foreground">
+                  {group.visibility === 'public' ? 'Public' : 'Private'}
                 </Badge>
               </div>
             </div>
 
-            <h3 className="text-xl font-black text-foreground mb-1 line-clamp-1 tracking-tighter uppercase italic">
+            <h3 className="text-base font-bold text-foreground mb-0.5 line-clamp-1">
               {group.grp_name}
             </h3>
-            <p className="text-[9px] text-muted-foreground font-bold mb-5 uppercase tracking-[0.2em]">{currencyLabel}</p>
+            <p className="text-[10px] text-muted-foreground mb-4">{currencyLabel}</p>
 
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <div className="p-3 rounded-xl bg-foreground/5 border border-border/10 group-hover/card:bg-foreground/10 transition-colors">
-                <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-1">Spent</p>
-                <p className="text-sm font-black text-foreground italic">{isPublicPreview ? '—' : formatMoney(totalSpend, currencySymbol)}</p>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="p-2.5 rounded-lg bg-foreground/5 border border-border/10">
+                <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">Total spent</p>
+                <p className="text-sm font-semibold text-foreground">{isPublicPreview ? '—' : formatMoney(totalSpend, currencySymbol)}</p>
               </div>
-              <div className="p-3 rounded-xl bg-foreground/5 border border-border/10 group-hover/card:bg-foreground/10 transition-colors">
-                <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-1">Status</p>
-                <p className={`text-sm font-black italic ${isPublicPreview ? 'text-muted-foreground' : balance >= 0 ? 'text-[#f78fa7]' : 'text-[#ff0080]'}`}>
-                  {isPublicPreview ? 'PUBLIC' : balance >= 0 ? 'WIN' : 'OUT'}
+              <div className="p-2.5 rounded-lg bg-foreground/5 border border-border/10">
+                <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-0.5">Balance</p>
+                <p className={`text-sm font-semibold ${isPublicPreview ? 'text-muted-foreground' : balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  {isPublicPreview ? '—' : balance >= 0 ? 'Settled' : 'Owed'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-border/10 mt-auto">
-            <div className="flex items-center gap-3 text-muted-foreground text-[9px] font-black uppercase italic">
+          <div className="flex items-center justify-between pt-3 border-t border-border/10 mt-auto">
+            <div className="flex items-center gap-3 text-muted-foreground text-xs">
               <span className="flex items-center gap-1">
-                <Users className="h-3 w-3 opacity-50" /> {memberCount}
+                <Users className="h-3 w-3 opacity-50" /> {memberCount} members
               </span>
               <span className="flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 opacity-50" /> {tripCount}
+                <TrendingUp className="h-3 w-3 opacity-50" /> {tripCount} expenses
               </span>
             </div>
-            <div className={`p-1.5 rounded-lg bg-foreground/5 border border-foreground/5 group-hover/card:bg-gradient-to-r group-hover/card:${accent} transition-all`}>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover/card:text-white" />
-            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
       </Link>
@@ -124,9 +119,9 @@ function GroupCard({ group, index, onDelete }) {
       {group.isAdmin && (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete({ id: group.id, grp_name: group.grp_name }); }}
-          className="absolute top-4 right-4 z-20 opacity-0 pointer-events-none md:group-hover/card:opacity-100 md:group-hover/card:pointer-events-auto p-2 rounded-xl glass-button text-[#ff0080] hover:bg-[#ff0080]/20 transition-all border-none"
+          className="absolute top-3 right-3 z-20 opacity-0 pointer-events-none md:group-hover/card:opacity-100 md:group-hover/card:pointer-events-auto p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all border-none"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       )}
     </motion.div>
@@ -159,7 +154,7 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
     mutationFn: (groupId) => api.deleteGroup(groupId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groupsWithDetails', activeUserId] });
-      toast.success('PEACE OUT! Group deleted.');
+      toast.success('Group deleted.');
       setDeleteTarget(null);
     },
   });
@@ -189,8 +184,8 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
     }, {});
   }, [groups]);
 
-  if ((!hasHydrated || !isAuthenticated) && !hasSSRData) return <Loading text="CHECKING VIBES..." />;
-  if (isLoading && !Array.isArray(groups)) return <Loading text="WAKING UP THE SERVER... RELAX." />;
+  if ((!hasHydrated || !isAuthenticated) && !hasSSRData) return <Loading text="Checking authentication..." />;
+  if (isLoading && !Array.isArray(groups)) return <Loading text="Loading your groups..." />;
 
   const handlePullToRefresh = async () => {
     await refetch();
@@ -212,16 +207,12 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
               transition={{ delay: 0.1 }}
               className="space-y-4"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f78fa7]/10 border border-[#f78fa7]/20 text-[9px] font-black text-[#f78fa7] uppercase tracking-widest backdrop-blur-md">
-                <Sparkles className="h-3 w-3" />
-                <span>Vault Overview</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl font-black mb-3 tracking-tighter uppercase italic leading-[0.9]">
-                <span className="text-muted-foreground/40">WELCOME,</span><br />
-                <span className="text-gradient-vibrant animate-gradient inline-block max-w-full break-all [overflow-wrap:anywhere]">{activeUser?.usernm || 'LEGEND'}</span>
+              <h1 className="text-4xl md:text-5xl font-bold mb-2 tracking-tight leading-tight">
+                <span className="text-muted-foreground">Welcome,</span>{' '}
+                <span className="text-foreground inline-block max-w-full break-all [overflow-wrap:anywhere]">{activeUser?.usernm || 'User'}</span>
               </h1>
-              <p className="text-muted-foreground/60 text-base font-black uppercase tracking-tight max-w-sm italic">
-                Leading <span className="text-foreground hover:text-[#f78fa7] transition-colors">{groups?.length || 0} active squads</span> to perfection.
+              <p className="text-muted-foreground text-sm max-w-sm">
+                You have <span className="text-foreground font-semibold">{groups?.length || 0} group{groups?.length !== 1 ? 's' : ''}</span>.
               </p>
             </motion.div>
           </div>
@@ -240,12 +231,12 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
                 </div>
                 <div className="text-right">
                   <p className="text-[8px] uppercase font-black text-foreground/20 tracking-[.3em] mb-1">Status</p>
-                  <Badge className="bg-[#f78fa7]/10 text-[#f78fa7] border-none text-[9px] px-2">PERFECT VIBE</Badge>
+                  <Badge variant="outline" className="text-[10px] px-2">Overview</Badge>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <p className="text-[9px] uppercase font-black text-muted-foreground tracking-[.3em] mb-4">Currency Vaults</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-4">Total Spending</p>
                 <div className="grid grid-cols-2 gap-6">
                   {Object.entries(currencyTotals).length > 0 ? (
                     Object.entries(currencyTotals).map(([sym, total]) => (
@@ -273,7 +264,7 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-[#f78fa7] transition-colors" />
             <Input
               className="pl-12 h-12 rounded-2xl bg-foreground/5 border-border/10 focus:border-[#f78fa7]/40 backdrop-blur-3xl transition-all text-sm font-bold placeholder:text-muted-foreground placeholder:uppercase placeholder:italic"
-              placeholder="Search Squads..."
+              placeholder="Search groups..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -284,15 +275,15 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
                 <SelectValue placeholder="Vibe Check" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border rounded-2xl">
-                <SelectItem value="all" className="text-muted-foreground focus:text-foreground focus:bg-foreground/5 uppercase font-black text-[9px] italic">Show All</SelectItem>
-                <SelectItem value="admin" className="text-muted-foreground focus:text-foreground focus:bg-foreground/5 uppercase font-black text-[9px] italic">Owner Mode</SelectItem>
-                <SelectItem value="member" className="text-muted-foreground focus:text-foreground focus:bg-foreground/5 uppercase font-black text-[9px] italic">Guest Mode</SelectItem>
+                <SelectItem value="all">Show All</SelectItem>
+                <SelectItem value="admin">My Groups</SelectItem>
+                <SelectItem value="member">Groups I'm In</SelectItem>
               </SelectContent>
             </Select>
             <Button asChild className="h-12 w-12 md:w-auto md:px-6 rounded-2xl bg-[#f78fa7] hover:bg-[#f78fa7]/90 text-black font-black uppercase italic tracking-tighter gap-2 shadow-[0_0_20px_rgba(128,255,0,0.2)] group">
               <Link href="/groups/create" className="flex items-center">
                 <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" />
-                <span className="hidden md:inline text-[11px]">Spawn</span>
+                <span className="hidden md:inline text-[11px]">New Group</span>
               </Link>
             </Button>
           </div>
@@ -320,7 +311,7 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
         {/* Empty State */}
         {groups?.length > 0 && filtered.length === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-32 text-center">
-            <p className="text-3xl font-black text-muted-foreground uppercase italic">Zero vibes found.</p>
+            <p className="text-lg text-muted-foreground">No groups found.</p>
           </motion.div>
         )}
       </main>
@@ -332,15 +323,15 @@ export function HomePageClient({ initialGroups = null, initialUser = null }) {
             <div className="w-16 h-16 rounded-[2rem] bg-[#ff0080]/20 flex items-center justify-center mb-6 border border-[#ff0080]/30">
               <AlertTriangle className="h-8 w-8 text-[#ff0080]" />
             </div>
-            <DialogTitle className="text-3xl font-black tracking-tighter uppercase italic">EXTERMINATE?</DialogTitle>
-            <DialogDescription className="text-muted-foreground text-lg font-bold">
-              Deleting <span className="text-foreground">{deleteTarget?.grp_name}</span> is forever. No regerts?
+            <DialogTitle className="text-xl font-bold">Delete group?</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Deleting <span className="text-foreground font-semibold">{deleteTarget?.grp_name}</span> is permanent and cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 pt-8">
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} className="h-16 rounded-2xl border-border hover:bg-foreground/5 font-black uppercase italic tracking-widest">Nah, back out</Button>
-            <Button variant="destructive" className="h-16 rounded-2xl bg-[#ff0080] hover:bg-[#cc0066] font-black uppercase italic tracking-widest" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteTarget.id)}>
-              {deleteMutation.isPending ? 'CRUNCHING...' : 'YES, DELETE'}
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} className="h-12 rounded-xl font-semibold">Cancel</Button>
+            <Button variant="destructive" className="h-12 rounded-xl font-semibold" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(deleteTarget.id)}>
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

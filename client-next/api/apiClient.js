@@ -135,6 +135,12 @@ export const api = {
     responseType: 'blob',
   }),
 
+  // Settlement
+  resolveTrip: (data) => apiClient.post('/api/resolveTrip', data),
+  undoSettlement: (data) => apiClient.post('/api/undoSettlement', data),
+  clearMemberReceipt: (data) => apiClient.post('/api/clearMemberReceipt', data),
+  getSettlementHistory: (groupId) => apiClient.get('/api/getSettlementHistory', { params: { group_id: groupId } }),
+
   // AI & Utilities
   askDatabase: (data) => apiClient.post('/api/askDatabase', data),
   chatWithDatabase: (data) => apiClient.post('/api/askDatabase', data),

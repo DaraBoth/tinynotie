@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   LayoutGrid, List, MessageSquare, Settings, ArrowLeft,
   Share2, UserPlus, Plus, Pencil, Trash2, Users,
   Wallet, TrendingUp, ScanLine, X, ChevronDown,
   Download, FileStack, Send, ExternalLink, Pin, MoreHorizontal,
-  Loader2,
+  Loader2, CheckCircle2, RotateCcw, History, Clock,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
@@ -280,6 +280,14 @@ export function GroupPageClient({ groupId, initialData = null }) {
   const [tripPinnedRows, setTripPinnedRows] = useState([]);
   const [memberPinnedColumns, setMemberPinnedColumns] = useState({ name: 'left' });
   const [tripPinnedColumns, setTripPinnedColumns] = useState({ name: 'left' });
+
+  // Settlement feature state
+  const [resolveModalOpen, setResolveModalOpen] = useState(false);
+  const [resolveTrip, setResolveTrip] = useState(null);
+  const [resolveExcludedIds, setResolveExcludedIds] = useState([]);
+  const [settlementHistoryOpen, setSettlementHistoryOpen] = useState(false);
+  const [clearReceiptMemberId, setClearReceiptMemberId] = useState(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -742,6 +750,81 @@ export function GroupPageClient({ groupId, initialData = null }) {
     }
   };
 
+  // Settlement history query (lazy — only fetched when sheet opens)
+  const { data: settlementHistoryData, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
+    queryKey: ['settlementHistory', groupId],
+    queryFn: async () => {
+      const res = await api.getSettlementHistory(groupId);
+      return res.data.data || [];
+    },
+    enabled: settlementHistoryOpen && hasHydrated && isAuthenticated && !!groupId,
+    staleTime: 0,
+  });
+
+  const resolveTripMutation = useMutation({
+    mutationFn: (data) => api.resolveTrip(data),
+    onSuccess: (res) => {
+      if (res.data.status) {
+        toast.success(res.data.message || 'Expense resolved.');
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+        setResolveModalOpen(false);
+        setResolveTrip(null);
+        setResolveExcludedIds([]);
+      } else {
+        toast.error(res.data.message || 'Failed to resolve expense.');
+      }
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to resolve expense.'),
+  });
+
+  const clearReceiptMutation = useMutation({
+    mutationFn: (data) => api.clearMemberReceipt(data),
+    onSuccess: (res) => {
+      if (res.data.status) {
+        toast.success(res.data.message || 'Receipt cleared.');
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+        setClearReceiptMemberId(null);
+      } else {
+        toast.error(res.data.message || 'Failed to clear receipt.');
+      }
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to clear receipt.'),
+  });
+
+  const undoSettlementMutation = useMutation({
+    mutationFn: (data) => api.undoSettlement(data),
+    onSuccess: (res) => {
+      if (res.data.status) {
+        toast.success('Settlement undone.');
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+        refetchHistory();
+      } else {
+        toast.error(res.data.message || 'Failed to undo.');
+      }
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to undo.'),
+  });
+
+  const handleOpenResolveModal = (trip) => {
+    setResolveTrip(trip);
+    setResolveExcludedIds([]);
+    setResolveModalOpen(true);
+  };
+
+  const handleConfirmResolve = () => {
+    if (!resolveTrip) return;
+    resolveTripMutation.mutate({
+      trip_id: resolveTrip.id,
+      group_id: groupId,
+      excluded_member_ids: resolveExcludedIds,
+    });
+  };
+
+  const handleClearReceipt = (memberId) => {
+    setClearReceiptMemberId(memberId);
+    clearReceiptMutation.mutate({ member_id: memberId, group_id: groupId });
+  };
+
   const getMemberCount = (trip) => {
     const ids = parseTripMemberIds(trip.mem_id);
     return ids.length || 1;
@@ -1094,7 +1177,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                 </div>
               )}
               {member && canManageGroup && (
-                <div className="mt-3 pt-3 border-t border-border/20">
+                <div className="mt-3 pt-3 border-t border-border/20 flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -1107,6 +1190,20 @@ export function GroupPageClient({ groupId, initialData = null }) {
                   >
                     <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                   </Button>
+                  {String(row.unpaid) !== '—' && parseFloat(String(row.unpaid).replace(/[^0-9.]/g, '')) > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                      disabled={clearReceiptMutation.isPending && clearReceiptMemberId === member.id}
+                      onClick={() => handleClearReceipt(member.id)}
+                    >
+                      {clearReceiptMutation.isPending && clearReceiptMemberId === member.id
+                        ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                        : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                      Clear Receipt
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -1239,14 +1336,24 @@ export function GroupPageClient({ groupId, initialData = null }) {
                   )}
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-border/20 flex gap-2">
+                <div className="mt-3 pt-3 border-t border-border/20 flex flex-wrap gap-2">
+                  {trip.is_resolved && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1">
+                      <CheckCircle2 className="h-3 w-3" /> Resolved
+                    </span>
+                  )}
                   {canManageGroup && (
                     <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}>
                       <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                     </Button>
                   )}
+                  {canManageGroup && !trip.is_resolved && (
+                    <Button size="sm" variant="outline" className="h-8 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                      onClick={() => handleOpenResolveModal(trip)}>
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Resolve
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openShareFlow('trip-single', trip)} disabled={shareTripIdLoading === trip.id || shareFlowSubmitting}>
-                    
                     {shareTripIdLoading === trip.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
                     {shareTripIdLoading === trip.id ? 'Sending...' : 'Telegram'}
                   </Button>
@@ -1346,7 +1453,22 @@ export function GroupPageClient({ groupId, initialData = null }) {
                     if (column.key === 'updated') {
                       return (
                         <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} text-muted-foreground text-xs`}>
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {trip.is_resolved ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 rounded px-1.5 py-0.5">
+                                <CheckCircle2 className="h-3 w-3" /> Done
+                              </span>
+                            ) : canManageGroup ? (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                                onClick={(e) => { e.stopPropagation(); handleOpenResolveModal(trip); }}
+                                title="Resolve trip"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                              </Button>
+                            ) : null}
                             <Button
                               size="icon"
                               variant="ghost"
@@ -1481,12 +1603,16 @@ export function GroupPageClient({ groupId, initialData = null }) {
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44 rounded-xl">
+                  <DropdownMenuContent align="end" className="w-48 rounded-xl">
                     <DropdownMenuItem onClick={() => setShareOpen(true)} className="cursor-pointer">
                       <Share2 className="mr-2 h-4 w-4" /> Share Group
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setChatOpen(true)} className="cursor-pointer">
                       <MessageSquare className="mr-2 h-4 w-4" /> AI Chat
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setSettlementHistoryOpen(true)} className="cursor-pointer">
+                      <History className="mr-2 h-4 w-4" /> Settlement History
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -1715,14 +1841,28 @@ export function GroupPageClient({ groupId, initialData = null }) {
                                 </div>
                               </div>
 
-                              {/* Edit button */}
+                              {/* Action buttons */}
                               {canManageGroup && (
-                                <button
-                                  onClick={() => { setSelectedMember(member); setEditMemberMode(true); setEditMemberOpen(true); }}
-                                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border/30 bg-muted/30 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all active:scale-95"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" /> Edit Member
-                                </button>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => { setSelectedMember(member); setEditMemberMode(true); setEditMemberOpen(true); }}
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border/30 bg-muted/30 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all active:scale-95"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" /> Edit
+                                  </button>
+                                  {!isPaid && (
+                                    <button
+                                      onClick={() => handleClearReceipt(member?.id)}
+                                      disabled={clearReceiptMutation.isPending && clearReceiptMemberId === member?.id}
+                                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
+                                    >
+                                      {clearReceiptMutation.isPending && clearReceiptMemberId === member?.id
+                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        : <CheckCircle2 className="h-3.5 w-3.5" />}
+                                      Clear Receipt
+                                    </button>
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}
@@ -1968,6 +2108,138 @@ export function GroupPageClient({ groupId, initialData = null }) {
       />
       {canOpenSettings && <GroupVisibilitySettings open={settingsOpen} onClose={() => setSettingsOpen(false)} group={group} groupId={groupId} isAdmin={!!group.isAdmin} />}
       {canManageGroup && <ReceiptScanner open={scannerOpen} onClose={() => setScannerOpen(false)} groupId={groupId} members={members} />}
+
+      {/* ── Resolve Trip Modal ── */}
+      {resolveModalOpen && resolveTrip && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => { setResolveModalOpen(false); }}>
+          <div className="bg-background border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">Resolve expense</h3>
+                <p className="text-xs text-muted-foreground truncate max-w-[220px]">{resolveTrip.trp_name}</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-4">
+              Each member's share ({currency}{(parseFloat(resolveTrip.spend || 0) / Math.max(1, parseTripMemberIds(resolveTrip.mem_id).filter(id => !resolveExcludedIds.includes(id)).length)).toFixed(2)}) will be added to their paid amount.
+              Uncheck members to exclude them.
+            </p>
+
+            <div className="space-y-2 mb-5 max-h-48 overflow-y-auto">
+              {parseTripMemberIds(resolveTrip.mem_id).map((memberId) => {
+                const member = members.find((m) => Number(m.id) === memberId);
+                if (!member) return null;
+                const excluded = resolveExcludedIds.includes(memberId);
+                return (
+                  <label key={memberId} className="flex items-center gap-3 p-2.5 rounded-xl border border-border/30 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={!excluded}
+                      onChange={() => setResolveExcludedIds((prev) =>
+                        excluded ? prev.filter((id) => id !== memberId) : [...prev, memberId]
+                      )}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    <span className="text-sm font-medium">{member.mem_name}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setResolveModalOpen(false); setResolveTrip(null); }}
+                className="flex-1 h-10 rounded-xl border border-border/40 text-sm font-semibold hover:bg-muted/30 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmResolve}
+                disabled={resolveTripMutation.isPending || parseTripMemberIds(resolveTrip.mem_id).filter(id => !resolveExcludedIds.includes(id)).length === 0}
+                className="flex-1 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {resolveTripMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {resolveTripMutation.isPending ? 'Resolving...' : 'Confirm Resolve'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Settlement History Sheet ── */}
+      <Sheet open={settlementHistoryOpen} onOpenChange={setSettlementHistoryOpen}>
+        <SheetContent side="bottom" title="Settlement History" description="All settlement actions for this group." className="w-full rounded-t-3xl border-t border-border/40 p-0 h-[85vh] max-h-[85vh]">
+          <SheetHeader className="px-5 pt-5 pb-3 border-b border-border/20">
+            <SheetTitle className="flex items-center gap-2 text-base font-bold">
+              <History className="h-4 w-4" /> Settlement History
+            </SheetTitle>
+            <SheetDescription className="text-xs">All payment settlements for this group. You can undo any action that has not already been reversed.</SheetDescription>
+          </SheetHeader>
+          <div className="h-[calc(100%-80px)] overflow-y-auto px-4 py-3 space-y-2">
+            {historyLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!historyLoading && (!settlementHistoryData || settlementHistoryData.length === 0) && (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <History className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">No settlement history yet.</p>
+              </div>
+            )}
+            {!historyLoading && settlementHistoryData?.map((entry) => {
+              const isUndo = entry.action_type.startsWith('UNDO_');
+              const affected = Array.isArray(entry.affected_members) ? entry.affected_members : [];
+              const actionLabel = {
+                RESOLVE_TRIP: 'Resolved trip',
+                CLEAR_MEMBER: 'Cleared member receipt',
+                UNDO_RESOLVE_TRIP: 'Undid trip resolution',
+                UNDO_CLEAR_MEMBER: 'Undid member receipt clear',
+              }[entry.action_type] || entry.action_type;
+
+              return (
+                <div key={entry.id} className={`rounded-xl border p-3.5 transition-colors ${entry.is_undone ? 'border-border/20 bg-muted/20 opacity-60' : isUndo ? 'border-amber-500/20 bg-amber-500/5' : 'border-border/30 bg-background/30'}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold">{actionLabel}</p>
+                      {entry.trip_name && <p className="text-xs text-muted-foreground truncate">Expense: {entry.trip_name}</p>}
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        {new Date(entry.created_at).toLocaleString()} · {entry.performed_by_name || 'Unknown'}
+                      </p>
+                      {affected.length > 0 && (
+                        <div className="mt-2 space-y-0.5">
+                          {affected.map((m, i) => (
+                            <p key={i} className="text-xs text-muted-foreground">
+                              {m.member_name}: +{currency}{parseFloat(m.amount_added || 0).toFixed(2)}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {!entry.is_undone && !isUndo && canManageGroup && (
+                      <button
+                        onClick={() => undoSettlementMutation.mutate({ log_id: entry.id, group_id: groupId })}
+                        disabled={undoSettlementMutation.isPending}
+                        className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+                      >
+                        {undoSettlementMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+                        Undo
+                      </button>
+                    )}
+                    {entry.is_undone && (
+                      <span className="shrink-0 text-[10px] font-semibold text-muted-foreground bg-muted/50 rounded px-2 py-1">Undone</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

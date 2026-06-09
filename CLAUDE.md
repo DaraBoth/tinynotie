@@ -85,6 +85,30 @@ There are no test suites configured in either workspace.
 
 **Deployment targets:** Vercel (`vercel.json`), Fly.io (`fly.toml`), Docker (`Dockerfile`). Backend is currently deployed to Fly.io; frontend to Vercel.
 
+## Database Schema
+
+`db_migration/00_database_schema.sql` is the authoritative schema snapshot. Key tables:
+
+| Table | Purpose |
+|---|---|
+| `user_infm` | Users (usernm, passwd, email, telegram_id, first_name, last_name, app_id) |
+| `grp_infm` | Groups (grp_name, currency, admin_id, visibility default 'private', telegram_chat_id) |
+| `member_infm` | Group members (mem_name, paid double precision, group_id) · unique per group |
+| `trp_infm` | Expenses (trp_name, spend, mem_id TEXT, payer_id, is_resolved, resolved_at, resolved_by) |
+| `grp_users` | Group access control (group_id, user_id, can_edit) · composite PK |
+| `settlement_log` | Settlement action history (action_type, affected_members JSONB, is_undone) |
+| `subscriptions` | Web push subscriptions |
+| `translations` | Translation history |
+| `testimonials_infm` | User testimonials |
+| `chat_room` / `chat_message` | Direct messaging |
+| `visitors_infm` | Visitor tracking |
+| `tel_grp_chat` | Telegram group chat registry |
+| `json_data` | AI chat history (JSONB) |
+
+Migration files live in `db_migration/`. Run them in order:
+- `00_database_schema.sql` — full schema (authoritative, updated by user directly)
+- `01_add_settlement_features.sql` — safe to re-run (`IF NOT EXISTS` guards); adds settlement columns/table if not present
+
 ## Key Conventions
 
 - **No Redux** — use Zustand for UI/auth state, TanStack Query for anything fetched from the server.

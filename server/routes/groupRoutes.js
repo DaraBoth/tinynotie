@@ -37,6 +37,25 @@ const parseTripMemberIds = (memId) => {
   }
 };
 
+const parseTripMemberIds = (memId) => {
+  try {
+    if (Array.isArray(memId)) return memId.map((id) => Number(id)).filter(Number.isFinite);
+    if (typeof memId === "string") {
+      const trimmed = memId.trim();
+      if (!trimmed) return [];
+      if (trimmed.startsWith("[")) {
+        const parsed = JSON.parse(trimmed);
+        return Array.isArray(parsed) ? parsed.map((id) => Number(id)).filter(Number.isFinite) : [];
+      }
+      return trimmed.split(",").map((id) => Number(id.trim())).filter(Number.isFinite);
+    }
+    const asNum = Number(memId);
+    return Number.isFinite(asNum) ? [asNum] : [];
+  } catch {
+    return [];
+  }
+};
+
 const formatAmount = (value) => safeNumber(value).toLocaleString(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -1663,6 +1682,125 @@ router.post("/shareMembersToTelegram", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("shareMembersToTelegram error:", error);
     res.status(500).json({ status: false, message: "Server error during sharing.", error: error.message });
+  }
+});
+
+// Clear a member's unpaid receipt balance: auto-topup their paid to cover what they owe
+router.post("/clearMemberReceipt", authenticateToken, async (req, res) => {
+  const { member_id, group_id } = req.body;
+  const user_id = req.user._id;
+
+  if (!member_id || !group_id) {
+    return res.status(400).json({ status: false, message: "member_id and group_id are required." });
+  }
+
+  const client = await pool.connect();
+  try {
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access) return res.status(404).json({ status: false, message: "Group not found." });
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
+    // Load member
+    const memberRes = await pool.query(
+      "SELECT id, mem_name, paid FROM member_infm WHERE id = $1 AND group_id = $2",
+      [member_id, group_id]
+    );
+    if (memberRes.rows.length === 0) return res.status(404).json({ status: false, message: "Member not found in this group." });
+    const member = memberRes.rows[0];
+
+    // Load all trips for this group to compute total share
+    const tripsRes = await pool.query("SELECT spend, mem_id FROM trp_infm WHERE group_id = $1", [group_id]);
+    const trips = tripsRes.rows;
+
+    let totalShare = 0;
+    trips.forEach((trip) => {
+      const participants = parseTripMemberIds(trip.mem_id);
+      if (participants.includes(Number(member_id)) && participants.length > 0) {
+        totalShare += safeNumber(trip.spend) / participants.length;
+      }
+    });
+
+    const paidBefore = safeNumber(member.paid);
+    const unpaid = Math.max(0, totalShare - paidBefore);
+
+    if (unpaid === 0) {
+      return res.json({ status: false, message: `${member.mem_name} has no outstanding balance to clear.` });
+    }
+
+    const paidAfter = paidBefore + unpaid;
+
+    await client.query("BEGIN");
+    await client.query("UPDATE member_infm SET paid = $1 WHERE id = $2", [paidAfter, member_id]);
+
+    const affectedMembers = [{
+      member_id: Number(member_id),
+      member_name: member.mem_name,
+      amount_added: unpaid,
+      paid_before: paidBefore,
+      paid_after: paidAfter,
+    }];
+
+    const logRes = await client.query(
+      `INSERT INTO settlement_log (action_type, group_id, member_id, affected_members, performed_by)
+       VALUES ('CLEAR_MEMBER', $1, $2, $3, $4) RETURNING id`,
+      [group_id, member_id, JSON.stringify(affectedMembers), user_id]
+    );
+
+    await client.query("COMMIT");
+    res.json({
+      status: true,
+      message: `${member.mem_name}'s receipt cleared. Added ${unpaid.toFixed(2)} to their paid amount.`,
+      log_id: logRes.rows[0].id,
+      amount_cleared: unpaid,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("clearMemberReceipt error:", error);
+    res.status(500).json({ status: false, message: "Failed to clear member receipt.", error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Get settlement history for a group
+router.get("/getSettlementHistory", authenticateToken, async (req, res) => {
+  const { group_id } = req.query;
+  const user_id = req.user._id;
+
+  if (!group_id) return res.status(400).json({ status: false, message: "group_id is required." });
+
+  try {
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access) return res.status(404).json({ status: false, message: "Group not found." });
+    if (!access.has_access) return res.status(403).json({ status: false, message: "Forbidden." });
+
+    const sql = `
+      SELECT
+        sl.id,
+        sl.action_type,
+        sl.trip_id,
+        sl.member_id,
+        sl.excluded_member_ids,
+        sl.affected_members,
+        sl.is_undone,
+        sl.undo_of_log_id,
+        sl.created_at,
+        u.usernm AS performed_by_name,
+        t.trp_name AS trip_name
+      FROM settlement_log sl
+      LEFT JOIN user_infm u ON u.id = sl.performed_by
+      LEFT JOIN trp_infm t ON t.id = sl.trip_id
+      WHERE sl.group_id = $1
+      ORDER BY sl.created_at DESC
+      LIMIT 100
+    `;
+    const result = await pool.query(sql, [group_id]);
+    res.json({ status: true, data: result.rows });
+  } catch (error) {
+    console.error("getSettlementHistory error:", error);
+    res.status(500).json({ status: false, message: "Failed to load settlement history.", error: error.message });
   }
 });
 

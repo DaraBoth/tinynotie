@@ -493,7 +493,7 @@ router.get("/getTripByGroupId", authenticateToken, async (req, res) => {
       return res.status(403).send({ status: false, message: "Forbidden: No access to this group." });
     }
 
-    const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
+    const sql = `SELECT id, trp_name, spend, mem_id, description, group_id, create_date, update_dttm, payer_id, is_resolved, resolved_at, resolved_by FROM trp_infm WHERE group_id = $1 ORDER BY id;`;
     const results = await pool.query(sql, [group_id]);
 
     res.send({
@@ -869,6 +869,168 @@ router.post("/shareTripToTelegram", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Share to Telegram error:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Resolve a trip: split its cost among participants and add to their paid amounts
+router.post("/resolveTrip", authenticateToken, async (req, res) => {
+  const { trip_id, group_id, excluded_member_ids = [] } = req.body;
+  const user_id = req.user._id;
+
+  if (!trip_id || !group_id) {
+    return res.status(400).json({ status: false, message: "trip_id and group_id are required." });
+  }
+
+  const client = await pool.connect();
+  try {
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access) return res.status(404).json({ status: false, message: "Group not found." });
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
+    // Load trip
+    const tripRes = await pool.query(
+      "SELECT id, trp_name, spend, mem_id, is_resolved FROM trp_infm WHERE id = $1 AND group_id = $2",
+      [trip_id, group_id]
+    );
+    if (tripRes.rows.length === 0) return res.status(404).json({ status: false, message: "Trip not found." });
+    const trip = tripRes.rows[0];
+    if (trip.is_resolved) return res.status(409).json({ status: false, message: "This trip is already resolved." });
+
+    const allParticipantIds = parseTripMemberIds(trip.mem_id);
+    const excludedIds = Array.isArray(excluded_member_ids)
+      ? excluded_member_ids.map(Number).filter(Number.isFinite)
+      : [];
+    const includedIds = allParticipantIds.filter((id) => !excludedIds.includes(id));
+
+    if (includedIds.length === 0) {
+      return res.status(400).json({ status: false, message: "No members to resolve for. All participants are excluded." });
+    }
+
+    const perPersonCost = safeNumber(trip.spend) / includedIds.length;
+
+    // Load current paid values for included members
+    const membersRes = await pool.query(
+      "SELECT id, mem_name, paid FROM member_infm WHERE id = ANY($1::int[]) AND group_id = $2",
+      [includedIds, group_id]
+    );
+    const memberMap = {};
+    membersRes.rows.forEach((m) => { memberMap[m.id] = m; });
+
+    await client.query("BEGIN");
+
+    const affectedMembers = [];
+    for (const memberId of includedIds) {
+      const member = memberMap[memberId];
+      if (!member) continue;
+      const paidBefore = safeNumber(member.paid);
+      const paidAfter = paidBefore + perPersonCost;
+      await client.query("UPDATE member_infm SET paid = $1 WHERE id = $2", [paidAfter, memberId]);
+      affectedMembers.push({
+        member_id: memberId,
+        member_name: member.mem_name,
+        amount_added: perPersonCost,
+        paid_before: paidBefore,
+        paid_after: paidAfter,
+      });
+    }
+
+    // Mark trip as resolved
+    await client.query(
+      "UPDATE trp_infm SET is_resolved = TRUE, resolved_at = NOW(), resolved_by = $1 WHERE id = $2",
+      [user_id, trip_id]
+    );
+
+    // Insert settlement log
+    const logRes = await client.query(
+      `INSERT INTO settlement_log (action_type, group_id, trip_id, excluded_member_ids, affected_members, performed_by)
+       VALUES ('RESOLVE_TRIP', $1, $2, $3, $4, $5) RETURNING id`,
+      [group_id, trip_id, JSON.stringify(excludedIds), JSON.stringify(affectedMembers), user_id]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      status: true,
+      message: `Trip "${safeText(trip.trp_name)}" resolved. ${affectedMembers.length} member(s) updated.`,
+      log_id: logRes.rows[0].id,
+      per_person_cost: perPersonCost,
+      affected_count: affectedMembers.length,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("resolveTrip error:", error);
+    res.status(500).json({ status: false, message: "Failed to resolve trip.", error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Undo a settlement log entry (reverses the paid top-up)
+router.post("/undoSettlement", authenticateToken, async (req, res) => {
+  const { log_id, group_id } = req.body;
+  const user_id = req.user._id;
+
+  if (!log_id || !group_id) {
+    return res.status(400).json({ status: false, message: "log_id and group_id are required." });
+  }
+
+  const client = await pool.connect();
+  try {
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access) return res.status(404).json({ status: false, message: "Group not found." });
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden." });
+    }
+
+    const logRes = await pool.query(
+      "SELECT * FROM settlement_log WHERE id = $1 AND group_id = $2",
+      [log_id, group_id]
+    );
+    if (logRes.rows.length === 0) return res.status(404).json({ status: false, message: "Settlement record not found." });
+    const log = logRes.rows[0];
+    if (log.is_undone) return res.status(409).json({ status: false, message: "This settlement has already been undone." });
+
+    const affectedMembers = Array.isArray(log.affected_members) ? log.affected_members : JSON.parse(log.affected_members || '[]');
+
+    await client.query("BEGIN");
+
+    for (const entry of affectedMembers) {
+      const currentRes = await client.query("SELECT paid FROM member_infm WHERE id = $1", [entry.member_id]);
+      if (currentRes.rows.length === 0) continue;
+      const currentPaid = safeNumber(currentRes.rows[0].paid);
+      const newPaid = Math.max(0, currentPaid - safeNumber(entry.amount_added));
+      await client.query("UPDATE member_infm SET paid = $1 WHERE id = $2", [newPaid, entry.member_id]);
+    }
+
+    // If this was a trip resolution, unmark the trip
+    if (log.action_type === 'RESOLVE_TRIP' && log.trip_id) {
+      await client.query(
+        "UPDATE trp_infm SET is_resolved = FALSE, resolved_at = NULL, resolved_by = NULL WHERE id = $1",
+        [log.trip_id]
+      );
+    }
+
+    // Mark original log as undone
+    await client.query("UPDATE settlement_log SET is_undone = TRUE WHERE id = $1", [log_id]);
+
+    // Insert undo log entry
+    const undoActionType = log.action_type === 'RESOLVE_TRIP' ? 'UNDO_RESOLVE_TRIP' : 'UNDO_CLEAR_MEMBER';
+    await client.query(
+      `INSERT INTO settlement_log (action_type, group_id, trip_id, member_id, affected_members, performed_by, undo_of_log_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [undoActionType, group_id, log.trip_id || null, log.member_id || null, log.affected_members, user_id, log_id]
+    );
+
+    await client.query("COMMIT");
+    res.json({ status: true, message: "Settlement undone successfully." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("undoSettlement error:", error);
+    res.status(500).json({ status: false, message: "Failed to undo settlement.", error: error.message });
+  } finally {
+    client.release();
   }
 });
 
