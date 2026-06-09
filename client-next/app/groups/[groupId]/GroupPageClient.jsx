@@ -453,6 +453,61 @@ export function GroupPageClient({ groupId, initialData = null }) {
     setViewMode(isMobile ? 'list' : 'table');
   }, [isMobile]);
 
+  /* ── settlement hooks (must be before any early returns) ── */
+  const { data: settlementHistoryData, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
+    queryKey: ['settlementHistory', groupId],
+    queryFn: async () => {
+      const res = await api.getSettlementHistory(groupId);
+      return res.data.data || [];
+    },
+    enabled: settlementHistoryOpen && hasHydrated && isAuthenticated && !!groupId,
+    staleTime: 0,
+  });
+
+  const resolveTripMutation = useMutation({
+    mutationFn: (data) => api.resolveTrip(data),
+    onSuccess: (res) => {
+      if (res.data.status) {
+        toast.success(res.data.message || 'Expense resolved.');
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+        setResolveModalOpen(false);
+        setResolveTrip(null);
+        setResolveExcludedIds([]);
+      } else {
+        toast.error(res.data.message || 'Failed to resolve expense.');
+      }
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to resolve expense.'),
+  });
+
+  const clearReceiptMutation = useMutation({
+    mutationFn: (data) => api.clearMemberReceipt(data),
+    onSuccess: (res) => {
+      if (res.data.status) {
+        toast.success(res.data.message || 'Receipt cleared.');
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+        setClearReceiptMemberId(null);
+      } else {
+        toast.error(res.data.message || 'Failed to clear receipt.');
+      }
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to clear receipt.'),
+  });
+
+  const undoSettlementMutation = useMutation({
+    mutationFn: (data) => api.undoSettlement(data),
+    onSuccess: (res) => {
+      if (res.data.status) {
+        toast.success('Settlement undone.');
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+        refetchHistory();
+      } else {
+        toast.error(res.data.message || 'Failed to undo.');
+      }
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to undo.'),
+  });
+
   /* ── guards ── */
   if ((!hasHydrated || !isAuthenticated) && !hasSSRData) return <Loading text="Checking authentication..." />;
   if (isLoading && !groupData) return <Loading text="Loading group..." />;
@@ -751,60 +806,6 @@ export function GroupPageClient({ groupId, initialData = null }) {
   };
 
   // Settlement history query (lazy — only fetched when sheet opens)
-  const { data: settlementHistoryData, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
-    queryKey: ['settlementHistory', groupId],
-    queryFn: async () => {
-      const res = await api.getSettlementHistory(groupId);
-      return res.data.data || [];
-    },
-    enabled: settlementHistoryOpen && hasHydrated && isAuthenticated && !!groupId,
-    staleTime: 0,
-  });
-
-  const resolveTripMutation = useMutation({
-    mutationFn: (data) => api.resolveTrip(data),
-    onSuccess: (res) => {
-      if (res.data.status) {
-        toast.success(res.data.message || 'Expense resolved.');
-        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
-        setResolveModalOpen(false);
-        setResolveTrip(null);
-        setResolveExcludedIds([]);
-      } else {
-        toast.error(res.data.message || 'Failed to resolve expense.');
-      }
-    },
-    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to resolve expense.'),
-  });
-
-  const clearReceiptMutation = useMutation({
-    mutationFn: (data) => api.clearMemberReceipt(data),
-    onSuccess: (res) => {
-      if (res.data.status) {
-        toast.success(res.data.message || 'Receipt cleared.');
-        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
-        setClearReceiptMemberId(null);
-      } else {
-        toast.error(res.data.message || 'Failed to clear receipt.');
-      }
-    },
-    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to clear receipt.'),
-  });
-
-  const undoSettlementMutation = useMutation({
-    mutationFn: (data) => api.undoSettlement(data),
-    onSuccess: (res) => {
-      if (res.data.status) {
-        toast.success('Settlement undone.');
-        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
-        refetchHistory();
-      } else {
-        toast.error(res.data.message || 'Failed to undo.');
-      }
-    },
-    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to undo.'),
-  });
-
   const handleOpenResolveModal = (trip) => {
     setResolveTrip(trip);
     setResolveExcludedIds([]);
