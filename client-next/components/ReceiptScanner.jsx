@@ -345,15 +345,24 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
                               <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
                                 <Users className="h-3 w-3" /> Joined By ({row.joined_ids.length})
                               </label>
-                              <button
-                                type="button"
-                                onClick={() => updateRow(row.id, 'joined_ids',
-                                  row.joined_ids.length === members.length ? [] : allMemberIds
-                                )}
-                                className="text-[10px] text-primary font-bold uppercase hover:underline"
-                              >
-                                {row.joined_ids.length === members.length ? 'Clear All' : 'Select All'}
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => updateRow(row.id, 'joined_ids', allMemberIds)}
+                                  disabled={row.joined_ids.length === members.length}
+                                  className="px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-primary/30 text-primary bg-primary/5 hover:bg-primary/15 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  All
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => updateRow(row.id, 'joined_ids', [])}
+                                  disabled={row.joined_ids.length === 0}
+                                  className="px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-border/50 text-muted-foreground bg-muted/30 hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  None
+                                </button>
+                              </div>
                             </div>
                             <div className="flex flex-wrap gap-1.5">
                               {members.map(m => {
