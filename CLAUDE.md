@@ -116,3 +116,44 @@ Migration files live in `db_migration/`. Run them in order:
 - **Authentication** — JWT stored via Zustand persist middleware (localStorage). The `TokenExpirationHandler` component in the frontend handles expiry warnings globally.
 - **Styling** — Tailwind utility classes only; CSS variables defined in `globals.css` drive the shadcn/ui theme tokens.
 - **API docs** — Swagger annotations live in the route files; docs are served at `/api-docs`.
+
+---
+
+## Multi-Agent Harness (Claude Code)
+
+Agents live in **`.claude/agents/`** (Claude Code sub-agent convention). Skills live in `.github/skills/`.
+
+### Agents
+
+| Agent file | Purpose |
+|---|---|
+| `.claude/agents/dev-agent.md` | Implements features and bug fixes across client-next & server |
+| `.claude/agents/qa-agent.md` | Finds and triages errors without modifying source code |
+
+### Skills
+
+| Skill folder | Purpose |
+|---|---|
+| `skills/orbit-api/` | ORBIT Task API — full read/write to DailyGoalMap tasks |
+| `skills/side-hustle-monetization/` | Monetization planning guidance |
+
+### Orbit Task API
+
+Both agents are trained on the `orbit-api` skill. They log work as tasks on [DailyGoalMap](https://dailygoalmap.vercel.app) using the Orbit Task API.
+
+**Token setup** (required before using either agent):
+1. Generate a key: Goal → Settings → API → Generate Project Key
+2. Add to project root `.env`:
+   ```
+   ORBIT_API_KEY=dgm_your_key_here
+   ```
+3. The local CLI helper at `~/.claude/scripts/orbit.js` reads this key automatically.
+
+**Key is goal-scoped** — it can only access tasks for the goal it was created under.
+
+### Token Efficiency Rule
+
+Both agents are instructed to minimize Orbit API calls:
+- **1 request** to create a task at work start.
+- **1 request** to update/complete at work end.
+- Never poll; fetch UUIDs once per session and reuse them.

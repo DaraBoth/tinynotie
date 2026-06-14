@@ -1,7 +1,15 @@
 
-
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
 
 # Legacy client folder (no longer active)
 client/
+
+# Environment variables (API keys — never commit these)
+.env
+.env.local
+.env*.local
+
+# Tesseract language data packs (binary, ~5 MB total — restore with curl)
+# See client-next/public/tessdata/README.md for instructions.
+client-next/public/tessdata/*.traineddata.gz

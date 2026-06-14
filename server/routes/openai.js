@@ -337,6 +337,17 @@ router.post("/receiptImage", async (req, res) => {
     }
 
     const receiptFile = req.files.receipt;
+
+    // Server-side size gate: reject files > 2 MB before spending any AI tokens.
+    // The client already compresses images to ~100-200 KB; this is a safety net.
+    const MAX_FILE_BYTES = 2 * 1024 * 1024; // 2 MB
+    if (receiptFile.size > MAX_FILE_BYTES) {
+      return res.status(413).json({
+        status: false,
+        message: `File too large (${Math.round(receiptFile.size / 1024)} KB). Maximum allowed size is 2 MB. Please compress the image and retry.`,
+      });
+    }
+
     const imageBase64 = receiptFile.data.toString('base64');
     const mimeType = receiptFile.mimetype;
     const fileName = receiptFile.name || 'receipt';

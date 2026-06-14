@@ -1,8 +1,11 @@
 import axios from "axios";
 import moment from "moment";
 import * as XLSX from "xlsx";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const MAX_TEXT_CHARS = 30000;
+// Real receipts are 200-500 chars; 3000 is a generous ceiling that avoids
+// flooding the model with thousands of tokens from large spreadsheets/PDFs.
+const MAX_TEXT_CHARS = 3000;
 
 const cleanJsonText = (text = "") => {
     return String(text || "").replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
@@ -97,7 +100,8 @@ const callReceiptModel = async ({ apiKey, messages }) => {
     const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
-            model: "gpt-4o",
+            // gpt-4o-mini supports vision equally well for receipt parsing at ~15x lower cost.
+            model: "gpt-4o-mini",
             messages,
             max_tokens: 1200,
             response_format: { type: "json_object" },
@@ -115,8 +119,43 @@ const callReceiptModel = async ({ apiKey, messages }) => {
 };
 
 /**
+ * Gemini fallback for receipt parsing.
+ * Triggered automatically when the primary OpenAI call throws (rate limit, quota, network).
+ * Uses gemini-1.5-flash which has excellent multilingual coverage:
+ *   - English/Korean: near-parity with gpt-4o-mini
+ *   - Khmer: stronger than OpenAI models due to Google's Southeast Asian training data
+ * Returns the identical { status, data[] } shape as callReceiptModel.
+ */
+const callReceiptModelGemini = async ({ isImage, imageBase64, mimeType, extractedText }) => {
+    const geminiApiKey = process.env.API_KEY2;
+    if (!geminiApiKey) {
+        throw new Error("Gemini API key (API_KEY2) is missing — cannot use fallback");
+    }
+
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    let result;
+    if (isImage) {
+        // Vision path: pass base64 image inline
+        result = await model.generateContent([
+            { text: buildCommonInstruction() },
+            { inlineData: { mimeType, data: imageBase64 } },
+        ]);
+    } else {
+        // Text path: pass extracted text as a single prompt
+        result = await model.generateContent(
+            `${buildCommonInstruction()}\n\nExtracted Content:\n${extractedText || "(No readable text extracted)"}`
+        );
+    }
+
+    return JSON.parse(cleanJsonText(result.response.text()));
+};
+
+/**
  * Receipt Service
- * Handles OCR and data extraction from receipt images using OpenAI Vision
+ * Handles OCR and data extraction from receipt images/documents using OpenAI Vision
+ * with automatic fallback to Gemini if OpenAI is unavailable.
  */
 export const processReceiptImage = async (imageBase64, mimeType = 'image/jpeg', fileName = 'receipt') => {
     const apiKey = process.env.OPENAI_VISION_API_KEY || process.env.OPEN_API_KEY;
@@ -125,51 +164,68 @@ export const processReceiptImage = async (imageBase64, mimeType = 'image/jpeg', 
         throw new Error('OpenAI API key is missing');
     }
 
-    try {
-        const isImage = String(mimeType || "").toLowerCase().startsWith("image/");
+    const isImage = String(mimeType || "").toLowerCase().startsWith("image/");
 
-        if (isImage) {
-            return await callReceiptModel({
-                apiKey,
-                messages: [
+    if (isImage) {
+        const messages = [
+            {
+                role: "system",
+                content: "You are an API endpoint that processes receipt files and extracts itemized expense data.",
+            },
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: buildCommonInstruction() },
                     {
-                        role: "system",
-                        content: "You are an API endpoint that processes receipt files and extracts itemized expense data.",
-                    },
-                    {
-                        role: "user",
-                        content: [
-                            { type: "text", text: buildCommonInstruction() },
-                            {
-                                type: "image_url",
-                                image_url: {
-                                    url: `data:${mimeType};base64,${imageBase64}`,
-                                },
-                            },
-                        ],
+                        type: "image_url",
+                        image_url: {
+                            url: `data:${mimeType};base64,${imageBase64}`,
+                            // 'low' caps cost to 85 tokens/image vs 765+ tokens/tile in 'high' mode.
+                            detail: "low",
+                        },
                     },
                 ],
-            });
+            },
+        ];
+
+        try {
+            return await callReceiptModel({ apiKey, messages });
+        } catch (openaiError) {
+            console.warn("[receiptService] OpenAI vision failed, trying Gemini fallback:", openaiError.message);
+            try {
+                return await callReceiptModelGemini({ isImage: true, imageBase64, mimeType });
+            } catch (geminiError) {
+                console.error("[receiptService] Gemini fallback also failed:", geminiError.message);
+                // Surface the primary error so callers see the root cause.
+                throw openaiError;
+            }
         }
+    }
 
-        const fileBuffer = Buffer.from(String(imageBase64 || ""), "base64");
-        const extractedText = extractTextFromBuffer({ fileBuffer, mimeType, fileName });
+    // Non-image path: PDF, Excel, text, etc. — extract text first then send to model.
+    const fileBuffer = Buffer.from(String(imageBase64 || ""), "base64");
+    const extractedText = extractTextFromBuffer({ fileBuffer, mimeType, fileName });
 
-        return await callReceiptModel({
-            apiKey,
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an API endpoint that processes receipt files and extracts itemized expense data.",
-                },
-                {
-                    role: "user",
-                    content: `${buildCommonInstruction()}\n\nFile: ${fileName}\nMime: ${mimeType}\n\nExtracted Content:\n${extractedText || "(No readable text extracted)"}`,
-                },
-            ],
-        });
-    } catch (error) {
-        console.error("Receipt processing error:", error.response?.data || error.message);
-        throw error;
+    const messages = [
+        {
+            role: "system",
+            content: "You are an API endpoint that processes receipt files and extracts itemized expense data.",
+        },
+        {
+            role: "user",
+            content: `${buildCommonInstruction()}\n\nFile: ${fileName}\nMime: ${mimeType}\n\nExtracted Content:\n${extractedText || "(No readable text extracted)"}`,
+        },
+    ];
+
+    try {
+        return await callReceiptModel({ apiKey, messages });
+    } catch (openaiError) {
+        console.warn("[receiptService] OpenAI text path failed, trying Gemini fallback:", openaiError.message);
+        try {
+            return await callReceiptModelGemini({ isImage: false, extractedText });
+        } catch (geminiError) {
+            console.error("[receiptService] Gemini fallback also failed:", geminiError.message);
+            throw openaiError;
+        }
     }
 };

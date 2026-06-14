@@ -7,6 +7,7 @@ import {
   Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { createWorker } from 'tesseract.js';
 import { useReceiptScan, useAddMultipleTrips } from '@/hooks/useQueries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,36 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getAvatarColor } from '@/app/groups/[groupId]/GroupPageClient';
 
 const NONE_PAYER = '__none__';
+
+/**
+ * Compress and resize an image File to at most maxSide×maxSide px at JPEG quality 0.7.
+ * Returns the original file unchanged for non-image types (PDF, XLSX, etc.).
+ * Camera shots are typically 3000×4000 px / 4–8 MB — this brings them to ~100–200 KB,
+ * cutting AI vision tokens from 765+/tile down to the flat 85-token "low detail" rate.
+ */
+async function compressImage(file, maxSide = 1024, quality = 0.7) {
+  if (!file.type?.startsWith('image/')) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const { naturalWidth: w, naturalHeight: h } = img;
+      const scale = Math.min(1, maxSide / Math.max(w, h));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file),
+        'image/jpeg',
+        quality,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
+}
 
 function defaultRow(allMemberIds = []) {
   return {
@@ -37,6 +68,11 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
   const [preview, setPreview] = useState('');
   const [rows, setRows] = useState([]);
   const [scanned, setScanned] = useState(false);
+  // Cooldown flag: prevents duplicate API calls from impatient taps.
+  // Resets automatically 3 s after each scan attempt.
+  const [scanCooldown, setScanCooldown] = useState(false);
+  // True while the Tesseract language packs are downloading / OCR is running.
+  const [ocrLoading, setOcrLoading] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
@@ -63,7 +99,7 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
 
   const allMemberIds = members.map(m => m.id);
 
-  const handleFile = (file) => {
+  const handleFile = async (file) => {
     if (!file) return;
     const allowed = [
       'image/',
@@ -81,45 +117,116 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
       return;
     }
 
-    setImageFile(file);
-    setPreview(file.type?.startsWith('image/') ? URL.createObjectURL(file) : '');
+    // Compress images client-side (max 1024×1024, JPEG q=0.7) before storing.
+    // This reduces camera photos from 4–8 MB to ~100–200 KB, slashing AI vision tokens.
+    const processedFile = await compressImage(file);
+    setImageFile(processedFile);
+    setPreview(processedFile.type?.startsWith('image/') ? URL.createObjectURL(processedFile) : '');
     setRows([]);
     setScanned(false);
   };
 
+  /**
+   * Tesseract.js offline-OCR fallback.
+   * Only called when the AI scan mutation throws (quota, network, 5xx, etc.).
+   * Loads eng+kor+khm language packs on first run (~18 MB from jsDelivr CDN, cached).
+   * Extracts raw text locally then uploads it as a plain-text file to the existing
+   * /openai/receiptImage endpoint, which routes it through the non-image text path.
+   * Only runs for image files — PDF/Excel/text already pass through text extraction
+   * server-side and do not benefit from client-side OCR.
+   */
+  const runTesseractFallback = async (file) => {
+    if (!file?.type?.startsWith('image/')) {
+      throw new Error('Tesseract fallback is only available for image files');
+    }
+
+    setOcrLoading(true);
+    toast.info('AI unavailable — trying offline OCR (may take a moment)…');
+
+    let worker;
+    try {
+      // Load eng + kor + khm from the self-hosted /tessdata/ folder
+      // (client-next/public/tessdata/*.traineddata.gz) so users never hit CDN.
+      // Falls back silently to jsDelivr CDN if the local files are missing.
+      worker = await createWorker(['eng', 'kor', 'khm'], 1, {
+        langPath: '/tessdata',
+      });
+      const { data: { text } } = await worker.recognize(file);
+
+      if (!text?.trim()) {
+        throw new Error('Tesseract extracted no text from the image');
+      }
+
+      // Package the OCR text as a plain-text file and re-use the same server endpoint.
+      // The server detects text/plain and routes it through the text extraction path,
+      // keeping all response parsing identical to the AI scan path.
+      const textBlob = new Blob([text], { type: 'text/plain' });
+      const textFile = new File([textBlob], 'ocr-receipt.txt', { type: 'text/plain' });
+      const formData = new FormData();
+      formData.append('receipt', textFile);
+
+      return await scanMutation.mutateAsync(formData);
+    } finally {
+      setOcrLoading(false);
+      await worker?.terminate();
+    }
+  };
+
+  /** Shared response parser — used by both AI and Tesseract paths. */
+  const applyScannedResponse = (response) => {
+    const raw = response?.data ?? response;
+
+    let parsed = raw;
+    if (typeof raw?.text === 'string') {
+      try {
+        const clean = raw.text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+        parsed = JSON.parse(clean);
+      } catch { parsed = raw; }
+    }
+
+    const trips = Array.isArray(parsed?.data) ? parsed.data
+      : Array.isArray(parsed?.trips) ? parsed.trips
+        : Array.isArray(parsed) ? parsed
+          : [];
+
+    if (trips.length === 0) { toast.error('No items detected in the receipt'); return; }
+
+    setRows(trips.map((t) => ({
+      id: Date.now() + Math.random(),
+      trp_name: t.trp_name || t.name || '',
+      spend: String(t.spend || t.amount || ''),
+      payer_id: NONE_PAYER,
+      joined_ids: allMemberIds,
+    })));
+    setScanned(true);
+    toast.success(`Detected ${trips.length} expense item${trips.length !== 1 ? 's' : ''}`);
+  };
+
   const handleScan = async () => {
     if (!imageFile) { toast.error('Please select or paste a file first'); return; }
+    // Debounce: ignore taps within 3 s of the last attempt to prevent duplicate calls.
+    if (scanCooldown) { toast.info('Please wait a moment before scanning again.'); return; }
+
+    setScanCooldown(true);
+    setTimeout(() => setScanCooldown(false), 3000);
+
     const formData = new FormData();
     formData.append('receipt', imageFile);
     try {
       const response = await scanMutation.mutateAsync(formData);
-      const raw = response?.data ?? response;
-
-      let parsed = raw;
-      if (typeof raw?.text === 'string') {
+      applyScannedResponse(response);
+    } catch {
+      // AI scan failed — attempt Tesseract offline OCR for image files.
+      if (imageFile?.type?.startsWith('image/')) {
         try {
-          const clean = raw.text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-          parsed = JSON.parse(clean);
-        } catch { parsed = raw; }
+          const fallbackResponse = await runTesseractFallback(imageFile);
+          applyScannedResponse(fallbackResponse);
+        } catch (ocrErr) {
+          toast.error(`Scan failed and offline OCR also failed: ${ocrErr.message}`);
+        }
       }
-
-      const trips = Array.isArray(parsed?.data) ? parsed.data
-        : Array.isArray(parsed?.trips) ? parsed.trips
-          : Array.isArray(parsed) ? parsed
-            : [];
-
-      if (trips.length === 0) { toast.error('No items detected in the receipt'); return; }
-
-      setRows(trips.map((t) => ({
-        id: Date.now() + Math.random(),
-        trp_name: t.trp_name || t.name || '',
-        spend: String(t.spend || t.amount || ''),
-        payer_id: NONE_PAYER,
-        joined_ids: allMemberIds,
-      })));
-      setScanned(true);
-      toast.success(`Detected ${trips.length} expense item${trips.length !== 1 ? 's' : ''}`);
-    } catch { /* handled by mutation */ }
+      // Non-image failures are already surfaced by the mutation's own error toast.
+    }
   };
 
   const updateRow = (id, field, value) =>
@@ -169,6 +276,8 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
     setPreview('');
     setRows([]);
     setScanned(false);
+    setScanCooldown(false);
+    setOcrLoading(false);
   };
 
   const handleClose = () => { clearAll(); onClose(); };
@@ -277,9 +386,12 @@ export function ReceiptScanner({ open, onClose, groupId, members = [] }) {
                 {/* Scan button */}
                 {!scanned && (
                   <Button type="button" onClick={handleScan}
-                    disabled={scanMutation.isPending} className="w-full gap-2 h-12 rounded-xl">
+                    disabled={scanMutation.isPending || ocrLoading || scanCooldown} className="w-full gap-2 h-12 rounded-xl">
                     <Sparkles className="h-4 w-4" />
-                    {scanMutation.isPending ? 'AI Analyzing Receipt…' : 'Scan with AI'}
+                    {scanMutation.isPending ? 'AI Analyzing Receipt…'
+                      : ocrLoading ? 'Loading OCR engine…'
+                      : scanCooldown ? 'Please wait…'
+                      : 'Scan with AI'}
                   </Button>
                 )}
 
