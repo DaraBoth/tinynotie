@@ -121,12 +121,14 @@ export const api = {
   addUserToGroup: (data) => apiClient.post('/api/addUserToGroup', data),
   updateMember: (data) => apiClient.post('/api/editMemberByMemberId', data),
   deleteMember: (memberId) => apiClient.delete(`/api/members/${memberId}`),
+  bulkDeleteMembers: (data) => apiClient.post('/api/bulkDeleteMembers', data),
   getMembersByGroupId: (groupId) => apiClient.get('/api/getMemberByGroupId', { params: { group_id: groupId } }),
 
   // Trips
   addTrip: (data) => apiClient.post('/api/addTripByGroupId', data),
   updateTrip: (data) => apiClient.post('/api/editTripByGroupId', data),
   deleteTrip: (tripId, groupId) => apiClient.delete('/api/deleteTripById', { data: { trip_id: tripId, group_id: groupId } }),
+  bulkDeleteTrips: (data) => apiClient.post('/api/bulkDeleteTrips', data),
   getTripsByGroupId: (groupId) => apiClient.get('/api/getTripByGroupId', { params: { group_id: groupId } }),
   shareTripToTelegram: (data) => apiClient.post('/api/shareTripToTelegram', data),
   shareMembersToTelegram: (data) => apiClient.post('/api/shareMembersToTelegram', data),
@@ -137,6 +139,7 @@ export const api = {
 
   // Settlement
   resolveTrip: (data) => apiClient.post('/api/resolveTrip', data),
+  settleTripMember: (data) => apiClient.post('/api/settleTripMember', data),
   undoSettlement: (data) => apiClient.post('/api/undoSettlement', data),
   clearMemberReceipt: (data) => apiClient.post('/api/clearMemberReceipt', data),
   getSettlementHistory: (groupId) => apiClient.get('/api/getSettlementHistory', { params: { group_id: groupId } }),

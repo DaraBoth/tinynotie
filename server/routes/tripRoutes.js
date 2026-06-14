@@ -638,6 +638,67 @@ router.delete("/deleteTripById", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
+ * /trips/bulkDeleteTrips:
+ *   post:
+ *     summary: Delete multiple trips from a group in one request
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [trip_ids, group_id]
+ *             properties:
+ *               trip_ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               group_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Trips deleted
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/bulkDeleteTrips", authenticateToken, async (req, res) => {
+  const { trip_ids, group_id } = req.body;
+  const user_id = req.user._id;
+
+  if (!Array.isArray(trip_ids) || trip_ids.length === 0) {
+    return res.status(400).json({ status: false, message: "trip_ids must be a non-empty array." });
+  }
+
+  const access = await getGroupAccess(group_id, user_id);
+  if (!access) return res.status(404).json({ status: false, message: "Group not found." });
+  if (!(access.is_admin || access.can_edit || access.is_member)) {
+    return res.status(403).json({ status: false, message: "You do not have permission to delete trips from this group." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const deleteSql = `DELETE FROM trp_infm WHERE id = ANY($1::int[]) AND group_id = $2;`;
+    const result = await client.query(deleteSql, [trip_ids, group_id]);
+    await client.query("COMMIT");
+
+    res.json({ status: true, message: `${result.rowCount} trip(s) deleted.`, deleted: result.rowCount });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("[bulkDeleteTrips] error", error);
+    res.status(500).json({ status: false, error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * @swagger
  * /trips/shareMembersToTelegram:
  *   post:
  *     summary: Share member contribution summary to linked Telegram group
@@ -1012,11 +1073,40 @@ router.post("/undoSettlement", authenticateToken, async (req, res) => {
       );
     }
 
+    // If this was a per-member settlement, remove the member from settled_member_ids
+    // and clear is_resolved if it had been auto-set
+    if (log.action_type === 'SETTLE_TRIP_MEMBER' && log.trip_id && log.member_id) {
+      const tripRes = await client.query(
+        "SELECT settled_member_ids, is_resolved FROM trp_infm WHERE id = $1",
+        [log.trip_id]
+      );
+      if (tripRes.rows.length > 0) {
+        const currentSettled = Array.isArray(tripRes.rows[0].settled_member_ids)
+          ? tripRes.rows[0].settled_member_ids.map(Number)
+          : JSON.parse(tripRes.rows[0].settled_member_ids || '[]').map(Number);
+        const newSettled = currentSettled.filter((id) => id !== Number(log.member_id));
+        // Clear is_resolved too (it may have been auto-set when this member completed the set)
+        await client.query(
+          `UPDATE trp_infm
+           SET settled_member_ids = $1::jsonb,
+               is_resolved = FALSE,
+               resolved_at = NULL,
+               resolved_by = NULL
+           WHERE id = $2`,
+          [JSON.stringify(newSettled), log.trip_id]
+        );
+      }
+    }
+
     // Mark original log as undone
     await client.query("UPDATE settlement_log SET is_undone = TRUE WHERE id = $1", [log_id]);
 
     // Insert undo log entry
-    const undoActionType = log.action_type === 'RESOLVE_TRIP' ? 'UNDO_RESOLVE_TRIP' : 'UNDO_CLEAR_MEMBER';
+    const undoActionType = log.action_type === 'RESOLVE_TRIP'
+      ? 'UNDO_RESOLVE_TRIP'
+      : log.action_type === 'SETTLE_TRIP_MEMBER'
+        ? 'UNDO_SETTLE_TRIP_MEMBER'
+        : 'UNDO_CLEAR_MEMBER';
     await client.query(
       `INSERT INTO settlement_log (action_type, group_id, trip_id, member_id, affected_members, performed_by, undo_of_log_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -1029,6 +1119,179 @@ router.post("/undoSettlement", authenticateToken, async (req, res) => {
     await client.query("ROLLBACK");
     console.error("undoSettlement error:", error);
     res.status(500).json({ status: false, message: "Failed to undo settlement.", error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * @swagger
+ * /api/settleTripMember:
+ *   post:
+ *     summary: Settle one member's share of a trip expense
+ *     description: >
+ *       Adds the member's per-person cost (spend / total participants) to their
+ *       `paid` balance, records the member in `settled_member_ids`, and
+ *       auto-resolves the trip if every participant has now settled.
+ *       Requires the `02_add_settled_member_ids.sql` migration to be applied first.
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [trip_id, member_id, group_id]
+ *             properties:
+ *               trip_id:
+ *                 type: integer
+ *               member_id:
+ *                 type: integer
+ *               group_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Member settled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 log_id:
+ *                   type: integer
+ *                 member_share:
+ *                   type: number
+ *                 all_settled:
+ *                   type: boolean
+ *       400:
+ *         description: Missing required fields
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Trip or group not found
+ *       409:
+ *         description: Member already settled or trip already fully resolved
+ */
+router.post("/settleTripMember", authenticateToken, async (req, res) => {
+  const { trip_id, member_id, group_id } = req.body;
+  const user_id = req.user._id;
+
+  if (!trip_id || !member_id || !group_id) {
+    return res.status(400).json({ status: false, message: "trip_id, member_id, and group_id are required." });
+  }
+
+  const client = await pool.connect();
+  try {
+    const access = await getGroupAccess(group_id, user_id);
+    if (!access) return res.status(404).json({ status: false, message: "Group not found." });
+    if (!(access.is_admin || access.can_edit || access.is_member)) {
+      return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+    }
+
+    // Load trip (also fetch settled_member_ids — column added by migration 02)
+    const tripRes = await pool.query(
+      `SELECT id, trp_name, spend, mem_id, is_resolved,
+              COALESCE(settled_member_ids, '[]'::jsonb) AS settled_member_ids
+       FROM trp_infm WHERE id = $1 AND group_id = $2`,
+      [trip_id, group_id]
+    );
+    if (tripRes.rows.length === 0) return res.status(404).json({ status: false, message: "Trip not found." });
+    const trip = tripRes.rows[0];
+    if (trip.is_resolved) return res.status(409).json({ status: false, message: "This trip is already fully resolved." });
+
+    // Parse participants and already-settled members
+    const allParticipantIds = parseTripMemberIds(trip.mem_id);
+    const settledIds = Array.isArray(trip.settled_member_ids)
+      ? trip.settled_member_ids.map(Number)
+      : JSON.parse(trip.settled_member_ids || '[]').map(Number);
+
+    if (!allParticipantIds.includes(Number(member_id))) {
+      return res.status(400).json({ status: false, message: "This member is not a participant in the trip." });
+    }
+    if (settledIds.includes(Number(member_id))) {
+      return res.status(409).json({ status: false, message: "This member has already settled their share." });
+    }
+
+    // Calculate per-person cost
+    const memberShare = allParticipantIds.length > 0
+      ? safeNumber(trip.spend) / allParticipantIds.length
+      : 0;
+
+    // Load current paid value for this member
+    const memberRes = await pool.query(
+      "SELECT id, mem_name, paid FROM member_infm WHERE id = $1 AND group_id = $2",
+      [member_id, group_id]
+    );
+    if (memberRes.rows.length === 0) return res.status(404).json({ status: false, message: "Member not found in this group." });
+    const member = memberRes.rows[0];
+
+    const paidBefore = safeNumber(member.paid);
+    const paidAfter = paidBefore + memberShare;
+
+    // Build the updated settled_member_ids list
+    const newSettledIds = [...settledIds, Number(member_id)];
+    const allSettled = allParticipantIds.every((id) => newSettledIds.includes(id));
+
+    await client.query("BEGIN");
+
+    // 1. Update member's paid amount
+    await client.query("UPDATE member_infm SET paid = $1 WHERE id = $2", [paidAfter, member_id]);
+
+    // 2. Update trip's settled_member_ids (and auto-resolve if all settled)
+    if (allSettled) {
+      await client.query(
+        `UPDATE trp_infm
+         SET settled_member_ids = $1::jsonb,
+             is_resolved = TRUE,
+             resolved_at = NOW(),
+             resolved_by = $2
+         WHERE id = $3`,
+        [JSON.stringify(newSettledIds), user_id, trip_id]
+      );
+    } else {
+      await client.query(
+        "UPDATE trp_infm SET settled_member_ids = $1::jsonb WHERE id = $2",
+        [JSON.stringify(newSettledIds), trip_id]
+      );
+    }
+
+    // 3. Log the settlement action
+    const affectedMembers = [{
+      member_id: Number(member_id),
+      member_name: member.mem_name,
+      amount_added: memberShare,
+      paid_before: paidBefore,
+      paid_after: paidAfter,
+    }];
+    const logRes = await client.query(
+      `INSERT INTO settlement_log
+         (action_type, group_id, trip_id, member_id, affected_members, performed_by)
+       VALUES ('SETTLE_TRIP_MEMBER', $1, $2, $3, $4, $5)
+       RETURNING id`,
+      [group_id, trip_id, member_id, JSON.stringify(affectedMembers), user_id]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      status: true,
+      message: allSettled
+        ? `All members settled — trip "${safeText(trip.trp_name)}" auto-resolved.`
+        : `${safeText(member.mem_name)} settled their share of "${safeText(trip.trp_name)}".`,
+      log_id: logRes.rows[0].id,
+      member_share: memberShare,
+      all_settled: allSettled,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("settleTripMember error:", error);
+    res.status(500).json({ status: false, message: "Failed to settle member share.", error: error.message });
   } finally {
     client.release();
   }

@@ -194,6 +194,38 @@ export function useDeleteTrip(groupId) {
   });
 }
 
+export function useDeleteMultipleTrips(groupId) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (tripIds) => api.bulkDeleteTrips({ trip_ids: tripIds, group_id: groupId }),
+    onSuccess: (_, tripIds) => {
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      toast.success(`${tripIds.length} expense${tripIds.length !== 1 ? 's' : ''} deleted`);
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Failed to delete expenses';
+      toast.error(message);
+    },
+  });
+}
+
+export function useDeleteMultipleMembers(groupId) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (memberIds) => api.bulkDeleteMembers({ member_ids: memberIds, group_id: groupId }),
+    onSuccess: (_, memberIds) => {
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      toast.success(`${memberIds.length} member${memberIds.length !== 1 ? 's' : ''} deleted`);
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Failed to delete members';
+      toast.error(message);
+    },
+  });
+}
+
 // ==================== User ====================
 
 export function useUserInfo(userId) {
@@ -238,6 +270,22 @@ export function useAddMultipleTrips(groupId) {
     },
     onError: (error) => {
       const message = error.response?.data?.message || 'Failed to add expenses';
+      toast.error(message);
+    },
+  });
+}
+
+export function useSettleTripMember(groupId) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => api.settleTripMember(data),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      toast.success(res.data?.message || 'Member share settled');
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Failed to settle member share';
       toast.error(message);
     },
   });

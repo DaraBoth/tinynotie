@@ -73,7 +73,7 @@ export function EditMember({ open, onClose, groupId, member, members = [], editM
     if (amount < 0) { toast.error('Amount cannot be negative'); return; }
     try {
       if (isEditing) {
-        await updateMutation.mutateAsync({ user_id: pickedMember.id, paid: amount, group_id: groupId, type: 'UPDATE' });
+        await updateMutation.mutateAsync({ user_id: pickedMember.id, mem_name: name.trim(), paid: amount, group_id: groupId, type: 'UPDATE' });
       } else {
         await addMutation.mutateAsync({ mem_name: name.trim(), paid: amount });
       }

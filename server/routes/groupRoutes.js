@@ -998,7 +998,7 @@ router.post("/updateGroupUserPermission", authenticateToken, async (req, res) =>
  */
 // Edit member by member ID
 router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
-  const { user_id, paid, group_id, type } = req.body;
+  const { user_id, paid, group_id, type, mem_name } = req.body;
 
   try {
     const access = await getGroupAccess(group_id, req.user._id);
@@ -1046,13 +1046,14 @@ router.post("/editMemberByMemberId", authenticateToken, async (req, res) => {
       });
     }
 
-    // Update the paid value in the database
-    const updateSql = `UPDATE member_infm SET paid = $1 WHERE id = $2;`;
-    await pool.query(updateSql, [newPaid, user_id]);
+    // Update paid value; also update mem_name when provided.
+    const newName = mem_name && String(mem_name).trim() ? String(mem_name).trim() : memberName;
+    const updateSql = `UPDATE member_infm SET paid = $1, mem_name = $2 WHERE id = $3;`;
+    await pool.query(updateSql, [newPaid, newName, user_id]);
 
     res.json({
       status: true,
-      message: `${memberName}'s payment updated successfully!`
+      message: `${newName}'s details updated successfully!`
     });
   } catch (error) {
     console.error("error", error);
@@ -1156,6 +1157,67 @@ router.delete("/members/:id", authenticateToken, async (req, res) => {
   }
 });
 
+
+/**
+ * @swagger
+ * /groups/bulkDeleteMembers:
+ *   post:
+ *     summary: Delete multiple members from a group in one request
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [member_ids, group_id]
+ *             properties:
+ *               member_ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               group_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Members deleted
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/bulkDeleteMembers", authenticateToken, async (req, res) => {
+  const { member_ids, group_id } = req.body;
+
+  if (!Array.isArray(member_ids) || member_ids.length === 0) {
+    return res.status(400).json({ status: false, message: "member_ids must be a non-empty array." });
+  }
+
+  const access = await getGroupAccess(group_id, req.user._id);
+  if (!access) return res.status(404).json({ status: false, message: "Group not found." });
+  if (!(access.is_admin || access.can_edit || access.is_member)) {
+    return res.status(403).json({ status: false, message: "Forbidden: You do not have edit access to this group." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    // Parameterised ANY($1) with a typed array avoids injection and handles any length.
+    const deleteSql = `DELETE FROM member_infm WHERE id = ANY($1::int[]) AND group_id = $2;`;
+    const result = await client.query(deleteSql, [member_ids, group_id]);
+    await client.query("COMMIT");
+
+    res.json({ status: true, message: `${result.rowCount} member(s) deleted.`, deleted: result.rowCount });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("[bulkDeleteMembers] error", error);
+    res.status(500).json({ status: false, error: error.message });
+  } finally {
+    client.release();
+  }
+});
 
 /**
  * @swagger

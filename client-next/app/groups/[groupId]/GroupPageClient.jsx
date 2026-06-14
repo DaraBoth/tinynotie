@@ -14,6 +14,7 @@ import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
 import { api } from '@/api/apiClient';
+import { useDeleteMultipleTrips, useDeleteMultipleMembers, useSettleTripMember } from '@/hooks/useQueries';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useWindowDimensions } from '@/hooks/useWindowDimensions';
 import { Button } from '@/components/ui/button';
@@ -508,6 +509,35 @@ export function GroupPageClient({ groupId, initialData = null }) {
     onError: (err) => toast.error(err?.response?.data?.message || 'Failed to undo.'),
   });
 
+  const bulkDeleteTripsMutation = useDeleteMultipleTrips(groupId);
+  const bulkDeleteMembersMutation = useDeleteMultipleMembers(groupId);
+  const settleTripMemberMutation = useSettleTripMember(groupId);
+  const [settlingKey, setSettlingKey] = useState(null); // `${tripId}-${memberId}`
+
+  const handleSettleTripMember = async (trip, memberId) => {
+    const key = `${trip.id}-${memberId}`;
+    setSettlingKey(key);
+    try {
+      await settleTripMemberMutation.mutateAsync({ trip_id: trip.id, member_id: memberId, group_id: groupId });
+    } finally {
+      setSettlingKey(null);
+    }
+  };
+
+  const handleBulkDeleteTrips = async () => {
+    if (selectedTripIds.length === 0) return;
+    if (!confirm(`Delete ${selectedTripIds.length} expense${selectedTripIds.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    await bulkDeleteTripsMutation.mutateAsync(selectedTripIds);
+    setSelectedTripIds([]);
+  };
+
+  const handleBulkDeleteMembers = async () => {
+    if (selectedMemberIds.length === 0) return;
+    if (!confirm(`Delete ${selectedMemberIds.length} member${selectedMemberIds.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    await bulkDeleteMembersMutation.mutateAsync(selectedMemberIds);
+    setSelectedMemberIds([]);
+  };
+
   /* ── guards ── */
   if ((!hasHydrated || !isAuthenticated) && !hasSSRData) return <Loading text="Checking authentication..." />;
   if (isLoading && !groupData) return <Loading text="Loading group..." />;
@@ -643,8 +673,8 @@ export function GroupPageClient({ groupId, initialData = null }) {
         '#': idx + 1,
         'Member Name': row.name || '—',
         'Paid': row.paid || '0.00',
-        'Remain': row.remain || '0.00',
-        'Unpaid': row.unpaid || '0.00'
+        'Balance': row.remain || '0.00',
+        'Still Owes': row.unpaid || '0.00'
       };
       tripColumns.forEach((tripName) => {
         item[tripName] = row[tripName] ?? '—';
@@ -839,8 +869,9 @@ export function GroupPageClient({ groupId, initialData = null }) {
     { key: 'name', label: 'Name', width: 160, align: 'left' },
     { key: 'paid', label: 'Paid', width: 120, align: 'right' },
     ...tripColumns.map((name) => ({ key: `trip:${name}`, label: name, width: 140, align: 'right' })),
-    { key: 'remain', label: 'Remain', width: 120, align: 'right' },
-    { key: 'unpaid', label: 'Unpaid', width: 120, align: 'right' },
+    { key: 'remain', label: 'Balance', width: 120, align: 'right' },
+    { key: 'unpaid', label: 'Still Owes', width: 120, align: 'right' },
+    { key: 'actions', label: '', width: 48, align: 'right' },
   ];
 
   const tripTableColumns = [
@@ -1107,6 +1138,47 @@ export function GroupPageClient({ groupId, initialData = null }) {
                       return <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={`${baseClass} text-rose-600 dark:text-rose-400`}>{row.unpaid}</td>;
                     }
 
+                    if (column.key === 'actions') {
+                      const member = members.find((m) => Number(m.id) === Number(row._memberId));
+                      const hasUnpaid = String(row.unpaid) !== '—' && parseFloat(String(row.unpaid).replace(/[^0-9.]/g, '')) > 0;
+                      if (!canManageGroup || !member) return <td key={`${row.id || idx}-${column.key}`} className={baseClass} />;
+                      return (
+                        <td key={`${row.id || idx}-${column.key}`} style={getPinnedCellStyle(column, memberPinnedColumns, memberPinnedMeta)} className={baseClass} onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground">
+                                <MoreHorizontal className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                              <DropdownMenuItem
+                                className="cursor-pointer"
+                                onClick={() => { setSelectedMember(member); setEditMemberMode(true); setEditMemberOpen(true); }}
+                              >
+                                <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
+                              </DropdownMenuItem>
+                              {hasUnpaid && (
+                                <DropdownMenuItem
+                                  className="cursor-pointer text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
+                                  disabled={clearReceiptMutation.isPending && clearReceiptMemberId === member.id}
+                                  onClick={() => handleClearReceipt(member.id)}
+                                >
+                                  <CheckCircle2 className="mr-2 h-3.5 w-3.5" /> Clear Receipt
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="cursor-pointer text-destructive focus:text-destructive"
+                                onClick={() => { setSelectedMember(member); setDeleteMemberOpen(true); }}
+                              >
+                                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      );
+                    }
+
                     if (column.key.startsWith('trip:')) {
                       const tripName = column.key.replace('trip:', '');
                       return (
@@ -1159,11 +1231,11 @@ export function GroupPageClient({ groupId, initialData = null }) {
                   <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{row.paid}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Remain</span>
+                  <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Balance</span>
                   <span className={`font-semibold ${String(row.remain).startsWith('-') ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{row.remain}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Unpaid</span>
+                  <span className="text-muted-foreground text-[10px] uppercase tracking-wide block mb-0.5">Still Owes</span>
                   <span className="text-rose-600 dark:text-rose-400 font-semibold">{row.unpaid}</span>
                 </div>
               </div>
@@ -1328,9 +1400,37 @@ export function GroupPageClient({ groupId, initialData = null }) {
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Joined By ({getMemberCount(trip)})</p>
                   {joinedMembers.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
-                      {joinedMembers.map((member) => (
-                        <span key={member.id} className="text-xs rounded-md bg-muted/50 px-2 py-1 max-w-full break-all">{member.mem_name}</span>
-                      ))}
+                      {joinedMembers.map((member) => {
+                        const settledIds = Array.isArray(trip.settled_member_ids)
+                          ? trip.settled_member_ids.map(Number)
+                          : [];
+                        const isSettled = settledIds.includes(Number(member.id));
+                        const key = `${trip.id}-${member.id}`;
+                        const isLoading = settlingKey === key;
+                        return (
+                          <button
+                            key={member.id}
+                            type="button"
+                            disabled={isSettled || !canManageGroup || trip.is_resolved || isLoading}
+                            onClick={() => !isSettled && canManageGroup && !trip.is_resolved && handleSettleTripMember(trip, member.id)}
+                            className={`inline-flex items-center gap-1 text-xs rounded-md px-2 py-1 transition-all ${
+                              isSettled
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : canManageGroup && !trip.is_resolved
+                                  ? 'bg-muted/50 text-foreground border border-border/30 hover:bg-primary/10 hover:border-primary/30 hover:text-primary cursor-pointer'
+                                  : 'bg-muted/50 text-muted-foreground border border-border/20'
+                            }`}
+                            title={isSettled ? `${member.mem_name} settled` : canManageGroup ? `Settle ${member.mem_name}'s share` : member.mem_name}
+                          >
+                            {isLoading
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : isSettled
+                                ? <CheckCircle2 className="h-3 w-3" />
+                                : null}
+                            <span className="max-w-[80px] truncate">{member.mem_name}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">No participants</p>
@@ -1417,7 +1517,16 @@ export function GroupPageClient({ groupId, initialData = null }) {
                     }
 
                     if (column.key === 'name') {
-                      return <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} font-medium truncate`} title={trip.trp_name}>{trip.trp_name}</td>;
+                      return (
+                        <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} font-medium`} title={trip.trp_name}>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="truncate">{trip.trp_name}</span>
+                            {trip.is_resolved && (
+                              <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500" />
+                            )}
+                          </div>
+                        </td>
+                      );
                     }
 
                     if (column.key === 'amount') {
@@ -1453,37 +1562,45 @@ export function GroupPageClient({ groupId, initialData = null }) {
 
                     if (column.key === 'updated') {
                       return (
-                        <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} text-muted-foreground text-xs`}>
+                        <td key={`${trip.id || idx}-${column.key}`} style={getPinnedCellStyle(column, tripPinnedColumns, tripPinnedMeta)} className={`${baseClass} text-muted-foreground text-xs`} onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
-                            {trip.is_resolved ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 rounded px-1.5 py-0.5">
-                                <CheckCircle2 className="h-3 w-3" /> Done
-                              </span>
-                            ) : canManageGroup ? (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-                                onClick={(e) => { e.stopPropagation(); handleOpenResolveModal(trip); }}
-                                title="Resolve expense"
-                              >
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                              </Button>
-                            ) : null}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 text-sky-600 dark:text-sky-400 hover:text-sky-500 dark:hover:text-sky-300 hover:bg-sky-500/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openShareFlow('trip-single', trip);
-                              }}
-                              disabled={shareTripIdLoading === trip.id}
-                              title="Share options"
-                            >
-                              {shareTripIdLoading === trip.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                            </Button>
-                            <span>{formatTimeDifference(trip.update_dttm || trip.create_date)}</span>
+                            <span className="shrink-0">{formatTimeDifference(trip.update_dttm || trip.create_date)}</span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0">
+                                  <MoreHorizontal className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44 rounded-xl">
+                                {canManageGroup && (
+                                  <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onClick={() => { setSelectedTrip(trip); setEditTripOpen(true); }}
+                                  >
+                                    <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
+                                  </DropdownMenuItem>
+                                )}
+                                {!trip.is_resolved && canManageGroup && (
+                                  <DropdownMenuItem
+                                    className="cursor-pointer text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
+                                    onClick={() => handleOpenResolveModal(trip)}
+                                  >
+                                    <CheckCircle2 className="mr-2 h-3.5 w-3.5" /> Resolve
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="cursor-pointer text-sky-600 dark:text-sky-400 focus:text-sky-600"
+                                  disabled={shareTripIdLoading === trip.id}
+                                  onClick={() => openShareFlow('trip-single', trip)}
+                                >
+                                  {shareTripIdLoading === trip.id
+                                    ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                    : <Send className="mr-2 h-3.5 w-3.5" />}
+                                  Share
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </td>
                       );
@@ -1535,10 +1652,41 @@ export function GroupPageClient({ groupId, initialData = null }) {
                   </div>
                 </div>
                 {joinedMembers.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-border/20 flex flex-wrap gap-1.5">
-                    {joinedMembers.map((member) => (
-                      <span key={member.id} className="text-xs bg-muted/60 rounded-lg px-2 py-1">{member.mem_name}</span>
-                    ))}
+                  <div className="mt-3 pt-3 border-t border-border/20">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">Participants</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {joinedMembers.map((member) => {
+                        const settledIds = Array.isArray(trip.settled_member_ids)
+                          ? trip.settled_member_ids.map(Number)
+                          : [];
+                        const isSettled = settledIds.includes(Number(member.id));
+                        const key = `${trip.id}-${member.id}`;
+                        const isLoading = settlingKey === key;
+                        return (
+                          <button
+                            key={member.id}
+                            type="button"
+                            disabled={isSettled || !canManageGroup || trip.is_resolved || isLoading}
+                            onClick={() => !isSettled && canManageGroup && !trip.is_resolved && handleSettleTripMember(trip, member.id)}
+                            className={`inline-flex items-center gap-1 text-xs rounded-lg px-2 py-1 transition-all ${
+                              isSettled
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : canManageGroup && !trip.is_resolved
+                                  ? 'bg-muted/60 text-foreground border border-border/30 hover:bg-primary/10 hover:border-primary/30 hover:text-primary cursor-pointer'
+                                  : 'bg-muted/60 text-muted-foreground border border-transparent'
+                            }`}
+                            title={isSettled ? `${member.mem_name} settled` : canManageGroup ? `Settle ${member.mem_name}'s share` : member.mem_name}
+                          >
+                            {isLoading
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : isSettled
+                                ? <CheckCircle2 className="h-3 w-3" />
+                                : null}
+                            {member.mem_name}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1559,8 +1707,8 @@ export function GroupPageClient({ groupId, initialData = null }) {
           { label: 'Total Members', value: info.totalMember, color: 'text-foreground' },
           { label: 'Total Paid', value: info.totalPaid, color: 'text-emerald-600 dark:text-emerald-400' },
           { label: 'Total Spend', value: info.totalSpend, color: 'text-orange-600 dark:text-orange-400' },
-          { label: 'Total Remain', value: info.totalRemain, color: 'text-sky-600 dark:text-sky-400' },
-          { label: 'Total Unpaid', value: info.totalUnPaid, color: 'text-rose-600 dark:text-rose-400' },
+          { label: 'Total Balance', value: info.totalRemain, color: 'text-sky-600 dark:text-sky-400' },
+          { label: 'Total Still Owes', value: info.totalUnPaid, color: 'text-rose-600 dark:text-rose-400' },
         ].map(({ label, value, color }, i, arr) => (
           <div key={label} className={`flex justify-between items-center px-4 py-3.5 ${i < arr.length - 1 ? 'border-b border-border/20' : ''} hover:bg-muted/20 transition-colors`}>
             <span className="text-muted-foreground text-sm">{label}</span>
@@ -1837,7 +1985,7 @@ export function GroupPageClient({ groupId, initialData = null }) {
                                   <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{row.paid}</p>
                                 </div>
                                 <div className="rounded-xl bg-sky-500/10 border border-sky-500/20 px-3 py-2">
-                                  <p className="text-[9px] uppercase tracking-widest text-sky-600 dark:text-sky-400/70 mb-0.5">Remain</p>
+                                  <p className="text-[9px] uppercase tracking-widest text-sky-600 dark:text-sky-400/70 mb-0.5">Balance</p>
                                   <p className="text-sm font-bold text-sky-600 dark:text-sky-400">{row.remain}</p>
                                 </div>
                               </div>
@@ -2241,6 +2389,53 @@ export function GroupPageClient({ groupId, initialData = null }) {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ── Floating selection action bar ── */}
+      {/* Appears when the user has checked any trips or members, giving clear purpose to the selection. */}
+      {(selectedTripIds.length > 0 || selectedMemberIds.length > 0) && (
+        <div className="fixed bottom-20 inset-x-0 z-40 flex justify-center pointer-events-none px-4">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md shadow-2xl px-4 py-3 max-w-sm w-full">
+            <span className="text-sm font-semibold text-muted-foreground flex-1 leading-none">
+              {[
+                selectedTripIds.length > 0 && `${selectedTripIds.length} expense${selectedTripIds.length !== 1 ? 's' : ''}`,
+                selectedMemberIds.length > 0 && `${selectedMemberIds.length} member${selectedMemberIds.length !== 1 ? 's' : ''}`,
+              ].filter(Boolean).join(' · ')} selected
+            </span>
+
+            {/* Share / Export — same actions as before, now surfaced in the bar */}
+            {selectedTripIds.length > 0 && (
+              <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs px-2"
+                onClick={() => { setShareFlowMode('trips'); setShareFlowOpen(true); }}>
+                <Share2 className="h-3.5 w-3.5" /> Share
+              </Button>
+            )}
+
+            {/* Bulk delete */}
+            {canManageGroup && selectedTripIds.length > 0 && (
+              <Button size="sm" variant="destructive" className="h-8 gap-1 text-xs px-2"
+                disabled={bulkDeleteTripsMutation.isPending}
+                onClick={handleBulkDeleteTrips}>
+                <Trash2 className="h-3.5 w-3.5" />
+                {bulkDeleteTripsMutation.isPending ? '…' : 'Delete'}
+              </Button>
+            )}
+            {canManageGroup && selectedMemberIds.length > 0 && (
+              <Button size="sm" variant="destructive" className="h-8 gap-1 text-xs px-2"
+                disabled={bulkDeleteMembersMutation.isPending}
+                onClick={handleBulkDeleteMembers}>
+                <Trash2 className="h-3.5 w-3.5" />
+                {bulkDeleteMembersMutation.isPending ? '…' : 'Delete'}
+              </Button>
+            )}
+
+            {/* Dismiss */}
+            <button className="ml-1 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              onClick={() => { setSelectedTripIds([]); setSelectedMemberIds([]); }}>
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
